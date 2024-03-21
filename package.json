@@ -31,6 +31,7 @@
     "@parcel/watcher": "^2.4.1",
     "glob": "^10.3.10",
     "minimatch": "^9.0.3",
-    "picocolors": "^1.0.0"
+    "picocolors": "^1.0.0",
+    "xstate": "^5.9.1"
   }
 }
