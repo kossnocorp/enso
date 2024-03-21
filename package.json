@@ -1,0 +1,36 @@
+{
+  "name": "enso",
+  "version": "2.0.0",
+  "description": "",
+  "main": "index.js",
+  "bin": {
+    "enso": "bin.js"
+  },
+  "type": "module",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/kossnocorp/enso.git"
+  },
+  "keywords": [
+    "monorepo"
+  ],
+  "author": "Sasha Koss <koss@nocorp.me>",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/kossnocorp/enso/issues"
+  },
+  "homepage": "https://github.com/kossnocorp/enso#readme",
+  "devDependencies": {
+    "@types/node": "^20.11.30",
+    "minimatch": "^9.0.3",
+    "typescript": "^5.4.3"
+  },
+  "dependencies": {
+    "@parcel/watcher": "^2.4.1",
+    "glob": "^10.3.10",
+    "picocolors": "^1.0.0"
+  }
+}
