@@ -6,6 +6,7 @@ const command = process.argv[2];
 
 function main() {
   switch (command) {
+    case "dev":
     default:
       console.log("TODO");
   }

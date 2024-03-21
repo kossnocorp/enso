@@ -25,12 +25,12 @@
   "homepage": "https://github.com/kossnocorp/enso#readme",
   "devDependencies": {
     "@types/node": "^20.11.30",
-    "minimatch": "^9.0.3",
     "typescript": "^5.4.3"
   },
   "dependencies": {
     "@parcel/watcher": "^2.4.1",
     "glob": "^10.3.10",
+    "minimatch": "^9.0.3",
     "picocolors": "^1.0.0"
   }
 }
