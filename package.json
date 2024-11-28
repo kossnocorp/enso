@@ -66,16 +66,18 @@
     "@parcel/watcher": "^2.4.1",
     "@swc/core": "^1.4.13",
     "@types/react": "^18.3.12",
-    "@types/sinonjs__fake-timers": "^8.1.5",
+    "@vitest/browser": "^2.1.6",
     "babel-plugin-replace-import-extension": "^1.1.4",
     "benny": "^3.7.1",
     "bytes-iec": "^3.1.1",
     "glob": "^10.3.12",
     "minimatch": "^10.0.1",
     "picocolors": "^1.0.0",
+    "playwright": "^1.49.0",
     "react": "^18.3.1",
     "typescript": "^5.7.2",
-    "vitest": "^1.4.0"
+    "vitest": "^2.1.6",
+    "vitest-browser-react": "^0.0.4"
   },
   "packageManager": "pnpm@9.10.0+sha512.73a29afa36a0d092ece5271de5177ecbf8318d454ecd701343131b8ebc0c1a91c487da46ab77c8e596d6acf1461e3594ced4becedf8921b074fbd8653ed7051c",
   "dependencies": {
