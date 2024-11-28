@@ -6,7 +6,7 @@ export class State<Payload> {
   #id = nanoid();
   #target = new EventTarget();
   #internal!: InternalState<Payload>;
-  #parent?: State<any>;
+  #parent?: State<any> | undefined;
   #subs = new Set<(event: Event) => void>();
 
   constructor(value: Payload, parent?: State<any>) {
@@ -97,12 +97,11 @@ export class State<Payload> {
 }
 
 export namespace State {
-  export type $<Payload> =
-    Payload extends Array<infer Item>
-      ? Array<State<Item>>
-      : Payload extends object
-        ? { [Key in keyof Payload]: State<Payload[Key]> }
-        : State<Payload>;
+  export type $<Payload> = Payload extends Array<infer Item>
+    ? Array<State<Item>>
+    : Payload extends object
+    ? { [Key in keyof Payload]: State<Payload[Key]> }
+    : State<Payload>;
 
   export type WatchCallback<Payload> = (
     payload: Payload,
@@ -111,7 +110,7 @@ export namespace State {
 
   export type Discriminated<
     Payload,
-    Discriminator extends keyof Exclude<Payload, undefined>,
+    Discriminator extends keyof Exclude<Payload, undefined>
   > = Payload extends Payload
     ? Discriminator extends keyof Payload
       ? Payload[Discriminator] extends infer DiscriminatorValue
@@ -206,7 +205,7 @@ export class PrimitiveState<Payload> extends InternalState<Payload> {
 //#region ObjectState
 
 export class ObjectState<
-  Payload extends object,
+  Payload extends object
 > extends InternalState<Payload> {
   #children: Map<string, State<any>> = new Map();
 
@@ -256,7 +255,7 @@ export class ObjectState<
 //#region ArrayState
 
 export class ArrayState<
-  Payload extends Array<any>,
+  Payload extends Array<any>
 > extends InternalState<Payload> {
   #children: State<any>[] = [];
 

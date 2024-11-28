@@ -1,5 +1,5 @@
 import { assert, describe, expect, it, vi } from "vitest";
-import { State, StateChangeType } from ".";
+import { State, StateChangeType } from "./index.ts";
 
 describe("state", () => {
   describe("State", () => {
