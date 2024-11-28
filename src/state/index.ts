@@ -1,6 +1,11 @@
 import { nanoid } from "nanoid";
+import { EnsoUtils } from "../utils.ts";
 
 //#region State
+
+const createSymbol = Symbol();
+
+const clearSymbol = Symbol();
 
 export class State<Payload> {
   #id = nanoid();
@@ -24,6 +29,12 @@ export class State<Payload> {
     return changed;
   }
 
+  [createSymbol] = (value: Payload): StateChange | 0 => {
+    const changed = this.#internal.set(value) | StateChangeType.Created;
+    this.#changed(changed);
+    return changed;
+  };
+
   watch(callback: State.WatchCallback<Payload>): () => void {
     const handler = (event: Event) => {
       callback(this.get(), event as StateChangeEvent);
@@ -44,6 +55,10 @@ export class State<Payload> {
     );
     this.#internal.free();
   }
+
+  [clearSymbol] = () => {
+    this.#internal.set(undefined as Payload);
+  };
 
   // [TODO] Hide from non-object states?
   decompose(): State.Decomposed<Payload> {
@@ -97,11 +112,21 @@ export class State<Payload> {
 }
 
 export namespace State {
-  export type $<Payload> = Payload extends Array<infer Item>
-    ? Array<State<Item>>
-    : Payload extends object
-    ? { [Key in keyof Payload]: State<Payload[Key]> }
+  export type $<Payload> = Payload extends object
+    ? Object$<Payload>
     : State<Payload>;
+
+  export type Object$<Payload> = $Fn<Payload> & {
+    [Key in keyof Payload]-?: State<Payload[Key]>;
+  };
+
+  export type $Fn<Payload> = <Key extends keyof Payload>(
+    key: Key
+  ) => State<
+    EnsoUtils.StaticKey<Payload, Key> extends true
+      ? Payload[Key]
+      : Payload[Key] | undefined
+  >;
 
   export type WatchCallback<Payload> = (
     payload: Payload,
@@ -208,25 +233,45 @@ export class ObjectState<
   Payload extends object
 > extends InternalState<Payload> {
   #children: Map<string, State<any>> = new Map();
+  #proxy;
+  #undefined;
 
-  set(value: Payload): StateChange | 0 {
+  constructor(external: State<Payload>, value: Payload) {
+    super(external, value);
+
+    this.#proxy = new Proxy((() => {}) as unknown as State.$<Payload>, {
+      apply: (_, __, [key]: [string]) => this.#field(key),
+      get: (_, key: string) => this.#field(key),
+    });
+
+    this.#undefined = new UndefinedStateRegistry(external);
+  }
+
+  set(newValue: Payload): StateChange | 0 {
     let changed = 0;
 
     this.#children.forEach((child, key) => {
-      if (!(key in value)) {
+      if (!(key in newValue)) {
         this.#children.delete(key);
-        child.free();
+        child[clearSymbol]();
+        this.#undefined.register(key, child);
         changed |= StateChangeType.Removed;
       }
     });
 
-    for (const [k, v] of Object.entries(value)) {
-      const child = this.#children.get(k);
+    for (const [key, value] of Object.entries(newValue)) {
+      const child = this.#children.get(key);
       if (child) {
-        const childChanged = child.set(v);
+        const childChanged = child.set(value);
         if (childChanged) changed |= StateChangeType.Child;
       } else {
-        this.#children.set(k, new State(v, this.external));
+        const undefinedState = this.#undefined.claim(key);
+        if (undefinedState) undefinedState[createSymbol](value);
+
+        this.#children.set(
+          key,
+          undefinedState || new State(value, this.external)
+        );
         changed |= StateChangeType.Added;
       }
     }
@@ -241,12 +286,19 @@ export class ObjectState<
   }
 
   $(): State.$<Payload> {
-    return Object.fromEntries(this.#children.entries()) as State.$<Payload>;
+    return this.#proxy;
   }
 
   free() {
     this.#children.forEach((child) => child.free());
     this.#children.clear();
+  }
+
+  #field(key: string) {
+    const field = this.#children.get(key);
+    if (field) return field;
+
+    return this.#undefined.ensure(key);
   }
 }
 
@@ -258,26 +310,43 @@ export class ArrayState<
   Payload extends Array<any>
 > extends InternalState<Payload> {
   #children: State<any>[] = [];
+  #proxy;
+  #undefined;
 
-  set(value: Payload): StateChange | 0 {
+  constructor(external: State<Payload>, value: Payload) {
+    super(external, value);
+
+    this.#proxy = new Proxy((() => {}) as unknown as State.$<Payload>, {
+      apply: (_, __, [index]: [number]) => this.#item(index),
+      get: (_, index: string) => this.#item(Number(index)),
+    });
+
+    this.#undefined = new UndefinedStateRegistry(external);
+  }
+
+  set(newValue: Payload): StateChange | 0 {
     let changed = 0;
 
-    this.#children.forEach((child, index) => {
-      if (!(index in value)) {
+    this.#children.forEach((item, index) => {
+      if (!(index in newValue)) {
         delete this.#children[index];
-        child.free();
+        item[clearSymbol]();
+        this.#undefined.register(index.toString(), item);
         changed |= StateChangeType.Removed;
       }
     });
 
-    this.#children = value.map((v, i) => {
-      const child = this.#children[i];
+    this.#children = newValue.map((value, index) => {
+      const child = this.#children[index];
       if (child) {
-        const childChanged = child.set(v);
+        const childChanged = child.set(value);
         if (childChanged) changed |= StateChangeType.Child;
         return child;
       } else {
-        const newChild = new State(v, this.external);
+        const undefinedState = this.#undefined.claim(index.toString());
+        if (undefinedState) undefinedState[createSymbol](value);
+
+        const newChild = undefinedState || new State(value, this.external);
         changed |= StateChangeType.Added;
         return newChild;
       }
@@ -291,12 +360,66 @@ export class ArrayState<
   }
 
   $(): State.$<Payload> {
-    return Object.fromEntries(this.#children.entries()) as State.$<Payload>;
+    return this.#proxy;
   }
 
   free() {
     this.#children.forEach((child) => child.free());
     this.#children.length = 0;
+  }
+
+  #item(index: number) {
+    const item = this.#children[index];
+    if (item) return item;
+
+    const indexStr = index.toString();
+    return this.#undefined.ensure(indexStr);
+  }
+}
+
+//#endregion
+
+//#region UndefinedStateRegistry
+
+export class UndefinedStateRegistry {
+  #external;
+  #map = new Map<string, WeakRef<State<any>>>();
+  #registry;
+
+  constructor(external: State<any>) {
+    this.#external = external;
+    this.#registry = new FinalizationRegistry<string>((key) =>
+      this.#map.delete(key)
+    );
+  }
+
+  register(key: string, state: State<undefined>) {
+    const stateRef = new WeakRef(state);
+    this.#map.set(key, stateRef);
+    this.#registry.register(stateRef, key);
+  }
+
+  claim(key: string): State<undefined> | undefined {
+    // Look up if the undefined state exists
+    const ref = this.#map.get(key);
+    const registered = ref?.deref();
+    if (!ref || !registered) return;
+
+    // Unregisted the state and allow the caller to claim it
+    this.#registry.unregister(ref);
+    this.#map.delete(key);
+    return registered;
+  }
+
+  ensure(key: string): State<undefined> {
+    // Try to look up registed undefined item
+    const registered = this.#map.get(key)?.deref();
+    if (registered) return registered;
+
+    // Or create and register a new one
+    const state = new State(undefined, this.#external);
+    this.register(key, state);
+    return state;
   }
 }
 
@@ -310,19 +433,21 @@ export type StateChange = number;
 
 export enum StateChangeType {
   /** Nothing has changed, the initial value. */
-  Nothing = 0b000000, // 0
+  Nothing = 0, // 0
+  /** The state has been inserted into an object or an array. */
+  Created = 0b00000001, // 1
   /** The primitive value of the state has changed. */
-  Value = 0b000001, // 1
+  Value = 0b0000010, // 2
   /** The type of the state has changed. */
-  Type = 0b000010, // 2
+  Type = 0b0000100, // 4
   /** An object field or an array item has changed. */
-  Child = 0b000100, // 4
+  Child = 0b0001000, // 8
   /** An object field or an array item has been removed. */
-  Removed = 0b001000, // 8
+  Removed = 0b0010000, // 16
   /** An object field or an array item has been added. */
-  Added = 0b010000, // 16
+  Added = 0b0100000, // 32
   /** The order of array items has changed. */
-  Reordered = 0b100000, // 32
+  Reordered = 0b10000000, // 64
 }
 
 export class StateChangeEvent extends CustomEvent<StateChange> {
