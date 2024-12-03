@@ -5,6 +5,7 @@ import { describe, expect, it } from "vitest";
 // https://github.com/vitest-dev/vitest/issues/6965
 import "@vitest/browser/matchers.d.ts";
 import { State } from "./index.ts";
+import { userEvent } from "@vitest/browser/context";
 
 describe("state", () => {
   describe("browser", () => {
@@ -34,6 +35,24 @@ describe("state", () => {
       await expect
         .element(screen.getByTestId("render-name"))
         .toHaveTextContent("3");
+    });
+
+    it("allows to control array state", async () => {
+      const screen = render(
+        <UserNamesComponent names={[{ first: "Alexander" }]} />
+      );
+
+      await userEvent.fill(screen.getByTestId("input-name-first"), "Sasha");
+      await userEvent.fill(screen.getByTestId("input-name-last"), "Koss");
+      await screen.getByText("Add name").click();
+
+      await expect
+        .element(screen.getByTestId("name-1"))
+        .toHaveTextContent("1SashaKoss");
+
+      // [TODO] Remove one of the items
+
+      // [TODO] Check render times
     });
   });
 });
@@ -83,7 +102,7 @@ function UserComponent(props: UserComponentProps) {
   const count = useRenderCount();
   const user = props.user;
   // Makes the component re-render when the name shape changes
-  const name = user.use.name();
+  const name = user.$.name.use();
   return (
     <div>
       <div data-testid="render-user">{count}</div>
@@ -104,10 +123,73 @@ function UserNameComponent(props: UserNameComponentProps) {
   const count = useRenderCount();
   const { first, last } = props.name.useWatch();
   return (
-    <div>
+    <div data-testid="name">
       <div data-testid="render-name">{count}</div>
       <div data-testid="name-first">{first}</div>
       <div data-testid="name-last">{last}</div>
+    </div>
+  );
+}
+
+interface UserNamesComponentProps {
+  names: UserName[];
+}
+
+function UserNamesComponent(props: UserNamesComponentProps) {
+  const count = useRenderCount();
+  const state = State.use({ names: props.names });
+  const names = state.$.names.use();
+
+  return (
+    <div>
+      <div data-testid="render-names">{count}</div>
+
+      {names.map((name, index) => (
+        <div data-testid={`name-${index}`} key={name.id}>
+          <UserNameComponent name={name} />
+        </div>
+      ))}
+
+      <UserNameFormComponent onAdd={(name) => names.push(name)} />
+    </div>
+  );
+}
+
+interface UserNameFormComponentProps {
+  onAdd: (name: UserName) => void;
+}
+
+function UserNameFormComponent(props: UserNameFormComponentProps) {
+  const count = useRenderCount();
+  const form = State.use<UserName>({ first: "", last: "" });
+
+  return (
+    <div>
+      <div data-testid="render-name-form">{count}</div>
+
+      <form
+        onSubmit={(event) => {
+          event.preventDefault();
+          props.onAdd(form.get());
+        }}
+      >
+        <input
+          type="text"
+          name="first"
+          data-testid="input-name-first"
+          required
+          onChange={(event) => form.$.first.set(event.target.value)}
+        />
+
+        <input
+          type="text"
+          name="last"
+          data-testid="input-name-last"
+          onChange={(event) => form.$.last.set(event.target.value)}
+        />
+
+        <button type="submit">Add name</button>
+      </form>
     </div>
   );
 }

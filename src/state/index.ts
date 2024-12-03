@@ -100,6 +100,27 @@ export class State<Payload> {
     } as State.Discriminated<Payload, Discriminator>;
   }
 
+  push: Payload extends Array<infer Item> ? (item: Item) => void : never = (
+    item: Payload extends Array<infer Item> ? Item : never
+  ) => {
+    if (!(this.#internal instanceof InternalArrayState))
+      throw new Error("State is not an array");
+
+    this.#internal.push(item);
+    this.#trigger(StateChangeType.Added, StateTriggerFlow.Bidirectional);
+  };
+
+  map: Payload extends Array<infer Item>
+    ? <Return>(
+        callback: (item: State<Item>, index: number) => Return
+      ) => Return[]
+    : never = (callback: (item: any, index: number) => any) => {
+    if (!(this.#internal instanceof InternalArrayState))
+      throw new Error("State is not an array");
+
+    return this.#internal.map(callback);
+  };
+
   get id(): string {
     return this.#id;
   }
@@ -110,16 +131,8 @@ export class State<Payload> {
 
   get use(): State.Use<Payload> {
     return new Proxy((() => {}) as unknown as State.Use<Payload>, {
-      get: (_, key: string) => {
-        // @ts-ignore: This is okay
-        return this.$[key].use;
-        // return new Proxy((() => {}) as unknown as UseFieldRef<Payload>, {
-        //   apply: (_, __, [key]: [string]) => {},
-        //   // get: (_, key: string) => {
-
-        //   // }
-        // });
-      },
+      // @ts-ignore: This is okay
+      get: (_, key: string) => this.$[key].use,
 
       apply: () => {
         const [_, setState] = useState(0);
@@ -139,11 +152,7 @@ export class State<Payload> {
     const ValueConstructor = InternalState.detect(value);
 
     // The state is already of the same type
-    if (internal instanceof ValueConstructor) {
-      // @ts-ignore: TypeScript is picky about the type here
-      internal as InternalState<Payload>;
-      return internal.set(value);
-    }
+    if (internal instanceof ValueConstructor) return internal.set(value);
 
     // The state is of a different type
     internal?.free();
@@ -231,14 +240,17 @@ export namespace State {
 export abstract class InternalState<Payload> {
   static detect(
     value: any
-  ): typeof ArrayState | typeof ObjectState | typeof PrimitiveState {
+  ):
+    | typeof InternalArrayState
+    | typeof InternalObjectState
+    | typeof InternalPrimitiveState {
     if (
       value !== null &&
       typeof value === "object" &&
       !(value instanceof UndefinedValue)
     )
-      return Array.isArray(value) ? ArrayState : ObjectState;
-    return PrimitiveState;
+      return Array.isArray(value) ? InternalArrayState : InternalObjectState;
+    return InternalPrimitiveState;
   }
 
   #external: State<Payload>;
@@ -268,9 +280,9 @@ export abstract class InternalState<Payload> {
 
 //#endregion
 
-//#region PrimitiveState
+//#region InternalPrimitiveState
 
-export class PrimitiveState<Payload> extends InternalState<Payload> {
+export class InternalPrimitiveState<Payload> extends InternalState<Payload> {
   #value: Payload;
 
   constructor(state: State<Payload>, value: Payload) {
@@ -314,9 +326,9 @@ export class PrimitiveState<Payload> extends InternalState<Payload> {
 
 //#endregion
 
-//#region ObjectState
+//#region InternalObjectState
 
-export class ObjectState<
+export class InternalObjectState<
   Payload extends object
 > extends InternalState<Payload> {
   #children: Map<string, State<any>> = new Map();
@@ -415,9 +427,9 @@ export class ObjectState<
 
 //#endregion
 
-//#region ArrayState
+//#region InternalArrayState
 
-export class ArrayState<
+export class InternalArrayState<
   Payload extends Array<any>
 > extends InternalState<Payload> {
   #children: State<any>[] = [];
@@ -433,6 +445,10 @@ export class ArrayState<
     });
 
     this.#undefined = new UndefinedStateRegistry(external);
+  }
+
+  get(): Payload {
+    return this.#children.map((child) => child.get()) as Payload;
   }
 
   set(newValue: Payload): StateChange | 0 {
@@ -466,8 +482,14 @@ export class ArrayState<
     return changed;
   }
 
-  get(): Payload {
-    return this.#children.map((child) => child.get()) as Payload;
+  push(item: Payload[number]) {
+    this.#children.push(new State(item, this.external));
+  }
+
+  map<Return>(
+    callback: (item: Payload[number], index: number) => Return
+  ): Return[] {
+    return this.#children.map(callback);
   }
 
   $(): State.$<Payload> {
