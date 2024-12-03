@@ -293,6 +293,19 @@ describe("state", () => {
 
             state.$.num.set(43);
           }));
+
+        it("listens to fields create", async () =>
+          new Promise<void>((resolve) => {
+            const state = new State<{ num: number; str?: string }>({ num: 42 });
+
+            const unsub = state.watch((value) => {
+              expect(value.str).toBe("Hello!");
+              unsub();
+              resolve();
+            });
+
+            state.$.str.set("Hello!");
+          }));
       });
 
       describe("array", () => {
@@ -307,6 +320,19 @@ describe("state", () => {
             });
 
             state.$(1).set(43);
+          }));
+
+        it("listens to items create", async () =>
+          new Promise<void>((resolve) => {
+            const state = new State([1, 2, 3]);
+
+            const unsub = state.watch((value) => {
+              expect(value[5]).toBe(43);
+              unsub();
+              resolve();
+            });
+
+            state.$(5).set(43);
           }));
       });
     });

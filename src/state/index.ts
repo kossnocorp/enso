@@ -1,13 +1,19 @@
 import { nanoid } from "nanoid";
 import { EnsoUtils } from "../utils.ts";
+import { useEffect, useMemo, useState } from "react";
 
 //#region State
 
 const createSymbol = Symbol();
-
 const clearSymbol = Symbol();
+const childTriggerSymbol = Symbol();
 
 export class State<Payload> {
+  static use<Payload>(value: Payload): State<Payload> {
+    const state = useMemo(() => new State(value), []);
+    return state;
+  }
+
   #id = nanoid();
   #target = new EventTarget();
   #internal!: InternalState<Payload>;
@@ -23,19 +29,20 @@ export class State<Payload> {
     return this.#internal.get();
   }
 
-  set(value: Payload): StateChange | 0 {
+  // [TODO] Get rid of the type argument and expose directional set via symbol.
+  set(value: Payload, type = StateTriggerFlow.Bidirectional): StateChange | 0 {
     const changed = this.#internal.set(value);
-    if (changed) this.#changed(changed);
+    if (changed) this.#trigger(changed, type);
     return changed;
   }
 
-  [createSymbol] = (value: Payload): StateChange | 0 => {
+  [createSymbol](value: Payload): StateChange | 0 {
     const changed = this.#internal.set(value) | StateChangeType.Created;
-    this.#changed(changed);
+    this.#trigger(changed, StateTriggerFlow.Directional);
     return changed;
-  };
+  }
 
-  watch(callback: State.WatchCallback<Payload>): () => void {
+  watch(callback: State.WatchCallback<Payload>): State.Unwatch {
     const handler = (event: Event) => {
       callback(this.get(), event as StateChangeEvent);
     };
@@ -49,16 +56,30 @@ export class State<Payload> {
     };
   }
 
+  useWatch(): Payload {
+    const [payload, setPayload] = useState(this.get());
+    useEffect(
+      () =>
+        this.watch((newPayload, event) => {
+          // [TODO] Check event changes?
+          setPayload(newPayload);
+        }),
+      []
+    );
+    return payload;
+  }
+
   free() {
     this.#subs.forEach((sub) =>
       this.#target.removeEventListener("change", sub)
     );
+    this.#subs.clear();
     this.#internal.free();
   }
 
-  [clearSymbol] = () => {
+  [clearSymbol]() {
     this.#internal.set(undefined as Payload);
-  };
+  }
 
   // [TODO] Hide from non-object states?
   decompose(): State.Decomposed<Payload> {
@@ -87,6 +108,32 @@ export class State<Payload> {
     return this.#internal.$();
   }
 
+  get use(): State.Use<Payload> {
+    return new Proxy((() => {}) as unknown as State.Use<Payload>, {
+      get: (_, key: string) => {
+        return new Proxy((() => {}) as unknown as UseFieldRef<Payload>, {
+          apply: (_, __, [key]: [string]) => {},
+          // get: (_, key: string) => {
+
+          // }
+        });
+      },
+
+      apply: () => {
+        const [_, setState] = useState(0);
+        useEffect(
+          () =>
+            this.watch((payload, event) => {
+              // [TODO] Use 0
+              if (this.#internal.updated(event)) setState(Date.now());
+            }),
+          []
+        );
+        return this;
+      },
+    });
+  }
+
   #set(value: Payload, internal?: InternalState<any>): StateChange | 0 {
     const ValueConstructor = InternalState.detect(value);
 
@@ -105,9 +152,15 @@ export class State<Payload> {
     return StateChangeType.Type;
   }
 
-  #changed(type: StateChangeType) {
-    this.#target.dispatchEvent(new StateChangeEvent(type));
-    if (this.#parent) this.#parent.#changed(StateChangeType.Child);
+  #trigger(changed: StateChange, type: StateTriggerFlow) {
+    this.#target.dispatchEvent(new StateChangeEvent(changed));
+    if (type === StateTriggerFlow.Bidirectional)
+      this.#parent?.[childTriggerSymbol](changed, this);
+  }
+
+  [childTriggerSymbol](type: StateChange, child: State<any>) {
+    this.#internal.childUpdate(type, child);
+    this.#trigger(StateChangeType.Child, StateTriggerFlow.Directional);
   }
 }
 
@@ -128,10 +181,18 @@ export namespace State {
       : Payload[Key] | undefined
   >;
 
+  export type Use<Payload> = Payload extends Array<any>
+    ? UseFieldRef.UseFn<Payload>
+    : Payload extends object
+    ? UseFieldRef.Use<Payload>
+    : never;
+
   export type WatchCallback<Payload> = (
     payload: Payload,
     event: StateChangeEvent
   ) => void;
+
+  export type Unwatch = () => void;
 
   export type Discriminated<
     Payload,
@@ -166,9 +227,21 @@ export namespace State {
 //#region InternalState
 
 export abstract class InternalState<Payload> {
+  static detect(
+    value: any
+  ): typeof ArrayState | typeof ObjectState | typeof PrimitiveState {
+    if (
+      value !== null &&
+      typeof value === "object" &&
+      !(value instanceof UndefinedValue)
+    )
+      return Array.isArray(value) ? ArrayState : ObjectState;
+    return PrimitiveState;
+  }
+
   #external: State<Payload>;
 
-  constructor(state: State<Payload>, value: Payload) {
+  constructor(state: State<Payload>, _value: Payload) {
     this.#external = state;
   }
 
@@ -180,18 +253,18 @@ export abstract class InternalState<Payload> {
 
   abstract $(): State.$<Payload>;
 
+  childUpdate(type: StateChangeType, _child: State<any>): StateChange {
+    return type;
+  }
+
+  abstract updated(event: StateChangeEvent): boolean;
+
   protected get external() {
     return this.#external;
   }
-
-  static detect(
-    value: any
-  ): typeof ArrayState | typeof ObjectState | typeof PrimitiveState {
-    if (value !== null && typeof value === "object")
-      return Array.isArray(value) ? ArrayState : ObjectState;
-    return PrimitiveState;
-  }
 }
+
+//#endregion
 
 //#region PrimitiveState
 
@@ -206,7 +279,10 @@ export class PrimitiveState<Payload> extends InternalState<Payload> {
   set(value: Payload): StateChange | 0 {
     let changed = 0;
 
-    if (typeof this.#value !== typeof value) changed |= StateChangeType.Type;
+    if (this.#value instanceof UndefinedValue)
+      changed |= StateChangeType.Type | StateChangeType.Created;
+    else if (typeof this.#value !== typeof value)
+      changed |= StateChangeType.Type;
     else if (this.#value !== value) changed |= StateChangeType.Value;
 
     if (this.#value !== value) this.#value = value;
@@ -215,11 +291,20 @@ export class PrimitiveState<Payload> extends InternalState<Payload> {
   }
 
   get(): Payload {
-    return this.#value;
+    return this.#value instanceof UndefinedValue
+      ? (undefined as Payload)
+      : this.#value;
   }
 
   $(): State.$<Payload> {
     return this.external as State.$<Payload>;
+  }
+
+  updated(event: StateChangeEvent): boolean {
+    return !!(
+      event.detail & StateChangeType.Created ||
+      event.detail & StateChangeType.Type
+    );
   }
 
   free() {}
@@ -262,7 +347,7 @@ export class ObjectState<
     for (const [key, value] of Object.entries(newValue)) {
       const child = this.#children.get(key);
       if (child) {
-        const childChanged = child.set(value);
+        const childChanged = child.set(value, StateTriggerFlow.Directional);
         if (childChanged) changed |= StateChangeType.Child;
       } else {
         const undefinedState = this.#undefined.claim(key);
@@ -287,6 +372,30 @@ export class ObjectState<
 
   $(): State.$<Payload> {
     return this.#proxy;
+  }
+
+  updated(event: StateChangeEvent): boolean {
+    return !!(
+      event.detail & StateChangeType.Created ||
+      event.detail & StateChangeType.Type ||
+      event.detail & StateChangeType.Removed ||
+      event.detail & StateChangeType.Added
+    );
+  }
+
+  childUpdate(childChanged: StateChange, child: State<any>): StateChange {
+    let changed = StateChangeType.Child;
+
+    // Handle when child goes from undefined to defined
+    if (childChanged & StateChangeType.Created) {
+      const key = this.#undefined.key(child);
+      if (!key) throw new Error("Failed to find the child state when updating");
+      this.#undefined.claim(key);
+      this.#children.set(key, child);
+      changed |= StateChangeType.Added;
+    }
+
+    return changed;
   }
 
   free() {
@@ -339,7 +448,7 @@ export class ArrayState<
     this.#children = newValue.map((value, index) => {
       const child = this.#children[index];
       if (child) {
-        const childChanged = child.set(value);
+        const childChanged = child.set(value, StateTriggerFlow.Directional);
         if (childChanged) changed |= StateChangeType.Child;
         return child;
       } else {
@@ -363,6 +472,31 @@ export class ArrayState<
     return this.#proxy;
   }
 
+  updated(event: StateChangeEvent): boolean {
+    return !!(
+      event.detail & StateChangeType.Created ||
+      event.detail & StateChangeType.Type ||
+      event.detail & StateChangeType.Removed ||
+      event.detail & StateChangeType.Added ||
+      event.detail & StateChangeType.Reordered
+    );
+  }
+
+  childUpdate(childChanged: StateChange, child: State<any>): StateChange {
+    let changed = StateChangeType.Child;
+
+    // Handle when child goes from undefined to defined
+    if (childChanged & StateChangeType.Created) {
+      const key = this.#undefined.key(child);
+      if (!key) throw new Error("Failed to find the child state when updating");
+      this.#undefined.claim(key);
+      this.#children[Number(key)] = child;
+      changed |= StateChangeType.Added;
+    }
+
+    return changed;
+  }
+
   free() {
     this.#children.forEach((child) => child.free());
     this.#children.length = 0;
@@ -383,47 +517,58 @@ export class ArrayState<
 
 export class UndefinedStateRegistry {
   #external;
-  #map = new Map<string, WeakRef<State<any>>>();
+  #refsMap = new Map<string, WeakRef<State<any>>>();
+  #keysMap = new WeakMap<State<any>, string>();
   #registry;
 
   constructor(external: State<any>) {
     this.#external = external;
     this.#registry = new FinalizationRegistry<string>((key) =>
-      this.#map.delete(key)
+      this.#refsMap.delete(key)
     );
   }
 
-  register(key: string, state: State<undefined>) {
+  register(key: string, state: State<UndefinedValue>) {
     const stateRef = new WeakRef(state);
-    this.#map.set(key, stateRef);
+    this.#refsMap.set(key, stateRef);
+    this.#keysMap.set(state, key);
     this.#registry.register(stateRef, key);
   }
 
   claim(key: string): State<undefined> | undefined {
     // Look up if the undefined state exists
-    const ref = this.#map.get(key);
+    const ref = this.#refsMap.get(key);
     const registered = ref?.deref();
     if (!ref || !registered) return;
 
     // Unregisted the state and allow the caller to claim it
     this.#registry.unregister(ref);
-    this.#map.delete(key);
+    this.#refsMap.delete(key);
+    this.#keysMap.delete(registered);
     return registered;
   }
 
-  ensure(key: string): State<undefined> {
+  key(state: State<any>): string | undefined {
+    return this.#keysMap.get(state);
+  }
+
+  ensure(key: string): State<UndefinedValue> {
     // Try to look up registed undefined item
-    const registered = this.#map.get(key)?.deref();
+    const registered = this.#refsMap.get(key)?.deref();
     if (registered) return registered;
 
     // Or create and register a new one
-    const state = new State(undefined, this.#external);
+    const state = new State(new UndefinedValue(), this.#external);
     this.register(key, state);
     return state;
   }
 }
 
 //#endregion
+
+//#region UndefinedValue
+
+class UndefinedValue {}
 
 //#endregion
 
@@ -453,6 +598,53 @@ export enum StateChangeType {
 export class StateChangeEvent extends CustomEvent<StateChange> {
   constructor(type: StateChange) {
     super("change", { detail: type });
+  }
+}
+
+//#endregion
+
+//#region
+
+export enum StateTriggerFlow {
+  /** Parent updates its children, so no need to go upstream. */
+  Directional,
+  /** Child updates its parents. */
+  Bidirectional,
+}
+
+//#endregion
+
+//#region UseFieldRef
+
+interface UseFieldRef<Payload> {
+  (): State<Payload>;
+
+  get use(): UseFieldRef.Use<Payload>;
+
+  watch(): Payload;
+
+  discriminated<Discriminator extends keyof Exclude<Payload, undefined>>(
+    discriminator: Discriminator
+  ): State.Discriminated<Payload, Discriminator>;
+
+  narrow<Return extends State<any> | false | undefined | "" | null | 0>(
+    callback: (decomposed: State.Decomposed<Payload>) => Return
+  ): Return;
+}
+
+export namespace UseFieldRef {
+  export type Use<Payload> = UseFn<Payload> & {
+    [Key in keyof Payload]-?: UseFieldRef<Payload[Key]>;
+  };
+
+  export interface UseFn<Payload> {
+    (): State<Payload>;
+
+    <Key extends keyof Payload>(key: Key): UseFieldRef<
+      EnsoUtils.StaticKey<Payload, Key> extends true
+        ? Payload[Key]
+        : Payload[Key] | undefined
+    >;
   }
 }
 
