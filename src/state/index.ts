@@ -111,12 +111,14 @@ export class State<Payload> {
   get use(): State.Use<Payload> {
     return new Proxy((() => {}) as unknown as State.Use<Payload>, {
       get: (_, key: string) => {
-        return new Proxy((() => {}) as unknown as UseFieldRef<Payload>, {
-          apply: (_, __, [key]: [string]) => {},
-          // get: (_, key: string) => {
+        // @ts-ignore: This is okay
+        return this.$[key].use;
+        // return new Proxy((() => {}) as unknown as UseFieldRef<Payload>, {
+        //   apply: (_, __, [key]: [string]) => {},
+        //   // get: (_, key: string) => {
 
-          // }
-        });
+        //   // }
+        // });
       },
 
       apply: () => {
@@ -124,7 +126,6 @@ export class State<Payload> {
         useEffect(
           () =>
             this.watch((payload, event) => {
-              // [TODO] Use 0
               if (this.#internal.updated(event)) setState(Date.now());
             }),
           []
@@ -159,8 +160,9 @@ export class State<Payload> {
   }
 
   [childTriggerSymbol](type: StateChange, child: State<any>) {
-    this.#internal.childUpdate(type, child);
-    this.#trigger(StateChangeType.Child, StateTriggerFlow.Directional);
+    const updated =
+      this.#internal.childUpdate(type, child) | StateChangeType.Child;
+    this.#trigger(updated, StateTriggerFlow.Directional);
   }
 }
 

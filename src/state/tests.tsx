@@ -81,7 +81,9 @@ interface UserComponentProps {
 
 function UserComponent(props: UserComponentProps) {
   const count = useRenderCount();
-  const user = props.user.use();
+  const user = props.user;
+  // Makes the component re-render when the name shape changes
+  const name = user.use.name();
   return (
     <div>
       <div data-testid="render-user">{count}</div>
@@ -89,7 +91,7 @@ function UserComponent(props: UserComponentProps) {
         Rename first
       </button>
       <div data-testid="has-last">{user.$.name.get() ? "true" : "false"}</div>
-      <UserNameComponent name={user.$.name} />
+      <UserNameComponent name={name} />
     </div>
   );
 }
