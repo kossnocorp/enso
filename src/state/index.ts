@@ -17,10 +17,10 @@ export class State<Payload> {
   #id = nanoid();
   #target = new EventTarget();
   #internal!: InternalState<Payload>;
-  #parent?: State<any> | undefined;
+  #parent?: StateParent<any> | undefined;
   #subs = new Set<(event: Event) => void>();
 
-  constructor(value: Payload, parent?: State<any>) {
+  constructor(value: Payload, parent?: StateParent<any>) {
     this.#set(value);
     this.#parent = parent;
   }
@@ -164,13 +164,14 @@ export class State<Payload> {
 
   #trigger(changed: StateChange, type: StateTriggerFlow) {
     this.#target.dispatchEvent(new StateChangeEvent(changed));
+    // If the updates should flow upstream to parents too
     if (type === StateTriggerFlow.Bidirectional)
-      this.#parent?.[childTriggerSymbol](changed, this);
+      this.#parent?.state[childTriggerSymbol](changed, this.#parent.key);
   }
 
-  [childTriggerSymbol](type: StateChange, child: State<any>) {
+  [childTriggerSymbol](type: StateChange, key: string) {
     const updated =
-      this.#internal.childUpdate(type, child) | StateChangeType.Child;
+      this.#internal.childUpdate(type, key) | StateChangeType.Child;
     this.#trigger(updated, StateTriggerFlow.Directional);
   }
 }
@@ -235,6 +236,15 @@ export namespace State {
 
 //#endregion
 
+//#region StateParent
+
+export interface StateParent<Payload> {
+  key: string;
+  state: State<Payload>;
+}
+
+//#endregion
+
 //#region InternalState
 
 export abstract class InternalState<Payload> {
@@ -267,7 +277,7 @@ export abstract class InternalState<Payload> {
 
   abstract $(): State.$<Payload>;
 
-  childUpdate(type: StateChangeType, _child: State<any>): StateChange {
+  childUpdate(type: StateChangeType, _key: string): StateChange {
     return type;
   }
 
@@ -369,7 +379,7 @@ export class InternalObjectState<
 
         this.#children.set(
           key,
-          undefinedState || new State(value, this.external)
+          undefinedState || new State(value, { key, state: this.external })
         );
         changed |= StateChangeType.Added;
       }
@@ -397,14 +407,14 @@ export class InternalObjectState<
     );
   }
 
-  childUpdate(childChanged: StateChange, child: State<any>): StateChange {
+  childUpdate(childChanged: StateChange, key: string): StateChange {
     let changed = StateChangeType.Child;
 
     // Handle when child goes from undefined to defined
     if (childChanged & StateChangeType.Created) {
-      const key = this.#undefined.key(child);
-      if (!key) throw new Error("Failed to find the child state when updating");
-      this.#undefined.claim(key);
+      const child = this.#undefined.claim(key);
+      if (!child)
+        throw new Error("Failed to find the child state when updating");
       this.#children.set(key, child);
       changed |= StateChangeType.Added;
     }
@@ -473,7 +483,12 @@ export class InternalArrayState<
         const undefinedState = this.#undefined.claim(index.toString());
         if (undefinedState) undefinedState[createSymbol](value);
 
-        const newChild = undefinedState || new State(value, this.external);
+        const newChild =
+          undefinedState ||
+          new State(value, {
+            key: String(index),
+            state: this.external,
+          });
         changed |= StateChangeType.Added;
         return newChild;
       }
@@ -483,7 +498,11 @@ export class InternalArrayState<
   }
 
   push(item: Payload[number]) {
-    this.#children.push(new State(item, this.external));
+    const index = this.#children.length;
+    this.#children[index] = new State(item, {
+      key: String(index),
+      state: this.external,
+    });
   }
 
   map<Return>(
@@ -506,14 +525,14 @@ export class InternalArrayState<
     );
   }
 
-  childUpdate(childChanged: StateChange, child: State<any>): StateChange {
+  childUpdate(childChanged: StateChange, key: string): StateChange {
     let changed = StateChangeType.Child;
 
     // Handle when child goes from undefined to defined
     if (childChanged & StateChangeType.Created) {
-      const key = this.#undefined.key(child);
-      if (!key) throw new Error("Failed to find the child state when updating");
-      this.#undefined.claim(key);
+      const child = this.#undefined.claim(key);
+      if (!child)
+        throw new Error("Failed to find the child state when updating");
       this.#children[Number(key)] = child;
       changed |= StateChangeType.Added;
     }
@@ -542,7 +561,6 @@ export class InternalArrayState<
 export class UndefinedStateRegistry {
   #external;
   #refsMap = new Map<string, WeakRef<State<any>>>();
-  #keysMap = new WeakMap<State<any>, string>();
   #registry;
 
   constructor(external: State<any>) {
@@ -555,7 +573,6 @@ export class UndefinedStateRegistry {
   register(key: string, state: State<UndefinedValue>) {
     const stateRef = new WeakRef(state);
     this.#refsMap.set(key, stateRef);
-    this.#keysMap.set(state, key);
     this.#registry.register(stateRef, key);
   }
 
@@ -568,12 +585,7 @@ export class UndefinedStateRegistry {
     // Unregisted the state and allow the caller to claim it
     this.#registry.unregister(ref);
     this.#refsMap.delete(key);
-    this.#keysMap.delete(registered);
     return registered;
-  }
-
-  key(state: State<any>): string | undefined {
-    return this.#keysMap.get(state);
   }
 
   ensure(key: string): State<UndefinedValue> {
@@ -582,7 +594,10 @@ export class UndefinedStateRegistry {
     if (registered) return registered;
 
     // Or create and register a new one
-    const state = new State(new UndefinedValue(), this.#external);
+    const state = new State(new UndefinedValue(), {
+      key,
+      state: this.#external,
+    });
     this.register(key, state);
     return state;
   }

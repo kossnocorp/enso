@@ -48,7 +48,7 @@ describe("state", () => {
 
       await expect
         .element(screen.getByTestId("name-1"))
-        .toHaveTextContent("1SashaKoss");
+        .toHaveTextContent("1SashaKossRemove");
 
       // [TODO] Remove one of the items
 
@@ -147,6 +147,7 @@ function UserNamesComponent(props: UserNamesComponentProps) {
       {names.map((name, index) => (
         <div data-testid={`name-${index}`} key={name.id}>
           <UserNameComponent name={name} />
+          <button onClick={() => name.remove()}>Remove</button>
         </div>
       ))}
 
