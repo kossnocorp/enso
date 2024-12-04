@@ -206,8 +206,6 @@ describe("state", () => {
           (name, ok) => typeof name !== "string" && ok(name)
         );
 
-        // [TODO] Figure out if that's a bug or intended behavior and adjust the API
-        // accordingly: https://github.com/microsoft/TypeScript/issues/60685
         return (
           <div>
             <div data-testid="render-address">{count}</div>
@@ -270,6 +268,121 @@ describe("state", () => {
 
       await expect
         .element(screen.getByTestId("render-address"))
+        .toHaveTextContent("2");
+    });
+
+    it("allows to discriminate union state", async () => {
+      type Hello = HelloMachine | HelloHuman;
+
+      interface HelloMachine {
+        lang: "machine";
+        binary: number;
+      }
+
+      interface HelloHuman {
+        lang: "human";
+        text: string;
+      }
+
+      interface TestState {
+        hello: Hello;
+      }
+
+      interface ComponentProps {
+        hello: Hello;
+      }
+
+      function Component(props: ComponentProps) {
+        const count = useRenderCount();
+        const state = State.use<TestState>(props);
+        const hello = state.$.hello.useDiscriminate("lang");
+
+        return (
+          <div>
+            <div data-testid="render-hello">{count}</div>
+
+            {hello.discriminator === "human" ? (
+              <div>
+                <button
+                  onClick={() =>
+                    hello.state.set({
+                      lang: "human",
+                      text: "Hola",
+                    })
+                  }
+                >
+                  Say hola
+                </button>
+
+                <button
+                  onClick={() =>
+                    state.$.hello.set({
+                      lang: "machine",
+                      binary: 0b1101010,
+                    })
+                  }
+                >
+                  Switch to binary
+                </button>
+
+                <StringComponent string={hello.state.$.text} />
+              </div>
+            ) : (
+              <div>
+                <button
+                  onClick={() =>
+                    state.$.hello.set({
+                      lang: "machine",
+                      binary: 0b1010101,
+                    })
+                  }
+                >
+                  Say 1010101
+                </button>
+
+                <NumberComponent number={hello.state.$.binary} />
+              </div>
+            )}
+          </div>
+        );
+      }
+
+      const screen = render(
+        <Component hello={{ lang: "human", text: "Hello" }} />
+      );
+
+      await expect
+        .element(screen.getByTestId("string"))
+        .toHaveTextContent("Hello");
+
+      await screen.getByText("Say hola").click();
+
+      await expect
+        .element(screen.getByTestId("string"))
+        .toHaveTextContent("Hola");
+
+      await expect
+        .element(screen.getByTestId("render-hello"))
+        .toHaveTextContent("1");
+
+      await screen.getByText("Switch to binary").click();
+
+      await expect
+        .element(screen.getByTestId("string"))
+        .not.toBeInTheDocument();
+
+      await expect
+        .element(screen.getByTestId("number"))
+        .toHaveTextContent("106");
+
+      await screen.getByText("Say 1010101").click();
+
+      await expect
+        .element(screen.getByTestId("number"))
+        .toHaveTextContent("85");
+
+      await expect
+        .element(screen.getByTestId("render-hello"))
         .toHaveTextContent("2");
     });
   });
@@ -384,6 +497,21 @@ function StringComponent(props: StringComponentProps) {
     <div>
       <div data-testid="render-string">{count}</div>
       <div data-testid="string">{string}</div>
+    </div>
+  );
+}
+
+interface NumberComponentProps {
+  number: State<number>;
+}
+
+function NumberComponent(props: NumberComponentProps) {
+  const count = useRenderCount();
+  const number = props.number.useWatch();
+  return (
+    <div>
+      <div data-testid="render-number">{count}</div>
+      <div data-testid="number">{number}</div>
     </div>
   );
 }

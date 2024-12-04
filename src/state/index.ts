@@ -157,6 +157,31 @@ export class State<Payload> {
     } as State.Discriminated<Payload, Discriminator>;
   }
 
+  useDiscriminate<Discriminator extends keyof Exclude<Payload, undefined>>(
+    discriminator: Discriminator
+  ): State.Discriminated<Payload, Discriminator> {
+    const [_, setState] = useState(0);
+    const initialDiscriminated = useMemo(
+      () => this.discriminate(discriminator),
+      []
+    );
+    const discriminatedRef = useRef(initialDiscriminated);
+    useEffect(
+      () =>
+        this.watch((_payload, _event) => {
+          const newDiscriminated = this.discriminate(discriminator);
+          if (
+            newDiscriminated.discriminator !==
+            discriminatedRef.current.discriminator
+          )
+            setState(Date.now());
+          discriminatedRef.current = newDiscriminated;
+        }),
+      []
+    );
+    return discriminatedRef.current;
+  }
+
   // @ts-ignore: This is fine
   map: Payload extends Array<infer Item>
     ? <Return>(
