@@ -224,6 +224,39 @@ export class State<Payload> {
       this.#internal.childUpdate(type, key) | StateChangeType.Child;
     this.#trigger(updated, StateTriggerFlow.Directional);
   }
+
+  narrow<Type extends Payload>(
+    callback: State.NarrowCallback<Payload, Type>
+  ): State<Type> | undefined {
+    let narrowed = false;
+    const payload = this.get();
+    callback(payload, <Narrowed>(narrowedPayload: Narrowed) => {
+      if (payload === (narrowedPayload as any)) narrowed = true;
+      return {} as State.NarrowWrapper<Narrowed>;
+    });
+    // @ts-ignore: This is fine
+    if (narrowed) return this;
+  }
+
+  useNarrow<Type extends Payload>(
+    callback: State.NarrowCallback<Payload, Type>
+  ): State<Type> | undefined {
+    const [_, setState] = useState(0);
+    const initialNarrowed = useMemo(() => !!this.narrow(callback), []);
+    const narrowedRef = useRef(initialNarrowed);
+    useEffect(
+      () =>
+        this.watch((_payload, _event) => {
+          const newNarrowed = !!this.narrow(callback);
+          if (newNarrowed !== narrowedRef.current) {
+            narrowedRef.current = newNarrowed;
+            setState(Date.now());
+          }
+        }),
+      []
+    );
+    return narrowedRef.current ? (this as unknown as State<Type>) : undefined;
+  }
 }
 
 export namespace State {
@@ -287,6 +320,21 @@ export namespace State {
     newPayload: Payload,
     prevPayload: Payload
   ) => boolean;
+
+  export type NarrowCallback<Payload, Narrowed> = (
+    payload: Payload,
+    wrap: NarrowWrap
+  ) => NarrowWrapper<Narrowed> | EnsoUtils.Falsy;
+
+  export type NarrowWrap = <Payload>(
+    payload: Payload
+  ) => NarrowWrapper<Payload>;
+
+  export type NarrowWrapper<Payload> = {
+    [narrowWrapperBrand]: Payload;
+  };
+
+  declare const narrowWrapperBrand: unique symbol;
 }
 
 //#endregion

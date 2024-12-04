@@ -10,10 +10,27 @@ import { userEvent } from "@vitest/browser/context";
 describe("state", () => {
   describe("browser", () => {
     it("allows to control object state", async () => {
+      interface ComponentProps {
+        profile: Profile;
+      }
+
+      function Component(props: ComponentProps) {
+        const count = useRenderCount();
+        const profile = State.use<Profile>(props.profile);
+
+        return (
+          <div>
+            <div data-testid="render-profile">{count}</div>
+            <button onClick={() => profile.$.user.$.name.$.last.set("Koss")}>
+              Rename last
+            </button>
+            <UserComponent user={profile.$.user} />
+          </div>
+        );
+      }
+
       const screen = render(
-        <ProfileComponent
-          profile={{ user: { name: { first: "Alexander" } } }}
-        />
+        <Component profile={{ user: { name: { first: "Alexander" } } }} />
       );
 
       await screen.getByText("Rename first").click();
@@ -38,9 +55,37 @@ describe("state", () => {
     });
 
     it("allows to control array state", async () => {
-      const screen = render(
-        <UserNamesComponent names={[{ first: "Alexander" }]} />
-      );
+      interface ComponentProps {
+        names: UserName[];
+      }
+
+      function Component(props: ComponentProps) {
+        const count = useRenderCount();
+        const state = State.use({ names: props.names });
+        const names = state.$.names.use();
+
+        return (
+          <div>
+            <div data-testid="render-names">{count}</div>
+
+            {names.map((name, index) => (
+              <div data-testid={`name-${index}`} key={name.id}>
+                <UserNameComponent name={name} />
+                <button
+                  onClick={() => name.remove()}
+                  data-testid={`remove-${index}`}
+                >
+                  Remove
+                </button>
+              </div>
+            ))}
+
+            <UserNameFormComponent onAdd={(name) => names.push(name)} />
+          </div>
+        );
+      }
+
+      const screen = render(<Component names={[{ first: "Alexander" }]} />);
 
       await userEvent.fill(screen.getByTestId("input-name-first"), "Sasha");
       await userEvent.fill(screen.getByTestId("input-name-last"), "Koss");
@@ -62,8 +107,137 @@ describe("state", () => {
     });
 
     it("allows to decompose union state", async () => {
+      interface ComponentProps {
+        address: Address;
+      }
+
+      function Component(props: ComponentProps) {
+        const count = useRenderCount();
+        const address = State.use<Address>(props.address);
+        const name = address.$.name.useDecompose(
+          (newName, prevName) => typeof newName !== typeof prevName
+        );
+
+        // [TODO] Figure out if that's a bug or intended behavior and adjust the API
+        // accordingly: https://github.com/microsoft/TypeScript/issues/60685
+        return (
+          <div>
+            <div data-testid="render-address">{count}</div>
+
+            {typeof name.value === "string" ? (
+              <div>
+                <button
+                  onClick={() => (name.state as State<string>).set("Alexander")}
+                >
+                  Rename
+                </button>
+                <StringComponent string={name.state as State<string>} />
+              </div>
+            ) : (
+              <div>
+                <button
+                  onClick={() =>
+                    (name.state as State<UserName>).$.first.set("Sasha")
+                  }
+                >
+                  Rename first
+                </button>
+
+                <button onClick={() => address.$.name.set("Alex")}>
+                  Set string name
+                </button>
+
+                <UserNameComponent name={name.state as State<UserName>} />
+              </div>
+            )}
+          </div>
+        );
+      }
+
       const screen = render(
-        <AddressComponent address={{ name: { first: "Alexander" } }} />
+        <Component address={{ name: { first: "Alexander" } }} />
+      );
+
+      await expect
+        .element(screen.getByTestId("name"))
+        .toHaveTextContent("1Alexander");
+
+      await screen.getByText("Rename first").click();
+
+      await expect
+        .element(screen.getByTestId("name"))
+        .toHaveTextContent("2Sasha");
+
+      await expect
+        .element(screen.getByTestId("render-address"))
+        .toHaveTextContent("1");
+
+      await screen.getByText("Set string name").click();
+
+      await expect.element(screen.getByTestId("name")).not.toBeInTheDocument();
+
+      await expect
+        .element(screen.getByTestId("string"))
+        .toHaveTextContent("Alex");
+
+      await screen.getByText("Rename").click();
+
+      await expect
+        .element(screen.getByTestId("string"))
+        .toHaveTextContent("Alexander");
+
+      await expect
+        .element(screen.getByTestId("render-address"))
+        .toHaveTextContent("2");
+    });
+
+    it("allows to narrow union state", async () => {
+      interface ComponentProps {
+        address: Address;
+      }
+
+      function Component(props: ComponentProps) {
+        const count = useRenderCount();
+        const address = State.use<Address>(props.address);
+        const nameStr = address.$.name.useNarrow(
+          (name, ok) => typeof name === "string" && ok(name)
+        );
+        const nameObj = address.$.name.useNarrow(
+          (name, ok) => typeof name !== "string" && ok(name)
+        );
+
+        // [TODO] Figure out if that's a bug or intended behavior and adjust the API
+        // accordingly: https://github.com/microsoft/TypeScript/issues/60685
+        return (
+          <div>
+            <div data-testid="render-address">{count}</div>
+
+            {nameStr && (
+              <div>
+                <button onClick={() => nameStr.set("Alexander")}>Rename</button>
+                <StringComponent string={nameStr} />
+              </div>
+            )}
+
+            {nameObj && (
+              <div>
+                <button onClick={() => nameObj.$.first.set("Sasha")}>
+                  Rename first
+                </button>
+
+                <button onClick={() => address.$.name.set("Alex")}>
+                  Set string name
+                </button>
+
+                <UserNameComponent name={nameObj} />
+              </div>
+            )}
+          </div>
+        );
+      }
+
+      const screen = render(
+        <Component address={{ name: { first: "Alexander" } }} />
       );
 
       await expect
@@ -123,25 +297,6 @@ interface UserName {
   last?: string;
 }
 
-interface ProfileComponentProps {
-  profile: Profile;
-}
-
-function ProfileComponent(props: ProfileComponentProps) {
-  const count = useRenderCount();
-  const profile = State.use<Profile>(props.profile);
-
-  return (
-    <div>
-      <div data-testid="render-profile">{count}</div>
-      <button onClick={() => profile.$.user.$.name.$.last.set("Koss")}>
-        Rename last
-      </button>
-      <UserComponent user={profile.$.user} />
-    </div>
-  );
-}
-
 interface UserComponentProps {
   user: State<User>;
 }
@@ -175,33 +330,6 @@ function UserNameComponent(props: UserNameComponentProps) {
       <div data-testid="render-name">{count}</div>
       <div data-testid="name-first">{first}</div>
       <div data-testid="name-last">{last}</div>
-    </div>
-  );
-}
-
-interface UserNamesComponentProps {
-  names: UserName[];
-}
-
-function UserNamesComponent(props: UserNamesComponentProps) {
-  const count = useRenderCount();
-  const state = State.use({ names: props.names });
-  const names = state.$.names.use();
-
-  return (
-    <div>
-      <div data-testid="render-names">{count}</div>
-
-      {names.map((name, index) => (
-        <div data-testid={`name-${index}`} key={name.id}>
-          <UserNameComponent name={name} />
-          <button onClick={() => name.remove()} data-testid={`remove-${index}`}>
-            Remove
-          </button>
-        </div>
-      ))}
-
-      <UserNameFormComponent onAdd={(name) => names.push(name)} />
     </div>
   );
 }
@@ -241,43 +369,6 @@ function UserNameFormComponent(props: UserNameFormComponentProps) {
 
         <button type="submit">Add name</button>
       </form>
-    </div>
-  );
-}
-
-interface AddressComponentProps {
-  address: Address;
-}
-
-function AddressComponent(props: AddressComponentProps) {
-  const count = useRenderCount();
-  const address = State.use<Address>(props.address);
-  const name = address.$.name.useDecompose(
-    (newName, prevName) => typeof newName !== typeof prevName
-  );
-
-  return (
-    <div>
-      <div data-testid="render-address">{count}</div>
-
-      {typeof name.value === "string" ? (
-        <div>
-          <button onClick={() => name.state.set("Alexander")}>Rename</button>
-          <StringComponent string={name.state} />
-        </div>
-      ) : (
-        <div>
-          <button onClick={() => name.state.$.first.set("Sasha")}>
-            Rename first
-          </button>
-
-          <button onClick={() => address.$.name.set("Alex")}>
-            Set string name
-          </button>
-
-          <UserNameComponent name={name.state} />
-        </div>
-      )}
     </div>
   );
 }

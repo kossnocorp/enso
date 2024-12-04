@@ -33,4 +33,6 @@ export namespace EnsoUtils {
     Model,
     Key extends keyof Model
   > = Key extends keyof WithoutIndexed<Model> ? true : false;
+
+  export type Falsy = false | 0 | "" | null | undefined;
 }

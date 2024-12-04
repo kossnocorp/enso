@@ -485,5 +485,16 @@ describe("state", () => {
         assert(false, "Should not reach here");
       });
     });
+
+    describe("narrow", () => {
+      it("allows to narrow the state type", () => {
+        const state = new State<string | number>("Hello, world!");
+        const narrowed = state.narrow(
+          (value, ok) => typeof value === "string" && ok(value)
+        );
+        narrowed satisfies State<string> | undefined;
+        expect(narrowed?.get()).toBe("Hello, world!");
+      });
+    });
   });
 });
