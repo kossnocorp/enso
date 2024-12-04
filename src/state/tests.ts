@@ -58,13 +58,13 @@ describe("state", () => {
         it("returns added change type if a child has been added", () => {
           const state = new State<{ num?: number; str?: string }>({ num: 42 });
           expect(state.set({ num: 42, str: "hello" })).toBe(
-            StateChangeType.Added
+            StateChangeType.ChildAdded
           );
         });
 
         it("returns remove change type if a child has been removed", () => {
           const state = new State<{ num?: number; str?: string }>({ num: 42 });
-          expect(state.set({})).toBe(StateChangeType.Removed);
+          expect(state.set({})).toBe(StateChangeType.ChildRemoved);
         });
 
         it("returns combined change type", () => {
@@ -75,9 +75,11 @@ describe("state", () => {
           }>({ num: 42, str: "hello" });
           const changed = state.set({ num: 43, bool: true });
           expect(changed & StateChangeType.Child).toBe(StateChangeType.Child);
-          expect(changed & StateChangeType.Added).toBe(StateChangeType.Added);
-          expect(changed & StateChangeType.Removed).toBe(
-            StateChangeType.Removed
+          expect(changed & StateChangeType.ChildAdded).toBe(
+            StateChangeType.ChildAdded
+          );
+          expect(changed & StateChangeType.ChildRemoved).toBe(
+            StateChangeType.ChildRemoved
           );
         });
 
@@ -169,12 +171,12 @@ describe("state", () => {
 
         it("returns added change type if a child has been added", () => {
           const state = new State([1, 2, 3]);
-          expect(state.set([1, 2, 3, 4])).toBe(StateChangeType.Added);
+          expect(state.set([1, 2, 3, 4])).toBe(StateChangeType.ChildAdded);
         });
 
         it("returns remove change type if a child has been removed", () => {
           const state = new State([1, 2, 3]);
-          expect(state.set([1, 2])).toBe(StateChangeType.Removed);
+          expect(state.set([1, 2])).toBe(StateChangeType.ChildRemoved);
         });
 
         it("returns combined change type", () => {
@@ -183,9 +185,11 @@ describe("state", () => {
           delete arr[1];
           const changed = state.set(arr);
           expect(changed & StateChangeType.Child).toBe(StateChangeType.Child);
-          expect(changed & StateChangeType.Added).toBe(StateChangeType.Added);
-          expect(changed & StateChangeType.Removed).toBe(
-            StateChangeType.Removed
+          expect(changed & StateChangeType.ChildAdded).toBe(
+            StateChangeType.ChildAdded
+          );
+          expect(changed & StateChangeType.ChildRemoved).toBe(
+            StateChangeType.ChildRemoved
           );
         });
 

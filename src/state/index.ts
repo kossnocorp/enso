@@ -107,7 +107,7 @@ export class State<Payload> {
       throw new Error("State is not an array");
 
     this.#internal.push(item);
-    this.#trigger(StateChangeType.Added, StateTriggerFlow.Bidirectional);
+    this.#trigger(StateChangeType.ChildAdded, StateTriggerFlow.Bidirectional);
   };
 
   map: Payload extends Array<infer Item>
@@ -120,6 +120,15 @@ export class State<Payload> {
 
     return this.#internal.map(callback);
   };
+
+  remove() {
+    if (!this.#parent)
+      throw new Error("Cannot remove a state without a parent state");
+    this.#parent.state[childTriggerSymbol](
+      StateChangeType.Removed,
+      this.#parent.key
+    );
+  }
 
   get id(): string {
     return this.#id;
@@ -327,6 +336,7 @@ export class InternalPrimitiveState<Payload> extends InternalState<Payload> {
   updated(event: StateChangeEvent): boolean {
     return !!(
       event.detail & StateChangeType.Created ||
+      event.detail & StateChangeType.Removed ||
       event.detail & StateChangeType.Type
     );
   }
@@ -364,7 +374,7 @@ export class InternalObjectState<
         this.#children.delete(key);
         child[clearSymbol]();
         this.#undefined.register(key, child);
-        changed |= StateChangeType.Removed;
+        changed |= StateChangeType.ChildRemoved;
       }
     });
 
@@ -381,7 +391,7 @@ export class InternalObjectState<
           key,
           undefinedState || new State(value, { key, state: this.external })
         );
-        changed |= StateChangeType.Added;
+        changed |= StateChangeType.ChildAdded;
       }
     }
 
@@ -401,9 +411,10 @@ export class InternalObjectState<
   updated(event: StateChangeEvent): boolean {
     return !!(
       event.detail & StateChangeType.Created ||
-      event.detail & StateChangeType.Type ||
       event.detail & StateChangeType.Removed ||
-      event.detail & StateChangeType.Added
+      event.detail & StateChangeType.Type ||
+      event.detail & StateChangeType.ChildRemoved ||
+      event.detail & StateChangeType.ChildAdded
     );
   }
 
@@ -416,7 +427,16 @@ export class InternalObjectState<
       if (!child)
         throw new Error("Failed to find the child state when updating");
       this.#children.set(key, child);
-      changed |= StateChangeType.Added;
+      changed |= StateChangeType.ChildAdded;
+    }
+
+    if (childChanged & StateChangeType.Removed) {
+      const child = this.#children.get(key);
+      if (!child)
+        throw new Error("Failed to find the child state when updating");
+      this.#children.delete(key);
+      child.free();
+      changed |= StateChangeType.ChildRemoved;
     }
 
     return changed;
@@ -469,7 +489,7 @@ export class InternalArrayState<
         delete this.#children[index];
         item[clearSymbol]();
         this.#undefined.register(index.toString(), item);
-        changed |= StateChangeType.Removed;
+        changed |= StateChangeType.ChildRemoved;
       }
     });
 
@@ -489,7 +509,7 @@ export class InternalArrayState<
             key: String(index),
             state: this.external,
           });
-        changed |= StateChangeType.Added;
+        changed |= StateChangeType.ChildAdded;
         return newChild;
       }
     });
@@ -518,10 +538,11 @@ export class InternalArrayState<
   updated(event: StateChangeEvent): boolean {
     return !!(
       event.detail & StateChangeType.Created ||
-      event.detail & StateChangeType.Type ||
       event.detail & StateChangeType.Removed ||
-      event.detail & StateChangeType.Added ||
-      event.detail & StateChangeType.Reordered
+      event.detail & StateChangeType.Type ||
+      event.detail & StateChangeType.ChildRemoved ||
+      event.detail & StateChangeType.ChildAdded ||
+      event.detail & StateChangeType.ChildrenReordered
     );
   }
 
@@ -534,7 +555,17 @@ export class InternalArrayState<
       if (!child)
         throw new Error("Failed to find the child state when updating");
       this.#children[Number(key)] = child;
-      changed |= StateChangeType.Added;
+      changed |= StateChangeType.ChildAdded;
+    }
+
+    // Handle when child goes from defined to undefined
+    if (childChanged & StateChangeType.Removed) {
+      const child = this.#children[Number(key)];
+      if (!child)
+        throw new Error("Failed to find the child state when updating");
+      delete this.#children[Number(key)];
+      child.free();
+      changed |= StateChangeType.ChildRemoved;
     }
 
     return changed;
@@ -620,18 +651,20 @@ export enum StateChangeType {
   Nothing = 0, // 0
   /** The state has been inserted into an object or an array. */
   Created = 0b00000001, // 1
+  /** The state has been removed from an object or an array. */
+  Removed = 0b00000010, // 2
   /** The primitive value of the state has changed. */
-  Value = 0b0000010, // 2
+  Value = 0b00000100, // 4
   /** The type of the state has changed. */
-  Type = 0b0000100, // 4
+  Type = 0b00001000, // 8
   /** An object field or an array item has changed. */
-  Child = 0b0001000, // 8
+  Child = 0b00010000, // 16
   /** An object field or an array item has been removed. */
-  Removed = 0b0010000, // 16
+  ChildRemoved = 0b00100000, // 32
   /** An object field or an array item has been added. */
-  Added = 0b0100000, // 32
+  ChildAdded = 0b01000000, // 64
   /** The order of array items has changed. */
-  Reordered = 0b10000000, // 64
+  ChildrenReordered = 0b100000000, // 128
 }
 
 export class StateChangeEvent extends CustomEvent<StateChange> {

@@ -9,7 +9,7 @@ import { userEvent } from "@vitest/browser/context";
 
 describe("state", () => {
   describe("browser", () => {
-    it("allows to watch updates in isolation", async () => {
+    it("allows to control object state", async () => {
       const screen = render(
         <ProfileComponent
           profile={{ user: { name: { first: "Alexander" } } }}
@@ -50,9 +50,15 @@ describe("state", () => {
         .element(screen.getByTestId("name-1"))
         .toHaveTextContent("1SashaKossRemove");
 
-      // [TODO] Remove one of the items
+      await screen.getByTestId("remove-1").click();
 
-      // [TODO] Check render times
+      await expect
+        .element(screen.getByTestId("name-1"))
+        .not.toBeInTheDocument();
+
+      await expect
+        .element(screen.getByTestId("render-names"))
+        .toHaveTextContent("3");
     });
   });
 });
@@ -147,7 +153,9 @@ function UserNamesComponent(props: UserNamesComponentProps) {
       {names.map((name, index) => (
         <div data-testid={`name-${index}`} key={name.id}>
           <UserNameComponent name={name} />
-          <button onClick={() => name.remove()}>Remove</button>
+          <button onClick={() => name.remove()} data-testid={`remove-${index}`}>
+            Remove
+          </button>
         </div>
       ))}
 
