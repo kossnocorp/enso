@@ -60,8 +60,50 @@ describe("state", () => {
         .element(screen.getByTestId("render-names"))
         .toHaveTextContent("3");
     });
+
+    it("allows to decompose union state", async () => {
+      const screen = render(
+        <AddressComponent address={{ name: { first: "Alexander" } }} />
+      );
+
+      await expect
+        .element(screen.getByTestId("name"))
+        .toHaveTextContent("1Alexander");
+
+      await screen.getByText("Rename first").click();
+
+      await expect
+        .element(screen.getByTestId("name"))
+        .toHaveTextContent("2Sasha");
+
+      await expect
+        .element(screen.getByTestId("render-address"))
+        .toHaveTextContent("1");
+
+      await screen.getByText("Set string name").click();
+
+      await expect.element(screen.getByTestId("name")).not.toBeInTheDocument();
+
+      await expect
+        .element(screen.getByTestId("string"))
+        .toHaveTextContent("Alex");
+
+      await screen.getByText("Rename").click();
+
+      await expect
+        .element(screen.getByTestId("string"))
+        .toHaveTextContent("Alexander");
+
+      await expect
+        .element(screen.getByTestId("render-address"))
+        .toHaveTextContent("2");
+    });
   });
 });
+
+interface Address {
+  name: UserName | string;
+}
 
 interface Profile {
   user: User;
@@ -199,6 +241,58 @@ function UserNameFormComponent(props: UserNameFormComponentProps) {
 
         <button type="submit">Add name</button>
       </form>
+    </div>
+  );
+}
+
+interface AddressComponentProps {
+  address: Address;
+}
+
+function AddressComponent(props: AddressComponentProps) {
+  const count = useRenderCount();
+  const address = State.use<Address>(props.address);
+  const name = address.$.name.useDecompose(
+    (newName, prevName) => typeof newName !== typeof prevName
+  );
+
+  return (
+    <div>
+      <div data-testid="render-address">{count}</div>
+
+      {typeof name.value === "string" ? (
+        <div>
+          <button onClick={() => name.state.set("Alexander")}>Rename</button>
+          <StringComponent string={name.state} />
+        </div>
+      ) : (
+        <div>
+          <button onClick={() => name.state.$.first.set("Sasha")}>
+            Rename first
+          </button>
+
+          <button onClick={() => address.$.name.set("Alex")}>
+            Set string name
+          </button>
+
+          <UserNameComponent name={name.state} />
+        </div>
+      )}
+    </div>
+  );
+}
+
+interface StringComponentProps {
+  string: State<string>;
+}
+
+function StringComponent(props: StringComponentProps) {
+  const count = useRenderCount();
+  const string = props.string.useWatch();
+  return (
+    <div>
+      <div data-testid="render-string">{count}</div>
+      <div data-testid="string">{string}</div>
     </div>
   );
 }

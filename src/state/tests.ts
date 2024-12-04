@@ -1,5 +1,5 @@
 import { assert, describe, expect, it, vi } from "vitest";
-import { State, StateChangeType } from "./index.ts";
+import { State, StateChangeType, undefinedValue } from "./index.ts";
 
 describe("state", () => {
   describe("State", () => {
@@ -212,7 +212,7 @@ describe("state", () => {
           const state = new State<number[]>([1, 2, 3, 4]);
           const spy = vi.fn();
           const itemA = state.$(2);
-          itemA?.watch(spy);
+          itemA.watch(spy);
           state.set([1, 2, 33, 4]);
           expect(spy).toHaveBeenCalledWith(
             33,
@@ -235,7 +235,7 @@ describe("state", () => {
           const state = new State<Array<number | undefined>>([1, 2, 3, 4]);
           const spy = vi.fn();
           const itemA = state.$(2);
-          itemA?.watch(spy);
+          itemA.watch(spy);
           state.set([1, 2, 33, 4]);
           expect(spy).toHaveBeenCalledWith(
             33,
@@ -251,6 +251,11 @@ describe("state", () => {
               detail: StateChangeType.Created,
             })
           );
+        });
+
+        it("does not trigger update when setting undefined value to undefined value", () => {
+          const state = new State<number[]>([1, 2, 3, 4]);
+          expect(state.$(5).set(undefinedValue)).toBe(0);
         });
       });
     });
@@ -473,7 +478,7 @@ describe("state", () => {
           "Hello, world!"
         );
         const decomposed = state.decompose();
-        if (decomposed.value === "Hello, world!") {
+        if (typeof decomposed.value === "string") {
           expect(decomposed.state.get()).toBe("Hello, world!");
           return;
         }

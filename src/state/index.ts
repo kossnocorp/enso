@@ -1,6 +1,14 @@
 import { nanoid } from "nanoid";
 import { EnsoUtils } from "../utils.ts";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
+
+//#region undefinedValue
+
+export const undefinedValue = Symbol();
+
+export type UndefinedValue = typeof undefinedValue;
+
+//#endregion
 
 //#region State
 
@@ -16,11 +24,18 @@ export class State<Payload> {
 
   #id = nanoid();
   #target = new EventTarget();
-  #internal!: InternalState<Payload>;
+  #internal: InternalState<Payload> = new InternalPrimitiveState(
+    this,
+    // @ts-ignore: This is fine
+    undefinedValue
+  );
   #parent?: StateParent<any> | undefined;
   #subs = new Set<(event: Event) => void>();
 
+  value: Payload;
+
   constructor(value: Payload, parent?: StateParent<any>) {
+    this.value = value;
     this.#set(value);
     this.#parent = parent;
   }
@@ -30,9 +45,32 @@ export class State<Payload> {
   }
 
   // [TODO] Get rid of the type argument and expose directional set via symbol.
-  set(value: Payload, type = StateTriggerFlow.Bidirectional): StateChange | 0 {
-    const changed = this.#internal.set(value);
+  set(
+    value: Payload | UndefinedValue,
+    type = StateTriggerFlow.Bidirectional
+  ): StateChange | 0 {
+    const changed = this.#set(value);
     if (changed) this.#trigger(changed, type);
+    return changed;
+  }
+
+  #set(value: Payload | UndefinedValue): StateChange | 0 {
+    const ValueConstructor = InternalState.detect(value);
+
+    // The state is already of the same type
+    if (this.#internal instanceof ValueConstructor)
+      return this.#internal.set(value);
+
+    // The state is of a different type
+    this.#internal.free();
+
+    let changed = StateChangeType.Type;
+    // The state is being removed
+    if (value === undefinedValue) changed |= StateChangeType.Removed;
+
+    // @ts-ignore: This is fine
+    this.#internal = new ValueConstructor(this, value);
+    this.#internal.set(value);
     return changed;
   }
 
@@ -90,6 +128,25 @@ export class State<Payload> {
     } as State.Decomposed<Payload>;
   }
 
+  useDecompose(
+    callback: State.DecomposeCallback<Payload>
+  ): State.Decomposed<Payload> {
+    const [_, setState] = useState(0);
+    const initialDecomposed = useMemo(() => this.decompose(), []);
+    const decomposedRef = useRef(initialDecomposed);
+    const prevPayload = useRef(decomposedRef.current.value);
+    useEffect(
+      () =>
+        this.watch((newPayload, _event) => {
+          decomposedRef.current = this.decompose();
+          if (callback(newPayload, prevPayload.current)) setState(Date.now());
+          prevPayload.current = newPayload;
+        }),
+      []
+    );
+    return decomposedRef.current;
+  }
+
   discriminate<Discriminator extends keyof Exclude<Payload, undefined>>(
     discriminator: Discriminator
   ): State.Discriminated<Payload, Discriminator> {
@@ -100,16 +157,7 @@ export class State<Payload> {
     } as State.Discriminated<Payload, Discriminator>;
   }
 
-  push: Payload extends Array<infer Item> ? (item: Item) => void : never = (
-    item: Payload extends Array<infer Item> ? Item : never
-  ) => {
-    if (!(this.#internal instanceof InternalArrayState))
-      throw new Error("State is not an array");
-
-    this.#internal.push(item);
-    this.#trigger(StateChangeType.ChildAdded, StateTriggerFlow.Bidirectional);
-  };
-
+  // @ts-ignore: This is fine
   map: Payload extends Array<infer Item>
     ? <Return>(
         callback: (item: State<Item>, index: number) => Return
@@ -121,13 +169,19 @@ export class State<Payload> {
     return this.#internal.map(callback);
   };
 
+  // @ts-ignore: This is fine
+  push: Payload extends Array<infer Item> ? (item: Item) => void : never = (
+    item: Payload extends Array<infer Item> ? Item : never
+  ) => {
+    if (!(this.#internal instanceof InternalArrayState))
+      throw new Error("State is not an array");
+
+    this.#internal.push(item);
+    this.#trigger(StateChangeType.ChildAdded, StateTriggerFlow.Bidirectional);
+  };
+
   remove() {
-    if (!this.#parent)
-      throw new Error("Cannot remove a state without a parent state");
-    this.#parent.state[childTriggerSymbol](
-      StateChangeType.Removed,
-      this.#parent.key
-    );
+    this.set(undefinedValue, StateTriggerFlow.Bidirectional);
   }
 
   get id(): string {
@@ -145,6 +199,7 @@ export class State<Payload> {
 
       apply: () => {
         const [_, setState] = useState(0);
+
         useEffect(
           () =>
             this.watch((payload, event) => {
@@ -155,20 +210,6 @@ export class State<Payload> {
         return this;
       },
     });
-  }
-
-  #set(value: Payload, internal?: InternalState<any>): StateChange | 0 {
-    const ValueConstructor = InternalState.detect(value);
-
-    // The state is already of the same type
-    if (internal instanceof ValueConstructor) return internal.set(value);
-
-    // The state is of a different type
-    internal?.free();
-    // @ts-ignore: TypeScript is picky about the type here
-    this.#internal = new ValueConstructor(this, value);
-    this.#internal.set(value);
-    return StateChangeType.Type;
   }
 
   #trigger(changed: StateChange, type: StateTriggerFlow) {
@@ -241,6 +282,11 @@ export namespace State {
         state: State<Payload>;
       }
     : never;
+
+  export type DecomposeCallback<Payload> = (
+    newPayload: Payload,
+    prevPayload: Payload
+  ) => boolean;
 }
 
 //#endregion
@@ -264,9 +310,10 @@ export abstract class InternalState<Payload> {
     | typeof InternalObjectState
     | typeof InternalPrimitiveState {
     if (
+      value !== undefinedValue &&
       value !== null &&
       typeof value === "object" &&
-      !(value instanceof UndefinedValue)
+      value !== undefinedValue
     )
       return Array.isArray(value) ? InternalArrayState : InternalObjectState;
     return InternalPrimitiveState;
@@ -274,13 +321,13 @@ export abstract class InternalState<Payload> {
 
   #external: State<Payload>;
 
-  constructor(state: State<Payload>, _value: Payload) {
+  constructor(state: State<Payload>, _value: Payload | UndefinedValue) {
     this.#external = state;
   }
 
   abstract free(): void;
 
-  abstract set(value: Payload): StateChange | 0;
+  abstract set(value: Payload | UndefinedValue): StateChange | 0;
 
   abstract get(): Payload;
 
@@ -312,8 +359,10 @@ export class InternalPrimitiveState<Payload> extends InternalState<Payload> {
   set(value: Payload): StateChange | 0 {
     let changed = 0;
 
-    if (this.#value instanceof UndefinedValue)
+    if (this.#value === undefinedValue && value !== undefinedValue)
       changed |= StateChangeType.Type | StateChangeType.Created;
+    else if (this.#value !== undefinedValue && value === undefinedValue)
+      changed |= StateChangeType.Type | StateChangeType.Removed;
     else if (typeof this.#value !== typeof value)
       changed |= StateChangeType.Type;
     else if (this.#value !== value) changed |= StateChangeType.Value;
@@ -324,7 +373,7 @@ export class InternalPrimitiveState<Payload> extends InternalState<Payload> {
   }
 
   get(): Payload {
-    return this.#value instanceof UndefinedValue
+    return this.#value === undefinedValue
       ? (undefined as Payload)
       : this.#value;
   }
@@ -625,7 +674,7 @@ export class UndefinedStateRegistry {
     if (registered) return registered;
 
     // Or create and register a new one
-    const state = new State(new UndefinedValue(), {
+    const state = new State(undefinedValue, {
       key,
       state: this.#external,
     });
@@ -633,12 +682,6 @@ export class UndefinedStateRegistry {
     return state;
   }
 }
-
-//#endregion
-
-//#region UndefinedValue
-
-class UndefinedValue {}
 
 //#endregion
 
