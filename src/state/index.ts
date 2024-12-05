@@ -182,6 +182,82 @@ export class State<Payload> {
     return discriminatedRef.current;
   }
 
+  narrow<Type extends Payload>(
+    callback: State.NarrowCallback<Payload, Type>
+  ): State<Type> | undefined {
+    let narrowed = false;
+    const payload = this.get();
+    callback(payload, <Narrowed>(narrowedPayload: Narrowed) => {
+      if (payload === (narrowedPayload as any)) narrowed = true;
+      return {} as State.NarrowWrapper<Narrowed>;
+    });
+    // @ts-ignore: This is fine
+    if (narrowed) return this;
+  }
+
+  useNarrow<Type extends Payload>(
+    callback: State.NarrowCallback<Payload, Type>
+  ): State<Type> | undefined {
+    const [_, setState] = useState(0);
+    const initialNarrowed = useMemo(() => !!this.narrow(callback), []);
+    const narrowedRef = useRef(initialNarrowed);
+    useEffect(
+      () =>
+        this.watch((_payload, _event) => {
+          const newNarrowed = !!this.narrow(callback);
+          if (newNarrowed !== narrowedRef.current) {
+            narrowedRef.current = newNarrowed;
+            setState(Date.now());
+          }
+        }),
+      []
+    );
+    return narrowedRef.current ? (this as unknown as State<Type>) : undefined;
+  }
+
+  into<Computed>(
+    intoCallback: State.IntoCallback<Payload, Computed>
+  ): State.Into<Payload, Computed> {
+    const computed = new State(intoCallback(this.get()));
+    // [TODO] This creates a leak, so rather than holding on to the computed
+    // state, store it as a weak ref and unsubscribe when it's no longer needed.
+    this.watch((payload) => computed.set(intoCallback(payload)));
+
+    return {
+      from: (fromCallback) => {
+        computed.watch((payload) => this.set(fromCallback(payload)));
+        return computed;
+      },
+    };
+  }
+
+  useInto<Computed>(
+    intoCallback: State.IntoCallback<Payload, Computed>
+  ): State.Into<Payload, Computed> {
+    const computed = useMemo(() => new State(intoCallback(this.get())), []);
+
+    useEffect(() => {
+      // It's ok to trigger set here because the setting the same value won't
+      // trigger any events, however for the better performance, it is better
+      // if the into and from callbacks are memoized.
+      computed.set(intoCallback(this.get()));
+      return this.watch((payload) => computed.set(intoCallback(payload)));
+    }, [intoCallback]);
+
+    return useMemo(
+      () => ({
+        from: (fromCallback) => {
+          useEffect(
+            () => computed.watch((payload) => this.set(fromCallback(payload))),
+            [computed, fromCallback]
+          );
+          return computed;
+        },
+      }),
+      [computed]
+    );
+  }
+
   // @ts-ignore: This is fine
   map: Payload extends Array<infer Item>
     ? <Return>(
@@ -248,39 +324,6 @@ export class State<Payload> {
     const updated =
       this.#internal.childUpdate(type, key) | StateChangeType.Child;
     this.#trigger(updated, StateTriggerFlow.Directional);
-  }
-
-  narrow<Type extends Payload>(
-    callback: State.NarrowCallback<Payload, Type>
-  ): State<Type> | undefined {
-    let narrowed = false;
-    const payload = this.get();
-    callback(payload, <Narrowed>(narrowedPayload: Narrowed) => {
-      if (payload === (narrowedPayload as any)) narrowed = true;
-      return {} as State.NarrowWrapper<Narrowed>;
-    });
-    // @ts-ignore: This is fine
-    if (narrowed) return this;
-  }
-
-  useNarrow<Type extends Payload>(
-    callback: State.NarrowCallback<Payload, Type>
-  ): State<Type> | undefined {
-    const [_, setState] = useState(0);
-    const initialNarrowed = useMemo(() => !!this.narrow(callback), []);
-    const narrowedRef = useRef(initialNarrowed);
-    useEffect(
-      () =>
-        this.watch((_payload, _event) => {
-          const newNarrowed = !!this.narrow(callback);
-          if (newNarrowed !== narrowedRef.current) {
-            narrowedRef.current = newNarrowed;
-            setState(Date.now());
-          }
-        }),
-      []
-    );
-    return narrowedRef.current ? (this as unknown as State<Type>) : undefined;
   }
 }
 
@@ -360,6 +403,16 @@ export namespace State {
   };
 
   declare const narrowWrapperBrand: unique symbol;
+
+  export type IntoCallback<Payload, Computed> = (payload: Payload) => Computed;
+
+  export interface Into<Payload, Computed> {
+    from(callback: FromCallback<Payload, Computed>): State<Computed>;
+  }
+
+  export type FromCallback<Payload, ComputedPayload> = (
+    payload: ComputedPayload
+  ) => Payload;
 }
 
 //#endregion

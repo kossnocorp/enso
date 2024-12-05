@@ -496,5 +496,44 @@ describe("state", () => {
         expect(narrowed?.get()).toBe("Hello, world!");
       });
     });
+
+    describe("into", () => {
+      it("allows to create a computed state", () => {
+        const state = new State({ message: "Hello, world!" });
+        const computed = state.$.message.into(toCodes).from(fromCodes);
+        expect(computed.get()).toEqual([
+          72, 101, 108, 108, 111, 44, 32, 119, 111, 114, 108, 100, 33,
+        ]);
+      });
+
+      it("updates the state back from computed", () => {
+        const state = new State({ message: "Hello, world!" });
+        const computed = state.$.message.into(toCodes).from(fromCodes);
+        computed.set([72, 105, 33]);
+        expect(state.get()).toEqual({ message: "Hi!" });
+      });
+
+      it("triggers state update", async () =>
+        new Promise<void>((resolve) => {
+          const state = new State({ message: "Hello, world!" });
+          const computed = state.$.message.into(toCodes).from(fromCodes);
+
+          const unsub = state.$.message.watch((value) => {
+            expect(value).toBe("Hi!");
+            unsub();
+            resolve();
+          });
+
+          computed.set([72, 105, 33]);
+        }));
+
+      function toCodes(message: string) {
+        return Array.from(message).map((c) => c.charCodeAt(0));
+      }
+
+      function fromCodes(codes: number[]) {
+        return codes.map((c) => String.fromCharCode(c)).join("");
+      }
+    });
   });
 });

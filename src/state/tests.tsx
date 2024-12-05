@@ -385,6 +385,93 @@ describe("state", () => {
         .element(screen.getByTestId("render-hello"))
         .toHaveTextContent("2");
     });
+
+    it("allows to compute state", async () => {
+      function Component() {
+        const count = useRenderCount();
+        const state = State.use({ message: "Hello" });
+        const codes = state.$.message.useInto(toCodes).from(fromCodes);
+
+        return (
+          <div>
+            <div data-testid="render-compute">{count}</div>
+
+            <StringComponent string={state.$.message} />
+
+            <CodesComponent codes={codes} />
+
+            <button onClick={() => codes.set([72, 105, 33])}>Say hi</button>
+
+            <button onClick={() => state.$.message.set("Yo")}>Say yo</button>
+          </div>
+        );
+      }
+
+      interface CodesComponentProps {
+        codes: State<number[]>;
+      }
+
+      function CodesComponent(props: CodesComponentProps) {
+        const count = useRenderCount();
+        const codes = props.codes.useWatch();
+        return (
+          <div>
+            <div data-testid="render-codes">{count}</div>
+            <div data-testid="codes">{codes.join(" ")}</div>
+          </div>
+        );
+      }
+
+      function toCodes(message: string) {
+        return Array.from(message).map((c) => c.charCodeAt(0));
+      }
+
+      function fromCodes(codes: number[]) {
+        return codes.map((c) => String.fromCharCode(c)).join("");
+      }
+
+      const screen = render(<Component />);
+
+      await expect
+        .element(screen.getByTestId("string"))
+        .toHaveTextContent("Hello");
+
+      await expect
+        .element(screen.getByTestId("codes"))
+        .toHaveTextContent("72 101 108 108 111");
+
+      await screen.getByText("Say hi").click();
+
+      await expect
+        .element(screen.getByTestId("string"))
+        .toHaveTextContent("Hi");
+
+      await expect
+        .element(screen.getByTestId("codes"))
+        .toHaveTextContent("72 105 33");
+
+      await screen.getByText("Say yo").click();
+
+      await expect
+        .element(screen.getByTestId("string"))
+        .toHaveTextContent("Yo");
+
+      await expect
+        .element(screen.getByTestId("codes"))
+        .toHaveTextContent("89 111");
+
+      await expect
+        .element(screen.getByTestId("render-compute"))
+        .toHaveTextContent("1");
+
+      await expect
+        .element(screen.getByTestId("render-string"))
+        .toHaveTextContent("3");
+
+      await expect
+        .element(screen.getByTestId("render-codes"))
+        .toHaveTextContent("3");
+    });
   });
 });
 
