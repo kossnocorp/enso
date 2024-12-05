@@ -16,6 +16,8 @@ const createSymbol = Symbol();
 const clearSymbol = Symbol();
 const childTriggerSymbol = Symbol();
 
+export const statePrivate = Symbol();
+
 export class State<Payload> {
   static use<Payload>(value: Payload): State<Payload> {
     const state = useMemo(() => new State(value), []);
@@ -24,13 +26,9 @@ export class State<Payload> {
 
   #id = nanoid();
   #target = new EventTarget();
-  #internal: InternalState<Payload> = new InternalPrimitiveState(
-    this,
-    // @ts-ignore: This is fine
-    undefinedValue
-  );
   #parent?: StateParent<any> | undefined;
   #subs = new Set<(event: Event) => void>();
+  #use;
 
   value: Payload;
 
@@ -38,6 +36,49 @@ export class State<Payload> {
     this.value = value;
     this.#set(value);
     this.#parent = parent;
+
+    this.#use = new Proxy((() => {}) as unknown as State.Use<Payload>, {
+      // @ts-ignore: This is okay
+      get: (_, key: string) => this.$[key].use,
+
+      apply: () => {
+        const [_, setState] = useState(0);
+        useEffect(
+          () =>
+            this.watch((payload, event) => {
+              if (this.#internal.updated(event)) setState(Date.now());
+            }),
+          []
+        );
+        return this;
+      },
+    });
+  }
+
+  free() {
+    this.#subs.forEach((sub) =>
+      this.#target.removeEventListener("change", sub)
+    );
+    this.#subs.clear();
+    this.#internal.free();
+  }
+
+  get id(): string {
+    return this.#id;
+  }
+
+  get $(): State.$<Payload> {
+    return this.#internal.$();
+  }
+
+  [statePrivate]: {
+    internal: InternalState<Payload>;
+  } = {
+    internal: new InternalPrimitiveState(this, undefinedValue),
+  };
+
+  get #internal() {
+    return this[statePrivate].internal;
   }
 
   get(): Payload {
@@ -69,7 +110,7 @@ export class State<Payload> {
     if (value === undefinedValue) changed |= StateChangeType.Removed;
 
     // @ts-ignore: This is fine
-    this.#internal = new ValueConstructor(this, value);
+    this[statePrivate].internal = new ValueConstructor(this, value);
     this.#internal.set(value);
     return changed;
   }
@@ -78,6 +119,14 @@ export class State<Payload> {
     const changed = this.#internal.set(value) | StateChangeType.Created;
     this.#trigger(changed, StateTriggerFlow.Directional);
     return changed;
+  }
+
+  [clearSymbol]() {
+    this.#internal.set(undefined as Payload);
+  }
+
+  get use(): State.Use<Payload> {
+    return this.#use;
   }
 
   watch(callback: State.WatchCallback<Payload>): State.Unwatch {
@@ -105,18 +154,6 @@ export class State<Payload> {
       []
     );
     return payload;
-  }
-
-  free() {
-    this.#subs.forEach((sub) =>
-      this.#target.removeEventListener("change", sub)
-    );
-    this.#subs.clear();
-    this.#internal.free();
-  }
-
-  [clearSymbol]() {
-    this.#internal.set(undefined as Payload);
   }
 
   // [TODO] Hide from non-object states?
@@ -285,34 +322,6 @@ export class State<Payload> {
     this.set(undefinedValue, StateTriggerFlow.Bidirectional);
   }
 
-  get id(): string {
-    return this.#id;
-  }
-
-  get $(): State.$<Payload> {
-    return this.#internal.$();
-  }
-
-  get use(): State.Use<Payload> {
-    return new Proxy((() => {}) as unknown as State.Use<Payload>, {
-      // @ts-ignore: This is okay
-      get: (_, key: string) => this.$[key].use,
-
-      apply: () => {
-        const [_, setState] = useState(0);
-
-        useEffect(
-          () =>
-            this.watch((payload, event) => {
-              if (this.#internal.updated(event)) setState(Date.now());
-            }),
-          []
-        );
-        return this;
-      },
-    });
-  }
-
   #trigger(changed: StateChange, type: StateTriggerFlow) {
     this.#target.dispatchEvent(new StateChangeEvent(changed));
     // If the updates should flow upstream to parents too
@@ -345,10 +354,40 @@ export namespace State {
   >;
 
   export type Use<Payload> = Payload extends Array<any>
-    ? UseFieldRef.UseFn<Payload>
+    ? State.HookStateUseFn<Payload>
     : Payload extends object
-    ? UseFieldRef.Use<Payload>
+    ? State.HookStateUse<Payload>
     : never;
+
+  export interface HookState<Payload> {
+    (): State<Payload>;
+
+    get use(): HookStateUse<Payload>;
+
+    watch(): Payload;
+
+    discriminated<Discriminator extends keyof Exclude<Payload, undefined>>(
+      discriminator: Discriminator
+    ): State.Discriminated<Payload, Discriminator>;
+
+    narrow<Return extends State<any> | false | undefined | "" | null | 0>(
+      callback: (decomposed: State.Decomposed<Payload>) => Return
+    ): Return;
+  }
+
+  export type HookStateUse<Payload> = HookStateUseFn<Payload> & {
+    [Key in keyof Payload]-?: HookState<Payload[Key]>;
+  };
+
+  export interface HookStateUseFn<Payload> {
+    (): State<Payload>;
+
+    <Key extends keyof Payload>(key: Key): HookState<
+      EnsoUtils.StaticKey<Payload, Key> extends true
+        ? Payload[Key]
+        : Payload[Key] | undefined
+    >;
+  }
 
   export type WatchCallback<Payload> = (
     payload: Payload,
@@ -851,42 +890,6 @@ export enum StateTriggerFlow {
   Directional,
   /** Child updates its parents. */
   Bidirectional,
-}
-
-//#endregion
-
-//#region UseFieldRef
-
-interface UseFieldRef<Payload> {
-  (): State<Payload>;
-
-  get use(): UseFieldRef.Use<Payload>;
-
-  watch(): Payload;
-
-  discriminated<Discriminator extends keyof Exclude<Payload, undefined>>(
-    discriminator: Discriminator
-  ): State.Discriminated<Payload, Discriminator>;
-
-  narrow<Return extends State<any> | false | undefined | "" | null | 0>(
-    callback: (decomposed: State.Decomposed<Payload>) => Return
-  ): Return;
-}
-
-export namespace UseFieldRef {
-  export type Use<Payload> = UseFn<Payload> & {
-    [Key in keyof Payload]-?: UseFieldRef<Payload[Key]>;
-  };
-
-  export interface UseFn<Payload> {
-    (): State<Payload>;
-
-    <Key extends keyof Payload>(key: Key): UseFieldRef<
-      EnsoUtils.StaticKey<Payload, Key> extends true
-        ? Payload[Key]
-        : Payload[Key] | undefined
-    >;
-  }
 }
 
 //#endregion

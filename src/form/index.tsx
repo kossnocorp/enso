@@ -1,5 +1,315 @@
-import { nanoid } from "nanoid";
-import React, { useMemo, type FormEvent } from "react";
+import React, { useEffect, useMemo, useState, type FormEvent } from "react";
+import {
+  InternalArrayState,
+  InternalPrimitiveState,
+  InternalState,
+  State,
+  StateChange,
+  statePrivate,
+  StateTriggerFlow,
+  undefinedValue,
+} from "../state/index.ts";
+import { EnsoUtils } from "../utils.ts";
+
+//#region Field
+
+export class Field<Payload> {
+  static use<Payload>(value: Payload): Field<Payload> {
+    const field = useMemo(() => new Field(value), []);
+    return field;
+  }
+
+  #proxy;
+  #use;
+
+  #state: State<Payload>;
+
+  #fields = new WeakMap<State<any>, Field<any>>();
+
+  constructor(payload: Payload | State<Payload>) {
+    this.#state = payload instanceof State ? payload : new State(payload);
+
+    this.#proxy = new Proxy((() => {}) as unknown as State.$<Payload>, {
+      // @ts-ignore: This is okay
+      apply: (_, __, [key]: [string]) => this.#field(this.#state.$(key)),
+      // @ts-ignore: This is okay
+      get: (_, key: string) => this.#field(this.#state.$(key)),
+    });
+
+    this.#use = new Proxy((() => {}) as unknown as State.Use<Payload>, {
+      // @ts-ignore: This is okay
+      get: (_, key: string) => this.$[key].use,
+
+      apply: () => {
+        const [_, setState] = useState(0);
+        useEffect(
+          () =>
+            this.watch((_payload, event) => {
+              if (this.#internal.updated(event)) setState(Date.now());
+            }),
+          []
+        );
+        return this;
+      },
+    });
+
+    this.set = this.set.bind(this);
+    this.Control = this.Control.bind(this);
+  }
+
+  get id(): string {
+    return this.#state.id;
+  }
+
+  get $(): Field.$<Payload> {
+    // Primitive state always returns itself
+    if (this.#internal instanceof InternalPrimitiveState)
+      return this as unknown as Field.$<Payload>;
+
+    return this.#proxy as unknown as Field.$<Payload>;
+  }
+
+  get(): Payload {
+    return this.#state.get();
+  }
+
+  set(payload: Payload): StateChange | 0 {
+    return this.#state.set(payload);
+  }
+
+  get use(): Field.Use<Payload> {
+    return this.#use as unknown as Field.Use<Payload>;
+  }
+
+  Control(props: Field.ControlProps<Payload>): React.ReactNode {
+    return props.render({
+      value: this.get(),
+      onChange: this.set,
+      // [TODO]
+      onBlur: () => {},
+      error: this.error,
+    });
+  }
+
+  watch(callback: State.WatchCallback<Payload>): State.Unwatch {
+    return this.#state.watch(callback);
+  }
+
+  useWatch(): Payload {
+    return this.#state.useWatch();
+  }
+
+  //#region Private
+
+  #field(state: State<any>): Field<any> {
+    let field = this.#fields.get(state);
+
+    if (!field) {
+      field = new Field(state);
+      this.#fields.set(state, field);
+    }
+
+    return field;
+  }
+
+  get #internal() {
+    return this.#state[statePrivate].internal;
+  }
+
+  // @ts-ignore: This is fine
+  map: Payload extends Array<infer Item>
+    ? <Return>(
+        callback: (item: Field<Item>, index: number) => Return
+      ) => Return[]
+    : never = (callback: (item: any, index: number) => any) => {
+    return this.#state.map((item, index) => callback(this.#field(item), index));
+  };
+
+  // @ts-ignore: This is fine
+  push: Payload extends Array<infer Item> ? (item: Item) => void : never = (
+    item: Payload extends Array<infer Item> ? Item : never
+  ) => {
+    return this.#state.push(item);
+  };
+
+  remove() {
+    this.#state.set(undefinedValue, StateTriggerFlow.Bidirectional);
+  }
+
+  //#endregion
+
+  // vvv PoC vvv
+
+  useComputed<ComputedPayload>(
+    callback: Field.IntoCallback<Payload, ComputedPayload>
+  ): ComputedPayload {
+    return {} as ComputedPayload;
+  }
+
+  useNarrow<Return extends Field<any> | false | undefined | "" | null | 0>(
+    callback: (decomposed: DecomposedField<Payload>) => Return
+  ): Return {
+    return {} as any;
+  }
+
+  into<ComputedPayload>(
+    callback: Field.IntoCallback<Payload, ComputedPayload>
+  ): Field.Into<Payload, ComputedPayload> {
+    return {} as Field.Into<Payload, ComputedPayload>;
+  }
+
+  get error(): FieldError | undefined {
+    return {} as FieldError | undefined;
+  }
+
+  get dirty(): boolean {
+    return false;
+  }
+
+  get valid(): boolean {
+    return false;
+  }
+
+  // @ts-ignore: [TODO]
+  get length(): Payload extends any[] ? number : never {}
+}
+
+export namespace Field {
+  export type $<Payload> = Payload extends object
+    ? Object$<Payload>
+    : Field<Payload>;
+
+  export type Object$<Payload> = $Fn<Payload> & {
+    [Key in keyof Payload]-?: Field<Payload[Key]>;
+  };
+
+  export type $Fn<Payload> = <Key extends keyof Payload>(
+    key: Key
+  ) => Field<
+    EnsoUtils.StaticKey<Payload, Key> extends true
+      ? Payload[Key]
+      : Payload[Key] | undefined
+  >;
+
+  //#region Use
+
+  export type Use<Payload> = Payload extends Array<any>
+    ? HookFieldUseFn<Payload>
+    : Payload extends object
+    ? HookFieldUse<Payload>
+    : never;
+
+  export interface HookField<Payload> {
+    (): State<Payload>;
+
+    get use(): HookFieldUse<Payload>;
+
+    // watch(): Payload;
+
+    // discriminated<Discriminator extends keyof Exclude<Payload, undefined>>(
+    //   discriminator: Discriminator
+    // ): State.Discriminated<Payload, Discriminator>;
+
+    // narrow<Return extends Field<any> | false | undefined | "" | null | 0>(
+    //   callback: (decomposed: State.Decomposed<Payload>) => Return
+    // ): Return;
+  }
+  export type HookFieldUse<Payload> = HookFieldUseFn<Payload> & {
+    [Key in keyof Payload]-?: HookField<Payload[Key]>;
+  };
+
+  export interface HookFieldUseFn<Payload> {
+    (): Field<Payload>;
+
+    <Key extends keyof Payload>(key: Key): HookField<
+      EnsoUtils.StaticKey<Payload, Key> extends true
+        ? Payload[Key]
+        : Payload[Key] | undefined
+    >;
+  }
+
+  //#endregion
+
+  //#region Control
+
+  export interface ControlProps<Payload> {
+    render: ControlRender<Payload>;
+  }
+
+  export type ControlRender<Payload> = (
+    control: Control<Payload>
+  ) => React.ReactNode;
+
+  export interface Control<Payload> {
+    value: Payload;
+    onChange: OnChange<Payload>;
+    onBlur: OnBlur;
+    error: FieldError | undefined;
+  }
+
+  export type OnChange<Payload> = (value: Payload) => void;
+
+  export type OnBlur = () => void;
+
+  //#endregion
+
+  // vvv PoC vvv
+
+  export type UseWatchCallback<Payload> = (payload: Payload) => void;
+
+  //#region Computed
+
+  export type IntoCallback<Payload, ComputedPayload> = (
+    payload: Payload
+  ) => ComputedPayload;
+
+  export interface Into<Payload, ComputedPayload> {
+    from(
+      callback: FromCallback<Payload, ComputedPayload>
+    ): From<ComputedPayload>;
+  }
+
+  export type FromCallback<Payload, ComputedPayload> = (
+    payload: ComputedPayload
+  ) => Payload;
+
+  export interface From<Payload> {
+    use(): Field<Payload>;
+  }
+
+  //#endregion
+
+  //#region Shared
+
+  // export type Use<Payload> = Payload extends Array<any>
+  //   ? HookField.HookFieldUseFn<Payload>
+  //   : Payload extends object
+  //   ? HookField.HookFieldUse<Payload>
+  //   : never;
+
+  export type ObjectOnly<Payload, Type> = Payload extends object & {
+    length?: never;
+  }
+    ? Type
+    : never;
+
+  export type ArrayOnly<Payload, Type> = Payload extends Array<any>
+    ? Type
+    : never;
+
+  //#endregion
+}
+
+//#endregion
+
+//#region FieldParent
+
+export interface FieldParent<Payload> {
+  key: string;
+  state: Field<Payload>;
+}
+
+//#endregion
 
 //#region PoC
 
@@ -7,7 +317,7 @@ import React, { useMemo, type FormEvent } from "react";
 
 export type DiscriminatedField<
   Payload,
-  Discriminator extends keyof Exclude<Payload, undefined>,
+  Discriminator extends keyof Exclude<Payload, undefined>
 > = Payload extends Payload
   ? Discriminator extends keyof Payload
     ? Payload[Discriminator] extends infer DiscriminatorValue
@@ -45,162 +355,6 @@ export type VariableField<Payload> =
 
 //#region BaseField
 
-const payloadSymbol = Symbol();
-
-export class Field<Payload> {
-  #id = nanoid();
-
-  [payloadSymbol]: Payload;
-
-  constructor(payload: Payload) {
-    this[payloadSymbol] = payload;
-    this.Control = this.Control.bind(this);
-  }
-
-  get(): Payload {
-    return this[payloadSymbol];
-  }
-
-  set(payload: Payload): void {
-    this[payloadSymbol] = payload;
-  }
-
-  Control(props: Field.ControlProps<Payload>): React.ReactNode {
-    return null;
-  }
-
-  useWatch(callback: Field.UseWatchCallback<Payload>): void;
-
-  useWatch(): Payload;
-
-  useWatch(callback?: Field.UseWatchCallback<Payload>): Payload | void {
-    return {} as Payload;
-  }
-
-  useComputed<ComputedPayload>(
-    callback: Field.IntoCallback<Payload, ComputedPayload>
-  ): ComputedPayload {
-    return {} as ComputedPayload;
-  }
-
-  useNarrow<Return extends Field<any> | false | undefined | "" | null | 0>(
-    callback: (decomposed: DecomposedField<Payload>) => Return
-  ): Return {
-    return {} as any;
-  }
-
-  into<ComputedPayload>(
-    callback: Field.IntoCallback<Payload, ComputedPayload>
-  ): Field.Into<Payload, ComputedPayload> {
-    return {} as Field.Into<Payload, ComputedPayload>;
-  }
-
-  get id(): string {
-    return this.#id;
-  }
-
-  get error(): FieldError | undefined {
-    return {} as FieldError | undefined;
-  }
-
-  get dirty(): boolean {
-    return false;
-  }
-
-  get valid(): boolean {
-    return false;
-  }
-
-  get $(): FieldRef.$<Payload> {
-    return {} as FieldRef.$<Payload>;
-  }
-
-  get use(): Field.Use<Payload> {
-    return (() => {}) as unknown as Field.Use<Payload>;
-  }
-
-  // @ts-ignore: [TODO]
-  map: Payload extends any[] ? ArrayField.Map<Payload> : never = () => {};
-
-  // @ts-ignore: [TODO]
-  append: Payload extends any[] ? ArrayField.Append<Payload> : never = () => {};
-
-  // @ts-ignore: [TODO]
-  remove: Payload extends any[] ? ArrayField.Remove : never = () => {};
-
-  // @ts-ignore: [TODO]
-  get length(): Payload extends any[] ? number : never {}
-}
-
-export namespace Field {
-  export type UseWatchCallback<Payload> = (payload: Payload) => void;
-
-  //#region Control
-
-  export interface ControlProps<Payload> {
-    render: ControlRender<Payload>;
-  }
-
-  export type ControlRender<Payload> = (
-    control: Control<Payload>
-  ) => React.ReactNode;
-
-  export interface Control<Payload> {
-    value: Payload;
-    onChange: OnChange<Payload>;
-    onBlur: OnBlur;
-    error: FieldError | undefined;
-  }
-
-  export type OnChange<Payload> = (value: Payload) => void;
-
-  export type OnBlur = () => void;
-
-  //#endregion
-
-  //#region Computed
-
-  export type IntoCallback<Payload, ComputedPayload> = (
-    payload: Payload
-  ) => ComputedPayload;
-
-  export interface Into<Payload, ComputedPayload> {
-    from(
-      callback: FromCallback<Payload, ComputedPayload>
-    ): From<ComputedPayload>;
-  }
-
-  export type FromCallback<Payload, ComputedPayload> = (
-    payload: ComputedPayload
-  ) => Payload;
-
-  export interface From<Payload> {
-    use(): Field<Payload>;
-  }
-
-  //#endregion
-
-  //#region Shared
-
-  export type Use<Payload> =
-    Payload extends Array<any>
-      ? UseFieldRef.UseFn<Payload>
-      : Payload extends object
-        ? UseFieldRef.Use<Payload>
-        : never;
-
-  export type ObjectOnly<Payload, Type> = Payload extends object & {
-    length?: never;
-  }
-    ? Type
-    : never;
-
-  export type ArrayOnly<Payload, Type> =
-    Payload extends Array<any> ? Type : never;
-
-  //#endregion
-}
-
 //#endregion
 
 //#region ArrayField
@@ -208,7 +362,7 @@ export namespace Field {
 export namespace ArrayField {
   export type Use<Payload extends Array<any>> = (
     index: number
-  ) => UseFieldRef<Payload[number] | undefined>;
+  ) => HookField<Payload[number] | undefined>;
 
   export type Map<Payload extends Array<any>> = <Result>(
     callback: IteratorCallback<Payload, Result>
@@ -232,10 +386,10 @@ export namespace ArrayField {
 
 //#endregion
 
-interface UseFieldRef<Payload> {
+interface HookField<Payload> {
   (): Field<Payload>;
 
-  get use(): UseFieldRef.Use<Payload>;
+  get use(): HookField.HookFieldUse<Payload>;
 
   watch(): Payload;
 
@@ -248,21 +402,19 @@ interface UseFieldRef<Payload> {
   ): Return;
 }
 
-export namespace UseFieldRef {
-  export type Use<Payload> = UseFn<Payload> & {
-    [Key in keyof Payload]-?: UseFieldRef<Payload[Key]>;
+export namespace HookField {
+  export type Use<Payload> = HookFieldUseFn<Payload> & {
+    [Key in keyof Payload]-?: HookField<Payload[Key]>;
   };
 
   export type UseFn<Payload> = <Key extends keyof Payload>(
     key: Key
-  ) => UseFieldRef<
+  ) => HookField<
     Enso.Utils.StaticKey<Payload, Key> extends true
       ? Payload[Key]
       : Payload[Key] | undefined
   >;
 }
-
-//#endregion
 
 //#region FieldRef
 
@@ -309,7 +461,7 @@ export namespace FieldRef {
 
 export type DiscriminatedFieldRef<
   Payload,
-  Discriminator extends keyof Exclude<Payload, undefined>,
+  Discriminator extends keyof Exclude<Payload, undefined>
 > = Payload extends Payload
   ? Discriminator extends keyof Payload
     ? Payload[Discriminator] extends infer DiscriminatorValue
@@ -354,7 +506,7 @@ export namespace Enso {
      * Removes brand from the given type.
      */
     export type Debrand<Type> = Type extends infer _Brand extends AnyBrand &
-      (infer Debranded extends string | number | symbol)
+      infer Debranded extends string | number | symbol
       ? Debranded
       : Type;
 
@@ -365,10 +517,10 @@ export namespace Enso {
       [Key in keyof Model as string extends Debrand<Key>
         ? never
         : number extends Debrand<Key>
-          ? never
-          : symbol extends Debrand<Key>
-            ? never
-            : Key]: Model[Key];
+        ? never
+        : symbol extends Debrand<Key>
+        ? never
+        : Key]: Model[Key];
     };
 
     /**
@@ -376,7 +528,7 @@ export namespace Enso {
      */
     export type StaticKey<
       Model,
-      Key extends keyof Model,
+      Key extends keyof Model
     > = Key extends keyof WithoutIndexed<Model> ? true : false;
   }
 }
@@ -403,7 +555,7 @@ export function useForm<Payload extends object & { length?: never }>(
 //#region Form
 
 export class Form<
-  Payload extends object & { length?: never },
+  Payload extends object & { length?: never }
 > extends Field<Payload> {
   // #id: string;
   // #payload: Payload;
@@ -466,12 +618,13 @@ export namespace Form {
     payload: Payload
   ) => unknown | Promise<unknown>;
 
-  export type $<Payload> =
-    Payload extends Record<string, any>
-      ? {
-          [Key in keyof Payload]-?: Field<Payload[Key]>;
-        }
-      : never;
+  export type $<Payload> = Payload extends Record<string, any>
+    ? {
+        [Key in keyof Payload]-?: Field<Payload[Key]>;
+      }
+    : never;
 }
+
+//#endregion
 
 //#endregion

@@ -12,7 +12,8 @@
     "exactOptionalPropertyTypes": true,
     "noUncheckedIndexedAccess": true,
     "skipLibCheck": true,
-    "allowJs": true
+    "allowJs": true,
+    "jsx": "preserve"
   },
   "exclude": []
 }
