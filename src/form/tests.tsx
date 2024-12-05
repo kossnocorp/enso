@@ -188,14 +188,14 @@ describe("form", () => {
         .toHaveTextContent("2");
     });
 
-    it.skip("allows to narrow union state", async () => {
+    it("allows to narrow union state", async () => {
       interface ComponentProps {
         address: Address;
       }
 
       function Component(props: ComponentProps) {
         const count = useRenderCount();
-        const address = State.use<Address>(props.address);
+        const address = Field.use<Address>(props.address);
         const nameStr = address.$.name.useNarrow(
           (name, ok) => typeof name === "string" && ok(name)
         );
@@ -236,13 +236,13 @@ describe("form", () => {
       );
 
       await expect
-        .element(screen.getByTestId("name"))
+        .element(screen.getByTestId("name-0"))
         .toHaveTextContent("1Alexander");
 
       await screen.getByText("Rename first").click();
 
       await expect
-        .element(screen.getByTestId("name"))
+        .element(screen.getByTestId("name-0"))
         .toHaveTextContent("2Sasha");
 
       await expect
@@ -251,7 +251,9 @@ describe("form", () => {
 
       await screen.getByText("Set string name").click();
 
-      await expect.element(screen.getByTestId("name")).not.toBeInTheDocument();
+      await expect
+        .element(screen.getByTestId("name-0"))
+        .not.toBeInTheDocument();
 
       await expect
         .element(screen.getByTestId("string"))

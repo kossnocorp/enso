@@ -1,6 +1,11 @@
 import { nanoid } from "nanoid";
 import { EnsoUtils } from "../utils.ts";
 import { useEffect, useMemo, useRef, useState } from "react";
+import {
+  narrowMixin,
+  type NarrowMixin,
+  useNarrowMixin,
+} from "../mixins/narrow.js";
 
 //#region undefinedValue
 
@@ -184,6 +189,14 @@ export class State<Payload> {
     return decomposedRef.current;
   }
 
+  narrow: <Narrowed extends Payload>(
+    callback: NarrowMixin.Callback<Payload, Narrowed>
+  ) => State<Narrowed> | undefined = narrowMixin();
+
+  useNarrow: <Narrowed extends Payload>(
+    callback: NarrowMixin.Callback<Payload, Narrowed>
+  ) => State<Narrowed> | undefined = useNarrowMixin();
+
   discriminate<Discriminator extends keyof Exclude<Payload, undefined>>(
     discriminator: Discriminator
   ): State.Discriminated<Payload, Discriminator> {
@@ -217,39 +230,6 @@ export class State<Payload> {
       []
     );
     return discriminatedRef.current;
-  }
-
-  narrow<Type extends Payload>(
-    callback: State.NarrowCallback<Payload, Type>
-  ): State<Type> | undefined {
-    let narrowed = false;
-    const payload = this.get();
-    callback(payload, <Narrowed>(narrowedPayload: Narrowed) => {
-      if (payload === (narrowedPayload as any)) narrowed = true;
-      return {} as State.NarrowWrapper<Narrowed>;
-    });
-    // @ts-ignore: This is fine
-    if (narrowed) return this;
-  }
-
-  useNarrow<Type extends Payload>(
-    callback: State.NarrowCallback<Payload, Type>
-  ): State<Type> | undefined {
-    const [_, setState] = useState(0);
-    const initialNarrowed = useMemo(() => !!this.narrow(callback), []);
-    const narrowedRef = useRef(initialNarrowed);
-    useEffect(
-      () =>
-        this.watch((_payload, _event) => {
-          const newNarrowed = !!this.narrow(callback);
-          if (newNarrowed !== narrowedRef.current) {
-            narrowedRef.current = newNarrowed;
-            setState(Date.now());
-          }
-        }),
-      []
-    );
-    return narrowedRef.current ? (this as unknown as State<Type>) : undefined;
   }
 
   into<Computed>(
@@ -431,21 +411,6 @@ export namespace State {
   ) => boolean;
 
   //#endregion
-
-  export type NarrowCallback<Payload, Narrowed> = (
-    payload: Payload,
-    wrap: NarrowWrap
-  ) => NarrowWrapper<Narrowed> | EnsoUtils.Falsy;
-
-  export type NarrowWrap = <Payload>(
-    payload: Payload
-  ) => NarrowWrapper<Payload>;
-
-  export type NarrowWrapper<Payload> = {
-    [narrowWrapperBrand]: Payload;
-  };
-
-  declare const narrowWrapperBrand: unique symbol;
 
   export type IntoCallback<Payload, Computed> = (payload: Payload) => Computed;
 

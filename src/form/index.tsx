@@ -16,6 +16,7 @@ import {
   undefinedValue,
 } from "../state/index.ts";
 import { EnsoUtils } from "../utils.ts";
+import { NarrowMixin, narrowMixin, useNarrowMixin } from "../mixins/narrow.js";
 
 //#region Field
 
@@ -172,6 +173,14 @@ export class Field<Payload> {
     return decomposedRef.current;
   }
 
+  narrow: <Narrowed extends Payload>(
+    callback: NarrowMixin.Callback<Payload, Narrowed>
+  ) => Field<Narrowed> | undefined = narrowMixin();
+
+  useNarrow: <Narrowed extends Payload>(
+    callback: NarrowMixin.Callback<Payload, Narrowed>
+  ) => Field<Narrowed> | undefined = useNarrowMixin();
+
   //#region Private
 
   #field(state: State<any>): Field<any> {
@@ -217,12 +226,6 @@ export class Field<Payload> {
     callback: Field.IntoCallback<Payload, ComputedPayload>
   ): ComputedPayload {
     return {} as ComputedPayload;
-  }
-
-  useNarrow<Return extends Field<any> | false | undefined | "" | null | 0>(
-    callback: (decomposed: DecomposedField<Payload>) => Return
-  ): Return {
-    return {} as any;
   }
 
   into<ComputedPayload>(
