@@ -1,4 +1,10 @@
-import React, { useEffect, useMemo, useState, type FormEvent } from "react";
+import React, {
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type FormEvent,
+} from "react";
 import {
   InternalArrayState,
   InternalPrimitiveState,
@@ -21,6 +27,7 @@ export class Field<Payload> {
 
   #proxy;
   #use;
+  #onInput;
 
   #state: State<Payload>;
 
@@ -53,8 +60,24 @@ export class Field<Payload> {
       },
     });
 
+    const onInput = (event: Event) => {
+      const target = event.target as HTMLInputElement;
+      const value = target.value as Payload;
+      this.set(value);
+    };
+
+    this.#onInput = <Element extends HTMLElement>(element: Element) => {
+      switch (true) {
+        case element instanceof HTMLInputElement:
+        // [TODO]
+        default:
+          return onInput;
+      }
+    };
+
     this.set = this.set.bind(this);
     this.Control = this.Control.bind(this);
+    this.ref = this.ref.bind(this);
   }
 
   get id(): string {
@@ -91,12 +114,62 @@ export class Field<Payload> {
     });
   }
 
+  register<Element extends HTMLElement>(): Field.Registration<Element> {
+    return {
+      // [TODO] Generate and maintain the path
+      name: "[TODO]",
+      ref: this.ref,
+    };
+  }
+
+  ref<Element extends HTMLElement>(element: Element | null) {
+    if (this.#element === element) return;
+
+    if (this.#element)
+      this.#element.removeEventListener("input", this.#onInput(this.#element));
+
+    if (!element) return;
+
+    element.addEventListener("input", this.#onInput(element));
+    this.#element = element;
+  }
+
+  #element: HTMLElement | null = null;
+
   watch(callback: State.WatchCallback<Payload>): State.Unwatch {
     return this.#state.watch(callback);
   }
 
   useWatch(): Payload {
     return this.#state.useWatch();
+  }
+
+  // [TODO] Hide from non-object states?
+  decompose(): Field.Decomposed<Payload> {
+    // @ts-ignore: TypeScript is picky about the type here
+    return {
+      value: this.get(),
+      field: this,
+    } as Field.Decomposed<Payload>;
+  }
+
+  useDecompose(
+    callback: State.DecomposeCallback<Payload>
+  ): Field.Decomposed<Payload> {
+    const [_, setState] = useState(0);
+    const initialDecomposed = useMemo(() => this.decompose(), []);
+    const decomposedRef = useRef(initialDecomposed);
+    const prevPayload = useRef(decomposedRef.current.value);
+    useEffect(
+      () =>
+        this.watch((newPayload, _event) => {
+          decomposedRef.current = this.decompose();
+          if (callback(newPayload, prevPayload.current)) setState(Date.now());
+          prevPayload.current = newPayload;
+        }),
+      []
+    );
+    return decomposedRef.current;
   }
 
   //#region Private
@@ -253,6 +326,30 @@ export namespace Field {
 
   //#endregion
 
+  //#region Register
+
+  export interface Registration<Element extends HTMLElement> {
+    name: string;
+    ref: RegistrationRef<Element>;
+  }
+
+  // [TODO] Add possible types
+  export type RegistrationRef<Element extends HTMLElement> =
+    React.LegacyRef<Element>;
+
+  //#endregion
+
+  //#region Decompose
+
+  export type Decomposed<Payload> = Payload extends Payload
+    ? {
+        value: Payload;
+        field: Field<Payload>;
+      }
+    : never;
+
+  //#endregion
+
   // vvv PoC vvv
 
   export type UseWatchCallback<Payload> = (payload: Payload) => void;
@@ -362,7 +459,7 @@ export type VariableField<Payload> =
 export namespace ArrayField {
   export type Use<Payload extends Array<any>> = (
     index: number
-  ) => HookField<Payload[number] | undefined>;
+  ) => Field.HookField<Payload[number] | undefined>;
 
   export type Map<Payload extends Array<any>> = <Result>(
     callback: IteratorCallback<Payload, Result>
@@ -385,36 +482,6 @@ export namespace ArrayField {
 }
 
 //#endregion
-
-interface HookField<Payload> {
-  (): Field<Payload>;
-
-  get use(): HookField.HookFieldUse<Payload>;
-
-  watch(): Payload;
-
-  discriminated<Discriminator extends keyof Exclude<Payload, undefined>>(
-    discriminator: Discriminator
-  ): DiscriminatedField<Payload, Discriminator>;
-
-  narrow<Return extends Field<any> | false | undefined | "" | null | 0>(
-    callback: (decomposed: DecomposedField<Payload>) => Return
-  ): Return;
-}
-
-export namespace HookField {
-  export type Use<Payload> = HookFieldUseFn<Payload> & {
-    [Key in keyof Payload]-?: HookField<Payload[Key]>;
-  };
-
-  export type UseFn<Payload> = <Key extends keyof Payload>(
-    key: Key
-  ) => HookField<
-    Enso.Utils.StaticKey<Payload, Key> extends true
-      ? Payload[Key]
-      : Payload[Key] | undefined
-  >;
-}
 
 //#region FieldRef
 

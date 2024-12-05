@@ -131,6 +131,7 @@ describe("state", () => {
                 >
                   Rename
                 </button>
+
                 <StringComponent string={name.state as State<string>} />
               </div>
             ) : (

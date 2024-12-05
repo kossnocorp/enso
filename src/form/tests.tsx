@@ -79,7 +79,7 @@ describe("form", () => {
               </div>
             ))}
 
-            <UserNameFormComponent onAdd={(name) => names.push(name)} />
+            <UserNameFormComponent onSubmit={(name) => names.push(name)} />
           </div>
         );
       }
@@ -88,7 +88,7 @@ describe("form", () => {
 
       await userEvent.fill(screen.getByTestId("input-name-first"), "Sasha");
       await userEvent.fill(screen.getByTestId("input-name-last"), "Koss");
-      await screen.getByText("Add name").click();
+      await screen.getByText("Submit name").click();
 
       await expect
         .element(screen.getByTestId("name-1"))
@@ -105,14 +105,14 @@ describe("form", () => {
         .toHaveTextContent("3");
     });
 
-    it.skip("allows to decompose union state", async () => {
+    it("allows to decompose union state", async () => {
       interface ComponentProps {
         address: Address;
       }
 
       function Component(props: ComponentProps) {
         const count = useRenderCount();
-        const address = State.use<Address>(props.address);
+        const address = Field.use<Address>(props.address);
         const name = address.$.name.useDecompose(
           (newName, prevName) => typeof newName !== typeof prevName
         );
@@ -126,27 +126,25 @@ describe("form", () => {
             {typeof name.value === "string" ? (
               <div>
                 <button
-                  onClick={() => (name.state as State<string>).set("Alexander")}
+                  onClick={() => (name.field as Field<string>).set("Alexander")}
                 >
                   Rename
                 </button>
-                <StringComponent string={name.state as State<string>} />
+
+                <StringComponent string={name.field as Field<string>} />
               </div>
             ) : (
               <div>
-                <button
-                  onClick={() =>
-                    (name.state as State<UserName>).$.first.set("Sasha")
-                  }
-                >
-                  Rename first
-                </button>
+                <input
+                  data-testid="input-name-first"
+                  {...(name.field as Field<UserName>).$.first.register()}
+                />
 
                 <button onClick={() => address.$.name.set("Alex")}>
                   Set string name
                 </button>
 
-                <UserNameComponent name={name.state as State<UserName>} />
+                <UserNameComponent name={name.field as Field<UserName>} />
               </div>
             )}
           </div>
@@ -158,13 +156,13 @@ describe("form", () => {
       );
 
       await expect
-        .element(screen.getByTestId("name"))
+        .element(screen.getByTestId("name-0"))
         .toHaveTextContent("1Alexander");
 
-      await screen.getByText("Rename first").click();
+      await userEvent.fill(screen.getByTestId("input-name-first"), "Sasha");
 
       await expect
-        .element(screen.getByTestId("name"))
+        .element(screen.getByTestId("name-0"))
         .toHaveTextContent("2Sasha");
 
       await expect
@@ -558,7 +556,7 @@ function UserNameComponent(props: UserNameComponentProps) {
 }
 
 interface UserNameFormComponentProps {
-  onAdd: (name: UserName) => void;
+  onSubmit: (name: UserName) => void;
 }
 
 function UserNameFormComponent(props: UserNameFormComponentProps) {
@@ -572,7 +570,7 @@ function UserNameFormComponent(props: UserNameFormComponentProps) {
       <form
         onSubmit={(event) => {
           event.preventDefault();
-          props.onAdd(field.get());
+          props.onSubmit(field.get());
         }}
       >
         <field.$.first.Control
@@ -595,14 +593,14 @@ function UserNameFormComponent(props: UserNameFormComponentProps) {
           )}
         />
 
-        <button type="submit">Add name</button>
+        <button type="submit">Submit name</button>
       </form>
     </div>
   );
 }
 
 interface StringComponentProps {
-  string: State<string>;
+  string: Field<string>;
 }
 
 function StringComponent(props: StringComponentProps) {
@@ -617,7 +615,7 @@ function StringComponent(props: StringComponentProps) {
 }
 
 interface NumberComponentProps {
-  number: State<number>;
+  number: Field<number>;
 }
 
 function NumberComponent(props: NumberComponentProps) {

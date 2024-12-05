@@ -416,6 +416,8 @@ export namespace State {
         }
     : never;
 
+  //#region Decompose
+
   export type Decomposed<Payload> = Payload extends Payload
     ? {
         value: Payload;
@@ -427,6 +429,8 @@ export namespace State {
     newPayload: Payload,
     prevPayload: Payload
   ) => boolean;
+
+  //#endregion
 
   export type NarrowCallback<Payload, Narrowed> = (
     payload: Payload,
