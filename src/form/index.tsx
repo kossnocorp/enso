@@ -25,13 +25,13 @@ import {
   undefinedValue,
 } from "../state/index.ts";
 import { type EnsoUtils } from "../utils.ts";
-import { Field } from "../field/index.tsx";
+import { State } from "../field/index.tsx";
 
 //#region Form
 
 export class Form<
   Payload extends object & { length?: never }
-> extends Field<Payload> {
+> extends State<Payload> {
   // #id: string;
   // #payload: Payload;
   // #dirty: boolean = false;
@@ -95,7 +95,7 @@ export namespace Form {
 
   export type $<Payload> = Payload extends Record<string, any>
     ? {
-        [Key in keyof Payload]-?: Field<Payload[Key]>;
+        [Key in keyof Payload]-?: State<Payload[Key]>;
       }
     : never;
 }

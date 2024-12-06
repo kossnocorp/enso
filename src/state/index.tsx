@@ -1,31 +1,23 @@
-import { nanoid } from "nanoid";
-import { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { useRerender } from "../hooks/rerender.ts";
 import {
-  decomposeMixin,
   type DecomposeMixin,
+  decomposeMixin,
   useDecomposeMixin,
 } from "../mixins/decompose.js";
 import {
-  discriminateMixin,
   type DiscriminateMixin,
+  discriminateMixin,
   useDiscriminateMixin,
 } from "../mixins/discriminate.js";
-import { intoMixin, IntoMixin, useIntoMixin } from "../mixins/into.js";
+import { intoMixin, type IntoMixin, useIntoMixin } from "../mixins/into.js";
 import {
-  narrowMixin,
   type NarrowMixin,
+  narrowMixin,
   useNarrowMixin,
 } from "../mixins/narrow.js";
 import { type EnsoUtils } from "../utils.ts";
-
-//#region undefinedValue
-
-export const undefinedValue = Symbol();
-
-export type UndefinedValue = typeof undefinedValue;
-
-//#endregion
+import { nanoid } from "nanoid";
 
 //#region State
 
@@ -44,8 +36,12 @@ export class State<Payload> {
   #id = nanoid();
   #parent?: State.Parent<any> | undefined;
   #use: State.Use<Payload>;
+  #onInput;
 
   value: Payload;
+
+  // @ts-ignore
+  #internal = new InternalPrimitiveState(this, undefinedValue);
 
   constructor(value: Payload, parent?: State.Parent<any>) {
     this.value = value;
@@ -68,6 +64,25 @@ export class State<Payload> {
         return this;
       },
     }) as State.Use<Payload>;
+
+    const onInput = (event: Event) => {
+      const target = event.target as HTMLInputElement;
+      const value = target.value as Payload;
+      this.set(value);
+    };
+
+    this.#onInput = <Element extends HTMLElement>(element: Element) => {
+      switch (true) {
+        case element instanceof HTMLInputElement:
+        // [TODO]
+        default:
+          return onInput;
+      }
+    };
+
+    this.set = this.set.bind(this);
+    this.Control = this.Control.bind(this);
+    this.ref = this.ref.bind(this);
   }
 
   //#region Attributes
@@ -86,10 +101,6 @@ export class State<Payload> {
 
   get parent(): State<any> | undefined {
     return this.#parent?.state;
-  }
-
-  get internal(): InternalState<Payload> {
-    return this.#internal;
   }
 
   //#endregion
@@ -120,7 +131,7 @@ export class State<Payload> {
     if (value === undefinedValue) change |= stateChangeType.removed;
 
     // @ts-ignore: This is fine
-    this[statePrivate].internal = new ValueConstructor(this, value);
+    this.#internal = new ValueConstructor(this, value);
     this.#internal.set(value);
     return change;
   }
@@ -133,17 +144,6 @@ export class State<Payload> {
 
   [clearSymbol]() {
     this.#internal.set(undefined as Payload);
-  }
-
-  [statePrivate]: {
-    internal: InternalState<Payload>;
-  } = {
-    // @ts-ignore: This is fine
-    internal: new InternalPrimitiveState(this, undefinedValue),
-  };
-
-  get #internal() {
-    return this[statePrivate].internal;
   }
 
   get $(): State.$<Payload> {
@@ -279,6 +279,102 @@ export class State<Payload> {
 
     // @ts-ignore: This is fine
     return this.#internal.length;
+  }
+
+  //#endregion
+
+  //#region Field
+
+  //#region Control
+
+  Control(props: State.ControlProps<Payload>): React.ReactNode {
+    // [TODO] Watch for changes and trigger rerender
+
+    return props.render({
+      value: this.get(),
+      onChange: this.set,
+      // [TODO]
+      onBlur: () => {},
+      // [TODO]
+      error: this.error,
+    });
+  }
+
+  register<Element extends HTMLElement>(): State.Registration<Element> {
+    return {
+      name: this.path.join(".") || ".",
+      ref: this.ref,
+    };
+  }
+
+  #element: HTMLElement | null = null;
+
+  ref<Element extends HTMLElement>(element: Element | null) {
+    if (this.#element === element) return;
+
+    if (this.#element)
+      this.#element.removeEventListener("input", this.#onInput(this.#element));
+
+    if (!element) return;
+
+    element.addEventListener("input", this.#onInput(element));
+    this.#element = element;
+  }
+
+  //#endregion
+
+  //#region Errors
+
+  #error: State.Error | undefined;
+
+  get error(): State.Error | undefined {
+    return this.#error;
+  }
+
+  setError(error?: string | State.Error | undefined) {
+    error = typeof error === "string" ? { message: error } : error;
+
+    if (
+      error &&
+      (!this.#error ||
+        this.#error.type !== error.type ||
+        this.#error.message !== error.message)
+    ) {
+      this.trigger(stateChangeType.invalid, true);
+    } else if (!error && this.#error) {
+      this.trigger(stateChangeType.valid, true);
+    }
+
+    this.#error = error;
+  }
+
+  get errors(): State.Errors {
+    const errors = new Map();
+
+    if (this.error) errors.set(this, this.error);
+
+    if (
+      this.#internal instanceof InternalArrayState ||
+      this.#internal instanceof InternalObjectState
+    ) {
+      this.forEach((item) => {
+        item.errors.forEach((error, state) => errors.set(state, error));
+      });
+    }
+
+    return errors;
+  }
+
+  //#endregion
+
+  // vvv PoC vvv
+
+  get valid(): boolean {
+    return false;
+  }
+
+  get dirty(): boolean {
+    return false;
   }
 
   //#endregion
@@ -421,6 +517,73 @@ export namespace State {
   export type ArrayMap<Payload extends Array<any>> = <Return>(
     callback: (item: State<Payload[number]>, index: number) => Return
   ) => Return[];
+
+  //#endregion
+
+  //#region Control
+
+  export interface ControlProps<Payload> {
+    render: ControlRender<Payload>;
+  }
+
+  export type ControlRender<Payload> = (
+    control: Control<Payload>
+  ) => React.ReactNode;
+
+  export interface Control<Payload> {
+    value: Payload;
+    onChange: OnChange<Payload>;
+    onBlur: OnBlur;
+    error: Error | undefined;
+  }
+
+  export type OnChange<Payload> = (value: Payload) => void;
+
+  export type OnBlur = () => void;
+
+  export interface Registration<Element extends HTMLElement> {
+    name: string;
+    ref: RegistrationRef<Element>;
+  }
+
+  // [TODO] Add possible types
+  export type RegistrationRef<Element extends HTMLElement> =
+    React.LegacyRef<Element>;
+
+  //#endregion
+
+  //#region Field
+
+  export interface Error {
+    type?: string | undefined;
+    message: string;
+  }
+
+  export type Errors = Map<State<any>, State.Error>;
+
+  //#endregion
+
+  // vvv PoC vvv
+
+  export type UseWatchCallback<Payload> = (payload: Payload) => void;
+
+  //#region Shared
+
+  // export type Use<Payload> = Payload extends Array<any>
+  //   ? HookField.HookFieldUseFn<Payload>
+  //   : Payload extends object
+  //   ? HookField.HookFieldUse<Payload>
+  //   : never;
+
+  export type ObjectOnly<Payload, Type> = Payload extends object & {
+    length?: never;
+  }
+    ? Type
+    : never;
+
+  export type ArrayOnly<Payload, Type> = Payload extends Array<any>
+    ? Type
+    : never;
 
   //#endregion
 }
@@ -875,20 +1038,44 @@ export const stateChangeType = {
   value: 0b00000100, // 4
   /** The type of the state has change. */
   type: 0b00001000, // 8
-  /** An object field or an array item has change. */
+  /** An object state or an array item has change. */
   child: 0b00010000, // 16
-  /** An object field or an array item has been removed. */
+  /** An object state or an array item has been removed. */
   childRemoved: 0b00100000, // 32
-  /** An object field or an array item has been added. */
+  /** An object state or an array item has been added. */
   childAdded: 0b01000000, // 64
   /** The order of array items has change. */
   childrenReordered: 0b100000000, // 128
+  /** The state become invalid. */
+  invalid: 0b1000000000, // 256
+  /** The state become valid. */
+  valid: 0b10000000000, // 512
 };
 
 export class StateChangeEvent extends CustomEvent<StateChange> {
   constructor(type: StateChange) {
     super("change", { detail: type });
   }
+}
+
+//#endregion
+
+//#region undefinedValue
+
+export const undefinedValue = Symbol();
+
+export type UndefinedValue = typeof undefinedValue;
+
+//#endregion
+
+//#region PoC
+
+export function useUndefinedStringField(
+  state: State<string | undefined>
+): State<string> {
+  return state
+    .useInto((value) => value ?? "")
+    .from((value) => value || undefined);
 }
 
 //#endregion

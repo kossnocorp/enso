@@ -1,10 +1,10 @@
 import { assert, describe, expect, it, vi } from "vitest";
 import {
-  InternalPrimitiveState,
   State,
   stateChangeType,
   undefinedValue,
-} from "./index.ts";
+  InternalPrimitiveState,
+} from "./index.tsx";
 
 describe("State", () => {
   it("creates a state instance", () => {
@@ -59,15 +59,6 @@ describe("State", () => {
       it("returns undefined for root state", () => {
         const state = new State({ name: { first: "Sasha" } });
         expect(state.parent).toBe(undefined);
-      });
-    });
-
-    describe("internal", () => {
-      it("returns the internal value", () => {
-        const state = new State(42);
-        const { internal } = state;
-        expect(internal).toBeInstanceOf(InternalPrimitiveState);
-        expect(internal.get()).toBe(42);
       });
     });
   });
@@ -147,7 +138,7 @@ describe("State", () => {
         );
       });
 
-      it("does not trigger fields updates when removing", () => {
+      it("does not trigger states updates when removing", () => {
         const state = new State<{ num?: number; str?: string }>({ num: 42 });
         const spy = vi.fn();
         state.$.num?.watch(spy);
@@ -160,7 +151,7 @@ describe("State", () => {
         expect(spy).toHaveBeenCalledOnce();
       });
 
-      it("preserves removed fields", () => {
+      it("preserves removed states", () => {
         const state = new State<{ num?: number; str?: string }>({ num: 42 });
         const spy = vi.fn();
         const numA = state.$.num;
@@ -319,6 +310,7 @@ describe("State", () => {
 
       it("does not trigger update when setting undefined value to undefined value", () => {
         const state = new State<number[]>([1, 2, 3, 4]);
+        // @ts-ignore: This is fine
         expect(state.$(5).set(undefinedValue)).toBe(0);
       });
     });
@@ -331,7 +323,7 @@ describe("State", () => {
     });
 
     describe("object", () => {
-      it("allows to access fields", () => {
+      it("allows to access states", () => {
         const state = new State({ num: 42 });
         const num = state.$.num;
         num satisfies State<number>;
@@ -339,7 +331,7 @@ describe("State", () => {
         expect(num.get()).toBe(42);
       });
 
-      it("allows to access record fields", () => {
+      it("allows to access record states", () => {
         const state = new State<Record<string, number>>({ num: 42 });
         const numA = state.$["num"];
         numA satisfies State<number> | undefined;
@@ -349,7 +341,7 @@ describe("State", () => {
         expect(numB.get()).toBe(42);
       });
 
-      it("preserves fields", () => {
+      it("preserves states", () => {
         const state = new State({ num: 42 });
         const numA = state.$.num;
         const numB = state.$.num;
@@ -358,19 +350,19 @@ describe("State", () => {
         expect(numA).toBe(numB);
       });
 
-      it("allows to access undefined fields", () => {
+      it("allows to access undefined states", () => {
         const state = new State<{ num?: number; str?: string }>({ num: 42 });
-        const field = state.$.str;
-        field satisfies State<string | undefined>;
-        expect(field).toBeInstanceOf(State);
-        expect(field.get()).toBe(undefined);
+        const str = state.$.str;
+        str satisfies State<string | undefined>;
+        expect(str).toBeInstanceOf(State);
+        expect(str.get()).toBe(undefined);
       });
 
-      it("preserves undefined fields", () => {
+      it("preserves undefined states", () => {
         const state = new State<{ num?: number; str?: string }>({ num: 42 });
-        const fieldA = state.$.str;
-        const fieldB = state.$.str;
-        expect(fieldA).toBe(fieldB);
+        const stateA = state.$.str;
+        const stateB = state.$.str;
+        expect(stateA).toBe(stateB);
       });
     });
 
@@ -440,7 +432,7 @@ describe("State", () => {
         }));
 
       describe("object", () => {
-        it("listens to the field state changes", async () =>
+        it("listens to the state changes", async () =>
           new Promise<void>((resolve) => {
             const state = new State({ num: 42 });
 
@@ -453,7 +445,7 @@ describe("State", () => {
             state.$.num.set(43);
           }));
 
-        it("listens to fields create", async () =>
+        it("listens to states create", async () =>
           new Promise<void>((resolve) => {
             const state = new State<{ num: number; str?: string }>({
               num: 42,
@@ -688,27 +680,103 @@ describe("State", () => {
     });
   });
 
-  describe("object", () => {
-    describe("forEach", () => {
-      it("iterates the object entries", () => {
-        const state = new State({ num: 42, str: "Hello" });
-        const mapped: any[] = [];
-        state.forEach((item, key) => mapped.push([key, item.get()]));
-        expect(mapped).toEqual([
-          ["num", 42],
-          ["str", "Hello"],
-        ]);
+  describe("state", () => {
+    describe("register", () => {
+      it("generates props for a state", () => {
+        const state = new State({ name: { first: "Alexander" } });
+        const props = state.$.name.$.first.register();
+        expect(props.name).toEqual("name.first");
+        expect(props.ref).toBe(state.$.name.$.first.ref);
+      });
+
+      it("assigns . name for the root state", () => {
+        const state = new State({ name: { first: "Alexander" } });
+        const props = state.register();
+        expect(props.name).toEqual(".");
       });
     });
 
-    describe("map", () => {
-      it("maps the object entries", () => {
-        const state = new State({ num: 42, str: "Hello" });
-        const mapped = state.map((item, key) => [key, item.get()]);
-        expect(mapped).toEqual([
-          ["num", 42],
-          ["str", "Hello"],
-        ]);
+    describe("errors", () => {
+      describe("setError", () => {
+        it("assigns an error to the state", () => {
+          const state = new State(42);
+          state.setError("Something went wrong");
+          expect(state.error).toEqual({ message: "Something went wrong" });
+        });
+
+        it("allows to pass error object", () => {
+          const state = new State(42);
+          state.setError({ type: "internal", message: "Something went wrong" });
+          expect(state.error).toEqual({
+            type: "internal",
+            message: "Something went wrong",
+          });
+        });
+
+        it("allows to clear the error", () => {
+          const state = new State(42);
+          state.setError("Something went wrong");
+          state.setError();
+          expect(state.error).toBe(undefined);
+        });
+
+        it("triggers the invalid update", () =>
+          new Promise<void>((resolve) => {
+            const state = new State(42);
+            const spy = vi.fn();
+            state.watch(spy);
+            state.setError("Something went wrong");
+            setTimeout(() => {
+              expect(spy).toHaveBeenCalledWith(
+                42,
+                expect.objectContaining({ detail: stateChangeType.invalid })
+              );
+              resolve();
+            });
+          }));
+
+        it("clearing triggers the valid update", () =>
+          new Promise<void>((resolve) => {
+            const state = new State(42);
+            const spy = vi.fn();
+            state.watch(spy);
+            state.setError("Something went wrong");
+            state.setError();
+            setTimeout(() => {
+              expect(spy).toHaveBeenCalledTimes(2);
+              expect(spy).toHaveBeenCalledWith(
+                42,
+                expect.objectContaining({ detail: stateChangeType.valid })
+              );
+              resolve();
+            });
+          }));
+      });
+
+      describe("errors", () => {
+        it("collects map all children errors", () => {
+          const state = new State({
+            name: { first: "" },
+            age: 370,
+            ids: [123, 456],
+          });
+          state.setError("Something is wrong");
+          state.$.age.setError("Are you an immortal?");
+          state.$.name.$.first.setError("First name is required");
+          state.$.ids.$(1).setError("Is it a valid ID?");
+          const { errors } = state;
+          expect(errors.size).toBe(4);
+          expect(errors.get(state)).toEqual({ message: "Something is wrong" });
+          expect(errors.get(state.$.age)).toEqual({
+            message: "Are you an immortal?",
+          });
+          expect(errors.get(state.$.name.$.first)).toEqual({
+            message: "First name is required",
+          });
+          expect(errors.get(state.$.ids.$(1))).toEqual({
+            message: "Is it a valid ID?",
+          });
+        });
       });
     });
   });
