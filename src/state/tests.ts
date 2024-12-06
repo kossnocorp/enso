@@ -8,6 +8,15 @@ describe("state", () => {
       expect(state.get()).toBe(42);
     });
 
+    describe("id", () => {
+      it("assigns a unique id to each state", () => {
+        const state1 = new State(42);
+        const state2 = new State(42);
+        expect(state1.id).toBeTypeOf("string");
+        expect(state1.id).not.toBe(state2.id);
+      });
+    });
+
     describe("set", () => {
       describe("primitive", () => {
         it("sets a new state", () => {
@@ -260,101 +269,6 @@ describe("state", () => {
       });
     });
 
-    describe("watch", () => {
-      it("allows to subscribe for state changes", async () =>
-        new Promise<void>((resolve) => {
-          const state = new State(42);
-
-          const unsub = state.watch((value) => {
-            expect(value).toBe(43);
-            unsub();
-            // Check if the callback is not called after unsub
-            state.set(44);
-            setTimeout(resolve);
-          });
-
-          state.set(43);
-        }));
-
-      it("provides event object with change type as detail", async () =>
-        new Promise<void>((resolve) => {
-          const state = new State(42);
-
-          const unsub = state.watch((value, event) => {
-            expect(event.detail).toBe(StateChangeType.Value);
-            unsub();
-            resolve();
-          });
-
-          state.set(43);
-        }));
-
-      describe("object", () => {
-        it("listens to the field state changes", async () =>
-          new Promise<void>((resolve) => {
-            const state = new State({ num: 42 });
-
-            const unsub = state.watch((value) => {
-              expect(value.num).toBe(43);
-              unsub();
-              resolve();
-            });
-
-            state.$.num.set(43);
-          }));
-
-        it("listens to fields create", async () =>
-          new Promise<void>((resolve) => {
-            const state = new State<{ num: number; str?: string }>({ num: 42 });
-
-            const unsub = state.watch((value) => {
-              expect(value.str).toBe("Hello!");
-              unsub();
-              resolve();
-            });
-
-            state.$.str.set("Hello!");
-          }));
-      });
-
-      describe("array", () => {
-        it("listens to the item state changes", async () =>
-          new Promise<void>((resolve) => {
-            const state = new State([1, 2, 3]);
-
-            const unsub = state.watch((value) => {
-              expect(value[1]).toBe(43);
-              unsub();
-              resolve();
-            });
-
-            state.$(1).set(43);
-          }));
-
-        it("listens to items create", async () =>
-          new Promise<void>((resolve) => {
-            const state = new State([1, 2, 3]);
-
-            const unsub = state.watch((value) => {
-              expect(value[5]).toBe(43);
-              unsub();
-              resolve();
-            });
-
-            state.$(5).set(43);
-          }));
-      });
-    });
-
-    describe("id", () => {
-      it("assigns a unique id to each state", () => {
-        const state1 = new State(42);
-        const state2 = new State(42);
-        expect(state1.id).toBeTypeOf("string");
-        expect(state1.id).not.toBe(state2.id);
-      });
-    });
-
     describe("$", () => {
       it("points to itself for a primitive", () => {
         const state = new State(42);
@@ -440,100 +354,212 @@ describe("state", () => {
       });
     });
 
-    describe("discriminate", () => {
-      interface Cat {
-        type: "cat";
-        meow: true;
-      }
+    describe("watching", () => {
+      describe("watch", () => {
+        it("allows to subscribe for state changes", async () =>
+          new Promise<void>((resolve) => {
+            const state = new State(42);
 
-      interface Dog {
-        type: "dog";
-        bark: true;
-      }
+            const unsub = state.watch((value) => {
+              expect(value).toBe(43);
+              unsub();
+              // Check if the callback is not called after unsub
+              state.set(44);
+              setTimeout(resolve);
+            });
 
-      it("allows to discriminate the state type", () => {
-        const state = new State<Cat | Dog>({ type: "cat", meow: true });
-        const discriminated = state.discriminate("type");
-        if (discriminated.discriminator === "cat") {
-          expect(discriminated.state.get().meow).toBe(true);
-          return;
-        }
-        assert(false, "Should not reach here");
+            state.set(43);
+          }));
+
+        it("provides event object with change type as detail", async () =>
+          new Promise<void>((resolve) => {
+            const state = new State(42);
+
+            const unsub = state.watch((value, event) => {
+              expect(event.detail).toBe(StateChangeType.Value);
+              unsub();
+              resolve();
+            });
+
+            state.set(43);
+          }));
+
+        describe("object", () => {
+          it("listens to the field state changes", async () =>
+            new Promise<void>((resolve) => {
+              const state = new State({ num: 42 });
+
+              const unsub = state.watch((value) => {
+                expect(value.num).toBe(43);
+                unsub();
+                resolve();
+              });
+
+              state.$.num.set(43);
+            }));
+
+          it("listens to fields create", async () =>
+            new Promise<void>((resolve) => {
+              const state = new State<{ num: number; str?: string }>({
+                num: 42,
+              });
+
+              const unsub = state.watch((value) => {
+                expect(value.str).toBe("Hello!");
+                unsub();
+                resolve();
+              });
+
+              state.$.str.set("Hello!");
+            }));
+        });
+
+        describe("array", () => {
+          it("listens to the item state changes", async () =>
+            new Promise<void>((resolve) => {
+              const state = new State([1, 2, 3]);
+
+              const unsub = state.watch((value) => {
+                expect(value[1]).toBe(43);
+                unsub();
+                resolve();
+              });
+
+              state.$(1).set(43);
+            }));
+
+          it("listens to items create", async () =>
+            new Promise<void>((resolve) => {
+              const state = new State([1, 2, 3]);
+
+              const unsub = state.watch((value) => {
+                expect(value[5]).toBe(43);
+                unsub();
+                resolve();
+              });
+
+              state.$(5).set(43);
+            }));
+        });
       });
 
-      it("handles undefineds", () => {
-        const state = new State<Cat | Dog | undefined>(undefined);
-        const discriminated = state.discriminate("type");
-        if (!discriminated.discriminator) {
-          expect(discriminated.state.get()).toBe(undefined);
-          return;
-        }
-        assert(false, "Should not reach here");
+      describe("unwatch", () => {
+        it("unsubscribes all watchers", () => {
+          const state = new State(42);
+          const spy = vi.fn();
+          state.watch(spy);
+          state.unwatch();
+          state.set(43);
+          expect(spy).not.toHaveBeenCalled();
+        });
+
+        it("unsubscribes all children", () => {
+          const state = new State({ num: 42 });
+          const spy = vi.fn();
+          state.$.num?.watch(spy);
+          state.unwatch();
+          state.$.num?.set(43);
+          expect(spy).not.toHaveBeenCalled();
+        });
       });
     });
 
-    describe("decompose", () => {
-      it("allows to decompose the state type", () => {
-        const state = new State<string | number | Record<string, number>>(
-          "Hello, world!"
-        );
-        const decomposed = state.decompose();
-        if (typeof decomposed.value === "string") {
-          expect(decomposed.state.get()).toBe("Hello, world!");
-          return;
+    describe("mapping", () => {
+      describe("discriminate", () => {
+        interface Cat {
+          type: "cat";
+          meow: true;
         }
-        assert(false, "Should not reach here");
-      });
-    });
 
-    describe("narrow", () => {
-      it("allows to narrow the state type", () => {
-        const state = new State<string | number>("Hello, world!");
-        const narrowed = state.narrow(
-          (value, ok) => typeof value === "string" && ok(value)
-        );
-        narrowed satisfies State<string> | undefined;
-        expect(narrowed?.get()).toBe("Hello, world!");
-      });
-    });
+        interface Dog {
+          type: "dog";
+          bark: true;
+        }
 
-    describe("into", () => {
-      it("allows to create a computed state", () => {
-        const state = new State({ message: "Hello, world!" });
-        const computed = state.$.message.into(toCodes).from(fromCodes);
-        expect(computed.get()).toEqual([
-          72, 101, 108, 108, 111, 44, 32, 119, 111, 114, 108, 100, 33,
-        ]);
-      });
+        it("allows to discriminate the state type", () => {
+          const state = new State<Cat | Dog>({ type: "cat", meow: true });
+          const discriminated = state.discriminate("type");
+          if (discriminated.discriminator === "cat") {
+            expect(discriminated.state.get().meow).toBe(true);
+            return;
+          }
+          assert(false, "Should not reach here");
+        });
 
-      it("updates the state back from computed", () => {
-        const state = new State({ message: "Hello, world!" });
-        const computed = state.$.message.into(toCodes).from(fromCodes);
-        computed.set([72, 105, 33]);
-        expect(state.get()).toEqual({ message: "Hi!" });
+        it("handles undefineds", () => {
+          const state = new State<Cat | Dog | undefined>(undefined);
+          const discriminated = state.discriminate("type");
+          if (!discriminated.discriminator) {
+            expect(discriminated.state.get()).toBe(undefined);
+            return;
+          }
+          assert(false, "Should not reach here");
+        });
       });
 
-      it("triggers state update", async () =>
-        new Promise<void>((resolve) => {
+      describe("decompose", () => {
+        it("allows to decompose the state type", () => {
+          const state = new State<string | number | Record<string, number>>(
+            "Hello, world!"
+          );
+          const decomposed = state.decompose();
+          if (typeof decomposed.value === "string") {
+            expect(decomposed.state.get()).toBe("Hello, world!");
+            return;
+          }
+          assert(false, "Should not reach here");
+        });
+      });
+
+      describe("narrow", () => {
+        it("allows to narrow the state type", () => {
+          const state = new State<string | number>("Hello, world!");
+          const narrowed = state.narrow(
+            (value, ok) => typeof value === "string" && ok(value)
+          );
+          narrowed satisfies State<string> | undefined;
+          expect(narrowed?.get()).toBe("Hello, world!");
+        });
+      });
+
+      describe("into", () => {
+        it("allows to create a computed state", () => {
           const state = new State({ message: "Hello, world!" });
           const computed = state.$.message.into(toCodes).from(fromCodes);
+          expect(computed.get()).toEqual([
+            72, 101, 108, 108, 111, 44, 32, 119, 111, 114, 108, 100, 33,
+          ]);
+        });
 
-          const unsub = state.$.message.watch((value) => {
-            expect(value).toBe("Hi!");
-            unsub();
-            resolve();
-          });
-
+        it("updates the state back from computed", () => {
+          const state = new State({ message: "Hello, world!" });
+          const computed = state.$.message.into(toCodes).from(fromCodes);
           computed.set([72, 105, 33]);
-        }));
+          expect(state.get()).toEqual({ message: "Hi!" });
+        });
 
-      function toCodes(message: string) {
-        return Array.from(message).map((c) => c.charCodeAt(0));
-      }
+        it("triggers state update", async () =>
+          new Promise<void>((resolve) => {
+            const state = new State({ message: "Hello, world!" });
+            const computed = state.$.message.into(toCodes).from(fromCodes);
 
-      function fromCodes(codes: number[]) {
-        return codes.map((c) => String.fromCharCode(c)).join("");
-      }
+            const unsub = state.$.message.watch((value) => {
+              expect(value).toBe("Hi!");
+              unsub();
+              resolve();
+            });
+
+            computed.set([72, 105, 33]);
+          }));
+
+        function toCodes(message: string) {
+          return Array.from(message).map((c) => c.charCodeAt(0));
+        }
+
+        function fromCodes(codes: number[]) {
+          return codes.map((c) => String.fromCharCode(c)).join("");
+        }
+      });
     });
   });
 });

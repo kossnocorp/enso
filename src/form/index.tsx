@@ -1,18 +1,5 @@
-import React, { useEffect, useMemo, useState, type FormEvent } from "react";
-import {
-  InternalPrimitiveState,
-  State,
-  StateChange,
-  statePrivate,
-  StateTriggerFlow,
-  undefinedValue,
-} from "../state/index.ts";
-import { EnsoUtils } from "../utils.ts";
-import {
-  type NarrowMixin,
-  narrowMixin,
-  useNarrowMixin,
-} from "../mixins/narrow.js";
+import React, { type FormEvent, useEffect, useMemo } from "react";
+import { useRerender } from "../hooks/rerender.ts";
 import {
   type DecomposeMixin,
   decomposeMixin,
@@ -24,6 +11,20 @@ import {
   useDiscriminateMixin,
 } from "../mixins/discriminate.js";
 import { intoMixin, type IntoMixin, useIntoMixin } from "../mixins/into.js";
+import {
+  type NarrowMixin,
+  narrowMixin,
+  useNarrowMixin,
+} from "../mixins/narrow.js";
+import {
+  InternalPrimitiveState,
+  State,
+  StateChange,
+  statePrivate,
+  StateTriggerFlow,
+  undefinedValue,
+} from "../state/index.ts";
+import { EnsoUtils } from "../utils.ts";
 
 //#region Field
 
@@ -34,7 +35,7 @@ export class Field<Payload> {
   }
 
   #proxy;
-  #use;
+  #use: Field.Use<Payload>;
   #onInput;
 
   #state: State<Payload>;
@@ -51,22 +52,22 @@ export class Field<Payload> {
       get: (_, key: string) => this.#field(this.#state.$(key)),
     });
 
-    this.#use = new Proxy((() => {}) as unknown as State.Use<Payload>, {
+    this.#use = new Proxy(() => {}, {
       // @ts-ignore: This is okay
       get: (_, key: string) => this.$[key].use,
 
       apply: () => {
-        const [_, setState] = useState(0);
+        const rerender = useRerender();
         useEffect(
           () =>
             this.watch((_payload, event) => {
-              if (this.#internal.updated(event)) setState(Date.now());
+              if (this.#internal.updated(event)) rerender();
             }),
           []
         );
         return this;
       },
-    });
+    }) as Field.Use<Payload>;
 
     const onInput = (event: Event) => {
       const target = event.target as HTMLInputElement;
@@ -92,14 +93,6 @@ export class Field<Payload> {
     return this.#state.id;
   }
 
-  get $(): Field.$<Payload> {
-    // Primitive state always returns itself
-    if (this.#internal instanceof InternalPrimitiveState)
-      return this as unknown as Field.$<Payload>;
-
-    return this.#proxy as unknown as Field.$<Payload>;
-  }
-
   get(): Payload {
     return this.#state.get();
   }
@@ -108,8 +101,16 @@ export class Field<Payload> {
     return this.#state.set(payload);
   }
 
+  get $(): Field.$<Payload> {
+    // Primitive state always returns itself
+    if (this.#internal instanceof InternalPrimitiveState)
+      return this as unknown as Field.$<Payload>;
+
+    return this.#proxy as unknown as Field.$<Payload>;
+  }
+
   get use(): Field.Use<Payload> {
-    return this.#use as unknown as Field.Use<Payload>;
+    return this.#use;
   }
 
   Control(props: Field.ControlProps<Payload>): React.ReactNode {
@@ -150,6 +151,10 @@ export class Field<Payload> {
 
   useWatch(): Payload {
     return this.#state.useWatch();
+  }
+
+  unwatch() {
+    this.#state.unwatch();
   }
 
   //#region Mapping

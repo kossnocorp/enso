@@ -1,11 +1,6 @@
 import { nanoid } from "nanoid";
-import { EnsoUtils } from "../utils.ts";
 import { useEffect, useMemo, useState } from "react";
-import {
-  narrowMixin,
-  type NarrowMixin,
-  useNarrowMixin,
-} from "../mixins/narrow.js";
+import { useRerender } from "../hooks/rerender.ts";
 import {
   decomposeMixin,
   type DecomposeMixin,
@@ -17,6 +12,12 @@ import {
   useDiscriminateMixin,
 } from "../mixins/discriminate.js";
 import { intoMixin, IntoMixin, useIntoMixin } from "../mixins/into.js";
+import {
+  narrowMixin,
+  type NarrowMixin,
+  useNarrowMixin,
+} from "../mixins/narrow.js";
+import { EnsoUtils } from "../utils.ts";
 
 //#region undefinedValue
 
@@ -41,10 +42,8 @@ export class State<Payload> {
   }
 
   #id = nanoid();
-  #target = new EventTarget();
   #parent?: StateParent<any> | undefined;
-  #subs = new Set<(event: Event) => void>();
-  #use;
+  #use: State.Use<Payload>;
 
   value: Payload;
 
@@ -53,48 +52,26 @@ export class State<Payload> {
     this.#set(value);
     this.#parent = parent;
 
-    this.#use = new Proxy((() => {}) as unknown as State.Use<Payload>, {
+    this.#use = new Proxy(() => {}, {
       // @ts-ignore: This is okay
       get: (_, key: string) => this.$[key].use,
 
       apply: () => {
-        const [_, setState] = useState(0);
+        const rerender = useRerender();
         useEffect(
           () =>
-            this.watch((payload, event) => {
-              if (this.#internal.updated(event)) setState(Date.now());
+            this.watch((_payload, event) => {
+              if (this.#internal.updated(event)) rerender();
             }),
           []
         );
         return this;
       },
-    });
-  }
-
-  free() {
-    this.#subs.forEach((sub) =>
-      this.#target.removeEventListener("change", sub)
-    );
-    this.#subs.clear();
-    this.#internal.free();
+    }) as State.Use<Payload>;
   }
 
   get id(): string {
     return this.#id;
-  }
-
-  get $(): State.$<Payload> {
-    return this.#internal.$();
-  }
-
-  [statePrivate]: {
-    internal: InternalState<Payload>;
-  } = {
-    internal: new InternalPrimitiveState(this, undefinedValue),
-  };
-
-  get #internal() {
-    return this[statePrivate].internal;
   }
 
   get(): Payload {
@@ -119,7 +96,7 @@ export class State<Payload> {
       return this.#internal.set(value);
 
     // The state is of a different type
-    this.#internal.free();
+    this.#internal.unwatch();
 
     let changed = StateChangeType.Type;
     // The state is being removed
@@ -141,9 +118,28 @@ export class State<Payload> {
     this.#internal.set(undefined as Payload);
   }
 
+  get $(): State.$<Payload> {
+    return this.#internal.$();
+  }
+
+  [statePrivate]: {
+    internal: InternalState<Payload>;
+  } = {
+    internal: new InternalPrimitiveState(this, undefinedValue),
+  };
+
+  get #internal() {
+    return this[statePrivate].internal;
+  }
+
   get use(): State.Use<Payload> {
     return this.#use;
   }
+
+  //#region Watching
+
+  #target = new EventTarget();
+  #subs = new Set<(event: Event) => void>();
 
   watch(callback: State.WatchCallback<Payload>): State.Unwatch {
     const handler = (event: Event) => {
@@ -161,16 +157,32 @@ export class State<Payload> {
 
   useWatch(): Payload {
     const [payload, setPayload] = useState(this.get());
-    useEffect(
-      () =>
-        this.watch((newPayload, event) => {
-          // [TODO] Check event changes?
-          setPayload(newPayload);
-        }),
-      []
-    );
+    useEffect(() => this.watch(setPayload), []);
     return payload;
   }
+
+  unwatch() {
+    this.#subs.forEach((sub) =>
+      this.#target.removeEventListener("change", sub)
+    );
+    this.#subs.clear();
+    this.#internal.unwatch();
+  }
+
+  #trigger(changed: StateChange, type: StateTriggerFlow) {
+    this.#target.dispatchEvent(new StateChangeEvent(changed));
+    // If the updates should flow upstream to parents too
+    if (type === StateTriggerFlow.Bidirectional)
+      this.#parent?.state[childTriggerSymbol](changed, this.#parent.key);
+  }
+
+  [childTriggerSymbol](type: StateChange, key: string) {
+    const updated =
+      this.#internal.childUpdate(type, key) | StateChangeType.Child;
+    this.#trigger(updated, StateTriggerFlow.Directional);
+  }
+
+  //#endregion
 
   //#region Mapping
 
@@ -234,19 +246,6 @@ export class State<Payload> {
   remove() {
     this.set(undefinedValue, StateTriggerFlow.Bidirectional);
   }
-
-  #trigger(changed: StateChange, type: StateTriggerFlow) {
-    this.#target.dispatchEvent(new StateChangeEvent(changed));
-    // If the updates should flow upstream to parents too
-    if (type === StateTriggerFlow.Bidirectional)
-      this.#parent?.state[childTriggerSymbol](changed, this.#parent.key);
-  }
-
-  [childTriggerSymbol](type: StateChange, key: string) {
-    const updated =
-      this.#internal.childUpdate(type, key) | StateChangeType.Child;
-    this.#trigger(updated, StateTriggerFlow.Directional);
-  }
 }
 
 export namespace State {
@@ -276,16 +275,6 @@ export namespace State {
     (): State<Payload>;
 
     get use(): HookStateUse<Payload>;
-
-    watch(): Payload;
-
-    discriminated<Discriminator extends keyof Exclude<Payload, undefined>>(
-      discriminator: Discriminator
-    ): State.Discriminated<Payload, Discriminator>;
-
-    narrow<Return extends State<any> | false | undefined | "" | null | 0>(
-      callback: (decomposed: State.Decomposed<Payload>) => Return
-    ): Return;
   }
 
   export type HookStateUse<Payload> = HookStateUseFn<Payload> & {
@@ -381,7 +370,7 @@ export abstract class InternalState<Payload> {
     this.#external = state;
   }
 
-  abstract free(): void;
+  abstract unwatch(): void;
 
   abstract set(value: Payload | UndefinedValue): StateChange | 0;
 
@@ -446,7 +435,7 @@ export class InternalPrimitiveState<Payload> extends InternalState<Payload> {
     );
   }
 
-  free() {}
+  unwatch() {}
 }
 
 //#endregion
@@ -540,15 +529,15 @@ export class InternalObjectState<
       if (!child)
         throw new Error("Failed to find the child state when updating");
       this.#children.delete(key);
-      child.free();
+      child.unwatch();
       changed |= StateChangeType.ChildRemoved;
     }
 
     return changed;
   }
 
-  free() {
-    this.#children.forEach((child) => child.free());
+  unwatch() {
+    this.#children.forEach((child) => child.unwatch());
     this.#children.clear();
   }
 
@@ -669,15 +658,15 @@ export class InternalArrayState<
       if (!child)
         throw new Error("Failed to find the child state when updating");
       delete this.#children[Number(key)];
-      child.free();
+      child.unwatch();
       changed |= StateChangeType.ChildRemoved;
     }
 
     return changed;
   }
 
-  free() {
-    this.#children.forEach((child) => child.free());
+  unwatch() {
+    this.#children.forEach((child) => child.unwatch());
     this.#children.length = 0;
   }
 
