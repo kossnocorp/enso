@@ -42,12 +42,12 @@ export class State<Payload> {
   }
 
   #id = nanoid();
-  #parent?: StateParent<any> | undefined;
+  #parent?: State.Parent<any> | undefined;
   #use: State.Use<Payload>;
 
   value: Payload;
 
-  constructor(value: Payload, parent?: StateParent<any>) {
+  constructor(value: Payload, parent?: State.Parent<any>) {
     this.value = value;
     this.#set(value);
     this.#parent = parent;
@@ -70,22 +70,39 @@ export class State<Payload> {
     }) as State.Use<Payload>;
   }
 
+  //#region Attributes
+
   get id(): string {
     return this.#id;
   }
+
+  get key(): string | undefined {
+    return this.#parent?.key;
+  }
+
+  get path(): string[] {
+    return this.#parent ? [...this.#parent.state.path, this.#parent.key] : [];
+  }
+
+  get parent(): State<any> | undefined {
+    return this.#parent?.state;
+  }
+
+  get internal(): InternalState<Payload> {
+    return this.#internal;
+  }
+
+  //#endregion
 
   get(): Payload {
     return this.#internal.get();
   }
 
-  // [TODO] Get rid of the type argument and expose directional set via symbol.
-  set(
-    value: Payload | UndefinedValue,
-    type = StateTriggerFlow.Bidirectional
-  ): StateChange | 0 {
-    const changed = this.#set(value);
-    if (changed) this.#trigger(changed, type);
-    return changed;
+  // [TODO] Exposing the notify parents flag might be dangerous
+  set(value: Payload | UndefinedValue, notifyParents = true): StateChange | 0 {
+    const change = this.#set(value);
+    if (change) this.trigger(change, notifyParents);
+    return change;
   }
 
   #set(value: Payload | UndefinedValue): StateChange | 0 {
@@ -98,28 +115,24 @@ export class State<Payload> {
     // The state is of a different type
     this.#internal.unwatch();
 
-    let changed = StateChangeType.Type;
+    let change = stateChangeType.type;
     // The state is being removed
-    if (value === undefinedValue) changed |= StateChangeType.Removed;
+    if (value === undefinedValue) change |= stateChangeType.removed;
 
     // @ts-ignore: This is fine
     this[statePrivate].internal = new ValueConstructor(this, value);
     this.#internal.set(value);
-    return changed;
+    return change;
   }
 
   [createSymbol](value: Payload): StateChange | 0 {
-    const changed = this.#internal.set(value) | StateChangeType.Created;
-    this.#trigger(changed, StateTriggerFlow.Directional);
-    return changed;
+    const change = this.#internal.set(value) | stateChangeType.created;
+    this.trigger(change, false);
+    return change;
   }
 
   [clearSymbol]() {
     this.#internal.set(undefined as Payload);
-  }
-
-  get $(): State.$<Payload> {
-    return this.#internal.$();
   }
 
   [statePrivate]: {
@@ -131,6 +144,10 @@ export class State<Payload> {
 
   get #internal() {
     return this[statePrivate].internal;
+  }
+
+  get $(): State.$<Payload> {
+    return this.#internal.$();
   }
 
   get use(): State.Use<Payload> {
@@ -170,17 +187,17 @@ export class State<Payload> {
     this.#internal.unwatch();
   }
 
-  #trigger(changed: StateChange, type: StateTriggerFlow) {
-    this.#target.dispatchEvent(new StateChangeEvent(changed));
+  trigger(change: StateChange, notifyParents: boolean = false) {
+    this.#target.dispatchEvent(new StateChangeEvent(change));
     // If the updates should flow upstream to parents too
-    if (type === StateTriggerFlow.Bidirectional)
-      this.#parent?.state[childTriggerSymbol](changed, this.#parent.key);
+    if (notifyParents)
+      this.#parent?.state[childTriggerSymbol](change, this.#parent.key);
   }
 
   [childTriggerSymbol](type: StateChange, key: string) {
     const updated =
-      this.#internal.childUpdate(type, key) | StateChangeType.Child;
-    this.#trigger(updated, StateTriggerFlow.Directional);
+      this.#internal.childUpdate(type, key) | stateChangeType.child;
+    this.trigger(updated, false);
   }
 
   //#endregion
@@ -222,22 +239,26 @@ export class State<Payload> {
   //#endregion
 
   remove() {
-    this.set(undefinedValue, StateTriggerFlow.Bidirectional);
+    this.set(undefinedValue);
   }
 
-  //#region Array
+  //#region Collections
 
-  // @ts-ignore: This is fine
-  map: Payload extends Array<infer Item>
-    ? <Return>(
-        callback: (item: State<Item>, index: number) => Return
-      ) => Return[]
-    : never = (callback: (item: any, index: number) => any) => {
-    if (!(this.#internal instanceof InternalArrayState))
-      throw new Error("State is not an array");
+  forEach: State.ForEachFn<Payload> = ((callback: any) => {
+    if (
+      this.#internal instanceof InternalObjectState ||
+      this.#internal instanceof InternalArrayState
+    )
+      this.#internal.forEach(callback);
+  }) as State.ForEachFn<Payload>;
 
-    return this.#internal.map(callback);
-  };
+  map: State.MapFn<Payload> = ((callback: any) => {
+    if (
+      this.#internal instanceof InternalObjectState ||
+      this.#internal instanceof InternalArrayState
+    )
+      return this.#internal.map(callback);
+  }) as State.MapFn<Payload>;
 
   // @ts-ignore: This is fine
   push: Payload extends Array<infer Item> ? (item: Item) => void : never = (
@@ -247,7 +268,7 @@ export class State<Payload> {
       throw new Error("State is not an array");
 
     const length = this.#internal.push(item);
-    this.#trigger(StateChangeType.ChildAdded, StateTriggerFlow.Bidirectional);
+    this.trigger(stateChangeType.childAdded, true);
     return length;
   };
 
@@ -264,11 +285,18 @@ export class State<Payload> {
 }
 
 export namespace State {
+  //#region Traverse
+
+  export interface Parent<Payload> {
+    key: string;
+    state: State<Payload>;
+  }
+
   export type $<Payload> = Payload extends object
-    ? Object$<Payload>
+    ? $Object<Payload>
     : State<Payload>;
 
-  export type Object$<Payload> = $Fn<Payload> & {
+  export type $Object<Payload> = $Fn<Payload> & {
     [Key in keyof Payload]-?: State<Payload[Key]>;
   };
 
@@ -279,6 +307,8 @@ export namespace State {
       ? Payload[Key]
       : Payload[Key] | undefined
   >;
+
+  //#endregion
 
   //#region Use
 
@@ -355,15 +385,44 @@ export namespace State {
   }
 
   //#endregion
-}
 
-//#endregion
+  //#region Collections
 
-//#region StateParent
+  export type ForEachFn<Payload> = Payload extends Array<any>
+    ? ArrayForEach<Payload>
+    : Payload extends object
+    ? ObjectForEach<Payload>
+    : (cb: never) => never;
 
-export interface StateParent<Payload> {
-  key: string;
-  state: State<Payload>;
+  export type ObjectForEach<Payload extends object> = (
+    callback: <Key extends keyof Payload>(
+      item: State<Payload[Key]>,
+      key: Key
+    ) => void
+  ) => void;
+
+  export type ArrayForEach<Payload extends Array<any>> = (
+    callback: (item: State<Payload[number]>, index: number) => void
+  ) => void;
+
+  export type MapFn<Payload> = Payload extends Array<any>
+    ? ArrayMap<Payload>
+    : Payload extends object
+    ? ObjectMap<Payload>
+    : (cb: never) => never;
+
+  export type ObjectMap<Payload extends object> = <Return>(
+    callback: <Key extends keyof Payload>(
+      item: State<Payload[Key]>,
+      key: Key
+    ) => Return
+  ) => Return[];
+
+  export type ArrayMap<Payload extends Array<any>> = <Return>(
+    callback: (item: State<Payload[number]>, index: number) => Return
+  ) => Return[];
+
+  //#endregion
 }
 
 //#endregion
@@ -401,7 +460,7 @@ export abstract class InternalState<Payload> {
 
   abstract $(): State.$<Payload>;
 
-  childUpdate(type: StateChangeType, _key: string): StateChange {
+  childUpdate(type: StateChange, _key: string): StateChange {
     return type;
   }
 
@@ -425,19 +484,19 @@ export class InternalPrimitiveState<Payload> extends InternalState<Payload> {
   }
 
   set(value: Payload): StateChange | 0 {
-    let changed = 0;
+    let change = 0;
 
     if (this.#value === undefinedValue && value !== undefinedValue)
-      changed |= StateChangeType.Type | StateChangeType.Created;
+      change |= stateChangeType.type | stateChangeType.created;
     else if (this.#value !== undefinedValue && value === undefinedValue)
-      changed |= StateChangeType.Type | StateChangeType.Removed;
+      change |= stateChangeType.type | stateChangeType.removed;
     else if (typeof this.#value !== typeof value)
-      changed |= StateChangeType.Type;
-    else if (this.#value !== value) changed |= StateChangeType.Value;
+      change |= stateChangeType.type;
+    else if (this.#value !== value) change |= stateChangeType.value;
 
     if (this.#value !== value) this.#value = value;
 
-    return changed;
+    return change;
   }
 
   get(): Payload {
@@ -452,9 +511,9 @@ export class InternalPrimitiveState<Payload> extends InternalState<Payload> {
 
   updated(event: StateChangeEvent): boolean {
     return !!(
-      event.detail & StateChangeType.Created ||
-      event.detail & StateChangeType.Removed ||
-      event.detail & StateChangeType.Type
+      event.detail & stateChangeType.created ||
+      event.detail & stateChangeType.removed ||
+      event.detail & stateChangeType.type
     );
   }
 
@@ -484,7 +543,7 @@ export class InternalObjectState<
   }
 
   set(newValue: Payload): StateChange | 0 {
-    let changed = 0;
+    let change = 0;
 
     this.#children.forEach((child, key) => {
       if (!(key in newValue)) {
@@ -492,15 +551,15 @@ export class InternalObjectState<
         child[clearSymbol]();
         // @ts-ignore: This is fine
         this.#undefined.register(key, child);
-        changed |= StateChangeType.ChildRemoved;
+        change |= stateChangeType.childRemoved;
       }
     });
 
     for (const [key, value] of Object.entries(newValue)) {
       const child = this.#children.get(key);
       if (child) {
-        const childChanged = child.set(value, StateTriggerFlow.Directional);
-        if (childChanged) changed |= StateChangeType.Child;
+        const childChange = child.set(value, false);
+        if (childChange) change |= stateChangeType.child;
       } else {
         const undefinedState = this.#undefined.claim(key);
         if (undefinedState) undefinedState[createSymbol](value);
@@ -509,11 +568,11 @@ export class InternalObjectState<
           key,
           undefinedState || new State(value, { key, state: this.external })
         );
-        changed |= StateChangeType.ChildAdded;
+        change |= stateChangeType.childAdded;
       }
     }
 
-    return changed;
+    return change;
   }
 
   get(): Payload {
@@ -528,36 +587,36 @@ export class InternalObjectState<
 
   updated(event: StateChangeEvent): boolean {
     return !!(
-      event.detail & StateChangeType.Created ||
-      event.detail & StateChangeType.Removed ||
-      event.detail & StateChangeType.Type ||
-      event.detail & StateChangeType.ChildRemoved ||
-      event.detail & StateChangeType.ChildAdded
+      event.detail & stateChangeType.created ||
+      event.detail & stateChangeType.removed ||
+      event.detail & stateChangeType.type ||
+      event.detail & stateChangeType.childRemoved ||
+      event.detail & stateChangeType.childAdded
     );
   }
 
-  childUpdate(childChanged: StateChange, key: string): StateChange {
-    let changed = StateChangeType.Child;
+  childUpdate(childChange: StateChange, key: string): StateChange {
+    let change = stateChangeType.child;
 
     // Handle when child goes from undefined to defined
-    if (childChanged & StateChangeType.Created) {
+    if (childChange & stateChangeType.created) {
       const child = this.#undefined.claim(key);
       if (!child)
         throw new Error("Failed to find the child state when updating");
       this.#children.set(key, child);
-      changed |= StateChangeType.ChildAdded;
+      change |= stateChangeType.childAdded;
     }
 
-    if (childChanged & StateChangeType.Removed) {
+    if (childChange & stateChangeType.removed) {
       const child = this.#children.get(key);
       if (!child)
         throw new Error("Failed to find the child state when updating");
       this.#children.delete(key);
       child.unwatch();
-      changed |= StateChangeType.ChildRemoved;
+      change |= stateChangeType.childRemoved;
     }
 
-    return changed;
+    return change;
   }
 
   unwatch() {
@@ -571,6 +630,34 @@ export class InternalObjectState<
 
     return this.#undefined.ensure(key);
   }
+
+  //#region Array methods
+
+  forEach(
+    callback: <Key extends keyof Payload>(
+      item: State<Payload[Key]>,
+      index: Key
+    ) => void
+  ) {
+    this.#children.forEach((state, key) =>
+      callback(state, key as keyof Payload)
+    );
+  }
+
+  map<Return>(
+    callback: <Key extends keyof Payload>(
+      item: State<Payload[Key]>,
+      index: Key
+    ) => Return
+  ): Return[] {
+    const result = [];
+    this.#children.forEach((state, key) =>
+      result.push(callback(state, key as keyof Payload))
+    );
+    return result;
+  }
+
+  //#endregion
 }
 
 //#endregion
@@ -601,7 +688,7 @@ export class InternalArrayState<
   }
 
   set(newValue: Payload): StateChange | 0 {
-    let changed = 0;
+    let change = 0;
 
     this.#children.forEach((item, index) => {
       if (!(index in newValue)) {
@@ -609,15 +696,15 @@ export class InternalArrayState<
         item[clearSymbol]();
         // @ts-ignore: This is fine
         this.#undefined.register(index.toString(), item);
-        changed |= StateChangeType.ChildRemoved;
+        change |= stateChangeType.childRemoved;
       }
     });
 
     this.#children = newValue.map((value, index) => {
       const child = this.#children[index];
       if (child) {
-        const childChanged = child.set(value, StateTriggerFlow.Directional);
-        if (childChanged) changed |= StateChangeType.Child;
+        const childChange = child.set(value, false);
+        if (childChange) change |= stateChangeType.child;
         return child;
       } else {
         const undefinedState = this.#undefined.claim(index.toString());
@@ -630,12 +717,12 @@ export class InternalArrayState<
             // @ts-ignore: This is fine
             state: this.external,
           });
-        changed |= StateChangeType.ChildAdded;
+        change |= stateChangeType.childAdded;
         return newChild;
       }
     });
 
-    return changed;
+    return change;
   }
 
   $(): State.$<Payload> {
@@ -644,38 +731,38 @@ export class InternalArrayState<
 
   updated(event: StateChangeEvent): boolean {
     return !!(
-      event.detail & StateChangeType.Created ||
-      event.detail & StateChangeType.Removed ||
-      event.detail & StateChangeType.Type ||
-      event.detail & StateChangeType.ChildRemoved ||
-      event.detail & StateChangeType.ChildAdded ||
-      event.detail & StateChangeType.ChildrenReordered
+      event.detail & stateChangeType.created ||
+      event.detail & stateChangeType.removed ||
+      event.detail & stateChangeType.type ||
+      event.detail & stateChangeType.childRemoved ||
+      event.detail & stateChangeType.childAdded ||
+      event.detail & stateChangeType.childrenReordered
     );
   }
 
-  childUpdate(childChanged: StateChange, key: string): StateChange {
-    let changed = StateChangeType.Child;
+  childUpdate(childChange: StateChange, key: string): StateChange {
+    let change = stateChangeType.child;
 
     // Handle when child goes from undefined to defined
-    if (childChanged & StateChangeType.Created) {
+    if (childChange & stateChangeType.created) {
       const child = this.#undefined.claim(key);
       if (!child)
         throw new Error("Failed to find the child state when updating");
       this.#children[Number(key)] = child;
-      changed |= StateChangeType.ChildAdded;
+      change |= stateChangeType.childAdded;
     }
 
     // Handle when child goes from defined to undefined
-    if (childChanged & StateChangeType.Removed) {
+    if (childChange & stateChangeType.removed) {
       const child = this.#children[Number(key)];
       if (!child)
         throw new Error("Failed to find the child state when updating");
       delete this.#children[Number(key)];
       child.unwatch();
-      changed |= StateChangeType.ChildRemoved;
+      change |= stateChangeType.childRemoved;
     }
 
-    return changed;
+    return change;
   }
 
   unwatch() {
@@ -695,6 +782,10 @@ export class InternalArrayState<
 
   get length(): number {
     return this.#children.length;
+  }
+
+  forEach(callback: (item: Payload[number], index: number) => void) {
+    this.#children.forEach(callback);
   }
 
   map<Return>(
@@ -773,42 +864,31 @@ export class UndefinedStateRegistry {
 
 export type StateChange = number;
 
-export enum StateChangeType {
-  /** Nothing has changed, the initial value. */
-  Nothing = 0, // 0
+export const stateChangeType = {
+  /** Nothing has change, the initial value. */
+  nothing: 0,
   /** The state has been inserted into an object or an array. */
-  Created = 0b00000001, // 1
+  created: 0b00000001, // 1
   /** The state has been removed from an object or an array. */
-  Removed = 0b00000010, // 2
-  /** The primitive value of the state has changed. */
-  Value = 0b00000100, // 4
-  /** The type of the state has changed. */
-  Type = 0b00001000, // 8
-  /** An object field or an array item has changed. */
-  Child = 0b00010000, // 16
+  removed: 0b00000010, // 2
+  /** The primitive value of the state has change. */
+  value: 0b00000100, // 4
+  /** The type of the state has change. */
+  type: 0b00001000, // 8
+  /** An object field or an array item has change. */
+  child: 0b00010000, // 16
   /** An object field or an array item has been removed. */
-  ChildRemoved = 0b00100000, // 32
+  childRemoved: 0b00100000, // 32
   /** An object field or an array item has been added. */
-  ChildAdded = 0b01000000, // 64
-  /** The order of array items has changed. */
-  ChildrenReordered = 0b100000000, // 128
-}
+  childAdded: 0b01000000, // 64
+  /** The order of array items has change. */
+  childrenReordered: 0b100000000, // 128
+};
 
 export class StateChangeEvent extends CustomEvent<StateChange> {
   constructor(type: StateChange) {
     super("change", { detail: type });
   }
-}
-
-//#endregion
-
-//#region
-
-export enum StateTriggerFlow {
-  /** Parent updates its children, so no need to go upstream. */
-  Directional,
-  /** Child updates its parents. */
-  Bidirectional,
 }
 
 //#endregion

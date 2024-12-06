@@ -1,5 +1,4 @@
-import { useEffect, useMemo, useRef } from "react";
-import { useRerender } from "../hooks/rerender.ts";
+import { useEffect, useMemo } from "react";
 
 export function intoMixin(Self) {
   return function into(intoCallback) {
