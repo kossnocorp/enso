@@ -63,255 +63,387 @@ describe("State", () => {
     });
   });
 
-  describe("set", () => {
-    describe("primitive", () => {
-      it("sets a new state", () => {
+  describe("value", () => {
+    describe("set", () => {
+      describe("primitive", () => {
+        it("sets a new state", () => {
+          const state = new State(42);
+          state.set(43);
+          expect(state.get()).toBe(43);
+        });
+
+        it("returns 0 if the state has not changed", () => {
+          const state = new State(42);
+          expect(state.set(42)).toBe(0);
+        });
+
+        it("returns value change type if the state has changed", () => {
+          const state = new State(42);
+          expect(state.set(43)).toBe(stateChangeType.value);
+        });
+
+        it("returns value change type if the state has changed", () => {
+          const state = new State<number | string>(42);
+          expect(state.set("42")).toBe(stateChangeType.type);
+        });
+      });
+
+      describe("object", () => {
+        it("sets the object state", () => {
+          const state = new State<{ num?: number; str?: string }>({ num: 42 });
+          state.set({ num: 43 });
+          expect(state.get()).toEqual({ num: 43 });
+          state.set({ num: 44, str: "hello" });
+          expect(state.get()).toEqual({ num: 44, str: "hello" });
+          state.set({ str: "world" });
+          expect(state.get()).toEqual({ str: "world" });
+          state.set({});
+          expect(state.get()).toEqual({});
+        });
+
+        it("returns 0 if the state has not changed", () => {
+          const state = new State({ num: 42 });
+          expect(state.set({ num: 42 })).toBe(0);
+        });
+
+        it("returns child change type if a child state has changed", () => {
+          const state = new State({ num: 42 });
+          expect(state.set({ num: 43 })).toBe(stateChangeType.child);
+        });
+
+        it("returns added change type if a child has been added", () => {
+          const state = new State<{ num?: number; str?: string }>({ num: 42 });
+          expect(state.set({ num: 42, str: "hello" })).toBe(
+            stateChangeType.childAdded
+          );
+        });
+
+        it("returns remove change type if a child has been removed", () => {
+          const state = new State<{ num?: number; str?: string }>({ num: 42 });
+          expect(state.set({})).toBe(stateChangeType.childRemoved);
+        });
+
+        it("returns combined change type", () => {
+          const state = new State<{
+            num?: number;
+            str?: string;
+            bool?: boolean;
+          }>({ num: 42, str: "hello" });
+          const change = state.set({ num: 43, bool: true });
+          expect(change & stateChangeType.child).toBe(stateChangeType.child);
+          expect(change & stateChangeType.childAdded).toBe(
+            stateChangeType.childAdded
+          );
+          expect(change & stateChangeType.childRemoved).toBe(
+            stateChangeType.childRemoved
+          );
+        });
+
+        it("does not trigger states updates when removing", () => {
+          const state = new State<{ num?: number; str?: string }>({ num: 42 });
+          const spy = vi.fn();
+          state.$.num?.watch(spy);
+          state.set({ num: 43 });
+          expect(spy).toHaveBeenCalledWith(
+            43,
+            expect.objectContaining({ detail: stateChangeType.value })
+          );
+          state.set({ str: "hello" });
+          expect(spy).toHaveBeenCalledOnce();
+        });
+
+        it("preserves removed states", () => {
+          const state = new State<{ num?: number; str?: string }>({ num: 42 });
+          const spy = vi.fn();
+          const numA = state.$.num;
+          numA?.watch(spy);
+          state.set({ num: 43 });
+          expect(spy).toHaveBeenCalledWith(
+            43,
+            expect.objectContaining({ detail: stateChangeType.value })
+          );
+          state.set({ str: "hello" });
+          state.set({ num: 44, str: "hello" });
+          const numB = state.$.num;
+          expect(numA).toBeInstanceOf(State);
+          expect(numA).toBe(numB);
+          expect(spy).toHaveBeenCalledWith(
+            44,
+            expect.objectContaining({
+              detail: stateChangeType.type | stateChangeType.created,
+            })
+          );
+        });
+
+        it("indicates no type change on adding undefined", () => {
+          const state = new State<{ num?: number | undefined; str?: string }>({
+            num: 42,
+          });
+          const spy = vi.fn();
+          const numA = state.$.num;
+          numA?.watch(spy);
+          state.set({ num: 43 });
+          expect(spy).toHaveBeenCalledWith(
+            43,
+            expect.objectContaining({ detail: stateChangeType.value })
+          );
+          state.set({ str: "hello" });
+          state.set({ num: undefined, str: "hello" });
+          expect(spy).toHaveBeenCalledWith(
+            undefined,
+            expect.objectContaining({
+              // This test lacks StateChangeType.Type unlike the above,
+              // indicating that the value is still undefined
+              detail: stateChangeType.created,
+            })
+          );
+        });
+      });
+
+      describe("array", () => {
+        it("sets the array state", () => {
+          const state = new State<number[]>([1, 2, 3, 4, 5]);
+          state.set([1, 2, 3]);
+          expect(state.get()).toEqual([1, 2, 3]);
+          state.set([1, 2, 3, 4]);
+          expect(state.get()).toEqual([1, 2, 3, 4]);
+          const arr = new Array(5);
+          arr[3] = 5;
+          state.set(arr);
+          expect(state.get()).toEqual(arr);
+          state.set([]);
+          expect(state.get()).toEqual([]);
+        });
+
+        it("returns 0 if the state has not changed", () => {
+          const state = new State([1, 2, 3]);
+          expect(state.set([1, 2, 3])).toBe(0);
+        });
+
+        it("returns child change type if a child state has changed", () => {
+          const state = new State([1, 2, 3]);
+          expect(state.set([1, 2, 1])).toBe(stateChangeType.child);
+        });
+
+        it("returns added change type if a child has been added", () => {
+          const state = new State([1, 2, 3]);
+          expect(state.set([1, 2, 3, 4])).toBe(stateChangeType.childAdded);
+        });
+
+        it("returns remove change type if a child has been removed", () => {
+          const state = new State([1, 2, 3]);
+          expect(state.set([1, 2])).toBe(stateChangeType.childRemoved);
+        });
+
+        it("returns combined change type", () => {
+          const state = new State([1, 2]);
+          const arr = [0, 2, 3];
+          delete arr[1];
+          const change = state.set(arr);
+          expect(change & stateChangeType.child).toBe(stateChangeType.child);
+          expect(change & stateChangeType.childAdded).toBe(
+            stateChangeType.childAdded
+          );
+          expect(change & stateChangeType.childRemoved).toBe(
+            stateChangeType.childRemoved
+          );
+        });
+
+        it("does not trigger item updates when removing", () => {
+          const state = new State<number[]>([1, 2, 3, 4]);
+          const spy = vi.fn();
+          state.$[2]?.watch(spy);
+          state.set([1, 2, 33, 4]);
+          expect(spy).toHaveBeenCalledWith(
+            33,
+            expect.objectContaining({
+              detail: stateChangeType.value,
+            })
+          );
+          state.set([1, 2]);
+          expect(spy).toHaveBeenCalledOnce();
+        });
+
+        it("preserves removed items", () => {
+          const state = new State<number[]>([1, 2, 3, 4]);
+          const spy = vi.fn();
+          const itemA = state.$(2);
+          itemA.watch(spy);
+          state.set([1, 2, 33, 4]);
+          expect(spy).toHaveBeenCalledWith(
+            33,
+            expect.objectContaining({ detail: stateChangeType.value })
+          );
+          state.set([1, 2]);
+          state.set([1, 2, 333]);
+          const itemB = state.$(2);
+          expect(itemA).toBeInstanceOf(State);
+          expect(itemA).toBe(itemB);
+          expect(spy).toHaveBeenCalledWith(
+            333,
+            expect.objectContaining({
+              detail: stateChangeType.type | stateChangeType.created,
+            })
+          );
+        });
+
+        it("indicates no type change on adding undefined", () => {
+          const state = new State<Array<number | undefined>>([1, 2, 3, 4]);
+          const spy = vi.fn();
+          const itemA = state.$(2);
+          itemA.watch(spy);
+          state.set([1, 2, 33, 4]);
+          expect(spy).toHaveBeenCalledWith(
+            33,
+            expect.objectContaining({ detail: stateChangeType.value })
+          );
+          state.set([1, 2]);
+          state.set([1, 2, undefined]);
+          expect(spy).toHaveBeenCalledWith(
+            undefined,
+            expect.objectContaining({
+              // This test lacks StateChangeType.Type unlike the above,
+              // indicating that the value is still undefined
+              detail: stateChangeType.created,
+            })
+          );
+        });
+
+        it("does not trigger update when setting undefined value to undefined value", () => {
+          const state = new State<number[]>([1, 2, 3, 4]);
+          // @ts-ignore: This is fine
+          expect(state.$(5).set(undefinedValue)).toBe(0);
+        });
+      });
+    });
+
+    describe("initial", () => {
+      it("returns the initial state", () => {
         const state = new State(42);
         state.set(43);
-        expect(state.get()).toBe(43);
+        expect(state.initial).toBe(42);
       });
 
-      it("returns 0 if the state has not changed", () => {
-        const state = new State(42);
-        expect(state.set(42)).toBe(0);
-      });
-
-      it("returns value change type if the state has changed", () => {
-        const state = new State(42);
-        expect(state.set(43)).toBe(stateChangeType.value);
-      });
-
-      it("returns value change type if the state has changed", () => {
-        const state = new State<number | string>(42);
-        expect(state.set("42")).toBe(stateChangeType.type);
+      it("preserves the initial value on type change", () => {
+        const state = new State<number | object>(42);
+        state.set({ hello: "world" });
+        expect(state.initial).toBe(42);
       });
     });
 
-    describe("object", () => {
-      it("sets the object state", () => {
-        const state = new State<{ num?: number; str?: string }>({ num: 42 });
-        state.set({ num: 43 });
-        expect(state.get()).toEqual({ num: 43 });
-        state.set({ num: 44, str: "hello" });
-        expect(state.get()).toEqual({ num: 44, str: "hello" });
-        state.set({ str: "world" });
-        expect(state.get()).toEqual({ str: "world" });
-        state.set({});
-        expect(state.get()).toEqual({});
-      });
-
-      it("returns 0 if the state has not changed", () => {
-        const state = new State({ num: 42 });
-        expect(state.set({ num: 42 })).toBe(0);
-      });
-
-      it("returns child change type if a child state has changed", () => {
-        const state = new State({ num: 42 });
-        expect(state.set({ num: 43 })).toBe(stateChangeType.child);
-      });
-
-      it("returns added change type if a child has been added", () => {
-        const state = new State<{ num?: number; str?: string }>({ num: 42 });
-        expect(state.set({ num: 42, str: "hello" })).toBe(
-          stateChangeType.childAdded
-        );
-      });
-
-      it("returns remove change type if a child has been removed", () => {
-        const state = new State<{ num?: number; str?: string }>({ num: 42 });
-        expect(state.set({})).toBe(stateChangeType.childRemoved);
-      });
-
-      it("returns combined change type", () => {
-        const state = new State<{
-          num?: number;
-          str?: string;
-          bool?: boolean;
-        }>({ num: 42, str: "hello" });
-        const change = state.set({ num: 43, bool: true });
-        expect(change & stateChangeType.child).toBe(stateChangeType.child);
-        expect(change & stateChangeType.childAdded).toBe(
-          stateChangeType.childAdded
-        );
-        expect(change & stateChangeType.childRemoved).toBe(
-          stateChangeType.childRemoved
-        );
-      });
-
-      it("does not trigger states updates when removing", () => {
-        const state = new State<{ num?: number; str?: string }>({ num: 42 });
-        const spy = vi.fn();
-        state.$.num?.watch(spy);
-        state.set({ num: 43 });
-        expect(spy).toHaveBeenCalledWith(
-          43,
-          expect.objectContaining({ detail: stateChangeType.value })
-        );
-        state.set({ str: "hello" });
-        expect(spy).toHaveBeenCalledOnce();
-      });
-
-      it("preserves removed states", () => {
-        const state = new State<{ num?: number; str?: string }>({ num: 42 });
-        const spy = vi.fn();
-        const numA = state.$.num;
-        numA?.watch(spy);
-        state.set({ num: 43 });
-        expect(spy).toHaveBeenCalledWith(
-          43,
-          expect.objectContaining({ detail: stateChangeType.value })
-        );
-        state.set({ str: "hello" });
-        state.set({ num: 44, str: "hello" });
-        const numB = state.$.num;
-        expect(numA).toBeInstanceOf(State);
-        expect(numA).toBe(numB);
-        expect(spy).toHaveBeenCalledWith(
-          44,
-          expect.objectContaining({
-            detail: stateChangeType.type | stateChangeType.created,
-          })
-        );
-      });
-
-      it("indicates no type change on adding undefined", () => {
-        const state = new State<{ num?: number | undefined; str?: string }>({
-          num: 42,
+    describe("dirty", () => {
+      describe("primitive", () => {
+        it("returns true if the state has changed", () => {
+          const state = new State(42);
+          expect(state.dirty).toBe(false);
+          state.set(43);
+          expect(state.dirty).toBe(true);
         });
-        const spy = vi.fn();
-        const numA = state.$.num;
-        numA?.watch(spy);
-        state.set({ num: 43 });
-        expect(spy).toHaveBeenCalledWith(
-          43,
-          expect.objectContaining({ detail: stateChangeType.value })
-        );
-        state.set({ str: "hello" });
-        state.set({ num: undefined, str: "hello" });
-        expect(spy).toHaveBeenCalledWith(
-          undefined,
-          expect.objectContaining({
-            // This test lacks StateChangeType.Type unlike the above,
-            // indicating that the value is still undefined
-            detail: stateChangeType.created,
-          })
-        );
-      });
-    });
 
-    describe("array", () => {
-      it("sets the array state", () => {
-        const state = new State<number[]>([1, 2, 3, 4, 5]);
-        state.set([1, 2, 3]);
-        expect(state.get()).toEqual([1, 2, 3]);
-        state.set([1, 2, 3, 4]);
-        expect(state.get()).toEqual([1, 2, 3, 4]);
-        const arr = new Array(5);
-        arr[3] = 5;
-        state.set(arr);
-        expect(state.get()).toEqual(arr);
-        state.set([]);
-        expect(state.get()).toEqual([]);
+        it("returns false after restoring to the initial value", () => {
+          const state = new State(42);
+          expect(state.dirty).toBe(false);
+          state.set(43);
+          state.set(42);
+          expect(state.dirty).toBe(false);
+        });
       });
 
-      it("returns 0 if the state has not changed", () => {
-        const state = new State([1, 2, 3]);
-        expect(state.set([1, 2, 3])).toBe(0);
+      describe("object", () => {
+        it("returns true if any of the children has changed", () => {
+          const state = new State({ name: { first: "Alexander", last: "" } });
+          expect(state.dirty).toBe(false);
+          expect(state.$.name.dirty).toBe(false);
+          expect(state.$.name.$.first.dirty).toBe(false);
+          expect(state.$.name.$.last.dirty).toBe(false);
+          state.$.name.$.first.set("Sasha");
+          expect(state.dirty).toBe(true);
+          expect(state.$.name.dirty).toBe(true);
+          expect(state.$.name.$.first.dirty).toBe(true);
+          expect(state.$.name.$.last.dirty).toBe(false);
+        });
+
+        it("returns false after restoring to the initial value", () => {
+          const state = new State({ name: { first: "Alexander", last: "" } });
+          state.$.name.$.first.set("Sasha");
+          state.$.name.$.first.set("Alexander");
+          expect(state.dirty).toBe(false);
+          expect(state.$.name.dirty).toBe(false);
+          expect(state.$.name.$.first.dirty).toBe(false);
+          expect(state.$.name.$.last.dirty).toBe(false);
+        });
+
+        it("returns true if a child changed type", () => {
+          const state = new State<{
+            name: { first: string; last: string } | string;
+          }>({ name: { first: "Alexander", last: "" } });
+          expect(state.dirty).toBe(false);
+          expect(state.$.name.dirty).toBe(false);
+          state.$.name.set("Alexander");
+          expect(state.dirty).toBe(true);
+          expect(state.$.name.dirty).toBe(true);
+        });
+
+        it("returns true if a child changed shape", () => {
+          const state = new State<{
+            name: { first?: string; last?: string };
+          }>({ name: { first: "Alexander" } });
+          expect(state.dirty).toBe(false);
+          expect(state.$.name.dirty).toBe(false);
+          state.$.name.set({ last: "Koss" });
+          expect(state.dirty).toBe(true);
+          expect(state.$.name.dirty).toBe(true);
+          expect(state.$.name.$.last.dirty).toBe(false);
+        });
       });
 
-      it("returns child change type if a child state has changed", () => {
-        const state = new State([1, 2, 3]);
-        expect(state.set([1, 2, 1])).toBe(stateChangeType.child);
-      });
+      describe("object", () => {
+        it("returns true if any of the items has changed", () => {
+          const state = new State<number[][]>([[1, 2], [3]]);
+          expect(state.dirty).toBe(false);
+          expect(state.$(0).dirty).toBe(false);
+          expect(state.$(0).$(0).dirty).toBe(false);
+          expect(state.$(0).$(1).dirty).toBe(false);
+          expect(state.$(1).$(0).dirty).toBe(false);
+          state.$(1).$(0).set(5);
+          expect(state.dirty).toBe(true);
+          expect(state.$(0).dirty).toBe(false);
+          expect(state.$(0).$(0).dirty).toBe(false);
+          expect(state.$(0).$(1).dirty).toBe(false);
+          expect(state.$(1).$(0).dirty).toBe(true);
+        });
 
-      it("returns added change type if a child has been added", () => {
-        const state = new State([1, 2, 3]);
-        expect(state.set([1, 2, 3, 4])).toBe(stateChangeType.childAdded);
-      });
+        it("returns false after restoring to the initial value", () => {
+          const state = new State<number[][]>([[1, 2], [3]]);
+          state.$(1).$(0).set(5);
+          state.$(1).$(0).set(3);
+          expect(state.dirty).toBe(false);
+          expect(state.$(0).dirty).toBe(false);
+          expect(state.$(0).$(0).dirty).toBe(false);
+          expect(state.$(0).$(1).dirty).toBe(false);
+          expect(state.$(1).$(0).dirty).toBe(false);
+        });
 
-      it("returns remove change type if a child has been removed", () => {
-        const state = new State([1, 2, 3]);
-        expect(state.set([1, 2])).toBe(stateChangeType.childRemoved);
-      });
+        it("returns true if a child changed type", () => {
+          const state = new State<Array<string | object>>(["hello", {}]);
+          expect(state.dirty).toBe(false);
+          state.$(0).set({});
+          expect(state.dirty).toBe(true);
+          expect(state.$(0).dirty).toBe(true);
+          expect(state.$(1).dirty).toBe(false);
+        });
 
-      it("returns combined change type", () => {
-        const state = new State([1, 2]);
-        const arr = [0, 2, 3];
-        delete arr[1];
-        const change = state.set(arr);
-        expect(change & stateChangeType.child).toBe(stateChangeType.child);
-        expect(change & stateChangeType.childAdded).toBe(
-          stateChangeType.childAdded
-        );
-        expect(change & stateChangeType.childRemoved).toBe(
-          stateChangeType.childRemoved
-        );
-      });
-
-      it("does not trigger item updates when removing", () => {
-        const state = new State<number[]>([1, 2, 3, 4]);
-        const spy = vi.fn();
-        state.$[2]?.watch(spy);
-        state.set([1, 2, 33, 4]);
-        expect(spy).toHaveBeenCalledWith(
-          33,
-          expect.objectContaining({
-            detail: stateChangeType.value,
-          })
-        );
-        state.set([1, 2]);
-        expect(spy).toHaveBeenCalledOnce();
-      });
-
-      it("preserves removed items", () => {
-        const state = new State<number[]>([1, 2, 3, 4]);
-        const spy = vi.fn();
-        const itemA = state.$(2);
-        itemA.watch(spy);
-        state.set([1, 2, 33, 4]);
-        expect(spy).toHaveBeenCalledWith(
-          33,
-          expect.objectContaining({ detail: stateChangeType.value })
-        );
-        state.set([1, 2]);
-        state.set([1, 2, 333]);
-        const itemB = state.$(2);
-        expect(itemA).toBeInstanceOf(State);
-        expect(itemA).toBe(itemB);
-        expect(spy).toHaveBeenCalledWith(
-          333,
-          expect.objectContaining({
-            detail: stateChangeType.type | stateChangeType.created,
-          })
-        );
-      });
-
-      it("indicates no type change on adding undefined", () => {
-        const state = new State<Array<number | undefined>>([1, 2, 3, 4]);
-        const spy = vi.fn();
-        const itemA = state.$(2);
-        itemA.watch(spy);
-        state.set([1, 2, 33, 4]);
-        expect(spy).toHaveBeenCalledWith(
-          33,
-          expect.objectContaining({ detail: stateChangeType.value })
-        );
-        state.set([1, 2]);
-        state.set([1, 2, undefined]);
-        expect(spy).toHaveBeenCalledWith(
-          undefined,
-          expect.objectContaining({
-            // This test lacks StateChangeType.Type unlike the above,
-            // indicating that the value is still undefined
-            detail: stateChangeType.created,
-          })
-        );
-      });
-
-      it("does not trigger update when setting undefined value to undefined value", () => {
-        const state = new State<number[]>([1, 2, 3, 4]);
-        // @ts-ignore: This is fine
-        expect(state.$(5).set(undefinedValue)).toBe(0);
+        it("returns true if a child changed shape", () => {
+          const state = new State<Array<{ first?: string; last?: string }>>([
+            { first: "Alexander" },
+            { first: "Sasha" },
+          ]);
+          expect(state.dirty).toBe(false);
+          state.$(0).set({ last: "Koss" });
+          expect(state.dirty).toBe(true);
+          expect(state.$(0).dirty).toBe(true);
+          expect(state.$(1).dirty).toBe(false);
+        });
       });
     });
   });
@@ -680,104 +812,108 @@ describe("State", () => {
     });
   });
 
-  describe("state", () => {
-    describe("register", () => {
+  describe("input", () => {
+    describe("input", () => {
       it("generates props for a state", () => {
         const state = new State({ name: { first: "Alexander" } });
-        const props = state.$.name.$.first.register();
+        const props = state.$.name.$.first.input();
         expect(props.name).toEqual("name.first");
         expect(props.ref).toBe(state.$.name.$.first.ref);
       });
 
       it("assigns . name for the root state", () => {
         const state = new State({ name: { first: "Alexander" } });
-        const props = state.register();
+        const props = state.input();
         expect(props.name).toEqual(".");
       });
     });
+  });
 
-    describe("errors", () => {
-      describe("setError", () => {
-        it("assigns an error to the state", () => {
+  describe("errors", () => {
+    describe("setError", () => {
+      it("assigns an error to the state", () => {
+        const state = new State(42);
+        state.setError("Something went wrong");
+        expect(state.error).toEqual({ message: "Something went wrong" });
+      });
+
+      it("allows to pass error object", () => {
+        const state = new State(42);
+        state.setError({ type: "internal", message: "Something went wrong" });
+        expect(state.error).toEqual({
+          type: "internal",
+          message: "Something went wrong",
+        });
+      });
+
+      it("allows to clear the error", () => {
+        const state = new State(42);
+        state.setError("Something went wrong");
+        state.setError();
+        expect(state.error).toBe(undefined);
+      });
+
+      it("triggers the invalid update", () =>
+        new Promise<void>((resolve) => {
           const state = new State(42);
+          const spy = vi.fn();
+          state.watch(spy);
           state.setError("Something went wrong");
-          expect(state.error).toEqual({ message: "Something went wrong" });
-        });
-
-        it("allows to pass error object", () => {
-          const state = new State(42);
-          state.setError({ type: "internal", message: "Something went wrong" });
-          expect(state.error).toEqual({
-            type: "internal",
-            message: "Something went wrong",
+          setTimeout(() => {
+            expect(spy).toHaveBeenCalledWith(
+              42,
+              expect.objectContaining({ detail: stateChangeType.invalid })
+            );
+            resolve();
           });
-        });
+        }));
 
-        it("allows to clear the error", () => {
+      it("clearing triggers the valid update", () =>
+        new Promise<void>((resolve) => {
           const state = new State(42);
+          const spy = vi.fn();
+          state.watch(spy);
           state.setError("Something went wrong");
           state.setError();
-          expect(state.error).toBe(undefined);
+          setTimeout(() => {
+            expect(spy).toHaveBeenCalledTimes(2);
+            expect(spy).toHaveBeenCalledWith(
+              42,
+              expect.objectContaining({ detail: stateChangeType.valid })
+            );
+            resolve();
+          });
+        }));
+    });
+
+    describe("errors", () => {
+      it("collects map all children errors", () => {
+        const state = new State({
+          name: { first: "" },
+          age: 370,
+          ids: [123, 456],
         });
-
-        it("triggers the invalid update", () =>
-          new Promise<void>((resolve) => {
-            const state = new State(42);
-            const spy = vi.fn();
-            state.watch(spy);
-            state.setError("Something went wrong");
-            setTimeout(() => {
-              expect(spy).toHaveBeenCalledWith(
-                42,
-                expect.objectContaining({ detail: stateChangeType.invalid })
-              );
-              resolve();
-            });
-          }));
-
-        it("clearing triggers the valid update", () =>
-          new Promise<void>((resolve) => {
-            const state = new State(42);
-            const spy = vi.fn();
-            state.watch(spy);
-            state.setError("Something went wrong");
-            state.setError();
-            setTimeout(() => {
-              expect(spy).toHaveBeenCalledTimes(2);
-              expect(spy).toHaveBeenCalledWith(
-                42,
-                expect.objectContaining({ detail: stateChangeType.valid })
-              );
-              resolve();
-            });
-          }));
-      });
-
-      describe("errors", () => {
-        it("collects map all children errors", () => {
-          const state = new State({
-            name: { first: "" },
-            age: 370,
-            ids: [123, 456],
-          });
-          state.setError("Something is wrong");
-          state.$.age.setError("Are you an immortal?");
-          state.$.name.$.first.setError("First name is required");
-          state.$.ids.$(1).setError("Is it a valid ID?");
-          const { errors } = state;
-          expect(errors.size).toBe(4);
-          expect(errors.get(state)).toEqual({ message: "Something is wrong" });
-          expect(errors.get(state.$.age)).toEqual({
-            message: "Are you an immortal?",
-          });
-          expect(errors.get(state.$.name.$.first)).toEqual({
-            message: "First name is required",
-          });
-          expect(errors.get(state.$.ids.$(1))).toEqual({
-            message: "Is it a valid ID?",
-          });
+        state.setError("Something is wrong");
+        state.$.age.setError("Are you an immortal?");
+        state.$.name.$.first.setError("First name is required");
+        state.$.ids.$(1).setError("Is it a valid ID?");
+        const { errors } = state;
+        expect(errors.size).toBe(4);
+        expect(errors.get(state)).toEqual({ message: "Something is wrong" });
+        expect(errors.get(state.$.age)).toEqual({
+          message: "Are you an immortal?",
+        });
+        expect(errors.get(state.$.name.$.first)).toEqual({
+          message: "First name is required",
+        });
+        expect(errors.get(state.$.ids.$(1))).toEqual({
+          message: "Is it a valid ID?",
         });
       });
+    });
+
+    describe("valid", () => {
+      it.todo("is false if any of the children is invalid");
     });
   });
 });

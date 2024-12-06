@@ -38,13 +38,14 @@ export class State<Payload> {
   #use: State.Use<Payload>;
   #onInput;
 
-  value: Payload;
-
   // @ts-ignore
   #internal = new InternalPrimitiveState(this, undefinedValue);
 
+  #initial: Payload;
+
   constructor(value: Payload, parent?: State.Parent<any>) {
-    this.value = value;
+    this.#initial = value;
+
     this.#set(value);
     this.#parent = parent;
 
@@ -81,8 +82,12 @@ export class State<Payload> {
     };
 
     this.set = this.set.bind(this);
-    this.Control = this.Control.bind(this);
+    this.Input = this.Input.bind(this);
     this.ref = this.ref.bind(this);
+  }
+
+  #clearCache() {
+    this.#cachedDirty = undefined;
   }
 
   //#region Attributes
@@ -105,6 +110,8 @@ export class State<Payload> {
 
   //#endregion
 
+  //#region Value
+
   get(): Payload {
     return this.#internal.get();
   }
@@ -113,6 +120,7 @@ export class State<Payload> {
   set(value: Payload | UndefinedValue, notifyParents = true): StateChange | 0 {
     const change = this.#set(value);
     if (change) this.trigger(change, notifyParents);
+
     return change;
   }
 
@@ -145,6 +153,21 @@ export class State<Payload> {
   [clearSymbol]() {
     this.#internal.set(undefined as Payload);
   }
+
+  #cachedDirty: boolean | undefined;
+
+  get initial(): Payload {
+    return this.#initial;
+  }
+
+  get dirty(): boolean {
+    if (this.#cachedDirty === undefined) {
+      this.#cachedDirty = this.#internal.dirty(this.#initial);
+    }
+    return this.#cachedDirty;
+  }
+
+  //#endregion
 
   get $(): State.$<Payload> {
     return this.#internal.$();
@@ -188,6 +211,8 @@ export class State<Payload> {
   }
 
   trigger(change: StateChange, notifyParents: boolean = false) {
+    this.#clearCache();
+
     this.#target.dispatchEvent(new StateChangeEvent(change));
     // If the updates should flow upstream to parents too
     if (notifyParents)
@@ -197,7 +222,7 @@ export class State<Payload> {
   [childTriggerSymbol](type: StateChange, key: string) {
     const updated =
       this.#internal.childUpdate(type, key) | stateChangeType.child;
-    this.trigger(updated, false);
+    this.trigger(updated, true);
   }
 
   //#endregion
@@ -285,9 +310,9 @@ export class State<Payload> {
 
   //#region Field
 
-  //#region Control
+  //#region Input
 
-  Control(props: State.ControlProps<Payload>): React.ReactNode {
+  Input(props: State.InputProps<Payload>): React.ReactNode {
     // [TODO] Watch for changes and trigger rerender
 
     return props.render({
@@ -300,7 +325,7 @@ export class State<Payload> {
     });
   }
 
-  register<Element extends HTMLElement>(): State.Registration<Element> {
+  input<Element extends HTMLElement>(): State.Registration<Element> {
     return {
       name: this.path.join(".") || ".",
       ref: this.ref,
@@ -373,10 +398,6 @@ export class State<Payload> {
     return false;
   }
 
-  get dirty(): boolean {
-    return false;
-  }
-
   //#endregion
 }
 
@@ -398,11 +419,7 @@ export namespace State {
 
   export type $Fn<Payload> = <Key extends keyof Payload>(
     key: Key
-  ) => State<
-    EnsoUtils.StaticKey<Payload, Key> extends true
-      ? Payload[Key]
-      : Payload[Key] | undefined
-  >;
+  ) => State<Payload[Key]>;
 
   //#endregion
 
@@ -520,17 +537,15 @@ export namespace State {
 
   //#endregion
 
-  //#region Control
+  //#region Input
 
-  export interface ControlProps<Payload> {
-    render: ControlRender<Payload>;
+  export interface InputProps<Payload> {
+    render: InputRender<Payload>;
   }
 
-  export type ControlRender<Payload> = (
-    control: Control<Payload>
-  ) => React.ReactNode;
+  export type InputRender<Payload> = (input: Input<Payload>) => React.ReactNode;
 
-  export interface Control<Payload> {
+  export interface Input<Payload> {
     value: Payload;
     onChange: OnChange<Payload>;
     onBlur: OnBlur;
@@ -629,6 +644,8 @@ export abstract class InternalState<Payload> {
 
   abstract updated(event: StateChangeEvent): boolean;
 
+  abstract dirty(value: Payload): boolean;
+
   protected get external() {
     return this.#external;
   }
@@ -681,6 +698,10 @@ export class InternalPrimitiveState<Payload> extends InternalState<Payload> {
   }
 
   unwatch() {}
+
+  dirty(initial: Payload): boolean {
+    return initial !== this.#value;
+  }
 }
 
 //#endregion
@@ -792,6 +813,22 @@ export class InternalObjectState<
     if (field) return field;
 
     return this.#undefined.ensure(key);
+  }
+
+  dirty(initial: Payload): boolean {
+    if (!initial || typeof initial !== "object" || Array.isArray(initial))
+      return true;
+
+    const entries = Object.entries(initial);
+    if (entries.length !== this.#children.size) return true;
+
+    for (const [key, value] of entries) {
+      const state = this.#children.get(key);
+
+      if (!state || state.initial !== value || state.dirty) return true;
+    }
+
+    return false;
   }
 
   //#region Array methods
@@ -939,6 +976,22 @@ export class InternalArrayState<
 
     const indexStr = index.toString();
     return this.#undefined.ensure(indexStr);
+  }
+
+  dirty(initial: Payload): boolean {
+    if (!initial || typeof initial !== "object" || !Array.isArray(initial))
+      return true;
+
+    if (initial.length !== this.#children.length) return true;
+
+    for (const index in initial) {
+      const value = initial[index];
+      const state = this.#children[index];
+
+      if (!state || state.initial !== value || state.dirty) return true;
+    }
+
+    return false;
   }
 
   //#region Array methods

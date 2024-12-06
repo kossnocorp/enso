@@ -133,7 +133,7 @@ describe("State", () => {
             <div>
               <input
                 data-testid="input-name-first"
-                {...(name.state as State<UserName>).$.first.register()}
+                {...(name.state as State<UserName>).$.first.input()}
               />
 
               <button onClick={() => address.$.name.set("Alex")}>
@@ -516,7 +516,7 @@ function UserNameComponent(props: UserNameComponentProps) {
       <div data-testid={`name-first-${index}`}>{first}</div>
       <div data-testid={`name-last-${index}`}>{last}</div>
 
-      <name.$.first.Control
+      <name.$.first.Input
         render={(control) => (
           <input
             data-testid={`name-first-${index}-input`}
@@ -526,7 +526,7 @@ function UserNameComponent(props: UserNameComponentProps) {
         )}
       />
 
-      <name.$.last.Control
+      <name.$.last.Input
         render={(control) => (
           <input
             data-testid={`name-last-${index}-input`}
@@ -558,7 +558,7 @@ function UserNameFormComponent(props: UserNameFormComponentProps) {
           props.onSubmit(state.get());
         }}
       >
-        <state.$.first.Control
+        <state.$.first.Input
           render={(control) => (
             <input
               data-testid="input-name-first"
@@ -568,7 +568,7 @@ function UserNameFormComponent(props: UserNameFormComponentProps) {
           )}
         />
 
-        <state.$.last.Control
+        <state.$.last.Input
           render={(control) => (
             <input
               data-testid="input-name-last"
