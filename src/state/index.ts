@@ -17,7 +17,7 @@ import {
   type NarrowMixin,
   useNarrowMixin,
 } from "../mixins/narrow.js";
-import { EnsoUtils } from "../utils.ts";
+import { type EnsoUtils } from "../utils.ts";
 
 //#region undefinedValue
 
@@ -125,6 +125,7 @@ export class State<Payload> {
   [statePrivate]: {
     internal: InternalState<Payload>;
   } = {
+    // @ts-ignore: This is fine
     internal: new InternalPrimitiveState(this, undefinedValue),
   };
 
@@ -220,6 +221,12 @@ export class State<Payload> {
 
   //#endregion
 
+  remove() {
+    this.set(undefinedValue, StateTriggerFlow.Bidirectional);
+  }
+
+  //#region Array
+
   // @ts-ignore: This is fine
   map: Payload extends Array<infer Item>
     ? <Return>(
@@ -239,13 +246,21 @@ export class State<Payload> {
     if (!(this.#internal instanceof InternalArrayState))
       throw new Error("State is not an array");
 
-    this.#internal.push(item);
+    const length = this.#internal.push(item);
     this.#trigger(StateChangeType.ChildAdded, StateTriggerFlow.Bidirectional);
+    return length;
   };
 
-  remove() {
-    this.set(undefinedValue, StateTriggerFlow.Bidirectional);
+  // @ts-ignore: This is fine
+  get length(): Payload extends Array<any> ? number : never {
+    if (!(this.#internal instanceof InternalArrayState))
+      throw new Error("State is not an array");
+
+    // @ts-ignore: This is fine
+    return this.#internal.length;
   }
+
+  //#endregion
 }
 
 export namespace State {
@@ -265,21 +280,13 @@ export namespace State {
       : Payload[Key] | undefined
   >;
 
+  //#region Use
+
   export type Use<Payload> = Payload extends Array<any>
     ? State.HookStateUseFn<Payload>
     : Payload extends object
     ? State.HookStateUse<Payload>
     : never;
-
-  export interface HookState<Payload> {
-    (): State<Payload>;
-
-    get use(): HookStateUse<Payload>;
-  }
-
-  export type HookStateUse<Payload> = HookStateUseFn<Payload> & {
-    [Key in keyof Payload]-?: HookState<Payload[Key]>;
-  };
 
   export interface HookStateUseFn<Payload> {
     (): State<Payload>;
@@ -291,12 +298,28 @@ export namespace State {
     >;
   }
 
+  export type HookStateUse<Payload> = HookStateUseFn<Payload> & {
+    [Key in keyof Payload]-?: HookState<Payload[Key]>;
+  };
+
+  export interface HookState<Payload> {
+    (): State<Payload>;
+
+    get use(): HookStateUse<Payload>;
+  }
+
+  //#endregion
+
+  //#region Watching
+
   export type WatchCallback<Payload> = (
     payload: Payload,
     event: StateChangeEvent
   ) => void;
 
   export type Unwatch = () => void;
+
+  //#endregion
 
   //#region Mapping
 
@@ -467,6 +490,7 @@ export class InternalObjectState<
       if (!(key in newValue)) {
         this.#children.delete(key);
         child[clearSymbol]();
+        // @ts-ignore: This is fine
         this.#undefined.register(key, child);
         changed |= StateChangeType.ChildRemoved;
       }
@@ -568,6 +592,7 @@ export class InternalArrayState<
       get: (_, index: string) => this.#item(Number(index)),
     });
 
+    // @ts-ignore: This is fine
     this.#undefined = new UndefinedStateRegistry(external);
   }
 
@@ -582,6 +607,7 @@ export class InternalArrayState<
       if (!(index in newValue)) {
         delete this.#children[index];
         item[clearSymbol]();
+        // @ts-ignore: This is fine
         this.#undefined.register(index.toString(), item);
         changed |= StateChangeType.ChildRemoved;
       }
@@ -601,6 +627,7 @@ export class InternalArrayState<
           undefinedState ||
           new State(value, {
             key: String(index),
+            // @ts-ignore: This is fine
             state: this.external,
           });
         changed |= StateChangeType.ChildAdded;
@@ -609,20 +636,6 @@ export class InternalArrayState<
     });
 
     return changed;
-  }
-
-  push(item: Payload[number]) {
-    const index = this.#children.length;
-    this.#children[index] = new State(item, {
-      key: String(index),
-      state: this.external,
-    });
-  }
-
-  map<Return>(
-    callback: (item: Payload[number], index: number) => Return
-  ): Return[] {
-    return this.#children.map(callback);
   }
 
   $(): State.$<Payload> {
@@ -677,6 +690,30 @@ export class InternalArrayState<
     const indexStr = index.toString();
     return this.#undefined.ensure(indexStr);
   }
+
+  //#region Array methods
+
+  get length(): number {
+    return this.#children.length;
+  }
+
+  map<Return>(
+    callback: (item: Payload[number], index: number) => Return
+  ): Return[] {
+    return this.#children.map(callback);
+  }
+
+  push(item: Payload[number]) {
+    const length = this.#children.length;
+    this.#children[length] = new State(item, {
+      key: String(length),
+      // @ts-ignore: This is fine
+      state: this.external,
+    });
+    return length + 1;
+  }
+
+  //#endregion
 }
 
 //#endregion
@@ -710,12 +747,14 @@ export class UndefinedStateRegistry {
     // Unregisted the state and allow the caller to claim it
     this.#registry.unregister(ref);
     this.#refsMap.delete(key);
+    // @ts-ignore: This is fine
     return registered;
   }
 
   ensure(key: string): State<UndefinedValue> {
     // Try to look up registed undefined item
     const registered = this.#refsMap.get(key)?.deref();
+    // @ts-ignore: This is fine
     if (registered) return registered;
 
     // Or create and register a new one

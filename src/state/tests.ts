@@ -561,5 +561,35 @@ describe("state", () => {
         }
       });
     });
+
+    describe("array", () => {
+      describe("length", () => {
+        it("returns the length of the array", () => {
+          const state = new State([1, 2, 3]);
+          expect(state.length).toBe(3);
+        });
+      });
+
+      describe("map", () => {
+        it("maps the array", () => {
+          const state = new State([1, 2, 3]);
+          const mapped = state.map((item, index) => item.get() * index);
+          expect(mapped).toEqual([0, 2, 6]);
+        });
+      });
+
+      describe("push", () => {
+        it("adds an item to the end of the array", () => {
+          const state = new State([1, 2, 3]);
+          state.push(4);
+          expect(state.get()).toEqual([1, 2, 3, 4]);
+        });
+
+        it("returns the new length of the array", () => {
+          const state = new State([1, 2, 3]);
+          expect(state.push(4)).toBe(4);
+        });
+      });
+    });
   });
 });

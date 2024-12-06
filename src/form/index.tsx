@@ -24,7 +24,7 @@ import {
   StateTriggerFlow,
   undefinedValue,
 } from "../state/index.ts";
-import { EnsoUtils } from "../utils.ts";
+import { type EnsoUtils } from "../utils.ts";
 
 //#region Field
 
@@ -145,6 +145,8 @@ export class Field<Payload> {
 
   #element: HTMLElement | null = null;
 
+  //#region Watching
+
   watch(callback: State.WatchCallback<Payload>): State.Unwatch {
     return this.#state.watch(callback);
   }
@@ -156,6 +158,8 @@ export class Field<Payload> {
   unwatch() {
     this.#state.unwatch();
   }
+
+  //#endregion
 
   //#region Mapping
 
@@ -210,6 +214,18 @@ export class Field<Payload> {
     return this.#state[statePrivate].internal;
   }
 
+  //#endregion
+
+  remove() {
+    this.#state.set(undefinedValue, StateTriggerFlow.Bidirectional);
+  }
+
+  //#region Array
+
+  get length(): Payload extends Array<any> ? number : never {
+    return this.#state.length;
+  }
+
   // @ts-ignore: This is fine
   map: Payload extends Array<infer Item>
     ? <Return>(
@@ -226,10 +242,6 @@ export class Field<Payload> {
     return this.#state.push(item);
   };
 
-  remove() {
-    this.#state.set(undefinedValue, StateTriggerFlow.Bidirectional);
-  }
-
   //#endregion
 
   // vvv PoC vvv
@@ -245,9 +257,6 @@ export class Field<Payload> {
   get valid(): boolean {
     return false;
   }
-
-  // @ts-ignore: [TODO]
-  get length(): Payload extends any[] ? number : never {}
 }
 
 export namespace Field {

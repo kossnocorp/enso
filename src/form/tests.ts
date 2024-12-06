@@ -564,4 +564,34 @@ describe("form", () => {
       });
     });
   });
+
+  describe("array", () => {
+    describe("length", () => {
+      it("returns the length of the array", () => {
+        const field = new Field([1, 2, 3]);
+        expect(field.length).toBe(3);
+      });
+    });
+
+    describe("map", () => {
+      it("maps the array", () => {
+        const field = new Field([1, 2, 3]);
+        const mapped = field.map((item, index) => item.get() * index);
+        expect(mapped).toEqual([0, 2, 6]);
+      });
+    });
+
+    describe("push", () => {
+      it("adds an item to the end of the array", () => {
+        const field = new Field([1, 2, 3]);
+        field.push(4);
+        expect(field.get()).toEqual([1, 2, 3, 4]);
+      });
+
+      it("returns the new length of the array", () => {
+        const field = new Field([1, 2, 3]);
+        expect(field.push(4)).toBe(4);
+      });
+    });
+  });
 });
