@@ -1,14 +1,6 @@
-import React, {
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-  type FormEvent,
-} from "react";
+import React, { useEffect, useMemo, useState, type FormEvent } from "react";
 import {
-  InternalArrayState,
   InternalPrimitiveState,
-  InternalState,
   State,
   StateChange,
   statePrivate,
@@ -16,7 +8,22 @@ import {
   undefinedValue,
 } from "../state/index.ts";
 import { EnsoUtils } from "../utils.ts";
-import { NarrowMixin, narrowMixin, useNarrowMixin } from "../mixins/narrow.js";
+import {
+  type NarrowMixin,
+  narrowMixin,
+  useNarrowMixin,
+} from "../mixins/narrow.js";
+import {
+  type DecomposeMixin,
+  decomposeMixin,
+  useDecomposeMixin,
+} from "../mixins/decompose.js";
+import {
+  type DiscriminateMixin,
+  discriminateMixin,
+  useDiscriminateMixin,
+} from "../mixins/discriminate.js";
+import { intoMixin, type IntoMixin, useIntoMixin } from "../mixins/into.js";
 
 //#region Field
 
@@ -145,33 +152,31 @@ export class Field<Payload> {
     return this.#state.useWatch();
   }
 
-  // [TODO] Hide from non-object states?
-  decompose(): Field.Decomposed<Payload> {
-    // @ts-ignore: TypeScript is picky about the type here
-    return {
-      value: this.get(),
-      field: this,
-    } as Field.Decomposed<Payload>;
-  }
+  //#region Mapping
 
-  useDecompose(
-    callback: State.DecomposeCallback<Payload>
-  ): Field.Decomposed<Payload> {
-    const [_, setState] = useState(0);
-    const initialDecomposed = useMemo(() => this.decompose(), []);
-    const decomposedRef = useRef(initialDecomposed);
-    const prevPayload = useRef(decomposedRef.current.value);
-    useEffect(
-      () =>
-        this.watch((newPayload, _event) => {
-          decomposedRef.current = this.decompose();
-          if (callback(newPayload, prevPayload.current)) setState(Date.now());
-          prevPayload.current = newPayload;
-        }),
-      []
-    );
-    return decomposedRef.current;
-  }
+  decompose: () => Field.Decomposed<Payload> = decomposeMixin("field");
+
+  useDecompose: (
+    callback: DecomposeMixin.Callback<Payload>
+  ) => Field.Decomposed<Payload> = useDecomposeMixin();
+
+  discriminate: <Discriminator extends keyof Exclude<Payload, undefined>>(
+    discriminator: Discriminator
+  ) => Field.Discriminated<Payload, Discriminator> = discriminateMixin("field");
+
+  useDiscriminate: <
+    Discriminator extends DiscriminateMixin.DiscriminatorKey<Payload>
+  >(
+    discriminator: Discriminator
+  ) => Field.Discriminated<Payload, Discriminator> = useDiscriminateMixin();
+
+  into: <Computed>(
+    intoCallback: IntoMixin.IntoCallback<Payload, Computed>
+  ) => Field.Into<Payload, Computed> = intoMixin(Field);
+
+  useInto: <Computed>(
+    intoCallback: IntoMixin.IntoCallback<Payload, Computed>
+  ) => Field.Into<Payload, Computed> = useIntoMixin(Field);
 
   narrow: <Narrowed extends Payload>(
     callback: NarrowMixin.Callback<Payload, Narrowed>
@@ -180,6 +185,8 @@ export class Field<Payload> {
   useNarrow: <Narrowed extends Payload>(
     callback: NarrowMixin.Callback<Payload, Narrowed>
   ) => Field<Narrowed> | undefined = useNarrowMixin();
+
+  //#endregion
 
   //#region Private
 
@@ -221,18 +228,6 @@ export class Field<Payload> {
   //#endregion
 
   // vvv PoC vvv
-
-  useComputed<ComputedPayload>(
-    callback: Field.IntoCallback<Payload, ComputedPayload>
-  ): ComputedPayload {
-    return {} as ComputedPayload;
-  }
-
-  into<ComputedPayload>(
-    callback: Field.IntoCallback<Payload, ComputedPayload>
-  ): Field.Into<Payload, ComputedPayload> {
-    return {} as Field.Into<Payload, ComputedPayload>;
-  }
 
   get error(): FieldError | undefined {
     return {} as FieldError | undefined;
@@ -342,7 +337,7 @@ export namespace Field {
 
   //#endregion
 
-  //#region Decompose
+  //#region Mapping
 
   export type Decomposed<Payload> = Payload extends Payload
     ? {
@@ -351,33 +346,35 @@ export namespace Field {
       }
     : never;
 
+  export type Discriminated<
+    Payload,
+    Discriminator extends keyof Exclude<Payload, undefined>
+  > = Payload extends Payload
+    ? Discriminator extends keyof Payload
+      ? Payload[Discriminator] extends infer DiscriminatorValue
+        ? DiscriminatorValue extends Payload[Discriminator]
+          ? {
+              discriminator: DiscriminatorValue;
+              field: Field<Payload>;
+            }
+          : never
+        : never
+      : // Add the payload type without the discriminator (i.e. undefined)
+        {
+          discriminator: undefined;
+          field: Field<Payload>;
+        }
+    : never;
+
+  export interface Into<Payload, Computed> {
+    from(callback: IntoMixin.FromCallback<Payload, Computed>): Field<Computed>;
+  }
+
   //#endregion
 
   // vvv PoC vvv
 
   export type UseWatchCallback<Payload> = (payload: Payload) => void;
-
-  //#region Computed
-
-  export type IntoCallback<Payload, ComputedPayload> = (
-    payload: Payload
-  ) => ComputedPayload;
-
-  export interface Into<Payload, ComputedPayload> {
-    from(
-      callback: FromCallback<Payload, ComputedPayload>
-    ): From<ComputedPayload>;
-  }
-
-  export type FromCallback<Payload, ComputedPayload> = (
-    payload: ComputedPayload
-  ) => Payload;
-
-  export interface From<Payload> {
-    use(): Field<Payload>;
-  }
-
-  //#endregion
 
   //#region Shared
 

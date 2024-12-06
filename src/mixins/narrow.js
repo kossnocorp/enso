@@ -1,4 +1,5 @@
-import { useState, useMemo, useRef, useEffect } from "react";
+import { useEffect, useMemo, useRef } from "react";
+import { useRerender } from "../hooks/rerender.ts";
 
 export function narrowMixin() {
   return function narrow(callback) {
@@ -14,7 +15,7 @@ export function narrowMixin() {
 
 export function useNarrowMixin() {
   return function useNarrow(callback) {
-    const [_, rerender] = useState(0);
+    const rerender = useRerender();
     const initial = useMemo(() => !!this.narrow(callback), []);
     const ref = useRef(initial);
     useEffect(
@@ -23,7 +24,7 @@ export function useNarrowMixin() {
           const narrowed = !!this.narrow(callback);
           if (narrowed === ref.current) return;
           ref.current = narrowed;
-          rerender(Date.now());
+          rerender();
         }),
       []
     );

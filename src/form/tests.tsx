@@ -4,7 +4,6 @@ import { describe, expect, it } from "vitest";
 // [TODO] Figure out a way to get rid of it:
 // https://github.com/vitest-dev/vitest/issues/6965
 import "@vitest/browser/matchers.d.ts";
-import { State } from "../state/index.ts";
 import { Field } from "./index.tsx";
 import { userEvent } from "@vitest/browser/context";
 
@@ -53,7 +52,7 @@ describe("form", () => {
         .toHaveTextContent("3");
     });
 
-    it("allows to control array state", async () => {
+    it("allows to control array field", async () => {
       interface ComponentProps {
         names: UserName[];
       }
@@ -105,7 +104,7 @@ describe("form", () => {
         .toHaveTextContent("3");
     });
 
-    it("allows to decompose union state", async () => {
+    it("allows to decompose union field", async () => {
       interface ComponentProps {
         address: Address;
       }
@@ -188,7 +187,7 @@ describe("form", () => {
         .toHaveTextContent("2");
     });
 
-    it("allows to narrow union state", async () => {
+    it("allows to narrow union field", async () => {
       interface ComponentProps {
         address: Address;
       }
@@ -270,7 +269,7 @@ describe("form", () => {
         .toHaveTextContent("2");
     });
 
-    it.skip("allows to discriminate union state", async () => {
+    it("allows to discriminate union field", async () => {
       type Hello = HelloMachine | HelloHuman;
 
       interface HelloMachine {
@@ -293,8 +292,8 @@ describe("form", () => {
 
       function Component(props: ComponentProps) {
         const count = useRenderCount();
-        const state = State.use<TestState>(props);
-        const hello = state.$.hello.useDiscriminate("lang");
+        const field = Field.use<TestState>(props);
+        const hello = field.$.hello.useDiscriminate("lang");
 
         return (
           <div>
@@ -304,7 +303,7 @@ describe("form", () => {
               <div>
                 <button
                   onClick={() =>
-                    hello.state.set({
+                    hello.field.set({
                       lang: "human",
                       text: "Hola",
                     })
@@ -315,7 +314,7 @@ describe("form", () => {
 
                 <button
                   onClick={() =>
-                    state.$.hello.set({
+                    field.$.hello.set({
                       lang: "machine",
                       binary: 0b1101010,
                     })
@@ -324,13 +323,13 @@ describe("form", () => {
                   Switch to binary
                 </button>
 
-                <StringComponent string={hello.state.$.text} />
+                <StringComponent string={hello.field.$.text} />
               </div>
             ) : (
               <div>
                 <button
                   onClick={() =>
-                    state.$.hello.set({
+                    field.$.hello.set({
                       lang: "machine",
                       binary: 0b1010101,
                     })
@@ -339,7 +338,7 @@ describe("form", () => {
                   Say 1010101
                 </button>
 
-                <NumberComponent number={hello.state.$.binary} />
+                <NumberComponent number={hello.field.$.binary} />
               </div>
             )}
           </div>
@@ -385,29 +384,29 @@ describe("form", () => {
         .toHaveTextContent("2");
     });
 
-    it.skip("allows to compute state", async () => {
+    it("allows to compute field", async () => {
       function Component() {
         const count = useRenderCount();
-        const state = State.use({ message: "Hello" });
-        const codes = state.$.message.useInto(toCodes).from(fromCodes);
+        const field = Field.use({ message: "Hello" });
+        const codes = field.$.message.useInto(toCodes).from(fromCodes);
 
         return (
           <div>
             <div data-testid="render-compute">{count}</div>
 
-            <StringComponent string={state.$.message} />
+            <StringComponent string={field.$.message} />
 
             <CodesComponent codes={codes} />
 
             <button onClick={() => codes.set([72, 105, 33])}>Say hi</button>
 
-            <button onClick={() => state.$.message.set("Yo")}>Say yo</button>
+            <button onClick={() => field.$.message.set("Yo")}>Say yo</button>
           </div>
         );
       }
 
       interface CodesComponentProps {
-        codes: State<number[]>;
+        codes: Field<number[]>;
       }
 
       function CodesComponent(props: CodesComponentProps) {

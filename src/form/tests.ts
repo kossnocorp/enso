@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from "vitest";
+import { assert, describe, expect, it, vi } from "vitest";
 import { Field } from "./index.tsx";
 import { StateChangeType, undefinedValue } from "../state/index.ts";
 
@@ -146,7 +146,7 @@ describe("form", () => {
       });
 
       describe("array", () => {
-        it("sets the array state", () => {
+        it("sets the array field", () => {
           const field = new Field<number[]>([1, 2, 3, 4, 5]);
           field.set([1, 2, 3]);
           expect(field.get()).toEqual([1, 2, 3]);
@@ -160,12 +160,12 @@ describe("form", () => {
           expect(field.get()).toEqual([]);
         });
 
-        it("returns 0 if the state has not changed", () => {
+        it("returns 0 if the field has not changed", () => {
           const field = new Field([1, 2, 3]);
           expect(field.set([1, 2, 3])).toBe(0);
         });
 
-        it("returns child change type if a child state has changed", () => {
+        it("returns child change type if a child field has changed", () => {
           const field = new Field([1, 2, 3]);
           expect(field.set([1, 2, 1])).toBe(StateChangeType.Child);
         });
@@ -263,7 +263,7 @@ describe("form", () => {
     });
 
     describe("watch", () => {
-      it("allows to subscribe for state changes", async () =>
+      it("allows to subscribe for field changes", async () =>
         new Promise<void>((resolve) => {
           const field = new Field(42);
 
@@ -292,7 +292,7 @@ describe("form", () => {
         }));
 
       describe("object", () => {
-        it("listens to the field state changes", async () =>
+        it("listens to the field changes", async () =>
           new Promise<void>((resolve) => {
             const field = new Field({ num: 42 });
 
@@ -320,7 +320,7 @@ describe("form", () => {
       });
 
       describe("array", () => {
-        it("listens to the item state changes", async () =>
+        it("listens to the item field changes", async () =>
           new Promise<void>((resolve) => {
             const field = new Field([1, 2, 3]);
 
@@ -349,11 +349,11 @@ describe("form", () => {
     });
 
     describe("id", () => {
-      it("assigns a unique id to each state", () => {
-        const state1 = new Field(42);
-        const state2 = new Field(42);
-        expect(state1.id).toBeTypeOf("string");
-        expect(state1.id).not.toBe(state2.id);
+      it("assigns a unique id to each field", () => {
+        const field1 = new Field(42);
+        const field2 = new Field(42);
+        expect(field1.id).toBeTypeOf("string");
+        expect(field1.id).not.toBe(field2.id);
       });
     });
 
@@ -442,7 +442,7 @@ describe("form", () => {
       });
     });
 
-    describe.skip("discriminate", () => {
+    describe("discriminate", () => {
       interface Cat {
         type: "cat";
         meow: true;
@@ -453,7 +453,7 @@ describe("form", () => {
         bark: true;
       }
 
-      it("allows to discriminate the state type", () => {
+      it("allows to discriminate the field type", () => {
         const field = new Field<Cat | Dog>({ type: "cat", meow: true });
         const discriminated = field.discriminate("type");
         if (discriminated.discriminator === "cat") {
@@ -474,8 +474,8 @@ describe("form", () => {
       });
     });
 
-    describe.skip("decompose", () => {
-      it("allows to decompose the state type", () => {
+    describe("decompose", () => {
+      it("allows to decompose the field type", () => {
         const field = new Field<string | number | Record<string, number>>(
           "Hello, world!"
         );
@@ -488,8 +488,8 @@ describe("form", () => {
       });
     });
 
-    describe.skip("narrow", () => {
-      it("allows to narrow the state type", () => {
+    describe("narrow", () => {
+      it("allows to narrow the field type", () => {
         const field = new Field<string | number>("Hello, world!");
         const narrowed = field.narrow(
           (value, ok) => typeof value === "string" && ok(value)
@@ -499,8 +499,8 @@ describe("form", () => {
       });
     });
 
-    describe.skip("into", () => {
-      it("allows to create a computed state", () => {
+    describe("into", () => {
+      it("allows to create a computed field", () => {
         const field = new Field({ message: "Hello, world!" });
         const computed = field.$.message.into(toCodes).from(fromCodes);
         expect(computed.get()).toEqual([
@@ -508,14 +508,14 @@ describe("form", () => {
         ]);
       });
 
-      it("updates the state back from computed", () => {
+      it("updates the field back from computed", () => {
         const field = new Field({ message: "Hello, world!" });
         const computed = field.$.message.into(toCodes).from(fromCodes);
         computed.set([72, 105, 33]);
         expect(field.get()).toEqual({ message: "Hi!" });
       });
 
-      it("triggers state update", async () =>
+      it("triggers field update", async () =>
         new Promise<void>((resolve) => {
           const field = new Field({ message: "Hello, world!" });
           const computed = field.$.message.into(toCodes).from(fromCodes);

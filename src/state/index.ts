@@ -1,11 +1,22 @@
 import { nanoid } from "nanoid";
 import { EnsoUtils } from "../utils.ts";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   narrowMixin,
   type NarrowMixin,
   useNarrowMixin,
 } from "../mixins/narrow.js";
+import {
+  decomposeMixin,
+  type DecomposeMixin,
+  useDecomposeMixin,
+} from "../mixins/decompose.js";
+import {
+  discriminateMixin,
+  type DiscriminateMixin,
+  useDiscriminateMixin,
+} from "../mixins/discriminate.js";
+import { intoMixin, IntoMixin, useIntoMixin } from "../mixins/into.js";
 
 //#region undefinedValue
 
@@ -161,33 +172,31 @@ export class State<Payload> {
     return payload;
   }
 
-  // [TODO] Hide from non-object states?
-  decompose(): State.Decomposed<Payload> {
-    // @ts-ignore: TypeScript is picky about the type here
-    return {
-      value: this.get(),
-      state: this,
-    } as State.Decomposed<Payload>;
-  }
+  //#region Mapping
 
-  useDecompose(
-    callback: State.DecomposeCallback<Payload>
-  ): State.Decomposed<Payload> {
-    const [_, setState] = useState(0);
-    const initialDecomposed = useMemo(() => this.decompose(), []);
-    const decomposedRef = useRef(initialDecomposed);
-    const prevPayload = useRef(decomposedRef.current.value);
-    useEffect(
-      () =>
-        this.watch((newPayload, _event) => {
-          decomposedRef.current = this.decompose();
-          if (callback(newPayload, prevPayload.current)) setState(Date.now());
-          prevPayload.current = newPayload;
-        }),
-      []
-    );
-    return decomposedRef.current;
-  }
+  decompose: () => State.Decomposed<Payload> = decomposeMixin("state");
+
+  useDecompose: (
+    callback: DecomposeMixin.Callback<Payload>
+  ) => State.Decomposed<Payload> = useDecomposeMixin();
+
+  discriminate: <Discriminator extends keyof Exclude<Payload, undefined>>(
+    discriminator: Discriminator
+  ) => State.Discriminated<Payload, Discriminator> = discriminateMixin("state");
+
+  useDiscriminate: <
+    Discriminator extends DiscriminateMixin.DiscriminatorKey<Payload>
+  >(
+    discriminator: Discriminator
+  ) => State.Discriminated<Payload, Discriminator> = useDiscriminateMixin();
+
+  into: <Computed>(
+    intoCallback: IntoMixin.IntoCallback<Payload, Computed>
+  ) => State.Into<Payload, Computed> = intoMixin(State);
+
+  useInto: <Computed>(
+    intoCallback: IntoMixin.IntoCallback<Payload, Computed>
+  ) => State.Into<Payload, Computed> = useIntoMixin(State);
 
   narrow: <Narrowed extends Payload>(
     callback: NarrowMixin.Callback<Payload, Narrowed>
@@ -197,83 +206,7 @@ export class State<Payload> {
     callback: NarrowMixin.Callback<Payload, Narrowed>
   ) => State<Narrowed> | undefined = useNarrowMixin();
 
-  discriminate<Discriminator extends keyof Exclude<Payload, undefined>>(
-    discriminator: Discriminator
-  ): State.Discriminated<Payload, Discriminator> {
-    return {
-      // @ts-ignore: TypeScript is picky about the type here
-      discriminator: this.$[discriminator]?.get(),
-      state: this as State<Payload>,
-    } as State.Discriminated<Payload, Discriminator>;
-  }
-
-  useDiscriminate<Discriminator extends keyof Exclude<Payload, undefined>>(
-    discriminator: Discriminator
-  ): State.Discriminated<Payload, Discriminator> {
-    const [_, setState] = useState(0);
-    const initialDiscriminated = useMemo(
-      () => this.discriminate(discriminator),
-      []
-    );
-    const discriminatedRef = useRef(initialDiscriminated);
-    useEffect(
-      () =>
-        this.watch((_payload, _event) => {
-          const newDiscriminated = this.discriminate(discriminator);
-          if (
-            newDiscriminated.discriminator !==
-            discriminatedRef.current.discriminator
-          )
-            setState(Date.now());
-          discriminatedRef.current = newDiscriminated;
-        }),
-      []
-    );
-    return discriminatedRef.current;
-  }
-
-  into<Computed>(
-    intoCallback: State.IntoCallback<Payload, Computed>
-  ): State.Into<Payload, Computed> {
-    const computed = new State(intoCallback(this.get()));
-    // [TODO] This creates a leak, so rather than holding on to the computed
-    // state, store it as a weak ref and unsubscribe when it's no longer needed.
-    this.watch((payload) => computed.set(intoCallback(payload)));
-
-    return {
-      from: (fromCallback) => {
-        computed.watch((payload) => this.set(fromCallback(payload)));
-        return computed;
-      },
-    };
-  }
-
-  useInto<Computed>(
-    intoCallback: State.IntoCallback<Payload, Computed>
-  ): State.Into<Payload, Computed> {
-    const computed = useMemo(() => new State(intoCallback(this.get())), []);
-
-    useEffect(() => {
-      // It's ok to trigger set here because the setting the same value won't
-      // trigger any events, however for the better performance, it is better
-      // if the into and from callbacks are memoized.
-      computed.set(intoCallback(this.get()));
-      return this.watch((payload) => computed.set(intoCallback(payload)));
-    }, [intoCallback]);
-
-    return useMemo(
-      () => ({
-        from: (fromCallback) => {
-          useEffect(
-            () => computed.watch((payload) => this.set(fromCallback(payload))),
-            [computed, fromCallback]
-          );
-          return computed;
-        },
-      }),
-      [computed]
-    );
-  }
+  //#endregion
 
   // @ts-ignore: This is fine
   map: Payload extends Array<infer Item>
@@ -376,6 +309,15 @@ export namespace State {
 
   export type Unwatch = () => void;
 
+  //#region Mapping
+
+  export type Decomposed<Payload> = Payload extends Payload
+    ? {
+        value: Payload;
+        state: State<Payload>;
+      }
+    : never;
+
   export type Discriminated<
     Payload,
     Discriminator extends keyof Exclude<Payload, undefined>
@@ -396,31 +338,11 @@ export namespace State {
         }
     : never;
 
-  //#region Decompose
-
-  export type Decomposed<Payload> = Payload extends Payload
-    ? {
-        value: Payload;
-        state: State<Payload>;
-      }
-    : never;
-
-  export type DecomposeCallback<Payload> = (
-    newPayload: Payload,
-    prevPayload: Payload
-  ) => boolean;
-
-  //#endregion
-
-  export type IntoCallback<Payload, Computed> = (payload: Payload) => Computed;
-
   export interface Into<Payload, Computed> {
-    from(callback: FromCallback<Payload, Computed>): State<Computed>;
+    from(callback: IntoMixin.FromCallback<Payload, Computed>): State<Computed>;
   }
 
-  export type FromCallback<Payload, ComputedPayload> = (
-    payload: ComputedPayload
-  ) => Payload;
+  //#endregion
 }
 
 //#endregion
