@@ -15,6 +15,12 @@ describe("State", () => {
         expect(state1.id).toBeTypeOf("string");
         expect(state1.id).not.toBe(state2.id);
       });
+
+      it("returns the source id for computed states", () => {
+        const state = new State({ name: { first: "Sasha" } });
+        const computed = state.$.name.$.first.into(toCodes).from(fromCodes);
+        expect(computed.id).toBe(state.$.name.$.first.id);
+      });
     });
 
     describe("key", () => {
@@ -26,6 +32,12 @@ describe("State", () => {
       it("returns undefined for root state", () => {
         const state = new State({ name: { first: "Sasha" } });
         expect(state.key).toBe(undefined);
+      });
+
+      it("returns the source key for computed states", () => {
+        const state = new State({ name: { first: "Sasha" } });
+        const computed = state.$.name.$.first.into(toCodes).from(fromCodes);
+        expect(computed.key).toBe("first");
       });
     });
 
@@ -43,6 +55,12 @@ describe("State", () => {
         const state = new State({ name: { first: "Sasha" } });
         expect(state.path).toEqual([]);
       });
+
+      it("returns the source path for computed states", () => {
+        const state = new State({ name: { first: "Sasha" } });
+        const computed = state.$.name.$.first.into(toCodes).from(fromCodes);
+        expect(computed.path).toEqual(["name", "first"]);
+      });
     });
 
     describe("parent", () => {
@@ -54,6 +72,12 @@ describe("State", () => {
       it("returns undefined for root state", () => {
         const state = new State({ name: { first: "Sasha" } });
         expect(state.parent).toBe(undefined);
+      });
+
+      it("returns the source parent for computed states", () => {
+        const state = new State({ name: { first: "Sasha" } });
+        const computed = state.$.name.$.first.into(toCodes).from(fromCodes);
+        expect(computed.parent).toBe(state.$.name);
       });
     });
   });
@@ -392,7 +416,7 @@ describe("State", () => {
         });
       });
 
-      describe("object", () => {
+      describe("array", () => {
         it("returns true if any of the items has changed", () => {
           const state = new State<number[][]>([[1, 2], [3]]);
           expect(state.dirty).toBe(false);
@@ -439,6 +463,32 @@ describe("State", () => {
           expect(state.$(0).dirty).toBe(true);
           expect(state.$(1).dirty).toBe(false);
         });
+      });
+
+      describe("computed", () => {
+        it("returns true if the source state has changed", () => {
+          const state = new State<string | undefined>("Hello");
+          const computed = state.into(toString).from(fromString);
+          expect(computed.dirty).toBe(false);
+          state.set("Hi");
+          expect(computed.dirty).toBe(true);
+        });
+
+        it("returns false if the source state didn't change", () => {
+          const state = new State<string | undefined>(undefined);
+          const computed = state.into(toString).from(fromString);
+          expect(computed.dirty).toBe(false);
+          state.set(" ");
+          expect(computed.dirty).toBe(false);
+        });
+
+        function toString(value: string | undefined) {
+          return value ?? "";
+        }
+
+        function fromString(value: string) {
+          return value.trim() || undefined;
+        }
       });
     });
   });
@@ -842,14 +892,6 @@ describe("State", () => {
 
           computed.set([72, 105, 33]);
         }));
-
-      function toCodes(message: string) {
-        return Array.from(message).map((c) => c.charCodeAt(0));
-      }
-
-      function fromCodes(codes: number[]) {
-        return codes.map((c) => String.fromCharCode(c)).join("");
-      }
     });
   });
 
@@ -964,6 +1006,16 @@ describe("State", () => {
             resolve();
           });
         }));
+
+      it("sets the error to the source state for computed states", () => {
+        const state = new State({ name: { first: "Sasha" } });
+        const computed = state.$.name.$.first.into(toCodes).from(fromCodes);
+        computed.setError("Something went wrong");
+        expect(state.$.name.$.first.error).toEqual({
+          message: "Something went wrong",
+        });
+        expect(computed.error).toBe(state.error);
+      });
     });
 
     describe("errors", () => {
@@ -990,6 +1042,30 @@ describe("State", () => {
           message: "Is it a valid ID?",
         });
       });
+
+      it("returns the source state errors for computed states", () => {
+        const state = new State({ name: { first: "", last: "" } });
+        const computed = state.$.name.into(toFullName).from(fromFullName);
+        state.$.name.$.first.setError("First name is required");
+        state.$.name.$.last.setError("Last name is required");
+        const { errors } = computed;
+        expect(errors.size).toBe(2);
+        expect(errors.get(state.$.name.$.first)).toEqual({
+          message: "First name is required",
+        });
+        expect(errors.get(state.$.name.$.last)).toEqual({
+          message: "Last name is required",
+        });
+      });
+
+      function toFullName(name: { first: string; last: string }) {
+        return `${name.first} ${name.last}`;
+      }
+
+      function fromFullName(fullName: string) {
+        const [first = "", last = ""] = fullName.split(" ");
+        return { first, last };
+      }
     });
 
     describe("valid", () => {
@@ -997,3 +1073,11 @@ describe("State", () => {
     });
   });
 });
+
+function toCodes(message: string) {
+  return Array.from(message).map((c) => c.charCodeAt(0));
+}
+
+function fromCodes(codes: number[]) {
+  return codes.map((c) => String.fromCharCode(c)).join("");
+}

@@ -10,7 +10,6 @@ import {
   discriminateMixin,
   useDiscriminateMixin,
 } from "../mixins/discriminate.js";
-import { intoMixin, type IntoMixin, useIntoMixin } from "../mixins/into.js";
 import {
   type NarrowMixin,
   narrowMixin,
@@ -254,12 +253,50 @@ export class State<Payload> {
   ) => State.Discriminated<Payload, Discriminator> = useDiscriminateMixin();
 
   into: <Computed>(
-    intoCallback: IntoMixin.IntoCallback<Payload, Computed>
-  ) => State.Into<Payload, Computed> = intoMixin(State);
+    intoCallback: State.IntoCallback<Payload, Computed>
+  ) => State.Into<Payload, Computed> = (intoCallback) => {
+    const computed = new ComputedState(intoCallback(this.get()), this);
+    // [TODO] This creates a leak, so rather than holding on to the computed
+    // state, store it as a weak ref and unsubscribe when it's no longer needed.
+    this.watch((payload) => computed.set(intoCallback(payload)));
+
+    return {
+      from: (fromCallback) => {
+        computed.watch((payload) => this.set(fromCallback(payload)));
+        return computed;
+      },
+    };
+  };
 
   useInto: <Computed>(
-    intoCallback: IntoMixin.IntoCallback<Payload, Computed>
-  ) => State.Into<Payload, Computed> = useIntoMixin(State);
+    intoCallback: State.IntoCallback<Payload, Computed>
+  ) => State.Into<Payload, Computed> = (intoCallback) => {
+    const computed = useMemo(
+      () => new ComputedState(intoCallback(this.get()), this),
+      []
+    );
+
+    useEffect(() => {
+      // It's ok to trigger set here because the setting the same value won't
+      // trigger any events, however for the better performance, it is better
+      // if the into and from callbacks are memoized.
+      computed.set(intoCallback(this.get()));
+      return this.watch((payload) => computed.set(intoCallback(payload)));
+    }, [intoCallback]);
+
+    return useMemo(
+      () => ({
+        from: (fromCallback) => {
+          useEffect(
+            () => computed.watch((payload) => this.set(fromCallback(payload))),
+            [computed, fromCallback]
+          );
+          return computed;
+        },
+      }),
+      [computed]
+    );
+  };
 
   narrow: <Narrowed extends Payload>(
     callback: NarrowMixin.Callback<Payload, Narrowed>
@@ -315,8 +352,6 @@ export class State<Payload> {
   }
 
   //#endregion
-
-  //#region Field
 
   //#region Input
 
@@ -405,8 +440,6 @@ export class State<Payload> {
   get valid(): boolean {
     return false;
   }
-
-  //#endregion
 }
 
 export namespace State {
@@ -538,8 +571,16 @@ export namespace State {
     : never;
 
   export interface Into<Payload, Computed> {
-    from(callback: IntoMixin.FromCallback<Payload, Computed>): State<Computed>;
+    from(
+      callback: FromCallback<Payload, Computed>
+    ): ComputedState<Payload, Computed>;
   }
+
+  export type IntoCallback<Payload, Computed> = (payload: Payload) => Computed;
+
+  export type FromCallback<Payload, ComputedPayload> = (
+    payload: ComputedPayload
+  ) => Payload;
 
   //#endregion
 
@@ -645,6 +686,43 @@ export namespace State {
     : never;
 
   //#endregion
+}
+
+//#endregion
+
+//#region ComputedState
+
+export class ComputedState<Payload, Computed> extends State<Computed> {
+  #source: State<Payload>;
+
+  constructor(payload: Computed, source: State<Payload>) {
+    super(payload);
+    this.#source = source;
+  }
+
+  get id(): string {
+    return this.#source.id;
+  }
+
+  get key(): string | undefined {
+    return this.#source.key;
+  }
+
+  get path(): string[] {
+    return this.#source.path;
+  }
+
+  get errors(): State.Errors {
+    return this.#source.errors;
+  }
+
+  get parent(): State<any> | undefined {
+    return this.#source.parent;
+  }
+
+  setError(error?: string | State.Error | undefined): void {
+    this.#source.setError(error);
+  }
 }
 
 //#endregion
