@@ -169,9 +169,17 @@ export class State<Payload> {
 
   //#endregion
 
+  //#region Tree
+
   get $(): State.$<Payload> {
     return this.#internal.$();
   }
+
+  get try(): State.Try<Payload> {
+    return this.#internal.try();
+  }
+
+  //#endregion
 
   get use(): State.Use<Payload> {
     return this.#use;
@@ -402,7 +410,7 @@ export class State<Payload> {
 }
 
 export namespace State {
-  //#region Traverse
+  //#region Tree
 
   export interface Parent<Payload> {
     key: string;
@@ -414,12 +422,48 @@ export namespace State {
     : State<Payload>;
 
   export type $Object<Payload> = $Fn<Payload> & {
-    [Key in keyof Payload]-?: State<Payload[Key]>;
+    [Key in keyof Payload]-?: State<
+      EnsoUtils.StaticKey<Payload, Key> extends true
+        ? Payload[Key]
+        : Payload[Key] | undefined
+    >;
   };
 
   export type $Fn<Payload> = <Key extends keyof Payload>(
     key: Key
-  ) => State<Payload[Key]>;
+  ) => State<
+    EnsoUtils.StaticKey<Payload, Key> extends true
+      ? Payload[Key]
+      : Payload[Key] | undefined
+  >;
+
+  export type Try<Payload> = [Payload] extends [object]
+    ? TryObject<Payload>
+    : TryState<Payload>;
+
+  export type TryObject<Payload> = TryFn<Payload> & {
+    [Key in keyof Payload]-?: TryState<
+      EnsoUtils.StaticKey<Payload, Key> extends true
+        ? Payload[Key]
+        : Payload[Key] | undefined
+    >;
+  };
+
+  export type TryFn<Payload> = <Key extends keyof Payload>(
+    key: Key
+  ) => TryState<
+    EnsoUtils.StaticKey<Payload, Key> extends true
+      ? Payload[Key]
+      : Payload[Key] | undefined
+  >;
+
+  export type TryState<Payload> =
+    // Add null to the union
+    | (null extends Payload ? null : never)
+    // Add undefined to the union
+    | (undefined extends Payload ? undefined : never)
+    // Resolve state without null or undefined
+    | State<Exclude<Payload, null | undefined>>;
 
   //#endregion
 
@@ -638,6 +682,8 @@ export abstract class InternalState<Payload> {
 
   abstract $(): State.$<Payload>;
 
+  abstract try(): State.Try<Payload>;
+
   childUpdate(type: StateChange, _key: string): StateChange {
     return type;
   }
@@ -689,6 +735,13 @@ export class InternalPrimitiveState<Payload> extends InternalState<Payload> {
     return this.external as State.$<Payload>;
   }
 
+  try(): State.Try<Payload> {
+    const value = this.get();
+    if (value === undefined || value === null)
+      return value as State.Try<Payload>;
+    return this.external as State.Try<Payload>;
+  }
+
   updated(event: StateChangeEvent): boolean {
     return !!(
       event.detail & stateChangeType.created ||
@@ -712,17 +765,10 @@ export class InternalObjectState<
   Payload extends object
 > extends InternalState<Payload> {
   #children: Map<string, State<any>> = new Map();
-  #proxy;
   #undefined;
 
   constructor(external: State<Payload>, value: Payload) {
     super(external, value);
-
-    this.#proxy = new Proxy((() => {}) as unknown as State.$<Payload>, {
-      apply: (_, __, [key]: [string]) => this.#field(key),
-      get: (_, key: string) => this.#field(key),
-    });
-
     this.#undefined = new UndefinedStateRegistry(external);
   }
 
@@ -766,7 +812,37 @@ export class InternalObjectState<
   }
 
   $(): State.$<Payload> {
-    return this.#proxy;
+    return this.#$;
+  }
+
+  #$ = new Proxy((() => {}) as unknown as State.$<Payload>, {
+    apply: (_, __, [key]: [string]) => this.#$field(key),
+    get: (_, key: string) => this.#$field(key),
+  });
+
+  #$field(key: string) {
+    const field = this.#children.get(key);
+    if (field) return field;
+
+    return this.#undefined.ensure(key);
+  }
+
+  try(): State.Try<Payload> {
+    return this.#try;
+  }
+
+  #try = new Proxy((() => {}) as unknown as State.Try<Payload>, {
+    apply: (_, __, [key]: [string]) => this.#tryField(key),
+    get: (_, key: string) => this.#tryField(key),
+  });
+
+  #tryField(key: string) {
+    const field = this.#children.get(key);
+    if (field) {
+      const value = field.get();
+      if (value === undefined || value === null) return value;
+    }
+    return field;
   }
 
   updated(event: StateChangeEvent): boolean {
@@ -806,13 +882,6 @@ export class InternalObjectState<
   unwatch() {
     this.#children.forEach((child) => child.unwatch());
     this.#children.clear();
-  }
-
-  #field(key: string) {
-    const field = this.#children.get(key);
-    if (field) return field;
-
-    return this.#undefined.ensure(key);
   }
 
   dirty(initial: Payload): boolean {
@@ -868,16 +937,10 @@ export class InternalArrayState<
   Payload extends Array<any>
 > extends InternalState<Payload> {
   #children: State<any>[] = [];
-  #proxy;
   #undefined;
 
   constructor(external: State<Payload>, value: Payload) {
     super(external, value);
-
-    this.#proxy = new Proxy((() => {}) as unknown as State.$<Payload>, {
-      apply: (_, __, [index]: [number]) => this.#item(index),
-      get: (_, index: string) => this.#item(Number(index)),
-    });
 
     // @ts-ignore: This is fine
     this.#undefined = new UndefinedStateRegistry(external);
@@ -926,7 +989,38 @@ export class InternalArrayState<
   }
 
   $(): State.$<Payload> {
-    return this.#proxy;
+    return this.#$;
+  }
+
+  #$ = new Proxy((() => {}) as unknown as State.$<Payload>, {
+    apply: (_, __, [index]: [number]) => this.#item(index),
+    get: (_, index: string) => this.#item(Number(index)),
+  });
+
+  #item(index: number) {
+    const item = this.#children[index];
+    if (item) return item;
+
+    const indexStr = index.toString();
+    return this.#undefined.ensure(indexStr);
+  }
+
+  try(): State.Try<Payload> {
+    return this.#try;
+  }
+
+  #try = new Proxy((() => {}) as unknown as State.Try<Payload>, {
+    apply: (_, __, [index]: [number]) => this.#tryItem(index),
+    get: (_, index: number) => this.#tryItem(index),
+  });
+
+  #tryItem(index: number) {
+    const field = this.#children[index];
+    if (field) {
+      const value = field.get();
+      if (value === undefined || value === null) return value;
+    }
+    return field;
   }
 
   updated(event: StateChangeEvent): boolean {
@@ -968,14 +1062,6 @@ export class InternalArrayState<
   unwatch() {
     this.#children.forEach((child) => child.unwatch());
     this.#children.length = 0;
-  }
-
-  #item(index: number) {
-    const item = this.#children[index];
-    if (item) return item;
-
-    const indexStr = index.toString();
-    return this.#undefined.ensure(indexStr);
   }
 
   dirty(initial: Payload): boolean {

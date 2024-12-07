@@ -1,10 +1,5 @@
 import { assert, describe, expect, it, vi } from "vitest";
-import {
-  State,
-  stateChangeType,
-  undefinedValue,
-  InternalPrimitiveState,
-} from "./index.tsx";
+import { State, stateChangeType, undefinedValue } from "./index.tsx";
 
 describe("State", () => {
   it("creates a state instance", () => {
@@ -402,26 +397,26 @@ describe("State", () => {
           const state = new State<number[][]>([[1, 2], [3]]);
           expect(state.dirty).toBe(false);
           expect(state.$(0).dirty).toBe(false);
-          expect(state.$(0).$(0).dirty).toBe(false);
-          expect(state.$(0).$(1).dirty).toBe(false);
-          expect(state.$(1).$(0).dirty).toBe(false);
-          state.$(1).$(0).set(5);
+          expect(state.try(0)?.try(0)?.dirty).toBe(false);
+          expect(state.try(0)?.try(1)?.dirty).toBe(false);
+          expect(state.try(1)?.try(0)?.dirty).toBe(false);
+          state.try(1)?.$(0).set(5);
           expect(state.dirty).toBe(true);
-          expect(state.$(0).dirty).toBe(false);
-          expect(state.$(0).$(0).dirty).toBe(false);
-          expect(state.$(0).$(1).dirty).toBe(false);
-          expect(state.$(1).$(0).dirty).toBe(true);
+          expect(state.try(0)?.dirty).toBe(false);
+          expect(state.try(0)?.try(0)?.dirty).toBe(false);
+          expect(state.try(0)?.try(1)?.dirty).toBe(false);
+          expect(state.try(1)?.try(0)?.dirty).toBe(true);
         });
 
         it("returns false after restoring to the initial value", () => {
           const state = new State<number[][]>([[1, 2], [3]]);
-          state.$(1).$(0).set(5);
-          state.$(1).$(0).set(3);
+          state.try(1)?.$(0).set(5);
+          state.try(1)?.$(0).set(3);
           expect(state.dirty).toBe(false);
-          expect(state.$(0).dirty).toBe(false);
-          expect(state.$(0).$(0).dirty).toBe(false);
-          expect(state.$(0).$(1).dirty).toBe(false);
-          expect(state.$(1).$(0).dirty).toBe(false);
+          expect(state.try(0)?.dirty).toBe(false);
+          expect(state.try(0)?.try(0)?.dirty).toBe(false);
+          expect(state.try(0)?.try(1)?.dirty).toBe(false);
+          expect(state.try(1)?.try(0)?.dirty).toBe(false);
         });
 
         it("returns true if a child changed type", () => {
@@ -448,87 +443,172 @@ describe("State", () => {
     });
   });
 
-  describe("$", () => {
-    it("points to itself for a primitive", () => {
-      const state = new State(42);
-      expect(state.$).toBe(state);
+  describe("tree", () => {
+    describe("$", () => {
+      it("points to itself for a primitive", () => {
+        const state = new State(42);
+        expect(state.$).toBe(state);
+      });
+
+      describe("object", () => {
+        it("allows to access states", () => {
+          const state = new State({ num: 42 });
+          const num = state.$.num;
+          num satisfies State<number>;
+          expect(num).toBeInstanceOf(State);
+          expect(num.get()).toBe(42);
+        });
+
+        it("allows to access record states", () => {
+          const state = new State<Record<string, number>>({ num: 42 });
+          const numA = state.$["num"];
+          numA satisfies State<number | undefined> | undefined;
+          expect(numA?.get()).toBe(42);
+          const numB = state.$("num");
+          numB satisfies State<number | undefined>;
+          expect(numB.get()).toBe(42);
+        });
+
+        it("preserves states", () => {
+          const state = new State({ num: 42 });
+          const numA = state.$.num;
+          const numB = state.$.num;
+          numA satisfies State<number>;
+          expect(numA).toBeInstanceOf(State);
+          expect(numA).toBe(numB);
+        });
+
+        it("allows to access undefined states", () => {
+          const state = new State<{ num?: number; str?: string }>({ num: 42 });
+          const str = state.$.str;
+          str satisfies State<string | undefined>;
+          expect(str).toBeInstanceOf(State);
+          expect(str.get()).toBe(undefined);
+        });
+
+        it("preserves undefined states", () => {
+          const state = new State<{ num?: number; str?: string }>({ num: 42 });
+          const stateA = state.$.str;
+          const stateB = state.$.str;
+          expect(stateA).toBe(stateB);
+        });
+      });
+
+      describe("array", () => {
+        it("allows to access items", () => {
+          const state = new State([1, 2, 3, 4]);
+          const item = state.$[3];
+          item satisfies State<number | undefined> | undefined;
+          expect(item).toBeInstanceOf(State);
+          expect(item?.get()).toBe(4);
+        });
+
+        it("preserves items", () => {
+          const state = new State([1, 2, 3, 4]);
+          const itemA = state.$[3];
+          const itemB = state.$[3];
+          itemA satisfies State<number | undefined> | undefined;
+          expect(itemA).toBeInstanceOf(State);
+          expect(itemA).toBe(itemB);
+        });
+
+        it("allows to access undefined items", () => {
+          const state = new State([1, 2, 3, 4]);
+          const item = state.$(10);
+          item satisfies State<number | undefined>;
+          expect(item).toBeInstanceOf(State);
+          expect(item.get()).toBe(undefined);
+        });
+
+        it("preserves undefined items", () => {
+          const state = new State([1, 2, 3, 4]);
+          const itemA = state.$(10);
+          const itemB = state.$(10);
+          expect(itemA).toBe(itemB);
+        });
+      });
     });
 
-    describe("object", () => {
-      it("allows to access states", () => {
-        const state = new State({ num: 42 });
-        const num = state.$.num;
-        num satisfies State<number>;
-        expect(num).toBeInstanceOf(State);
-        expect(num.get()).toBe(42);
+    describe("try", () => {
+      describe("primitive", () => {
+        it("returns the state if it's defined", () => {
+          const state = new State<string | number | undefined>(42);
+          const num = state.try;
+          num satisfies State<string | number> | undefined;
+          expect(num).toBe(state);
+          expect(num).toBeInstanceOf(State);
+          expect(num?.get()).toBe(42);
+        });
+
+        it("returns undefined if state doesn't exist", () => {
+          const state = new State<string | number | undefined>(
+            undefinedValue as any
+          );
+          const num = state.try;
+          expect(num).toBe(undefined);
+        });
+
+        it("returns undefined/null if state is undefined/null", () => {
+          const undefinedState = new State<string | undefined>(undefined);
+          expect(undefinedState.try).toBe(undefined);
+          const nullState = new State<string | null>(null);
+          nullState.try satisfies State<string> | null;
+          expect(nullState.try).toBe(null);
+        });
       });
 
-      it("allows to access record states", () => {
-        const state = new State<Record<string, number>>({ num: 42 });
-        const numA = state.$["num"];
-        numA satisfies State<number> | undefined;
-        expect(numA?.get()).toBe(42);
-        const numB = state.$("num");
-        numB satisfies State<number | undefined>;
-        expect(numB.get()).toBe(42);
+      describe("object", () => {
+        it("returns the field if it exists", () => {
+          const state = new State<Record<string, number>>({ num: 42 });
+          const num = state.try("num");
+          num satisfies State<number> | undefined;
+          expect(num).toBeInstanceOf(State);
+          expect(num?.get()).toBe(42);
+        });
+
+        it("returns undefined if field doesn't exist", () => {
+          const state = new State<Record<string, number>>({ num: 42 });
+          const bum = state.try("bum");
+          expect(bum).toBe(undefined);
+        });
+
+        it("returns undefined/null if field is undefined/null", () => {
+          const state = new State<Record<string, number | undefined | null>>({
+            num: 42,
+            bum: undefined,
+            hum: null,
+          });
+          state.try("bum") satisfies State<number> | undefined | null;
+          expect(state.try("bum")).toBe(undefined);
+          expect(state.try("hum")).toBe(null);
+        });
       });
 
-      it("preserves states", () => {
-        const state = new State({ num: 42 });
-        const numA = state.$.num;
-        const numB = state.$.num;
-        numA satisfies State<number>;
-        expect(numA).toBeInstanceOf(State);
-        expect(numA).toBe(numB);
-      });
+      describe("array", () => {
+        it("returns the item if it exists", () => {
+          const state = new State<Array<number>>([1, 2, 3]);
+          const num = state.try(1);
+          num satisfies State<number> | undefined;
+          expect(num).toBeInstanceOf(State);
+          expect(num?.get()).toBe(2);
+        });
 
-      it("allows to access undefined states", () => {
-        const state = new State<{ num?: number; str?: string }>({ num: 42 });
-        const str = state.$.str;
-        str satisfies State<string | undefined>;
-        expect(str).toBeInstanceOf(State);
-        expect(str.get()).toBe(undefined);
-      });
+        it("returns undefined if item doesn't exist", () => {
+          const state = new State<Array<number>>([1, 2, 3]);
+          const num = state.try(5);
+          expect(num).toBe(undefined);
+        });
 
-      it("preserves undefined states", () => {
-        const state = new State<{ num?: number; str?: string }>({ num: 42 });
-        const stateA = state.$.str;
-        const stateB = state.$.str;
-        expect(stateA).toBe(stateB);
-      });
-    });
-
-    describe("array", () => {
-      it("allows to access items", () => {
-        const state = new State([1, 2, 3, 4]);
-        const item = state.$[3];
-        item satisfies State<number> | undefined;
-        expect(item).toBeInstanceOf(State);
-        expect(item?.get()).toBe(4);
-      });
-
-      it("preserves items", () => {
-        const state = new State([1, 2, 3, 4]);
-        const itemA = state.$[3];
-        const itemB = state.$[3];
-        itemA satisfies State<number> | undefined;
-        expect(itemA).toBeInstanceOf(State);
-        expect(itemA).toBe(itemB);
-      });
-
-      it("allows to access undefined items", () => {
-        const state = new State([1, 2, 3, 4]);
-        const item = state.$(10);
-        item satisfies State<number | undefined>;
-        expect(item).toBeInstanceOf(State);
-        expect(item.get()).toBe(undefined);
-      });
-
-      it("preserves undefined items", () => {
-        const state = new State([1, 2, 3, 4]);
-        const itemA = state.$(10);
-        const itemB = state.$(10);
-        expect(itemA).toBe(itemB);
+        it("returns undefined/null if item is undefined/null", () => {
+          const state = new State<Array<number | undefined | null>>([
+            1,
+            undefined,
+            null,
+          ]);
+          state.try(0) satisfies State<number> | undefined | null;
+          expect(state.try(1)).toBe(undefined);
+          expect(state.try(2)).toBe(null);
+        });
       });
     });
   });
