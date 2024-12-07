@@ -87,6 +87,7 @@ export class State<Payload> {
 
   #clearCache() {
     this.#cachedDirty = undefined;
+    this.#cachedErrors = undefined;
   }
 
   //#region Attributes
@@ -153,11 +154,11 @@ export class State<Payload> {
     this.#internal.set(undefined as Payload);
   }
 
-  #cachedDirty: boolean | undefined;
-
   get initial(): Payload {
     return this.#initial;
   }
+
+  #cachedDirty: boolean | undefined;
 
   get dirty(): boolean {
     if (this.#cachedDirty === undefined) {
@@ -416,30 +417,34 @@ export class State<Payload> {
     this.#error = error;
   }
 
+  #cachedErrors: Map<State<any>, State.Error> | undefined;
+
   get errors(): State.Errors {
-    const errors = new Map();
+    if (!this.#cachedErrors) {
+      const errors = new Map();
 
-    if (this.error) errors.set(this, this.error);
+      if (this.error) errors.set(this, this.error);
 
-    if (
-      this.#internal instanceof InternalArrayState ||
-      this.#internal instanceof InternalObjectState
-    ) {
-      this.forEach((item) => {
-        item.errors.forEach((error, state) => errors.set(state, error));
-      });
+      if (
+        this.#internal instanceof InternalArrayState ||
+        this.#internal instanceof InternalObjectState
+      ) {
+        this.forEach((item) => {
+          item.errors.forEach((error, state) => errors.set(state, error));
+        });
+      }
+
+      this.#cachedErrors = errors;
     }
 
-    return errors;
+    return this.#cachedErrors;
+  }
+
+  get valid(): boolean {
+    return !this.errors.size;
   }
 
   //#endregion
-
-  // vvv PoC vvv
-
-  get valid(): boolean {
-    return false;
-  }
 }
 
 export namespace State {

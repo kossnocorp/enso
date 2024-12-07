@@ -1057,19 +1057,33 @@ describe("State", () => {
           message: "Last name is required",
         });
       });
-
-      function toFullName(name: { first: string; last: string }) {
-        return `${name.first} ${name.last}`;
-      }
-
-      function fromFullName(fullName: string) {
-        const [first = "", last = ""] = fullName.split(" ");
-        return { first, last };
-      }
     });
 
     describe("valid", () => {
-      it.todo("is false if any of the children is invalid");
+      it("is false if any of the children is invalid", () => {
+        const state = new State({
+          name: { first: "" },
+          age: 370,
+          ids: [123, 456],
+        });
+        expect(state.valid).toBe(true);
+        expect(state.$.name.valid).toBe(true);
+        state.$.name.$.first.setError("First name is required");
+        expect(state.valid).toBe(false);
+        expect(state.$.name.valid).toBe(false);
+        state.$.name.$.first.setError();
+        expect(state.valid).toBe(true);
+        expect(state.$.name.valid).toBe(true);
+      });
+
+      it("is false if the source state is invalid", () => {
+        const state = new State({ name: { first: "", last: "" } });
+        const computed = state.$.name.into(toFullName).from(fromFullName);
+        expect(computed.valid).toBe(true);
+        state.$.name.$.first.setError("First name is required");
+        state.$.name.$.last.setError("Last name is required");
+        expect(computed.valid).toBe(false);
+      });
     });
   });
 });
@@ -1080,4 +1094,13 @@ function toCodes(message: string) {
 
 function fromCodes(codes: number[]) {
   return codes.map((c) => String.fromCharCode(c)).join("");
+}
+
+function toFullName(name: { first: string; last: string }) {
+  return `${name.first} ${name.last}`;
+}
+
+function fromFullName(fullName: string) {
+  const [first = "", last = ""] = fullName.split(" ");
+  return { first, last };
 }
