@@ -22,7 +22,6 @@ import { nanoid } from "nanoid";
 
 const createSymbol = Symbol();
 const clearSymbol = Symbol();
-const childTriggerSymbol = Symbol();
 
 export const statePrivate = Symbol();
 
@@ -81,7 +80,7 @@ export class State<Payload> {
     };
 
     this.set = this.set.bind(this);
-    this.Input = this.Input.bind(this);
+    this.Control = this.Control.bind(this);
     this.ref = this.ref.bind(this);
   }
 
@@ -167,6 +166,22 @@ export class State<Payload> {
     return this.#cachedDirty;
   }
 
+  useDirty(): boolean {
+    const [dirty, setDirty] = useState(this.dirty);
+
+    useEffect(
+      () =>
+        this.watch(() => {
+          const nextDirty = this.dirty;
+          if (nextDirty !== dirty) setDirty(nextDirty);
+        }),
+      // [TODO] Consider using a ref for performance
+      [dirty]
+    );
+
+    return dirty;
+  }
+
   //#endregion
 
   //#region Tree
@@ -223,11 +238,11 @@ export class State<Payload> {
 
     this.#target.dispatchEvent(new StateChangeEvent(change));
     // If the updates should flow upstream to parents too
-    if (notifyParents)
-      this.#parent?.state[childTriggerSymbol](change, this.#parent.key);
+    if (notifyParents && this.#parent)
+      this.#parent.state.#childTrigger(change, this.#parent.key);
   }
 
-  [childTriggerSymbol](type: StateChange, key: string) {
+  #childTrigger(type: StateChange, key: string) {
     const updated =
       this.#internal.childUpdate(type, key) | stateChangeType.child;
     this.trigger(updated, true);
@@ -356,7 +371,7 @@ export class State<Payload> {
 
   //#region Input
 
-  Input(props: State.InputProps<Payload>): React.ReactNode {
+  Control(props: State.InputProps<Payload>): React.ReactNode {
     // [TODO] Watch for changes and trigger rerender
 
     return props.render({
@@ -401,20 +416,21 @@ export class State<Payload> {
   }
 
   setError(error?: string | State.Error | undefined) {
+    const prevError = this.#error;
     error = typeof error === "string" ? { message: error } : error;
 
     if (
       error &&
-      (!this.#error ||
-        this.#error.type !== error.type ||
-        this.#error.message !== error.message)
+      (!prevError ||
+        prevError.type !== error.type ||
+        prevError.message !== error.message)
     ) {
+      this.#error = error;
       this.trigger(stateChangeType.invalid, true);
-    } else if (!error && this.#error) {
+    } else if (!error && prevError) {
+      this.#error = error;
       this.trigger(stateChangeType.valid, true);
     }
-
-    this.#error = error;
   }
 
   #cachedErrors: Map<State<any>, State.Error> | undefined;
@@ -440,8 +456,46 @@ export class State<Payload> {
     return this.#cachedErrors;
   }
 
+  useErrors(): State.Errors {
+    const [errors, setErrors] = useState(this.errors);
+
+    useEffect(
+      () =>
+        this.watch(() => {
+          const nextErrors = this.errors;
+          const equal =
+            nextErrors === errors ||
+            (nextErrors.size === errors.size &&
+              Array.from(nextErrors).every(
+                ([state, error]) => errors.get(state) === error
+              ));
+          if (!equal) setErrors(nextErrors);
+        }),
+      // [TODO] Consider using a ref for performance
+      [errors]
+    );
+
+    return errors;
+  }
+
   get valid(): boolean {
     return !this.errors.size;
+  }
+
+  useValid(): boolean {
+    const [valid, setValid] = useState(this.valid);
+
+    useEffect(
+      () =>
+        this.watch(() => {
+          const nextValid = this.valid;
+          if (nextValid !== valid) setValid(nextValid);
+        }),
+      // [TODO] Consider using a ref for performance
+      [valid]
+    );
+
+    return valid;
   }
 
   //#endregion
