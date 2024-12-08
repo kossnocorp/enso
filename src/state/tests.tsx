@@ -101,6 +101,121 @@ describe("State", () => {
       .toHaveTextContent("3");
   });
 
+  it("updates the input state", async () => {
+    function Component() {
+      const count = useRenderCount();
+      const state = State.use<User>({ name: { first: "Alexander" } });
+
+      return (
+        <div>
+          <div data-testid="render-input">{count}</div>
+
+          <input
+            data-testid="name-first-input"
+            {...state.$.name.$.first.input()}
+          />
+
+          <button onClick={() => state.$.name.$.first.set("Sasha")}>
+            Rename
+          </button>
+
+          <UserNameComponent name={state.$.name} />
+        </div>
+      );
+    }
+
+    const screen = render(<Component />);
+
+    await expect
+      .element(screen.getByTestId("name-first-0"))
+      .toHaveTextContent("Alexander");
+    await expect
+      .element(screen.getByTestId("name-first-input"))
+      .toHaveValue("Alexander");
+
+    await userEvent.fill(screen.getByTestId("name-first-input"), "Alex");
+
+    await expect
+      .element(screen.getByTestId("name-first-0"))
+      .toHaveTextContent("Alex");
+    await expect
+      .element(screen.getByTestId("name-first-input"))
+      .toHaveValue("Alex");
+
+    await screen.getByText("Rename").click();
+
+    await expect
+      .element(screen.getByTestId("name-first-0"))
+      .toHaveTextContent("Sasha");
+    await expect
+      .element(screen.getByTestId("name-first-input"))
+      .toHaveValue("Sasha");
+
+    await expect
+      .element(screen.getByTestId("render-input"))
+      .toHaveTextContent("1");
+  });
+
+  it("updates the controlled input state", async () => {
+    function Component() {
+      const count = useRenderCount();
+      const state = State.use<User>({ name: { first: "Alexander" } });
+
+      return (
+        <div>
+          <div data-testid="render-input">{count}</div>
+
+          <state.$.name.$.first.Control
+            render={(control) => (
+              <input
+                data-testid="name-first-input"
+                {...control}
+                onChange={(event) => control.onChange(event.target.value)}
+              />
+            )}
+          />
+
+          <button onClick={() => state.$.name.$.first.set("Sasha")}>
+            Rename
+          </button>
+
+          <UserNameComponent name={state.$.name} />
+        </div>
+      );
+    }
+
+    const screen = render(<Component />);
+
+    await expect
+      .element(screen.getByTestId("name-first-0"))
+      .toHaveTextContent("Alexander");
+    await expect
+      .element(screen.getByTestId("name-first-input"))
+      .toHaveValue("Alexander");
+
+    await userEvent.fill(screen.getByTestId("name-first-input"), "Alex");
+
+    await expect
+      .element(screen.getByTestId("name-first-0"))
+      .toHaveTextContent("Alex");
+    await expect
+      .element(screen.getByTestId("name-first-input"))
+      .toHaveValue("Alex");
+
+    await screen.getByText("Rename").click();
+
+    await expect
+      .element(screen.getByTestId("name-first-0"))
+      .toHaveTextContent("Sasha");
+    await expect
+      .element(screen.getByTestId("name-first-input"))
+      .toHaveValue("Sasha");
+
+    await expect
+      .element(screen.getByTestId("render-input"))
+      .toHaveTextContent("1");
+  });
+
   it("allows to listen to dirty state", async () => {
     function Component() {
       const count = useRenderCount();

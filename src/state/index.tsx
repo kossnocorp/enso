@@ -402,14 +402,23 @@ export class State<Payload> {
 
   Control(props: State.InputProps<Payload>): React.ReactNode {
     // [TODO] Watch for changes and trigger rerender
+    const initialValue = useMemo(() => this.get(), []);
+    const [value, setValue] = useState(initialValue);
+
+    useEffect(() => {
+      return this.watch((value) => {
+        setValue(value);
+      });
+    }, [setValue]);
 
     return props.render({
-      value: this.get(),
+      value,
       onChange: this.set,
-      // [TODO]
+      // [TODO] Connect it to the validation?
       onBlur: () => {},
-      // [TODO]
+      // [TODO] Watch for error changes?
       error: this.error,
+      // [TODO] Add the dirty, valid, and errors?
     });
   }
 
@@ -421,6 +430,7 @@ export class State<Payload> {
   }
 
   #element: HTMLElement | null = null;
+  #elementUnwatch: State.Unwatch | undefined;
 
   ref<Element extends HTMLElement>(element: Element | null) {
     if (this.#element === element) return;
@@ -428,7 +438,22 @@ export class State<Payload> {
     if (this.#element)
       this.#element.removeEventListener("input", this.#onInput(this.#element));
 
+    if (this.#elementUnwatch) {
+      this.#elementUnwatch();
+      this.#elementUnwatch = undefined;
+    }
+
     if (!element) return;
+
+    switch (true) {
+      case element instanceof HTMLInputElement:
+        // [TODO] Watch for changes and set the value
+        element.value = String(this.get()) as string;
+        this.#elementUnwatch = this.watch((value) => {
+          element.value = String(value) as string;
+        });
+        break;
+    }
 
     element.addEventListener("input", this.#onInput(element));
     this.#element = element;
