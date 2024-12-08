@@ -291,6 +291,8 @@ describe("State", () => {
     await screen.getByText("Set same last name error").click();
     await screen.getByText("Set same last name error").click();
 
+    await expect.element(screen.getByTestId("errors")).toHaveTextContent("2");
+
     await expect
       .element(screen.getByTestId("render-errors"))
       .toHaveTextContent("5");
@@ -301,16 +303,261 @@ describe("State", () => {
       .element(screen.getByTestId("render-errors"))
       .toHaveTextContent("5");
 
-    // await state.$.name.$.last.
+    await screen.getByText("Clear errors").click();
 
-    // await screen.getByText("Set error").click();
-    // await screen.getByText("Clear error").click();
+    await expect.element(screen.getByTestId("errors")).toHaveTextContent("0");
 
-    // await expect.element(screen.getByTestId("valid")).toHaveTextContent("true");
+    await expect
+      .element(screen.getByTestId("render-errors"))
+      .toHaveTextContent("6");
+  });
 
-    // await expect
-    //   .element(screen.getByTestId("render-valid"))
-    //   .toHaveTextContent("3");
+  it("allows to listen to meta information", async () => {
+    function Component() {
+      const count = useRenderCount();
+      const state = State.use({ name: { first: "Alexander", last: "" } });
+      const { dirty, valid, errors } = state.useMeta();
+
+      return (
+        <div>
+          <div data-testid="render-errors">{count}</div>
+
+          <button
+            onClick={() =>
+              state.$.name.$.first.setError(`Nope ${Math.random()}`)
+            }
+          >
+            Set first name error
+          </button>
+
+          <button
+            onClick={() => state.$.name.$.last.setError(`Nah ${Math.random()}`)}
+          >
+            Set last name error
+          </button>
+
+          <button
+            onClick={() =>
+              state.$.name.$.last.setError(state.$.name.$.last.error?.message)
+            }
+          >
+            Set same last name error
+          </button>
+
+          <button
+            onClick={() => {
+              state.$.name.$.first.setError();
+              state.$.name.$.last.setError();
+            }}
+          >
+            Clear errors
+          </button>
+
+          <button onClick={() => state.$.name.$.last.set("Koss")}>
+            Trigger state update
+          </button>
+
+          <div data-testid="dirty">{String(dirty)}</div>
+          <div data-testid="valid">{String(valid)}</div>
+          <div data-testid="errors">{errors.size}</div>
+        </div>
+      );
+    }
+
+    const screen = render(<Component />);
+
+    await expect
+      .element(screen.getByTestId("dirty"))
+      .toHaveTextContent("false");
+    await expect.element(screen.getByTestId("valid")).toHaveTextContent("true");
+    await expect.element(screen.getByTestId("errors")).toHaveTextContent("0");
+
+    await screen.getByText("Set first name error").click();
+
+    await expect
+      .element(screen.getByTestId("dirty"))
+      .toHaveTextContent("false");
+    await expect
+      .element(screen.getByTestId("valid"))
+      .toHaveTextContent("false");
+    await expect.element(screen.getByTestId("errors")).toHaveTextContent("1");
+
+    await screen.getByText("Set last name error").click();
+
+    await expect.element(screen.getByTestId("errors")).toHaveTextContent("2");
+
+    await expect
+      .element(screen.getByTestId("render-errors"))
+      .toHaveTextContent("3");
+
+    await screen.getByText("Set first name error").click();
+    await screen.getByText("Set last name error").click();
+
+    await expect
+      .element(screen.getByTestId("render-errors"))
+      .toHaveTextContent("5");
+
+    await screen.getByText("Set same last name error").click();
+    await screen.getByText("Set same last name error").click();
+
+    await expect.element(screen.getByTestId("errors")).toHaveTextContent("2");
+
+    await expect
+      .element(screen.getByTestId("render-errors"))
+      .toHaveTextContent("5");
+
+    await expect.element(screen.getByTestId("render-errors"));
+
+    await screen.getByText("Trigger state update").click();
+
+    await expect.element(screen.getByTestId("dirty")).toHaveTextContent("true");
+    await expect
+      .element(screen.getByTestId("valid"))
+      .toHaveTextContent("false");
+    await expect
+      .element(screen.getByTestId("render-errors"))
+      .toHaveTextContent("6");
+
+    await screen.getByText("Clear errors").click();
+
+    await expect.element(screen.getByTestId("dirty")).toHaveTextContent("true");
+    await expect.element(screen.getByTestId("valid")).toHaveTextContent("true");
+    await expect.element(screen.getByTestId("errors")).toHaveTextContent("0");
+
+    await expect
+      .element(screen.getByTestId("render-errors"))
+      .toHaveTextContent("7");
+  });
+
+  it("allows to listen to value with meta information", async () => {
+    function Component() {
+      const count = useRenderCount();
+      const state = State.use({ name: { first: "Alexander", last: "" } });
+      const [value, { dirty, valid, errors }] = state.useWatch({ meta: true });
+
+      return (
+        <div>
+          <div data-testid="render-errors">{count}</div>
+
+          <button
+            onClick={() =>
+              state.$.name.$.first.setError(`Nope ${Math.random()}`)
+            }
+          >
+            Set first name error
+          </button>
+
+          <button
+            onClick={() => state.$.name.$.last.setError(`Nah ${Math.random()}`)}
+          >
+            Set last name error
+          </button>
+
+          <button
+            onClick={() =>
+              state.$.name.$.last.setError(state.$.name.$.last.error?.message)
+            }
+          >
+            Set same last name error
+          </button>
+
+          <button
+            onClick={() => {
+              state.$.name.$.first.setError();
+              state.$.name.$.last.setError();
+            }}
+          >
+            Clear errors
+          </button>
+
+          <button
+            onClick={() => state.$.name.set({ first: "Sasha", last: "Koss" })}
+          >
+            Rename
+          </button>
+
+          <div data-testid="full-name">
+            {value.name.first} {value.name.last}
+          </div>
+
+          <div data-testid="dirty">{String(dirty)}</div>
+          <div data-testid="valid">{String(valid)}</div>
+          <div data-testid="errors">{errors.size}</div>
+        </div>
+      );
+    }
+
+    const screen = render(<Component />);
+
+    await expect
+      .element(screen.getByTestId("full-name"))
+      .toHaveTextContent("Alexander");
+
+    await expect
+      .element(screen.getByTestId("dirty"))
+      .toHaveTextContent("false");
+    await expect.element(screen.getByTestId("valid")).toHaveTextContent("true");
+    await expect.element(screen.getByTestId("errors")).toHaveTextContent("0");
+
+    await screen.getByText("Set first name error").click();
+
+    await expect
+      .element(screen.getByTestId("dirty"))
+      .toHaveTextContent("false");
+    await expect
+      .element(screen.getByTestId("valid"))
+      .toHaveTextContent("false");
+    await expect.element(screen.getByTestId("errors")).toHaveTextContent("1");
+
+    await screen.getByText("Set last name error").click();
+
+    await expect.element(screen.getByTestId("errors")).toHaveTextContent("2");
+
+    await expect
+      .element(screen.getByTestId("render-errors"))
+      .toHaveTextContent("3");
+
+    await screen.getByText("Set first name error").click();
+    await screen.getByText("Set last name error").click();
+
+    await expect
+      .element(screen.getByTestId("render-errors"))
+      .toHaveTextContent("5");
+
+    await screen.getByText("Set same last name error").click();
+    await screen.getByText("Set same last name error").click();
+
+    await expect.element(screen.getByTestId("errors")).toHaveTextContent("2");
+
+    await expect
+      .element(screen.getByTestId("render-errors"))
+      .toHaveTextContent("5");
+
+    await expect.element(screen.getByTestId("render-errors"));
+
+    await screen.getByText("Rename").click();
+
+    await expect
+      .element(screen.getByTestId("full-name"))
+      .toHaveTextContent("Sasha Koss");
+
+    await expect.element(screen.getByTestId("dirty")).toHaveTextContent("true");
+    await expect
+      .element(screen.getByTestId("valid"))
+      .toHaveTextContent("false");
+    await expect
+      .element(screen.getByTestId("render-errors"))
+      .toHaveTextContent("6");
+
+    await screen.getByText("Clear errors").click();
+
+    await expect.element(screen.getByTestId("dirty")).toHaveTextContent("true");
+    await expect.element(screen.getByTestId("valid")).toHaveTextContent("true");
+    await expect.element(screen.getByTestId("errors")).toHaveTextContent("0");
+
+    await expect
+      .element(screen.getByTestId("render-errors"))
+      .toHaveTextContent("7");
   });
 
   it("allows to decompose union state", async () => {
@@ -719,6 +966,7 @@ interface UserNameComponentProps {
 function UserNameComponent(props: UserNameComponentProps) {
   const count = useRenderCount();
   const { index = 0, name } = props;
+
   const { first, last } = name.useWatch();
 
   return (

@@ -166,20 +166,25 @@ export class State<Payload> {
     return this.#cachedDirty;
   }
 
-  useDirty(): boolean {
-    const [dirty, setDirty] = useState(this.dirty);
+  useDirty<Enable extends boolean | undefined = undefined>(
+    enable?: Enable
+  ): Enable extends true | undefined ? boolean : undefined {
+    const [dirty, setDirty] = useState(enable === false ? true : this.dirty);
 
     useEffect(
-      () =>
-        this.watch(() => {
+      () => {
+        if (enable === false) return;
+        return this.watch(() => {
           const nextDirty = this.dirty;
           if (nextDirty !== dirty) setDirty(nextDirty);
-        }),
+        });
+      },
       // [TODO] Consider using a ref for performance
-      [dirty]
+      [enable, dirty, setDirty]
     );
 
-    return dirty;
+    // @ts-ignore: This is fine
+    return enable === false ? undefined : dirty;
   }
 
   //#endregion
@@ -219,10 +224,25 @@ export class State<Payload> {
     };
   }
 
-  useWatch(): Payload {
+  useWatch<Props extends State.WatchProps | undefined = undefined>(
+    props?: Props
+  ): State.Watch<Payload, Props> {
     const [payload, setPayload] = useState(this.get());
+    const watchAllMeta = !!props?.meta;
+    const watchMeta =
+      watchAllMeta || props?.errors || props?.valid || props?.dirty;
+    const meta = this.useMeta(
+      watchAllMeta
+        ? undefined
+        : {
+            errors: !!props?.errors,
+            valid: !!props?.valid,
+            dirty: !!props?.dirty,
+          }
+    );
+
     useEffect(() => this.watch(setPayload), []);
-    return payload;
+    return watchMeta ? [payload, meta] : payload;
   }
 
   unwatch() {
@@ -246,6 +266,15 @@ export class State<Payload> {
     const updated =
       this.#internal.childUpdate(type, key) | stateChangeType.child;
     this.trigger(updated, true);
+  }
+
+  useMeta<Props extends State.MetaProps | undefined = undefined>(
+    props?: Props
+  ): State.Meta<Props> {
+    const errors = this.useErrors(!props || !!props.errors);
+    const valid = this.useValid(!props || !!props.valid);
+    const dirty = this.useDirty(!props || !!props.dirty);
+    return { errors, valid, dirty } as State.Meta<Props>;
   }
 
   //#endregion
@@ -456,12 +485,18 @@ export class State<Payload> {
     return this.#cachedErrors;
   }
 
-  useErrors(): State.Errors {
-    const [errors, setErrors] = useState(this.errors);
+  useErrors<Enable extends boolean | undefined = undefined>(
+    enable?: Enable
+  ): Enable extends true | undefined ? State.Errors : undefined {
+    const emptyMap = useMemo(() => new Map(), []);
+    const [errors, setErrors] = useState(
+      enable === false ? emptyMap : this.errors
+    );
 
     useEffect(
-      () =>
-        this.watch(() => {
+      () => {
+        if (enable === false) return;
+        return this.watch(() => {
           const nextErrors = this.errors;
           const equal =
             nextErrors === errors ||
@@ -470,32 +505,39 @@ export class State<Payload> {
                 ([state, error]) => errors.get(state) === error
               ));
           if (!equal) setErrors(nextErrors);
-        }),
+        });
+      },
       // [TODO] Consider using a ref for performance
-      [errors]
+      [enable, errors, setErrors]
     );
 
-    return errors;
+    // @ts-ignore: This is fine
+    return enable === false ? undefined : errors;
   }
 
   get valid(): boolean {
     return !this.errors.size;
   }
 
-  useValid(): boolean {
-    const [valid, setValid] = useState(this.valid);
+  useValid<Enable extends boolean | undefined = undefined>(
+    enable?: Enable
+  ): Enable extends true | undefined ? boolean : undefined {
+    const [valid, setValid] = useState(enable === false ? true : this.valid);
 
     useEffect(
-      () =>
-        this.watch(() => {
+      () => {
+        if (enable === false) return;
+        return this.watch(() => {
           const nextValid = this.valid;
           if (nextValid !== valid) setValid(nextValid);
-        }),
+        });
+      },
       // [TODO] Consider using a ref for performance
-      [valid]
+      [enable, valid, setValid]
     );
 
-    return valid;
+    // @ts-ignore: This is fine
+    return enable === false ? undefined : valid;
   }
 
   //#endregion
@@ -591,12 +633,59 @@ export namespace State {
 
   //#region Watching
 
+  export interface WatchProps extends MetaProps {
+    meta?: boolean;
+  }
+
   export type WatchCallback<Payload> = (
     payload: Payload,
     event: StateChangeEvent
   ) => void;
 
+  export type Watch<
+    Payload,
+    Props extends WatchProps | undefined
+  > = WatchIncludeMeta<Props> extends true
+    ? [Payload, Props extends { meta: true } ? Meta<undefined> : Meta<Props>]
+    : Payload;
+
+  export type WatchIncludeMeta<Props extends WatchProps | undefined> =
+    undefined extends Props
+      ? false
+      : Props extends WatchProps
+      ? Props["meta"] extends true
+        ? true
+        : Props["meta"] extends false
+        ? false
+        : Props["errors"] extends true
+        ? true
+        : Props["valid"] extends true
+        ? true
+        : Props["dirty"] extends true
+        ? true
+        : false
+      : false;
+
   export type Unwatch = () => void;
+
+  export interface MetaProps {
+    errors?: boolean;
+    valid?: boolean;
+    dirty?: boolean;
+  }
+
+  export type Meta<Props extends MetaProps | undefined> =
+    Props extends MetaProps
+      ? {
+          errors: Props["errors"] extends true ? Errors : undefined;
+          valid: Props["valid"] extends true ? boolean : undefined;
+          dirty: Props["dirty"] extends true ? boolean : undefined;
+        }
+      : {
+          errors: Errors;
+          valid: boolean;
+          dirty: boolean;
+        };
 
   //#endregion
 
@@ -719,30 +808,6 @@ export namespace State {
   }
 
   export type Errors = Map<State<any>, State.Error>;
-
-  //#endregion
-
-  // vvv PoC vvv
-
-  export type UseWatchCallback<Payload> = (payload: Payload) => void;
-
-  //#region Shared
-
-  // export type Use<Payload> = Payload extends Array<any>
-  //   ? HookField.HookFieldUseFn<Payload>
-  //   : Payload extends object
-  //   ? HookField.HookFieldUse<Payload>
-  //   : never;
-
-  export type ObjectOnly<Payload, Type> = Payload extends object & {
-    length?: never;
-  }
-    ? Type
-    : never;
-
-  export type ArrayOnly<Payload, Type> = Payload extends Array<any>
-    ? Type
-    : never;
 
   //#endregion
 }
