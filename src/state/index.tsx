@@ -86,7 +86,7 @@ export class State<Payload> {
 
   #clearCache() {
     this.#cachedDirty = undefined;
-    this.#cachedErrors = undefined;
+    this.#cachedInvalids = undefined;
   }
 
   //#region Attributes
@@ -113,6 +113,40 @@ export class State<Payload> {
 
   get(): Payload {
     return this.#internal.get();
+  }
+
+  useGet<Props extends State.UseGetProps | undefined = undefined>(
+    props?: Props
+  ): State.UseGet<Payload, Props> {
+    const [payload, setPayload] = useState(this.get());
+    const watchAllMeta = !!props?.meta;
+    const watchMeta =
+      watchAllMeta || props?.invalids || props?.valid || props?.dirty;
+    const meta = this.useMeta(
+      watchAllMeta
+        ? undefined
+        : {
+            invalids: !!props?.invalids,
+            valid: !!props?.valid,
+            error: !!props?.error,
+            dirty: !!props?.dirty,
+          }
+    );
+
+    useEffect(
+      () =>
+        this.watch((payload, event) => {
+          // Ignore only valid-invalid changes
+          if (
+            !(event.detail & ~(stateChangeType.valid | stateChangeType.invalid))
+          )
+            return;
+
+          setPayload(payload);
+        }),
+      []
+    );
+    return watchMeta ? [payload, meta] : payload;
   }
 
   // [TODO] Exposing the notify parents flag might be dangerous
@@ -224,27 +258,6 @@ export class State<Payload> {
     };
   }
 
-  useWatch<Props extends State.WatchProps | undefined = undefined>(
-    props?: Props
-  ): State.Watch<Payload, Props> {
-    const [payload, setPayload] = useState(this.get());
-    const watchAllMeta = !!props?.meta;
-    const watchMeta =
-      watchAllMeta || props?.errors || props?.valid || props?.dirty;
-    const meta = this.useMeta(
-      watchAllMeta
-        ? undefined
-        : {
-            errors: !!props?.errors,
-            valid: !!props?.valid,
-            dirty: !!props?.dirty,
-          }
-    );
-
-    useEffect(() => this.watch(setPayload), []);
-    return watchMeta ? [payload, meta] : payload;
-  }
-
   unwatch() {
     this.#subs.forEach((sub) =>
       this.#target.removeEventListener("change", sub)
@@ -271,10 +284,11 @@ export class State<Payload> {
   useMeta<Props extends State.MetaProps | undefined = undefined>(
     props?: Props
   ): State.Meta<Props> {
-    const errors = this.useErrors(!props || !!props.errors);
+    const invalids = this.useInvalids(!props || !!props.invalids);
     const valid = this.useValid(!props || !!props.valid);
+    const error = this.useError(!props || !!props.error);
     const dirty = this.useDirty(!props || !!props.dirty);
-    return { errors, valid, dirty } as State.Meta<Props>;
+    return { invalids, valid, error, dirty } as State.Meta<Props>;
   }
 
   //#endregion
@@ -469,6 +483,29 @@ export class State<Payload> {
     return this.#error;
   }
 
+  useError<Enable extends boolean | undefined = undefined>(
+    enable?: Enable
+  ): Enable extends true | undefined ? State.Error | undefined : undefined {
+    const [error, setError] = useState(
+      enable === false ? undefined : this.error
+    );
+
+    useEffect(
+      () => {
+        if (enable === false) return;
+        return this.watch(() => {
+          const nextError = this.error;
+          if (nextError !== error) setError(nextError);
+        });
+      },
+      // [TODO] Consider using a ref for performance
+      [enable, error, setError]
+    );
+
+    // @ts-ignore: This is fine
+    return enable === false ? undefined : error;
+  }
+
   setError(error?: string | State.Error | undefined) {
     const prevError = this.#error;
     error = typeof error === "string" ? { message: error } : error;
@@ -487,61 +524,61 @@ export class State<Payload> {
     }
   }
 
-  #cachedErrors: Map<State<any>, State.Error> | undefined;
+  #cachedInvalids: Map<State<any>, State.Error> | undefined;
 
-  get errors(): State.Errors {
-    if (!this.#cachedErrors) {
-      const errors = new Map();
+  get invalids(): State.Invalids {
+    if (!this.#cachedInvalids) {
+      const invalids = new Map();
 
-      if (this.error) errors.set(this, this.error);
+      if (this.error) invalids.set(this, this.error);
 
       if (
         this.#internal instanceof InternalArrayState ||
         this.#internal instanceof InternalObjectState
       ) {
         this.forEach((item) => {
-          item.errors.forEach((error, state) => errors.set(state, error));
+          item.invalids.forEach((error, state) => invalids.set(state, error));
         });
       }
 
-      this.#cachedErrors = errors;
+      this.#cachedInvalids = invalids;
     }
 
-    return this.#cachedErrors;
+    return this.#cachedInvalids;
   }
 
-  useErrors<Enable extends boolean | undefined = undefined>(
+  useInvalids<Enable extends boolean | undefined = undefined>(
     enable?: Enable
-  ): Enable extends true | undefined ? State.Errors : undefined {
+  ): Enable extends true | undefined ? State.Invalids : undefined {
     const emptyMap = useMemo(() => new Map(), []);
-    const [errors, setErrors] = useState(
-      enable === false ? emptyMap : this.errors
+    const [invalids, setInvalids] = useState(
+      enable === false ? emptyMap : this.invalids
     );
 
     useEffect(
       () => {
         if (enable === false) return;
         return this.watch(() => {
-          const nextErrors = this.errors;
+          const nextInvalids = this.invalids;
           const equal =
-            nextErrors === errors ||
-            (nextErrors.size === errors.size &&
-              Array.from(nextErrors).every(
-                ([state, error]) => errors.get(state) === error
+            nextInvalids === invalids ||
+            (nextInvalids.size === invalids.size &&
+              Array.from(nextInvalids).every(
+                ([state, error]) => invalids.get(state) === error
               ));
-          if (!equal) setErrors(nextErrors);
+          if (!equal) setInvalids(nextInvalids);
         });
       },
       // [TODO] Consider using a ref for performance
-      [enable, errors, setErrors]
+      [enable, invalids, setInvalids]
     );
 
     // @ts-ignore: This is fine
-    return enable === false ? undefined : errors;
+    return enable === false ? undefined : invalids;
   }
 
   get valid(): boolean {
-    return !this.errors.size;
+    return !this.invalids.size;
   }
 
   useValid<Enable extends boolean | undefined = undefined>(
@@ -569,6 +606,38 @@ export class State<Payload> {
 }
 
 export namespace State {
+  //#region Value
+
+  export interface UseGetProps extends MetaProps {
+    meta?: boolean;
+  }
+
+  export type UseGet<
+    Payload,
+    Props extends UseGetProps | undefined
+  > = UseGetIncludeMeta<Props> extends true
+    ? [Payload, Props extends { meta: true } ? Meta<undefined> : Meta<Props>]
+    : Payload;
+
+  export type UseGetIncludeMeta<Props extends UseGetProps | undefined> =
+    undefined extends Props
+      ? false
+      : Props extends UseGetProps
+      ? Props["meta"] extends true
+        ? true
+        : Props["meta"] extends false
+        ? false
+        : Props["invalids"] extends true
+        ? true
+        : Props["valid"] extends true
+        ? true
+        : Props["dirty"] extends true
+        ? true
+        : false
+      : false;
+
+  //#endregion
+
   //#region Tree
 
   export interface Parent<Payload> {
@@ -658,57 +727,32 @@ export namespace State {
 
   //#region Watching
 
-  export interface WatchProps extends MetaProps {
-    meta?: boolean;
-  }
-
   export type WatchCallback<Payload> = (
     payload: Payload,
     event: StateChangeEvent
   ) => void;
 
-  export type Watch<
-    Payload,
-    Props extends WatchProps | undefined
-  > = WatchIncludeMeta<Props> extends true
-    ? [Payload, Props extends { meta: true } ? Meta<undefined> : Meta<Props>]
-    : Payload;
-
-  export type WatchIncludeMeta<Props extends WatchProps | undefined> =
-    undefined extends Props
-      ? false
-      : Props extends WatchProps
-      ? Props["meta"] extends true
-        ? true
-        : Props["meta"] extends false
-        ? false
-        : Props["errors"] extends true
-        ? true
-        : Props["valid"] extends true
-        ? true
-        : Props["dirty"] extends true
-        ? true
-        : false
-      : false;
-
   export type Unwatch = () => void;
 
   export interface MetaProps {
-    errors?: boolean;
+    invalids?: boolean;
     valid?: boolean;
+    error?: boolean;
     dirty?: boolean;
   }
 
   export type Meta<Props extends MetaProps | undefined> =
     Props extends MetaProps
       ? {
-          errors: Props["errors"] extends true ? Errors : undefined;
+          invalids: Props["invalids"] extends true ? Invalids : undefined;
           valid: Props["valid"] extends true ? boolean : undefined;
+          error: Props["error"] extends true ? Error | undefined : undefined;
           dirty: Props["dirty"] extends true ? boolean : undefined;
         }
       : {
-          errors: Errors;
+          invalids: Invalids;
           valid: boolean;
+          error: Error | undefined;
           dirty: boolean;
         };
 
@@ -825,14 +869,14 @@ export namespace State {
 
   //#endregion
 
-  //#region Field
+  //#region Errors
 
   export interface Error {
     type?: string | undefined;
     message: string;
   }
 
-  export type Errors = Map<State<any>, State.Error>;
+  export type Invalids = Map<State<any>, State.Error>;
 
   //#endregion
 }
@@ -861,8 +905,8 @@ export class ComputedState<Payload, Computed> extends State<Computed> {
     return this.#source.path;
   }
 
-  get errors(): State.Errors {
-    return this.#source.errors;
+  get invalids(): State.Invalids {
+    return this.#source.invalids;
   }
 
   get parent(): State<any> | undefined {

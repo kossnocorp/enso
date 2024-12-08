@@ -1018,7 +1018,7 @@ describe("State", () => {
       });
     });
 
-    describe("errors", () => {
+    describe("invalids", () => {
       it("collects map all children errors", () => {
         const state = new State({
           name: { first: "" },
@@ -1029,16 +1029,16 @@ describe("State", () => {
         state.$.age.setError("Are you an immortal?");
         state.$.name.$.first.setError("First name is required");
         state.$.ids.$(1).setError("Is it a valid ID?");
-        const { errors } = state;
-        expect(errors.size).toBe(4);
-        expect(errors.get(state)).toEqual({ message: "Something is wrong" });
-        expect(errors.get(state.$.age)).toEqual({
+        const { invalids } = state;
+        expect(invalids.size).toBe(4);
+        expect(invalids.get(state)).toEqual({ message: "Something is wrong" });
+        expect(invalids.get(state.$.age)).toEqual({
           message: "Are you an immortal?",
         });
-        expect(errors.get(state.$.name.$.first)).toEqual({
+        expect(invalids.get(state.$.name.$.first)).toEqual({
           message: "First name is required",
         });
-        expect(errors.get(state.$.ids.$(1))).toEqual({
+        expect(invalids.get(state.$.ids.$(1))).toEqual({
           message: "Is it a valid ID?",
         });
       });
@@ -1048,12 +1048,12 @@ describe("State", () => {
         const computed = state.$.name.into(toFullName).from(fromFullName);
         state.$.name.$.first.setError("First name is required");
         state.$.name.$.last.setError("Last name is required");
-        const { errors } = computed;
-        expect(errors.size).toBe(2);
-        expect(errors.get(state.$.name.$.first)).toEqual({
+        const { invalids } = computed;
+        expect(invalids.size).toBe(2);
+        expect(invalids.get(state.$.name.$.first)).toEqual({
           message: "First name is required",
         });
-        expect(errors.get(state.$.name.$.last)).toEqual({
+        expect(invalids.get(state.$.name.$.last)).toEqual({
           message: "Last name is required",
         });
       });

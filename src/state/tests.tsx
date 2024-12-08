@@ -216,6 +216,54 @@ describe("State", () => {
       .toHaveTextContent("1");
   });
 
+  it("allows to watch for state", async () => {
+    function Component() {
+      const count = useRenderCount();
+      const state = State.use({ name: { first: "Alexander" } });
+      const name = state.$.name.useGet();
+
+      return (
+        <div>
+          <div data-testid="render-watch">{count}</div>
+
+          <button onClick={() => state.$.name.$.first.set("Sasha")}>
+            Rename
+          </button>
+
+          <button onClick={() => state.$.name.setError("Nope")}>
+            Add error
+          </button>
+
+          <div data-testid="name">{name.first}</div>
+        </div>
+      );
+    }
+
+    const screen = render(<Component />);
+
+    await expect
+      .element(screen.getByTestId("name"))
+      .toHaveTextContent("Alexander");
+
+    await expect
+      .element(screen.getByTestId("render-watch"))
+      .toHaveTextContent("1");
+
+    await screen.getByText("Add error").click();
+
+    await expect
+      .element(screen.getByTestId("render-watch"))
+      .toHaveTextContent("1");
+
+    await screen.getByText("rename").click();
+
+    await expect.element(screen.getByTestId("name")).toHaveTextContent("Sasha");
+
+    await expect
+      .element(screen.getByTestId("render-watch"))
+      .toHaveTextContent("2");
+  });
+
   it("allows to listen to dirty state", async () => {
     function Component() {
       const count = useRenderCount();
@@ -260,6 +308,100 @@ describe("State", () => {
     await expect
       .element(screen.getByTestId("render-dirty"))
       .toHaveTextContent("3");
+  });
+
+  it("allows to listen to error state", async () => {
+    function Component() {
+      const count = useRenderCount();
+      const state = State.use({ name: { first: "Alexander", last: "" } });
+      const error = state.$.name.useError();
+
+      return (
+        <div>
+          <div data-testid="render-error">{count}</div>
+
+          <button onClick={() => state.$.name.setError("Nope 1")}>
+            Set error 1
+          </button>
+
+          <button onClick={() => state.$.name.setError("Nope 2")}>
+            Set error 2
+          </button>
+
+          <button onClick={() => state.$.name.$.first.setError("Nah")}>
+            Set first name error
+          </button>
+
+          <button
+            onClick={() => {
+              state.$.name.setError();
+            }}
+          >
+            Clear error
+          </button>
+
+          <button onClick={() => state.$.name.$.last.set("Koss")}>
+            Trigger state update
+          </button>
+
+          <div data-testid="error">{error?.message}</div>
+        </div>
+      );
+    }
+
+    const screen = render(<Component />);
+
+    await expect.element(screen.getByTestId("error")).toHaveTextContent("");
+
+    await expect
+      .element(screen.getByTestId("render-error"))
+      .toHaveTextContent("1");
+
+    await screen.getByText("Set error 1").click();
+
+    await expect
+      .element(screen.getByTestId("error"))
+      .toHaveTextContent("Nope 1");
+
+    await expect
+      .element(screen.getByTestId("render-error"))
+      .toHaveTextContent("2");
+
+    await screen.getByText("Set error 1").click();
+
+    await expect
+      .element(screen.getByTestId("render-error"))
+      .toHaveTextContent("2");
+
+    await screen.getByText("Set error 2").click();
+
+    await expect
+      .element(screen.getByTestId("error"))
+      .toHaveTextContent("Nope 2");
+
+    await expect
+      .element(screen.getByTestId("render-error"))
+      .toHaveTextContent("3");
+
+    await screen.getByText("Trigger state update").click();
+
+    await expect
+      .element(screen.getByTestId("render-error"))
+      .toHaveTextContent("3");
+
+    await screen.getByText("Set first name error").click();
+
+    await expect
+      .element(screen.getByTestId("render-error"))
+      .toHaveTextContent("3");
+
+    await screen.getByText("Clear error").click();
+
+    await expect.element(screen.getByTestId("error")).toHaveTextContent("");
+
+    await expect
+      .element(screen.getByTestId("render-error"))
+      .toHaveTextContent("4");
   });
 
   it("allows to listen to valid state", async () => {
@@ -334,7 +476,7 @@ describe("State", () => {
     function Component() {
       const count = useRenderCount();
       const state = State.use({ name: { first: "Alexander", last: "" } });
-      const errors = state.useErrors();
+      const errors = state.useInvalids();
 
       return (
         <div>
@@ -431,7 +573,7 @@ describe("State", () => {
     function Component() {
       const count = useRenderCount();
       const state = State.use({ name: { first: "Alexander", last: "" } });
-      const { dirty, valid, errors } = state.useMeta();
+      const { dirty, error, valid, invalids: errors } = state.useMeta();
 
       return (
         <div>
@@ -459,6 +601,10 @@ describe("State", () => {
             Set same last name error
           </button>
 
+          <button onClick={() => state.setError("Nope")}>
+            Set state error
+          </button>
+
           <button
             onClick={() => {
               state.$.name.$.first.setError();
@@ -473,6 +619,7 @@ describe("State", () => {
           </button>
 
           <div data-testid="dirty">{String(dirty)}</div>
+          <div data-testid="error">{error?.message}</div>
           <div data-testid="valid">{String(valid)}</div>
           <div data-testid="errors">{errors.size}</div>
         </div>
@@ -542,13 +689,24 @@ describe("State", () => {
     await expect
       .element(screen.getByTestId("render-errors"))
       .toHaveTextContent("7");
+
+    await screen.getByText("Set state error").click();
+
+    await expect.element(screen.getByTestId("error")).toHaveTextContent("Nope");
+    await expect.element(screen.getByTestId("errors")).toHaveTextContent("1");
+
+    await expect
+      .element(screen.getByTestId("render-errors"))
+      .toHaveTextContent("8");
   });
 
   it("allows to listen to value with meta information", async () => {
     function Component() {
       const count = useRenderCount();
       const state = State.use({ name: { first: "Alexander", last: "" } });
-      const [value, { dirty, valid, errors }] = state.useWatch({ meta: true });
+      const [value, { dirty, error, valid, invalids: errors }] = state.useGet({
+        meta: true,
+      });
 
       return (
         <div>
@@ -576,6 +734,10 @@ describe("State", () => {
             Set same last name error
           </button>
 
+          <button onClick={() => state.setError("Nope")}>
+            Set state error
+          </button>
+
           <button
             onClick={() => {
               state.$.name.$.first.setError();
@@ -596,6 +758,7 @@ describe("State", () => {
           </div>
 
           <div data-testid="dirty">{String(dirty)}</div>
+          <div data-testid="error">{error?.message}</div>
           <div data-testid="valid">{String(valid)}</div>
           <div data-testid="errors">{errors.size}</div>
         </div>
@@ -673,6 +836,15 @@ describe("State", () => {
     await expect
       .element(screen.getByTestId("render-errors"))
       .toHaveTextContent("7");
+
+    await screen.getByText("Set state error").click();
+
+    await expect.element(screen.getByTestId("error")).toHaveTextContent("Nope");
+    await expect.element(screen.getByTestId("errors")).toHaveTextContent("1");
+
+    await expect
+      .element(screen.getByTestId("render-errors"))
+      .toHaveTextContent("8");
   });
 
   it("allows to decompose union state", async () => {
@@ -974,7 +1146,7 @@ describe("State", () => {
 
     function CodesComponent(props: CodesComponentProps) {
       const count = useRenderCount();
-      const codes = props.codes.useWatch();
+      const codes = props.codes.useGet();
       return (
         <div>
           <div data-testid="render-codes">{count}</div>
@@ -1082,7 +1254,7 @@ function UserNameComponent(props: UserNameComponentProps) {
   const count = useRenderCount();
   const { index = 0, name } = props;
 
-  const { first, last } = name.useWatch();
+  const { first, last } = name.useGet();
 
   return (
     <div data-testid={`name-${index}`}>
@@ -1165,7 +1337,7 @@ interface StringComponentProps {
 
 function StringComponent(props: StringComponentProps) {
   const count = useRenderCount();
-  const string = props.string.useWatch();
+  const string = props.string.useGet();
   return (
     <div>
       <div data-testid="render-string">{count}</div>
@@ -1180,7 +1352,7 @@ interface NumberComponentProps {
 
 function NumberComponent(props: NumberComponentProps) {
   const count = useRenderCount();
-  const number = props.number.useWatch();
+  const number = props.number.useGet();
   return (
     <div>
       <div data-testid="render-number">{count}</div>

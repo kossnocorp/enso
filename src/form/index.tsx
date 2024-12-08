@@ -43,8 +43,8 @@ export class Form<
 
     // this.#id = nanoid();
 
-    // this.#useWatchEffect.bind(this);
-    // this.#useWatchState.bind(this);
+    // this.#useGetEffect.bind(this);
+    // this.#useGetState.bind(this);
   }
 
   handleSubmit(callback: Form.HandleSubmitCallback<Payload>) {
