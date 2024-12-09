@@ -298,6 +298,25 @@ export class State<Payload> {
 
   //#region Mapping
 
+  useCompute<Computed>(
+    callback: State.ComputeCallback<Payload, Computed>
+  ): Computed {
+    const [computed, setComputed] = useState(() => callback(this.get()));
+
+    useEffect(
+      () =>
+        this.watch((payload) => {
+          const nextComputed = callback(payload);
+          // [TODO] Use deep object comparison?
+          if (nextComputed !== computed) setComputed(nextComputed);
+        }),
+      // [TODO] Consider using a ref for performance
+      [computed, setComputed]
+    );
+
+    return computed;
+  }
+
   decompose: () => State.Decomposed<Payload> = decomposeMixin("state");
 
   useDecompose: (
@@ -787,6 +806,10 @@ export namespace State {
   //#endregion
 
   //#region Mapping
+
+  export type ComputeCallback<Payload, Computed> = (
+    payload: Payload
+  ) => Computed;
 
   export type Decomposed<Payload> = Payload extends Payload
     ? {

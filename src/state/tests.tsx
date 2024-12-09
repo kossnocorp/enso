@@ -1013,6 +1013,88 @@ describe("State", () => {
       .toHaveTextContent("8");
   });
 
+  it("allows to compute value", async () => {
+    function Component() {
+      const count = useRenderCount();
+      const state = State.use<User>({ name: { first: "Alexander" } });
+      const hasLastName = state.$.name.useCompute((name) => !!name.last);
+
+      return (
+        <div>
+          <div data-testid="render-compute">{count}</div>
+
+          <button
+            onClick={() => state.$.name.$.first.set(`Sasha ${Math.random()}`)}
+          >
+            Rename first
+          </button>
+
+          <button onClick={() => state.$.name.setError("Nope")}>
+            Add error
+          </button>
+
+          <button onClick={() => state.$.name.$.last.set("Koss")}>
+            Set last name
+          </button>
+
+          <button onClick={() => state.$.name.$.last.set(undefined)}>
+            Clear last name
+          </button>
+
+          <div data-testid="computed">{String(hasLastName)}</div>
+        </div>
+      );
+    }
+
+    const screen = render(<Component />);
+
+    await expect
+      .element(screen.getByTestId("computed"))
+      .toHaveTextContent("false");
+
+    await expect
+      .element(screen.getByTestId("render-compute"))
+      .toHaveTextContent("1");
+
+    await screen.getByText("Add error").click();
+    await screen.getByText("Rename first").click();
+    await screen.getByText("Add error").click();
+    await screen.getByText("Rename first").click();
+
+    await expect
+      .element(screen.getByTestId("render-compute"))
+      .toHaveTextContent("1");
+
+    await screen.getByText("Set last name").click();
+
+    await expect
+      .element(screen.getByTestId("computed"))
+      .toHaveTextContent("true");
+
+    await expect
+      .element(screen.getByTestId("render-compute"))
+      .toHaveTextContent("2");
+
+    await screen.getByText("Add error").click();
+    await screen.getByText("Rename first").click();
+    await screen.getByText("Add error").click();
+    await screen.getByText("Rename first").click();
+
+    await expect
+      .element(screen.getByTestId("render-compute"))
+      .toHaveTextContent("2");
+
+    await screen.getByText("Clear last name").click();
+
+    await expect
+      .element(screen.getByTestId("computed"))
+      .toHaveTextContent("false");
+
+    await expect
+      .element(screen.getByTestId("render-compute"))
+      .toHaveTextContent("3");
+  });
+
   it("allows to decompose union state", async () => {
     interface ComponentProps {
       address: Address;
