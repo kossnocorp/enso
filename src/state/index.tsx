@@ -951,27 +951,27 @@ export class ComputedState<Payload, Computed> extends State<Computed> {
     this.#source = source;
   }
 
-  get id(): string {
+  override get id(): string {
     return this.#source.id;
   }
 
-  get key(): string | undefined {
+  override get key(): string | undefined {
     return this.#source.key;
   }
 
-  get path(): string[] {
+  override get path(): string[] {
     return this.#source.path;
   }
 
-  get invalids(): State.Invalids {
+  override get invalids(): State.Invalids {
     return this.#source.invalids;
   }
 
-  get parent(): State<any> | undefined {
+  override get parent(): State<any> | undefined {
     return this.#source.parent;
   }
 
-  setError(error?: string | State.Error | undefined): void {
+  override setError(error?: string | State.Error | undefined): void {
     this.#source.setError(error);
   }
 }
@@ -1186,7 +1186,7 @@ export class InternalObjectState<
     );
   }
 
-  childUpdate(childChange: StateChange, key: string): StateChange {
+  override childUpdate(childChange: StateChange, key: string): StateChange {
     let change = stateChangeType.child;
 
     // Handle when child goes from undefined to defined
@@ -1372,7 +1372,7 @@ export class InternalArrayState<
     );
   }
 
-  childUpdate(childChange: StateChange, key: string): StateChange {
+  override childUpdate(childChange: StateChange, key: string): StateChange {
     let change = stateChangeType.child;
 
     // Handle when child goes from undefined to defined
