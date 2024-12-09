@@ -6,35 +6,42 @@
   "main": "index.cjs",
   "module": "index.js",
   "exports": {
-    "./package.json": "./package.json",
     ".": {
-      "require": {
-        "types": "./index.d.cts",
-        "default": "./index.cjs"
+      "import": "./src/index.ts"
+    }
+  },
+  "publishConfig": {
+    "exports": {
+      "./package.json": "./package.json",
+      ".": {
+        "require": {
+          "types": "./index.d.cts",
+          "default": "./index.cjs"
+        },
+        "import": {
+          "types": "./index.d.ts",
+          "default": "./index.js"
+        }
       },
-      "import": {
-        "types": "./index.d.ts",
-        "default": "./index.js"
-      }
-    },
-    "./form": {
-      "require": {
-        "types": "./form/index.d.cts",
-        "default": "./form/index.cjs"
+      "./form": {
+        "require": {
+          "types": "./form/index.d.cts",
+          "default": "./form/index.cjs"
+        },
+        "import": {
+          "types": "./form/index.d.ts",
+          "default": "./form/index.js"
+        }
       },
-      "import": {
-        "types": "./form/index.d.ts",
-        "default": "./form/index.js"
-      }
-    },
-    "./state": {
-      "require": {
-        "types": "./state/index.d.cts",
-        "default": "./state/index.cjs"
-      },
-      "import": {
-        "types": "./state/index.d.ts",
-        "default": "./state/index.js"
+      "./state": {
+        "require": {
+          "types": "./state/index.d.cts",
+          "default": "./state/index.cjs"
+        },
+        "import": {
+          "types": "./state/index.d.ts",
+          "default": "./state/index.js"
+        }
       }
     }
   },
