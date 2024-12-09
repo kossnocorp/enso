@@ -491,6 +491,39 @@ describe("State", () => {
         }
       });
     });
+
+    describe("commit", () => {
+      it("commits the current state as the initial state", () => {
+        const state = new State(42);
+        state.set(43);
+        state.commit();
+        expect(state.initial).toBe(43);
+        expect(state.dirty).toBe(false);
+      });
+
+      it("commits the current state as the initial state for children", () => {
+        const state = new State({
+          name: { first: "Alexander" },
+          codes: [1, 2, 3],
+        });
+        state.$.name.$.first.set("Sasha");
+        state.$.codes.$(1).set(5);
+        state.commit();
+        expect(state.initial).toEqual({
+          name: { first: "Sasha" },
+          codes: [1, 5, 3],
+        });
+        expect(state.get()).toEqual({
+          name: { first: "Sasha" },
+          codes: [1, 5, 3],
+        });
+        expect(state.dirty).toBe(false);
+        expect(state.$.name.$.first.initial).toBe("Sasha");
+        expect(state.$.name.$.first.dirty).toBe(false);
+        expect(state.$.codes.$(1).initial).toBe(5);
+        expect(state.$.codes.$(1).dirty).toBe(false);
+      });
+    });
   });
 
   describe("tree", () => {

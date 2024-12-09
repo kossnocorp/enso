@@ -36,8 +36,11 @@ export class State<Payload> {
   #use: State.Use<Payload>;
   #onInput;
 
-  // @ts-ignore
-  #internal = new InternalPrimitiveState(this, undefinedValue);
+  #internal: InternalState<Payload> = new InternalPrimitiveState(
+    this,
+    // @ts-ignore
+    undefinedValue
+  );
 
   #initial: Payload;
 
@@ -85,6 +88,7 @@ export class State<Payload> {
   }
 
   #clearCache() {
+    this.#cachedGet = undefinedValue;
     this.#cachedDirty = undefined;
     this.#cachedInvalids = undefined;
   }
@@ -111,8 +115,13 @@ export class State<Payload> {
 
   //#region Value
 
+  #cachedGet: Payload | UndefinedValue = undefinedValue;
+
   get(): Payload {
-    return this.#internal.get();
+    if (this.#cachedGet === undefinedValue) {
+      this.#cachedGet = this.#internal.get();
+    }
+    return this.#cachedGet;
   }
 
   useGet<Props extends State.UseGetProps | undefined = undefined>(
@@ -197,9 +206,8 @@ export class State<Payload> {
   #cachedDirty: boolean | undefined;
 
   get dirty(): boolean {
-    if (this.#cachedDirty === undefined) {
+    if (this.#cachedDirty === undefined)
       this.#cachedDirty = this.#internal.dirty(this.#initial);
-    }
     return this.#cachedDirty;
   }
 
@@ -222,6 +230,17 @@ export class State<Payload> {
 
     // @ts-ignore: This is fine
     return enable === false ? undefined : dirty;
+  }
+
+  commit() {
+    this.#initial = this.get();
+    this.#cachedDirty = undefined;
+    if (
+      this.#internal instanceof InternalObjectState ||
+      this.#internal instanceof InternalArrayState
+    ) {
+      this.#internal.forEach((state: any) => state.commit());
+    }
   }
 
   //#endregion
