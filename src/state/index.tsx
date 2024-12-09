@@ -281,7 +281,7 @@ export class State<Payload> {
     this.trigger(updated, true);
   }
 
-  useMeta<Props extends State.MetaProps | undefined = undefined>(
+  useMeta<Props extends State.UseMetaProps | undefined = undefined>(
     props?: Props
   ): State.Meta<Props> {
     const invalids = this.useInvalids(!props || !!props.invalids);
@@ -414,26 +414,38 @@ export class State<Payload> {
 
   //#region Input
 
-  Control(props: State.InputProps<Payload>): React.ReactNode {
-    // [TODO] Watch for changes and trigger rerender
-    const initialValue = useMemo(() => this.get(), []);
-    const [value, setValue] = useState(initialValue);
+  Control<
+    MetaEnable extends boolean | undefined = undefined,
+    DirtyEnable extends boolean = false,
+    ErrorEnable extends boolean = false,
+    ValidEnable extends boolean = false,
+    InvalidsEnable extends boolean = false
+  >(
+    props: State.InputProps<
+      Payload,
+      MetaEnable,
+      DirtyEnable,
+      ErrorEnable,
+      ValidEnable,
+      InvalidsEnable
+    >
+  ): React.ReactNode {
+    const value = this.useGet();
+    const meta = this.useMeta({
+      dirty: props.meta || !!props.dirty,
+      error: props.meta || !!props.error,
+      valid: props.meta || !!props.valid,
+      invalids: props.meta || !!props.invalids,
+    });
 
-    useEffect(() => {
-      return this.watch((value) => {
-        setValue(value);
-      });
-    }, [setValue]);
-
-    return props.render({
+    const control = {
       value,
       onChange: this.set,
       // [TODO] Connect it to the validation?
       onBlur: () => {},
-      // [TODO] Watch for error changes?
-      error: this.error,
-      // [TODO] Add the dirty, valid, and errors?
-    });
+    };
+
+    return props.render(control, meta as any);
   }
 
   input<Element extends HTMLElement>(): State.Registration<Element> {
@@ -608,8 +620,8 @@ export class State<Payload> {
 export namespace State {
   //#region Value
 
-  export interface UseGetProps extends MetaProps {
-    meta?: boolean;
+  export interface UseGetProps extends UseMetaProps {
+    meta?: boolean | undefined;
   }
 
   export type UseGet<
@@ -734,20 +746,20 @@ export namespace State {
 
   export type Unwatch = () => void;
 
-  export interface MetaProps {
-    invalids?: boolean;
-    valid?: boolean;
-    error?: boolean;
-    dirty?: boolean;
+  export interface UseMetaProps {
+    invalids?: boolean | undefined;
+    valid?: boolean | undefined;
+    error?: boolean | undefined;
+    dirty?: boolean | undefined;
   }
 
-  export type Meta<Props extends MetaProps | undefined> =
-    Props extends MetaProps
+  export type Meta<Props extends UseMetaProps | undefined> =
+    Props extends UseMetaProps
       ? {
-          invalids: Props["invalids"] extends true ? Invalids : undefined;
-          valid: Props["valid"] extends true ? boolean : undefined;
-          error: Props["error"] extends true ? Error | undefined : undefined;
-          dirty: Props["dirty"] extends true ? boolean : undefined;
+          invalids: MetaEnable<Props["invalids"], Invalids>;
+          valid: MetaEnable<Props["valid"], boolean>;
+          error: MetaEnable<Props["error"], Error | undefined>;
+          dirty: MetaEnable<Props["dirty"], boolean>;
         }
       : {
           invalids: Invalids;
@@ -755,6 +767,16 @@ export namespace State {
           error: Error | undefined;
           dirty: boolean;
         };
+
+  export type MetaEnable<Enable, Payload> = Enable extends true
+    ? Payload
+    : Enable extends false
+    ? undefined
+    : Enable extends boolean
+    ? Payload | undefined
+    : Enable extends undefined
+    ? undefined
+    : never;
 
   //#endregion
 
@@ -841,18 +863,49 @@ export namespace State {
 
   //#region Input
 
-  export interface InputProps<Payload> {
-    render: InputRender<Payload>;
-  }
+  export type InputProps<
+    Payload,
+    MetaEnable extends boolean | undefined = undefined,
+    DirtyEnable extends boolean = false,
+    ErrorEnable extends boolean = false,
+    ValidEnable extends boolean = false,
+    InvalidsEnable extends boolean = false
+  > = {
+    render: InputRender<
+      Payload,
+      MetaEnable extends true
+        ? undefined
+        : MetaEnable extends false
+        ? {
+            invalids: false;
+            valid: false;
+            error: false;
+            dirty: false;
+          }
+        : {
+            invalids: InvalidsEnable;
+            valid: ValidEnable;
+            error: ErrorEnable;
+            dirty: DirtyEnable;
+          }
+    >;
+    meta?: MetaEnable;
+    dirty?: DirtyEnable;
+    error?: ErrorEnable;
+    valid?: ValidEnable;
+    invalids?: InvalidsEnable;
+  };
 
-  export type InputRender<Payload> = (input: Input<Payload>) => React.ReactNode;
+  export type InputRender<
+    Payload,
+    InputMetaProps extends UseMetaProps | undefined
+  > = (input: Input<Payload>, meta: Meta<InputMetaProps>) => React.ReactNode;
 
-  export interface Input<Payload> {
+  export type Input<Payload> = {
     value: Payload;
     onChange: OnChange<Payload>;
     onBlur: OnBlur;
-    error: Error | undefined;
-  }
+  };
 
   export type OnChange<Payload> = (value: Payload) => void;
 
