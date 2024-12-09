@@ -1,5 +1,8 @@
 import React, { useRef } from "react";
-import { render } from "vitest-browser-react";
+import { render } from "../../test/vitest-browser-react";
+// [TODO] Rollback to the package when it supports React 19:
+// https://github.com/vitest-dev/vitest-browser-react/issues/8
+// import { render } from "vitest-browser-react";
 import { describe, expect, it } from "vitest";
 // [TODO] Figure out a way to get rid of it:
 // https://github.com/vitest-dev/vitest/issues/6965
