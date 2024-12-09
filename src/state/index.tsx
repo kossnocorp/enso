@@ -261,6 +261,10 @@ export class State<Payload> {
     };
   }
 
+  useWatch(callback: State.WatchCallback<Payload>): void {
+    useEffect(() => this.watch(callback), [callback]);
+  }
+
   unwatch() {
     this.#subs.forEach((sub) =>
       this.#target.removeEventListener("change", sub)

@@ -1,4 +1,4 @@
-import React, { useRef } from "react";
+import React, { useRef, useState } from "react";
 import { render } from "vitest-browser-react";
 import { describe, expect, it } from "vitest";
 // [TODO] Figure out a way to get rid of it:
@@ -428,6 +428,55 @@ describe("State", () => {
     await expect
       .element(screen.getByTestId("render-watch"))
       .toHaveTextContent("2");
+  });
+
+  it("allows to watch for state using a function", async () => {
+    function Component() {
+      const count = useRenderCount();
+      const state = State.use({ name: { first: "Alexander" } });
+      const [name, setName] = useState(state.$.name.get());
+      state.$.name.useWatch(setName);
+
+      return (
+        <div>
+          <div data-testid="render-watch">{count}</div>
+
+          <button onClick={() => state.$.name.$.first.set("Sasha")}>
+            Rename
+          </button>
+
+          <button onClick={() => state.$.name.setError("Nope")}>
+            Add error
+          </button>
+
+          <div data-testid="name">{name.first}</div>
+        </div>
+      );
+    }
+
+    const screen = render(<Component />);
+
+    await expect
+      .element(screen.getByTestId("name"))
+      .toHaveTextContent("Alexander");
+
+    await expect
+      .element(screen.getByTestId("render-watch"))
+      .toHaveTextContent("1");
+
+    await screen.getByText("Add error").click();
+
+    await expect
+      .element(screen.getByTestId("render-watch"))
+      .toHaveTextContent("2");
+
+    await screen.getByText("rename").click();
+
+    await expect.element(screen.getByTestId("name")).toHaveTextContent("Sasha");
+
+    await expect
+      .element(screen.getByTestId("render-watch"))
+      .toHaveTextContent("3");
   });
 
   it("allows to listen to dirty state", async () => {
