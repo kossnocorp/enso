@@ -309,7 +309,7 @@ export class State<Payload> {
   ) => State.Discriminated<Payload, Discriminator> = discriminateMixin("state");
 
   useDiscriminate: <
-    Discriminator extends DiscriminateMixin.DiscriminatorKey<Payload>
+    Discriminator extends DiscriminateMixin.DiscriminatorKey<Payload>,
   >(
     discriminator: Discriminator
   ) => State.Discriminated<Payload, Discriminator> = useDiscriminateMixin();
@@ -422,7 +422,7 @@ export class State<Payload> {
     DirtyEnable extends boolean = false,
     ErrorEnable extends boolean = false,
     ValidEnable extends boolean = false,
-    InvalidsEnable extends boolean = false
+    InvalidsEnable extends boolean = false,
   >(
     props: State.InputProps<
       Payload,
@@ -629,29 +629,27 @@ export namespace State {
     meta?: boolean | undefined;
   }
 
-  export type UseGet<
-    Payload,
-    Props extends UseGetProps | undefined
-  > = UseGetIncludeMeta<Props> extends true
-    ? [Payload, Props extends { meta: true } ? Meta<undefined> : Meta<Props>]
-    : Payload;
+  export type UseGet<Payload, Props extends UseGetProps | undefined> =
+    UseGetIncludeMeta<Props> extends true
+      ? [Payload, Props extends { meta: true } ? Meta<undefined> : Meta<Props>]
+      : Payload;
 
   export type UseGetIncludeMeta<Props extends UseGetProps | undefined> =
     undefined extends Props
       ? false
       : Props extends UseGetProps
-      ? Props["meta"] extends true
-        ? true
-        : Props["meta"] extends false
-        ? false
-        : Props["invalids"] extends true
-        ? true
-        : Props["valid"] extends true
-        ? true
-        : Props["dirty"] extends true
-        ? true
-        : false
-      : false;
+        ? Props["meta"] extends true
+          ? true
+          : Props["meta"] extends false
+            ? false
+            : Props["invalids"] extends true
+              ? true
+              : Props["valid"] extends true
+                ? true
+                : Props["dirty"] extends true
+                  ? true
+                  : false
+        : false;
 
   //#endregion
 
@@ -714,16 +712,19 @@ export namespace State {
 
   //#region Use
 
-  export type Use<Payload> = Payload extends Array<any>
-    ? State.HookStateUseFn<Payload>
-    : Payload extends object
-    ? State.HookStateUse<Payload>
-    : never;
+  export type Use<Payload> =
+    Payload extends Array<any>
+      ? State.HookStateUseFn<Payload>
+      : Payload extends object
+        ? State.HookStateUse<Payload>
+        : never;
 
   export interface HookStateUseFn<Payload> {
     (): State<Payload>;
 
-    <Key extends keyof Payload>(key: Key): HookState<
+    <Key extends keyof Payload>(
+      key: Key
+    ): HookState<
       EnsoUtils.StaticKey<Payload, Key> extends true
         ? Payload[Key]
         : Payload[Key] | undefined
@@ -776,12 +777,12 @@ export namespace State {
   export type MetaEnable<Enable, Payload> = Enable extends true
     ? Payload
     : Enable extends false
-    ? undefined
-    : Enable extends boolean
-    ? Payload | undefined
-    : Enable extends undefined
-    ? undefined
-    : never;
+      ? undefined
+      : Enable extends boolean
+        ? Payload | undefined
+        : Enable extends undefined
+          ? undefined
+          : never;
 
   //#endregion
 
@@ -796,7 +797,7 @@ export namespace State {
 
   export type Discriminated<
     Payload,
-    Discriminator extends keyof Exclude<Payload, undefined>
+    Discriminator extends keyof Exclude<Payload, undefined>,
   > = Payload extends Payload
     ? Discriminator extends keyof Payload
       ? Payload[Discriminator] extends infer DiscriminatorValue
@@ -830,11 +831,12 @@ export namespace State {
 
   //#region Collections
 
-  export type ForEachFn<Payload> = Payload extends Array<any>
-    ? ArrayForEach<Payload>
-    : Payload extends object
-    ? ObjectForEach<Payload>
-    : (cb: never) => never;
+  export type ForEachFn<Payload> =
+    Payload extends Array<any>
+      ? ArrayForEach<Payload>
+      : Payload extends object
+        ? ObjectForEach<Payload>
+        : (cb: never) => never;
 
   export type ObjectForEach<Payload extends object> = (
     callback: <Key extends keyof Payload>(
@@ -847,11 +849,12 @@ export namespace State {
     callback: (item: State<Payload[number]>, index: number) => void
   ) => void;
 
-  export type MapFn<Payload> = Payload extends Array<any>
-    ? ArrayMap<Payload>
-    : Payload extends object
-    ? ObjectMap<Payload>
-    : (cb: never) => never;
+  export type MapFn<Payload> =
+    Payload extends Array<any>
+      ? ArrayMap<Payload>
+      : Payload extends object
+        ? ObjectMap<Payload>
+        : (cb: never) => never;
 
   export type ObjectMap<Payload extends object> = <Return>(
     callback: <Key extends keyof Payload>(
@@ -874,25 +877,25 @@ export namespace State {
     DirtyEnable extends boolean = false,
     ErrorEnable extends boolean = false,
     ValidEnable extends boolean = false,
-    InvalidsEnable extends boolean = false
+    InvalidsEnable extends boolean = false,
   > = {
     render: InputRender<
       Payload,
       MetaEnable extends true
         ? undefined
         : MetaEnable extends false
-        ? {
-            invalids: false;
-            valid: false;
-            error: false;
-            dirty: false;
-          }
-        : {
-            invalids: InvalidsEnable;
-            valid: ValidEnable;
-            error: ErrorEnable;
-            dirty: DirtyEnable;
-          }
+          ? {
+              invalids: false;
+              valid: false;
+              error: false;
+              dirty: false;
+            }
+          : {
+              invalids: InvalidsEnable;
+              valid: ValidEnable;
+              error: ErrorEnable;
+              dirty: DirtyEnable;
+            }
     >;
     meta?: MetaEnable;
     dirty?: DirtyEnable;
@@ -903,7 +906,7 @@ export namespace State {
 
   export type InputRender<
     Payload,
-    InputMetaProps extends UseMetaProps | undefined
+    InputMetaProps extends UseMetaProps | undefined,
   > = (input: Input<Payload>, meta: Meta<InputMetaProps>) => React.ReactNode;
 
   export type Input<Payload> = {
@@ -1091,7 +1094,7 @@ export class InternalPrimitiveState<Payload> extends InternalState<Payload> {
 //#region InternalObjectState
 
 export class InternalObjectState<
-  Payload extends object
+  Payload extends object,
 > extends InternalState<Payload> {
   #children: Map<string, State<any>> = new Map();
   #undefined;
@@ -1270,7 +1273,7 @@ export class InternalObjectState<
 //#region InternalArrayState
 
 export class InternalArrayState<
-  Payload extends Array<any>
+  Payload extends Array<any>,
 > extends InternalState<Payload> {
   #children: State<any>[] = [];
   #undefined;
