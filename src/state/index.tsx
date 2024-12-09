@@ -146,6 +146,7 @@ export class State<Payload> {
         }),
       []
     );
+    // @ts-ignore: [TODO]
     return watchMeta ? [payload, meta] : payload;
   }
 
@@ -162,6 +163,7 @@ export class State<Payload> {
 
     // The state is already of the same type
     if (this.#internal instanceof ValueConstructor)
+      // @ts-ignore: [TODO]
       return this.#internal.set(value);
 
     // The state is of a different type
@@ -173,6 +175,7 @@ export class State<Payload> {
 
     // @ts-ignore: This is fine
     this.#internal = new ValueConstructor(this, value);
+    // @ts-ignore: [TODO]
     this.#internal.set(value);
     return change;
   }
@@ -548,7 +551,9 @@ export class State<Payload> {
         this.#internal instanceof InternalArrayState ||
         this.#internal instanceof InternalObjectState
       ) {
+        // @ts-ignore: [TODO]
         this.forEach((item) => {
+          // @ts-ignore: [TODO]
           item.invalids.forEach((error, state) => invalids.set(state, error));
         });
       }
@@ -1093,6 +1098,7 @@ export class InternalObjectState<
 
   constructor(external: State<Payload>, value: Payload) {
     super(external, value);
+    // @ts-ignore: [TODO]
     this.#undefined = new UndefinedStateRegistry(external);
   }
 
@@ -1120,6 +1126,7 @@ export class InternalObjectState<
 
         this.#children.set(
           key,
+          // @ts-ignore: [TODO]
           undefinedState || new State(value, { key, state: this.external })
         );
         change |= stateChangeType.childAdded;
@@ -1187,6 +1194,7 @@ export class InternalObjectState<
       const child = this.#undefined.claim(key);
       if (!child)
         throw new Error("Failed to find the child state when updating");
+      // @ts-ignore: [TODO]
       this.#children.set(key, child);
       change |= stateChangeType.childAdded;
     }
@@ -1233,6 +1241,7 @@ export class InternalObjectState<
     ) => void
   ) {
     this.#children.forEach((state, key) =>
+      // @ts-ignore: [TODO]
       callback(state, key as keyof Payload)
     );
   }
@@ -1243,10 +1252,13 @@ export class InternalObjectState<
       index: Key
     ) => Return
   ): Return[] {
+    // @ts-ignore: [TODO]
     const result = [];
     this.#children.forEach((state, key) =>
+      // @ts-ignore: [TODO]
       result.push(callback(state, key as keyof Payload))
     );
+    // @ts-ignore: [TODO]
     return result;
   }
 
@@ -1287,6 +1299,7 @@ export class InternalArrayState<
       }
     });
 
+    // @ts-ignore: [TODO]
     this.#children = newValue.map((value, index) => {
       const child = this.#children[index];
       if (child) {
@@ -1335,6 +1348,7 @@ export class InternalArrayState<
 
   #try = new Proxy((() => {}) as unknown as State.Try<Payload>, {
     apply: (_, __, [index]: [number]) => this.#tryItem(index),
+    // @ts-ignore: [TODO]
     get: (_, index: number) => this.#tryItem(index),
   });
 
@@ -1366,6 +1380,7 @@ export class InternalArrayState<
       const child = this.#undefined.claim(key);
       if (!child)
         throw new Error("Failed to find the child state when updating");
+      // @ts-ignore: [TODO]
       this.#children[Number(key)] = child;
       change |= stateChangeType.childAdded;
     }
@@ -1422,6 +1437,7 @@ export class InternalArrayState<
 
   push(item: Payload[number]) {
     const length = this.#children.length;
+    // @ts-ignore: [TODO]
     this.#children[length] = new State(item, {
       key: String(length),
       // @ts-ignore: This is fine
@@ -1451,6 +1467,7 @@ export class UndefinedStateRegistry {
 
   register(key: string, state: State<UndefinedValue>) {
     const stateRef = new WeakRef(state);
+    // @ts-ignore: [TODO]
     this.#refsMap.set(key, stateRef);
     this.#registry.register(stateRef, key);
   }

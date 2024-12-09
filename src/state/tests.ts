@@ -1031,13 +1031,17 @@ describe("State", () => {
         state.$.ids.$(1).setError("Is it a valid ID?");
         const { invalids } = state;
         expect(invalids.size).toBe(4);
+        // @ts-ignore: [TODO]
         expect(invalids.get(state)).toEqual({ message: "Something is wrong" });
+        // @ts-ignore: [TODO]
         expect(invalids.get(state.$.age)).toEqual({
           message: "Are you an immortal?",
         });
+        // @ts-ignore: [TODO]
         expect(invalids.get(state.$.name.$.first)).toEqual({
           message: "First name is required",
         });
+        // @ts-ignore: [TODO]
         expect(invalids.get(state.$.ids.$(1))).toEqual({
           message: "Is it a valid ID?",
         });
@@ -1050,9 +1054,11 @@ describe("State", () => {
         state.$.name.$.last.setError("Last name is required");
         const { invalids } = computed;
         expect(invalids.size).toBe(2);
+        // @ts-ignore: [TODO]
         expect(invalids.get(state.$.name.$.first)).toEqual({
           message: "First name is required",
         });
+        // @ts-ignore: [TODO]
         expect(invalids.get(state.$.name.$.last)).toEqual({
           message: "Last name is required",
         });
