@@ -191,7 +191,8 @@ export class Form<Payload> {
 }
 
 export namespace Form {
-  export interface ControlProps<Payload> {
+  export interface ControlProps<Payload>
+    extends Omit<React.FormHTMLAttributes<HTMLFormElement>, "onSubmit"> {
     onSubmit?: SubmitCallback<Payload>;
     children?: React.ReactNode;
   }
