@@ -137,9 +137,9 @@ describe("Field", () => {
           );
         });
 
-        it("returns remove change type if a child has been removed", () => {
+        it("returns child detached change type if a child has been detached", () => {
           const field = new Field<{ num?: number; str?: string }>({ num: 42 });
-          expect(field.set({})).toBe(fieldChange.childRemoved);
+          expect(field.set({})).toBe(fieldChange.childDetached);
         });
 
         it("returns combined change type", () => {
@@ -151,12 +151,12 @@ describe("Field", () => {
           const change = field.set({ num: 43, bool: true });
           expect(change & fieldChange.child).toBe(fieldChange.child);
           expect(change & fieldChange.childAdded).toBe(fieldChange.childAdded);
-          expect(change & fieldChange.childRemoved).toBe(
-            fieldChange.childRemoved
+          expect(change & fieldChange.childDetached).toBe(
+            fieldChange.childDetached
           );
         });
 
-        it("does not trigger fields updates when removing", () => {
+        it("does not trigger fields updates when detaching", () => {
           const field = new Field<{ num?: number; str?: string }>({ num: 42 });
           const spy = vi.fn();
           field.$.num?.watch(spy);
@@ -169,7 +169,7 @@ describe("Field", () => {
           expect(spy).toHaveBeenCalledOnce();
         });
 
-        it("preserves removed fields", () => {
+        it("preserves detached fields", () => {
           const field = new Field<{ num?: number; str?: string }>({ num: 42 });
           const spy = vi.fn();
           const numA = field.$.num;
@@ -247,9 +247,9 @@ describe("Field", () => {
           expect(field.set([1, 2, 3, 4])).toBe(fieldChange.childAdded);
         });
 
-        it("returns remove change type if a child has been removed", () => {
+        it("returns child detached change type if a child has been detached", () => {
           const field = new Field([1, 2, 3]);
-          expect(field.set([1, 2])).toBe(fieldChange.childRemoved);
+          expect(field.set([1, 2])).toBe(fieldChange.childDetached);
         });
 
         it("returns combined change type", () => {
@@ -259,12 +259,12 @@ describe("Field", () => {
           const change = field.set(arr);
           expect(change & fieldChange.child).toBe(fieldChange.child);
           expect(change & fieldChange.childAdded).toBe(fieldChange.childAdded);
-          expect(change & fieldChange.childRemoved).toBe(
-            fieldChange.childRemoved
+          expect(change & fieldChange.childDetached).toBe(
+            fieldChange.childDetached
           );
         });
 
-        it("does not trigger item updates when removing", () => {
+        it("does not trigger item updates when detaching", () => {
           const field = new Field<number[]>([1, 2, 3, 4]);
           const spy = vi.fn();
           field.$[2]?.watch(spy);
@@ -279,7 +279,7 @@ describe("Field", () => {
           expect(spy).toHaveBeenCalledOnce();
         });
 
-        it("preserves removed items", () => {
+        it("preserves detached items", () => {
           const field = new Field<number[]>([1, 2, 3, 4]);
           const spy = vi.fn();
           const itemA = field.$(2);

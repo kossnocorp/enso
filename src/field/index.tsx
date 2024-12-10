@@ -143,15 +143,15 @@ export class Field<Payload> {
     // The field is of a different type
     this.#internal.unwatch();
 
-    let change = fieldChange.type;
-    // The field is being removed
-    if (value === undefinedValue) change |= fieldChange.removed;
+    let changes = fieldChange.type;
+    // The field is being detached
+    if (value === undefinedValue) changes |= fieldChange.detached;
 
     // @ts-ignore: This is fine
     this.#internal = new ValueConstructor(this, value);
     // @ts-ignore: [TODO]
     this.#internal.set(value);
-    return change;
+    return changes;
   }
 
   [createSymbol](value: Payload): FieldChange | 0 {
@@ -453,7 +453,7 @@ export class Field<Payload> {
 
   //#endregion
 
-  remove() {
+  detach() {
     this.set(undefinedValue);
   }
 
@@ -1123,7 +1123,7 @@ export class InternalPrimitiveState<Payload> extends InternalState<Payload> {
     if (this.#value === undefinedValue && value !== undefinedValue)
       change |= fieldChange.type | fieldChange.created;
     else if (this.#value !== undefinedValue && value === undefinedValue)
-      change |= fieldChange.type | fieldChange.removed;
+      change |= fieldChange.type | fieldChange.detached;
     else if (typeof this.#value !== typeof value) change |= fieldChange.type;
     else if (this.#value !== value) change |= fieldChange.value;
 
@@ -1152,7 +1152,7 @@ export class InternalPrimitiveState<Payload> extends InternalState<Payload> {
   updated(event: FieldChangeEvent): boolean {
     return !!(
       event.changes & fieldChange.created ||
-      event.changes & fieldChange.removed ||
+      event.changes & fieldChange.detached ||
       event.changes & fieldChange.type
     );
   }
@@ -1189,7 +1189,7 @@ export class InternalObjectState<
         child[clearSymbol]();
         // @ts-ignore: This is fine
         this.#undefined.register(key, child);
-        change |= fieldChange.childRemoved;
+        change |= fieldChange.childDetached;
       }
     });
 
@@ -1257,9 +1257,9 @@ export class InternalObjectState<
   updated(event: FieldChangeEvent): boolean {
     return !!(
       event.changes & fieldChange.created ||
-      event.changes & fieldChange.removed ||
+      event.changes & fieldChange.detached ||
       event.changes & fieldChange.type ||
-      event.changes & fieldChange.childRemoved ||
+      event.changes & fieldChange.childDetached ||
       event.changes & fieldChange.childAdded
     );
   }
@@ -1277,13 +1277,13 @@ export class InternalObjectState<
       change |= fieldChange.childAdded;
     }
 
-    if (childChange & fieldChange.removed) {
+    if (childChange & fieldChange.detached) {
       const child = this.#children.get(key);
       if (!child)
         throw new Error("Failed to find the child field when updating");
       this.#children.delete(key);
       child.unwatch();
-      change |= fieldChange.childRemoved;
+      change |= fieldChange.childDetached;
     }
 
     return change;
@@ -1373,7 +1373,7 @@ export class InternalArrayState<
         item[clearSymbol]();
         // @ts-ignore: This is fine
         this.#undefined.register(index.toString(), item);
-        change |= fieldChange.childRemoved;
+        change |= fieldChange.childDetached;
       }
     });
 
@@ -1442,9 +1442,9 @@ export class InternalArrayState<
   updated(event: FieldChangeEvent): boolean {
     return !!(
       event.changes & fieldChange.created ||
-      event.changes & fieldChange.removed ||
+      event.changes & fieldChange.detached ||
       event.changes & fieldChange.type ||
-      event.changes & fieldChange.childRemoved ||
+      event.changes & fieldChange.childDetached ||
       event.changes & fieldChange.childAdded ||
       event.changes & fieldChange.childrenReordered
     );
@@ -1464,13 +1464,13 @@ export class InternalArrayState<
     }
 
     // Handle when child goes from defined to undefined
-    if (childChange & fieldChange.removed) {
+    if (childChange & fieldChange.detached) {
       const child = this.#children[Number(key)];
       if (!child)
         throw new Error("Failed to find the child field when updating");
       delete this.#children[Number(key)];
       child.unwatch();
-      change |= fieldChange.childRemoved;
+      change |= fieldChange.childDetached;
     }
 
     return change;
@@ -1590,16 +1590,16 @@ export const fieldChange = {
   nothing: 0,
   /** The field has been inserted into an object or an array. */
   created: 0b000000000001, // 1
-  /** The field has been removed from an object or an array. */
-  removed: 0b000000000010, // 2
+  /** The field has been detached from an object or an array. */
+  detached: 0b000000000010, // 2
   /** The primitive value of the field has change. */
   value: 0b000000000100, // 4
   /** The type of the field has change. */
   type: 0b000000001000, // 8
   /** An object field or an array item has changed. */
   child: 0b000000010000, // 16
-  /** An object field or an array item has been removed. */
-  childRemoved: 0b000000100000, // 32
+  /** An object field or an array item has been detached. */
+  childDetached: 0b000000100000, // 32
   /** An object field or an array item has been added. */
   childAdded: 0b000001000000, // 64
   /** The order of array items has change. */
