@@ -43,6 +43,13 @@ describe("Form", () => {
       expect(spy).toHaveBeenCalled();
     });
 
+    it("delegates useDirty", () => {
+      const spy = vi.spyOn(Field.prototype, "useDirty").mockReturnValue(false);
+      const form = new Form(42);
+      expect(form.useDirty()).toBe(false);
+      expect(spy).toHaveBeenCalled();
+    });
+
     it("delegates commit", () => {
       const spy = vi.spyOn(Field.prototype, "commit").mockReturnValue();
       const form = new Form(42);

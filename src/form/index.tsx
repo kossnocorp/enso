@@ -65,6 +65,10 @@ export class Form<Payload> {
     return this.#field.dirty;
   }
 
+  useDirty() {
+    return this.#field.useDirty();
+  }
+
   commit() {
     return this.#field.commit();
   }
