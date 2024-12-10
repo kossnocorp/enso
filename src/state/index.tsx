@@ -1560,25 +1560,29 @@ export const stateChangeType = {
   /** Nothing has change, the initial value. */
   nothing: 0,
   /** The state has been inserted into an object or an array. */
-  created: 0b00000001, // 1
+  created: 0b000000000001, // 1
   /** The state has been removed from an object or an array. */
-  removed: 0b00000010, // 2
+  removed: 0b000000000010, // 2
   /** The primitive value of the state has change. */
-  value: 0b00000100, // 4
+  value: 0b000000000100, // 4
   /** The type of the state has change. */
-  type: 0b00001000, // 8
-  /** An object state or an array item has change. */
-  child: 0b00010000, // 16
+  type: 0b000000001000, // 8
+  /** An object state or an array item has changed. */
+  child: 0b000000010000, // 16
   /** An object state or an array item has been removed. */
-  childRemoved: 0b00100000, // 32
+  childRemoved: 0b000000100000, // 32
   /** An object state or an array item has been added. */
-  childAdded: 0b01000000, // 64
+  childAdded: 0b000001000000, // 64
   /** The order of array items has change. */
-  childrenReordered: 0b100000000, // 128
+  childrenReordered: 0b000010000000, // 128
   /** The state become invalid. */
-  invalid: 0b1000000000, // 256
+  invalid: 0b000100000000, // 256
   /** The state become valid. */
-  valid: 0b10000000000, // 512
+  valid: 0b001000000000, // 512,
+  /** The current state got commited as initial */
+  committed: 0b010000000000, // 1024
+  // Just in case to give a little room, first 12 bits are reserved for State
+  // reserved: 0b100000000000, // 2048
 };
 
 export class StateChangeEvent extends CustomEvent<StateChange> {
@@ -1608,5 +1612,3 @@ export function useUndefinedStringField(
 }
 
 //#endregion
-
-export { State as Field, State as Form };

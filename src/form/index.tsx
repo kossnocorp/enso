@@ -1,104 +1,91 @@
-// @ts-nocheck
-
-import React, { type FormEvent } from "react";
+import React, { useEffect, useMemo } from "react";
+import { State, stateChangeType } from "../state/index.tsx";
 import { useRerender } from "../hooks/rerender.ts";
-import {
-  type DecomposeMixin,
-  decomposeMixin,
-  useDecomposeMixin,
-} from "../mixins/decompose.js";
-import {
-  type DiscriminateMixin,
-  discriminateMixin,
-  useDiscriminateMixin,
-} from "../mixins/discriminate.js";
-import { intoMixin, type IntoMixin, useIntoMixin } from "../mixins/into.js";
-import {
-  type NarrowMixin,
-  narrowMixin,
-  useNarrowMixin,
-} from "../mixins/narrow.js";
-import {
-  InternalPrimitiveState,
-  State,
-  StateChange,
-  statePrivate,
-  StateChangeFlow,
-  undefinedValue,
-} from "../state/index.ts";
-import { type EnsoUtils } from "../utils.ts";
+
+export { State as Field };
 
 //#region Form
 
-export class Form<
-  Payload extends object & { length?: never }
-> extends State<Payload> {
-  // #id: string;
-  // #payload: Payload;
-  // #dirty: boolean = false;
-  // #errors: FieldError[] = [];
-  // #target = new EventTarget();
+export class Form<Payload> extends State<Payload> {
+  static override use<Payload>(value: Payload): Form<Payload> {
+    const form = useMemo(() => new Form(value), []);
+    const rerender = useRerender();
 
-  constructor(initial: Form.InitialPayload<Payload>) {
-    super(initial());
+    useEffect(
+      () =>
+        form.watch((_, event) => {
+          // Only react to form-specific changes, as everything else is
+          // handled by the state's use hook.
+          if (
+            event.detail &
+            ~(formChangeType.submitting | formChangeType.submitted)
+          )
+            return;
+          rerender();
+        }),
+      [form, rerender]
+    );
 
-    // this.#id = nanoid();
-
-    // this.#useGetEffect.bind(this);
-    // this.#useGetState.bind(this);
+    // [TODO] Rename use to useBind or something like that and get rid of
+    // the object traversal.
+    return form.use() as Form<Payload>;
   }
 
-  handleSubmit(callback: Form.HandleSubmitCallback<Payload>) {
-    return async (event: FormEvent<HTMLFormElement>) => {
-      event.preventDefault();
-      event.stopPropagation();
+  constructor(initial: Payload) {
+    super(initial);
+  }
 
-      // [TODO] Resolve the form
-
-      // await callback(this.#payload);
+  control(callback: Form.SubmitCallback<Payload>): Form.Control {
+    return {
+      onSubmit: (event) => this.#submit(event, callback),
     };
   }
 
-  commit(): void {}
-
-  // get at(): LegacyField.At<Payload> {
-  //   return {};
-  // }
-
-  // get $(): Form.$<Payload> {
-  //   return {};
-  // }
-
-  // get dirty() {
-  //   return this.#dirty;
-  // }
+  #submitting = false;
 
   get submitting() {
-    return false;
+    return this.#submitting;
+  }
+
+  async #submit(
+    event: React.FormEvent<HTMLFormElement>,
+    callback: Form.SubmitCallback<Payload>
+  ) {
+    event.preventDefault();
+    event.stopPropagation();
+
+    this.#submitting = true;
+    this.trigger(formChangeType.submitting, true);
+
+    await callback(this.get());
+
+    this.#submitting = false;
+    this.trigger(formChangeType.submitted, true);
   }
 }
 
 export namespace Form {
-  export interface UseProps<Payload extends object & { length?: never }> {
-    initial: InitialPayload<Payload>;
-    resolve?: Resolve<Payload>;
+  export type ControlCallback = (
+    submit: (event: React.FormEvent<HTMLFormElement>) => void
+  ) => any;
+
+  export interface Control {
+    onSubmit: (event: React.FormEvent<HTMLFormElement>) => void;
   }
 
-  export type InitialPayload<Payload> = () => Payload;
-
-  export type Resolve<Payload extends object & { length?: never }> = (
-    form: Form<Payload>
-  ) => void;
-
-  export type HandleSubmitCallback<Payload> = (
+  export type SubmitCallback<Payload> = (
     payload: Payload
   ) => unknown | Promise<unknown>;
-
-  export type $<Payload> = Payload extends Record<string, any>
-    ? {
-        [Key in keyof Payload]-?: State<Payload[Key]>;
-      }
-    : never;
 }
+
+//#endregion
+
+//# FormChange
+
+export const formChangeType = {
+  ...stateChangeType,
+  submitting: 0b01000000000000, // 4096
+  submitted: 0b10000000000000, // 8192
+};
 
 //#endregion
