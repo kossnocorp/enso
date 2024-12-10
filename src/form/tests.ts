@@ -71,6 +71,14 @@ describe("Form", () => {
       expect(form.watch(watchCb)).toBe(unwatch);
       expect(spy).toHaveBeenCalledWith(watchCb);
     });
+
+    it("delegates useWatch", () => {
+      const spy = vi.spyOn(Field.prototype, "useWatch").mockReturnValue();
+      const form = new Form(42);
+      const watchCb = () => {};
+      expect(form.useWatch(watchCb)).toBe(undefined);
+      expect(spy).toHaveBeenCalledWith(watchCb);
+    });
   });
 
   describe("mapping", () => {

@@ -77,6 +77,10 @@ export class Form<Payload> {
     return this.#field.watch(callback);
   }
 
+  useWatch(callback: Field.WatchCallback<Payload>) {
+    return this.#field.useWatch(callback);
+  }
+
   //#endregion
 
   //#region Mapping
