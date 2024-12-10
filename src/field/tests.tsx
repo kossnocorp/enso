@@ -59,7 +59,7 @@ describe("Field", () => {
     function Component(props: ComponentProps) {
       const count = useRenderCount();
       const field = Field.use({ names: props.names });
-      const names = field.$.names.use();
+      const names = field.$.names.useBind();
 
       return (
         <div>
@@ -1530,7 +1530,7 @@ function UserComponent(props: UserComponentProps) {
   const count = useRenderCount();
   const user = props.user;
   // Makes the component re-render when the name shape changes
-  const name = user.$.name.use();
+  const name = user.$.name.useBind();
   return (
     <div>
       <div data-testid="render-user">{count}</div>

@@ -26,7 +26,7 @@ export class Form<Payload> {
 
     // [TODO] Rename use to useBind or something like that and get rid of
     // the object traversal.
-    form.#field.use();
+    form.#field.useBind();
 
     return form;
   }

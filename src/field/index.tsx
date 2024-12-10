@@ -18,7 +18,6 @@ export class Field<Payload> {
 
   #id = nanoid();
   #parent?: Field.Parent<any> | undefined;
-  #use: Field.Use<Payload>;
   #onInput;
 
   #internal: InternalState<Payload> = new InternalPrimitiveState(
@@ -34,23 +33,6 @@ export class Field<Payload> {
 
     this.#set(value);
     this.#parent = parent;
-
-    this.#use = new Proxy(() => {}, {
-      // @ts-ignore: This is okay
-      get: (_, key: string) => this.$[key].use,
-
-      apply: () => {
-        const rerender = useRerender();
-        useEffect(
-          () =>
-            this.watch((_payload, event) => {
-              if (this.#internal.updated(event)) rerender();
-            }),
-          []
-        );
-        return this;
-      },
-    }) as Field.Use<Payload>;
 
     const onInput = (event: Event) => {
       const target = event.target as HTMLInputElement;
@@ -242,10 +224,6 @@ export class Field<Payload> {
 
   //#endregion
 
-  get use(): Field.Use<Payload> {
-    return this.#use;
-  }
-
   //#region Watching
 
   #target = new EventTarget();
@@ -275,6 +253,20 @@ export class Field<Payload> {
     );
     this.#subs.clear();
     this.#internal.unwatch();
+  }
+
+  useBind(): Field<Payload> {
+    const rerender = useRerender();
+
+    useEffect(
+      () =>
+        this.watch((_, event) => {
+          if (this.#internal.updated(event)) rerender();
+        }),
+      [rerender]
+    );
+
+    return this;
   }
 
   trigger(change: FieldChange, notifyParents: boolean = false) {
@@ -801,39 +793,6 @@ export namespace Field {
     | (undefined extends Payload ? undefined : never)
     // Resolve field without null or undefined
     | Field<Exclude<Payload, null | undefined>>;
-
-  //#endregion
-
-  //#region Use
-
-  export type Use<Payload> =
-    Payload extends Array<any>
-      ? Field.HookStateUseFn<Payload>
-      : Payload extends object
-        ? Field.HookStateUse<Payload>
-        : never;
-
-  export interface HookStateUseFn<Payload> {
-    (): Field<Payload>;
-
-    <Key extends keyof Payload>(
-      key: Key
-    ): HookState<
-      EnsoUtils.StaticKey<Payload, Key> extends true
-        ? Payload[Key]
-        : Payload[Key] | undefined
-    >;
-  }
-
-  export type HookStateUse<Payload> = HookStateUseFn<Payload> & {
-    [Key in keyof Payload]-?: HookState<Payload[Key]>;
-  };
-
-  export interface HookState<Payload> {
-    (): Field<Payload>;
-
-    get use(): HookStateUse<Payload>;
-  }
 
   //#endregion
 
