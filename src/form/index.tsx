@@ -1,9 +1,6 @@
 import React, { useEffect, useMemo } from "react";
-import { State, stateChangeType } from "../state/index.tsx";
+import { Field, fieldChangeType } from "../field/index.tsx";
 import { useRerender } from "../hooks/rerender.ts";
-import { Field } from "./index.tsx";
-
-export { State as Field };
 
 //#region Form
 
@@ -14,9 +11,9 @@ export class Form<Payload> {
 
     useEffect(
       () =>
-        form.#state.watch((_, event) => {
+        form.#field.watch((_, event) => {
           // Only react to form-specific changes, as everything else is
-          // handled by the state's use hook.
+          // handled by the field's use hook.
           if (
             event.detail &
             ~(formChangeType.submitting | formChangeType.submitted)
@@ -29,15 +26,15 @@ export class Form<Payload> {
 
     // [TODO] Rename use to useBind or something like that and get rid of
     // the object traversal.
-    form.#state.use();
+    form.#field.use();
 
     return form;
   }
 
-  #state: State<Payload>;
+  #field: Field<Payload>;
 
   constructor(initial: Payload) {
-    this.#state = new State(initial);
+    this.#field = new Field(initial);
 
     this.Control = this.Control.bind(this);
   }
@@ -45,7 +42,7 @@ export class Form<Payload> {
   //#region Attributes
 
   get id() {
-    return this.#state.id;
+    return this.#field.id;
   }
 
   //#endregion
@@ -53,31 +50,31 @@ export class Form<Payload> {
   //#region Value
 
   get() {
-    return this.#state.get();
+    return this.#field.get();
   }
 
   set(value: Payload) {
-    return this.#state.set(value);
+    return this.#field.set(value);
   }
 
   get initial() {
-    return this.#state.initial;
+    return this.#field.initial;
   }
 
   get dirty() {
-    return this.#state.dirty;
+    return this.#field.dirty;
   }
 
   commit() {
-    return this.#state.commit();
+    return this.#field.commit();
   }
 
   //#endregion
 
   //#region Watching
 
-  watch(callback: State.WatchCallback<Payload>) {
-    return this.#state.watch(callback);
+  watch(callback: Field.WatchCallback<Payload>) {
+    return this.#field.watch(callback);
   }
 
   //#endregion
@@ -85,55 +82,55 @@ export class Form<Payload> {
   //#region Mapping
 
   useCompute<Computed>(
-    callback: State.ComputeCallback<Payload, Computed>
+    callback: Field.ComputeCallback<Payload, Computed>
   ): Computed {
-    return this.#state.useCompute(callback);
+    return this.#field.useCompute(callback);
   }
 
-  decompose(): State.Decomposed<Payload> {
-    return this.#state.decompose();
+  decompose(): Field.Decomposed<Payload> {
+    return this.#field.decompose();
   }
 
   useDecompose(
-    callback: State.DecomposeCallback<Payload>
-  ): State.Decomposed<Payload> {
-    return this.#state.useDecompose(callback);
+    callback: Field.DecomposeCallback<Payload>
+  ): Field.Decomposed<Payload> {
+    return this.#field.useDecompose(callback);
   }
 
   discriminate<Discriminator extends keyof Exclude<Payload, undefined>>(
     discriminator: Discriminator
   ): Field.Discriminated<Payload, Discriminator> {
-    return this.#state.discriminate(discriminator);
+    return this.#field.discriminate(discriminator);
   }
 
   useDiscriminate<Discriminator extends keyof Exclude<Payload, undefined>>(
     discriminator: Discriminator
   ) {
-    return this.#state.useDiscriminate(discriminator);
+    return this.#field.useDiscriminate(discriminator);
   }
 
   into<Computed>(
-    intoCallback: State.IntoCallback<Payload, Computed>
-  ): State.Into<Payload, Computed> {
-    return this.#state.into(intoCallback);
+    intoCallback: Field.IntoCallback<Payload, Computed>
+  ): Field.Into<Payload, Computed> {
+    return this.#field.into(intoCallback);
   }
 
   useInto<Computed>(
-    intoCallback: State.IntoCallback<Payload, Computed>
-  ): State.Into<Payload, Computed> {
-    return this.#state.useInto(intoCallback);
+    intoCallback: Field.IntoCallback<Payload, Computed>
+  ): Field.Into<Payload, Computed> {
+    return this.#field.useInto(intoCallback);
   }
 
   narrow<Narrowed extends Payload>(
-    callback: State.NarrowCallback<Payload, Narrowed>
-  ): State<Narrowed> | undefined {
-    return this.#state.narrow(callback);
+    callback: Field.NarrowCallback<Payload, Narrowed>
+  ): Field<Narrowed> | undefined {
+    return this.#field.narrow(callback);
   }
 
   useNarrow<Narrowed extends Payload>(
-    callback: State.NarrowCallback<Payload, Narrowed>
-  ): State<Narrowed> | undefined {
-    return this.#state.useNarrow(callback);
+    callback: Field.NarrowCallback<Payload, Narrowed>
+  ): Field<Narrowed> | undefined {
+    return this.#field.useNarrow(callback);
   }
 
   //#endregion
@@ -141,11 +138,11 @@ export class Form<Payload> {
   //#region Errors
 
   get invalids() {
-    return this.#state.invalids;
+    return this.#field.invalids;
   }
 
   get valid() {
-    return this.#state.valid;
+    return this.#field.valid;
   }
 
   //#endregion
@@ -180,16 +177,16 @@ export class Form<Payload> {
     event.stopPropagation();
 
     this.#submitting = true;
-    this.#state.trigger(formChangeType.submitting, true);
+    this.#field.trigger(formChangeType.submitting, true);
 
-    await callback(this.#state.get());
+    await callback(this.#field.get());
 
     this.#submitting = false;
-    this.#state.trigger(formChangeType.submitted, true);
+    this.#field.trigger(formChangeType.submitted, true);
   }
 
   get $() {
-    return this.#state.$;
+    return this.#field.$;
   }
 }
 
@@ -217,7 +214,7 @@ export namespace Form {
 //# FormChange
 
 export const formChangeType = {
-  ...stateChangeType,
+  ...fieldChangeType,
   submitting: 0b01000000000000, // 4096
   submitted: 0b10000000000000, // 8192
 };

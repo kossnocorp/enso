@@ -4,18 +4,18 @@ import { describe, expect, it } from "vitest";
 // [TODO] Figure out a way to get rid of it:
 // https://github.com/vitest-dev/vitest/issues/6965
 import "@vitest/browser/matchers.d.ts";
-import { State } from "./index.tsx";
+import { Field } from "./index.tsx";
 import { userEvent } from "@vitest/browser/context";
 
-describe("State", () => {
-  it("allows to control object state", async () => {
+describe("Field", () => {
+  it("allows to control object field", async () => {
     interface ComponentProps {
       profile: Profile;
     }
 
     function Component(props: ComponentProps) {
       const count = useRenderCount();
-      const profile = State.use<Profile>(props.profile);
+      const profile = Field.use<Profile>(props.profile);
 
       return (
         <div>
@@ -51,15 +51,15 @@ describe("State", () => {
       .toHaveTextContent("3");
   });
 
-  it("allows to control array state", async () => {
+  it("allows to control array field", async () => {
     interface ComponentProps {
       names: UserName[];
     }
 
     function Component(props: ComponentProps) {
       const count = useRenderCount();
-      const state = State.use({ names: props.names });
-      const names = state.$.names.use();
+      const field = Field.use({ names: props.names });
+      const names = field.$.names.use();
 
       return (
         <div>
@@ -101,10 +101,10 @@ describe("State", () => {
       .toHaveTextContent("3");
   });
 
-  it("updates the input state", async () => {
+  it("updates the input field", async () => {
     function Component() {
       const count = useRenderCount();
-      const state = State.use<User>({ name: { first: "Alexander" } });
+      const field = Field.use<User>({ name: { first: "Alexander" } });
 
       return (
         <div>
@@ -112,14 +112,14 @@ describe("State", () => {
 
           <input
             data-testid="name-first-input"
-            {...state.$.name.$.first.input()}
+            {...field.$.name.$.first.input()}
           />
 
-          <button onClick={() => state.$.name.$.first.set("Sasha")}>
+          <button onClick={() => field.$.name.$.first.set("Sasha")}>
             Rename
           </button>
 
-          <UserNameComponent name={state.$.name} />
+          <UserNameComponent name={field.$.name} />
         </div>
       );
     }
@@ -156,16 +156,16 @@ describe("State", () => {
       .toHaveTextContent("1");
   });
 
-  it("updates the controlled input state", async () => {
+  it("updates the controlled input field", async () => {
     function Component() {
       const count = useRenderCount();
-      const state = State.use<User>({ name: { first: "Alexander" } });
+      const field = Field.use<User>({ name: { first: "Alexander" } });
 
       return (
         <div>
           <div data-testid="render-input">{count}</div>
 
-          <state.$.name.$.first.Control
+          <field.$.name.$.first.Control
             render={(control) => (
               <input
                 data-testid="name-first-input"
@@ -175,11 +175,11 @@ describe("State", () => {
             )}
           />
 
-          <button onClick={() => state.$.name.$.first.set("Sasha")}>
+          <button onClick={() => field.$.name.$.first.set("Sasha")}>
             Rename
           </button>
 
-          <UserNameComponent name={state.$.name} />
+          <UserNameComponent name={field.$.name} />
         </div>
       );
     }
@@ -219,13 +219,13 @@ describe("State", () => {
   it("allows to subscribe to meta information when controlling input", async () => {
     function Component() {
       const outsideCount = useRenderCount();
-      const state = State.use({ name: { first: "Alexander", last: "" } });
+      const field = Field.use({ name: { first: "Alexander", last: "" } });
 
       return (
         <div>
           <div data-testid="render-meta-outside">{outsideCount}</div>
 
-          <state.Control
+          <field.Control
             meta
             render={({ value }, { invalids, valid, error, dirty }) => {
               const count = useRenderCount();
@@ -235,7 +235,7 @@ describe("State", () => {
 
                   <button
                     onClick={() =>
-                      state.$.name.$.first.setError(`Nope ${Math.random()}`)
+                      field.$.name.$.first.setError(`Nope ${Math.random()}`)
                     }
                   >
                     Set first name error
@@ -243,7 +243,7 @@ describe("State", () => {
 
                   <button
                     onClick={() =>
-                      state.$.name.$.last.setError(`Nah ${Math.random()}`)
+                      field.$.name.$.last.setError(`Nah ${Math.random()}`)
                     }
                   >
                     Set last name error
@@ -251,22 +251,22 @@ describe("State", () => {
 
                   <button
                     onClick={() =>
-                      state.$.name.$.last.setError(
-                        state.$.name.$.last.error?.message
+                      field.$.name.$.last.setError(
+                        field.$.name.$.last.error?.message
                       )
                     }
                   >
                     Set same last name error
                   </button>
 
-                  <button onClick={() => state.setError("Nope")}>
-                    Set state error
+                  <button onClick={() => field.setError("Nope")}>
+                    Set field error
                   </button>
 
                   <button
                     onClick={() => {
-                      state.$.name.$.first.setError();
-                      state.$.name.$.last.setError();
+                      field.$.name.$.first.setError();
+                      field.$.name.$.last.setError();
                     }}
                   >
                     Clear errors
@@ -274,7 +274,7 @@ describe("State", () => {
 
                   <button
                     onClick={() =>
-                      state.$.name.set({ first: "Sasha", last: "Koss" })
+                      field.$.name.set({ first: "Sasha", last: "Koss" })
                     }
                   >
                     Rename
@@ -368,7 +368,7 @@ describe("State", () => {
       .element(screen.getByTestId("render-meta"))
       .toHaveTextContent("7");
 
-    await screen.getByText("Set state error").click();
+    await screen.getByText("Set field error").click();
 
     await expect.element(screen.getByTestId("error")).toHaveTextContent("Nope");
     await expect.element(screen.getByTestId("errors")).toHaveTextContent("1");
@@ -382,21 +382,21 @@ describe("State", () => {
       .toHaveTextContent("1");
   });
 
-  it("allows to watch for state", async () => {
+  it("allows to watch for field", async () => {
     function Component() {
       const count = useRenderCount();
-      const state = State.use({ name: { first: "Alexander" } });
-      const name = state.$.name.useGet();
+      const field = Field.use({ name: { first: "Alexander" } });
+      const name = field.$.name.useGet();
 
       return (
         <div>
           <div data-testid="render-watch">{count}</div>
 
-          <button onClick={() => state.$.name.$.first.set("Sasha")}>
+          <button onClick={() => field.$.name.$.first.set("Sasha")}>
             Rename
           </button>
 
-          <button onClick={() => state.$.name.setError("Nope")}>
+          <button onClick={() => field.$.name.setError("Nope")}>
             Add error
           </button>
 
@@ -430,22 +430,22 @@ describe("State", () => {
       .toHaveTextContent("2");
   });
 
-  it("allows to watch for state using a function", async () => {
+  it("allows to watch for field using a function", async () => {
     function Component() {
       const count = useRenderCount();
-      const state = State.use({ name: { first: "Alexander" } });
-      const [name, setName] = useState(state.$.name.get());
-      state.$.name.useWatch(setName);
+      const field = Field.use({ name: { first: "Alexander" } });
+      const [name, setName] = useState(field.$.name.get());
+      field.$.name.useWatch(setName);
 
       return (
         <div>
           <div data-testid="render-watch">{count}</div>
 
-          <button onClick={() => state.$.name.$.first.set("Sasha")}>
+          <button onClick={() => field.$.name.$.first.set("Sasha")}>
             Rename
           </button>
 
-          <button onClick={() => state.$.name.setError("Nope")}>
+          <button onClick={() => field.$.name.setError("Nope")}>
             Add error
           </button>
 
@@ -479,11 +479,11 @@ describe("State", () => {
       .toHaveTextContent("3");
   });
 
-  it("allows to listen to dirty state", async () => {
+  it("allows to listen to dirty field", async () => {
     function Component() {
       const count = useRenderCount();
-      const state = State.use({ name: { first: "Alexander" } });
-      const dirty = state.useDirty();
+      const field = Field.use({ name: { first: "Alexander" } });
+      const dirty = field.useDirty();
 
       return (
         <div>
@@ -491,7 +491,7 @@ describe("State", () => {
 
           <input
             data-testid="name-first-input"
-            {...state.$.name.$.first.input()}
+            {...field.$.name.$.first.input()}
           />
 
           <div data-testid="dirty">{String(dirty)}</div>
@@ -525,38 +525,38 @@ describe("State", () => {
       .toHaveTextContent("3");
   });
 
-  it("allows to listen to error state", async () => {
+  it("allows to listen to error field", async () => {
     function Component() {
       const count = useRenderCount();
-      const state = State.use({ name: { first: "Alexander", last: "" } });
-      const error = state.$.name.useError();
+      const field = Field.use({ name: { first: "Alexander", last: "" } });
+      const error = field.$.name.useError();
 
       return (
         <div>
           <div data-testid="render-error">{count}</div>
 
-          <button onClick={() => state.$.name.setError("Nope 1")}>
+          <button onClick={() => field.$.name.setError("Nope 1")}>
             Set error 1
           </button>
 
-          <button onClick={() => state.$.name.setError("Nope 2")}>
+          <button onClick={() => field.$.name.setError("Nope 2")}>
             Set error 2
           </button>
 
-          <button onClick={() => state.$.name.$.first.setError("Nah")}>
+          <button onClick={() => field.$.name.$.first.setError("Nah")}>
             Set first name error
           </button>
 
           <button
             onClick={() => {
-              state.$.name.setError();
+              field.$.name.setError();
             }}
           >
             Clear error
           </button>
 
-          <button onClick={() => state.$.name.$.last.set("Koss")}>
-            Trigger state update
+          <button onClick={() => field.$.name.$.last.set("Koss")}>
+            Trigger field update
           </button>
 
           <div data-testid="error">{error?.message}</div>
@@ -598,7 +598,7 @@ describe("State", () => {
       .element(screen.getByTestId("render-error"))
       .toHaveTextContent("3");
 
-    await screen.getByText("Trigger state update").click();
+    await screen.getByText("Trigger field update").click();
 
     await expect
       .element(screen.getByTestId("render-error"))
@@ -619,11 +619,11 @@ describe("State", () => {
       .toHaveTextContent("4");
   });
 
-  it("allows to listen to valid state", async () => {
+  it("allows to listen to valid field", async () => {
     function Component() {
       const count = useRenderCount();
-      const state = State.use({ name: { first: "Alexander" } });
-      const valid = state.useValid();
+      const field = Field.use({ name: { first: "Alexander" } });
+      const valid = field.useValid();
 
       return (
         <div>
@@ -631,18 +631,18 @@ describe("State", () => {
 
           <button
             onClick={() =>
-              state.$.name.$.first.setError(`Nope ${Math.random()}`)
+              field.$.name.$.first.setError(`Nope ${Math.random()}`)
             }
           >
             Set error
           </button>
 
-          <button onClick={() => state.$.name.$.first.setError()}>
+          <button onClick={() => field.$.name.$.first.setError()}>
             Clear error
           </button>
 
-          <button onClick={() => state.$.name.$.first.set("Sasha")}>
-            Trigger state update
+          <button onClick={() => field.$.name.$.first.set("Sasha")}>
+            Trigger field update
           </button>
 
           <div data-testid="valid">{String(valid)}</div>
@@ -671,7 +671,7 @@ describe("State", () => {
       .element(screen.getByTestId("render-valid"))
       .toHaveTextContent("2");
 
-    await screen.getByText("Trigger state update").click();
+    await screen.getByText("Trigger field update").click();
 
     await expect
       .element(screen.getByTestId("render-valid"))
@@ -687,11 +687,11 @@ describe("State", () => {
       .toHaveTextContent("3");
   });
 
-  it("allows to listen to errors state", async () => {
+  it("allows to listen to errors field", async () => {
     function Component() {
       const count = useRenderCount();
-      const state = State.use({ name: { first: "Alexander", last: "" } });
-      const errors = state.useInvalids();
+      const field = Field.use({ name: { first: "Alexander", last: "" } });
+      const errors = field.useInvalids();
 
       return (
         <div>
@@ -699,21 +699,21 @@ describe("State", () => {
 
           <button
             onClick={() =>
-              state.$.name.$.first.setError(`Nope ${Math.random()}`)
+              field.$.name.$.first.setError(`Nope ${Math.random()}`)
             }
           >
             Set first name error
           </button>
 
           <button
-            onClick={() => state.$.name.$.last.setError(`Nah ${Math.random()}`)}
+            onClick={() => field.$.name.$.last.setError(`Nah ${Math.random()}`)}
           >
             Set last name error
           </button>
 
           <button
             onClick={() =>
-              state.$.name.$.last.setError(state.$.name.$.last.error?.message)
+              field.$.name.$.last.setError(field.$.name.$.last.error?.message)
             }
           >
             Set same last name error
@@ -721,15 +721,15 @@ describe("State", () => {
 
           <button
             onClick={() => {
-              state.$.name.$.first.setError();
-              state.$.name.$.last.setError();
+              field.$.name.$.first.setError();
+              field.$.name.$.last.setError();
             }}
           >
             Clear errors
           </button>
 
-          <button onClick={() => state.$.name.$.last.set("Koss")}>
-            Trigger state update
+          <button onClick={() => field.$.name.$.last.set("Koss")}>
+            Trigger field update
           </button>
 
           <div data-testid="errors">{errors.size}</div>
@@ -769,7 +769,7 @@ describe("State", () => {
       .element(screen.getByTestId("render-errors"))
       .toHaveTextContent("5");
 
-    await screen.getByText("Trigger state update").click();
+    await screen.getByText("Trigger field update").click();
 
     await expect
       .element(screen.getByTestId("render-errors"))
@@ -787,8 +787,8 @@ describe("State", () => {
   it("allows to listen to meta information", async () => {
     function Component() {
       const count = useRenderCount();
-      const state = State.use({ name: { first: "Alexander", last: "" } });
-      const { dirty, error, valid, invalids: errors } = state.useMeta();
+      const field = Field.use({ name: { first: "Alexander", last: "" } });
+      const { dirty, error, valid, invalids: errors } = field.useMeta();
 
       return (
         <div>
@@ -796,41 +796,41 @@ describe("State", () => {
 
           <button
             onClick={() =>
-              state.$.name.$.first.setError(`Nope ${Math.random()}`)
+              field.$.name.$.first.setError(`Nope ${Math.random()}`)
             }
           >
             Set first name error
           </button>
 
           <button
-            onClick={() => state.$.name.$.last.setError(`Nah ${Math.random()}`)}
+            onClick={() => field.$.name.$.last.setError(`Nah ${Math.random()}`)}
           >
             Set last name error
           </button>
 
           <button
             onClick={() =>
-              state.$.name.$.last.setError(state.$.name.$.last.error?.message)
+              field.$.name.$.last.setError(field.$.name.$.last.error?.message)
             }
           >
             Set same last name error
           </button>
 
-          <button onClick={() => state.setError("Nope")}>
-            Set state error
+          <button onClick={() => field.setError("Nope")}>
+            Set field error
           </button>
 
           <button
             onClick={() => {
-              state.$.name.$.first.setError();
-              state.$.name.$.last.setError();
+              field.$.name.$.first.setError();
+              field.$.name.$.last.setError();
             }}
           >
             Clear errors
           </button>
 
-          <button onClick={() => state.$.name.$.last.set("Koss")}>
-            Trigger state update
+          <button onClick={() => field.$.name.$.last.set("Koss")}>
+            Trigger field update
           </button>
 
           <div data-testid="dirty">{String(dirty)}</div>
@@ -885,7 +885,7 @@ describe("State", () => {
 
     await expect.element(screen.getByTestId("render-meta"));
 
-    await screen.getByText("Trigger state update").click();
+    await screen.getByText("Trigger field update").click();
 
     await expect.element(screen.getByTestId("dirty")).toHaveTextContent("true");
     await expect
@@ -905,7 +905,7 @@ describe("State", () => {
       .element(screen.getByTestId("render-meta"))
       .toHaveTextContent("7");
 
-    await screen.getByText("Set state error").click();
+    await screen.getByText("Set field error").click();
 
     await expect.element(screen.getByTestId("error")).toHaveTextContent("Nope");
     await expect.element(screen.getByTestId("errors")).toHaveTextContent("1");
@@ -918,8 +918,8 @@ describe("State", () => {
   it("allows to listen to value with meta information", async () => {
     function Component() {
       const count = useRenderCount();
-      const state = State.use({ name: { first: "Alexander", last: "" } });
-      const [value, { dirty, error, valid, invalids }] = state.useGet({
+      const field = Field.use({ name: { first: "Alexander", last: "" } });
+      const [value, { dirty, error, valid, invalids }] = field.useGet({
         meta: true,
       });
 
@@ -929,41 +929,41 @@ describe("State", () => {
 
           <button
             onClick={() =>
-              state.$.name.$.first.setError(`Nope ${Math.random()}`)
+              field.$.name.$.first.setError(`Nope ${Math.random()}`)
             }
           >
             Set first name error
           </button>
 
           <button
-            onClick={() => state.$.name.$.last.setError(`Nah ${Math.random()}`)}
+            onClick={() => field.$.name.$.last.setError(`Nah ${Math.random()}`)}
           >
             Set last name error
           </button>
 
           <button
             onClick={() =>
-              state.$.name.$.last.setError(state.$.name.$.last.error?.message)
+              field.$.name.$.last.setError(field.$.name.$.last.error?.message)
             }
           >
             Set same last name error
           </button>
 
-          <button onClick={() => state.setError("Nope")}>
-            Set state error
+          <button onClick={() => field.setError("Nope")}>
+            Set field error
           </button>
 
           <button
             onClick={() => {
-              state.$.name.$.first.setError();
-              state.$.name.$.last.setError();
+              field.$.name.$.first.setError();
+              field.$.name.$.last.setError();
             }}
           >
             Clear errors
           </button>
 
           <button
-            onClick={() => state.$.name.set({ first: "Sasha", last: "Koss" })}
+            onClick={() => field.$.name.set({ first: "Sasha", last: "Koss" })}
           >
             Rename
           </button>
@@ -1052,7 +1052,7 @@ describe("State", () => {
       .element(screen.getByTestId("render-meta"))
       .toHaveTextContent("7");
 
-    await screen.getByText("Set state error").click();
+    await screen.getByText("Set field error").click();
 
     await expect.element(screen.getByTestId("error")).toHaveTextContent("Nope");
     await expect.element(screen.getByTestId("errors")).toHaveTextContent("1");
@@ -1065,28 +1065,28 @@ describe("State", () => {
   it("allows to compute value", async () => {
     function Component() {
       const count = useRenderCount();
-      const state = State.use<User>({ name: { first: "Alexander" } });
-      const hasLastName = state.$.name.useCompute((name) => !!name.last);
+      const field = Field.use<User>({ name: { first: "Alexander" } });
+      const hasLastName = field.$.name.useCompute((name) => !!name.last);
 
       return (
         <div>
           <div data-testid="render-compute">{count}</div>
 
           <button
-            onClick={() => state.$.name.$.first.set(`Sasha ${Math.random()}`)}
+            onClick={() => field.$.name.$.first.set(`Sasha ${Math.random()}`)}
           >
             Rename first
           </button>
 
-          <button onClick={() => state.$.name.setError("Nope")}>
+          <button onClick={() => field.$.name.setError("Nope")}>
             Add error
           </button>
 
-          <button onClick={() => state.$.name.$.last.set("Koss")}>
+          <button onClick={() => field.$.name.$.last.set("Koss")}>
             Set last name
           </button>
 
-          <button onClick={() => state.$.name.$.last.set(undefined)}>
+          <button onClick={() => field.$.name.$.last.set(undefined)}>
             Clear last name
           </button>
 
@@ -1144,14 +1144,14 @@ describe("State", () => {
       .toHaveTextContent("3");
   });
 
-  it("allows to decompose union state", async () => {
+  it("allows to decompose union field", async () => {
     interface ComponentProps {
       address: Address;
     }
 
     function Component(props: ComponentProps) {
       const count = useRenderCount();
-      const address = State.use<Address>(props.address);
+      const address = Field.use<Address>(props.address);
       const name = address.$.name.useDecompose(
         (newName, prevName) => typeof newName !== typeof prevName
       );
@@ -1165,25 +1165,25 @@ describe("State", () => {
           {typeof name.value === "string" ? (
             <div>
               <button
-                onClick={() => (name.state as State<string>).set("Alexander")}
+                onClick={() => (name.field as Field<string>).set("Alexander")}
               >
                 Rename
               </button>
 
-              <StringComponent string={name.state as State<string>} />
+              <StringComponent string={name.field as Field<string>} />
             </div>
           ) : (
             <div>
               <input
                 data-testid="input-name-first"
-                {...(name.state as State<UserName>).$.first.input()}
+                {...(name.field as Field<UserName>).$.first.input()}
               />
 
               <button onClick={() => address.$.name.set("Alex")}>
                 Set string name
               </button>
 
-              <UserNameComponent name={name.state as State<UserName>} />
+              <UserNameComponent name={name.field as Field<UserName>} />
             </div>
           )}
         </div>
@@ -1227,14 +1227,14 @@ describe("State", () => {
       .toHaveTextContent("2");
   });
 
-  it("allows to narrow union state", async () => {
+  it("allows to narrow union field", async () => {
     interface ComponentProps {
       address: Address;
     }
 
     function Component(props: ComponentProps) {
       const count = useRenderCount();
-      const address = State.use<Address>(props.address);
+      const address = Field.use<Address>(props.address);
       const nameStr = address.$.name.useNarrow(
         (name, ok) => typeof name === "string" && ok(name)
       );
@@ -1307,7 +1307,7 @@ describe("State", () => {
       .toHaveTextContent("2");
   });
 
-  it("allows to discriminate union state", async () => {
+  it("allows to discriminate union field", async () => {
     type Hello = HelloMachine | HelloHuman;
 
     interface HelloMachine {
@@ -1330,8 +1330,8 @@ describe("State", () => {
 
     function Component(props: ComponentProps) {
       const count = useRenderCount();
-      const state = State.use<TestState>(props);
-      const hello = state.$.hello.useDiscriminate("lang");
+      const field = Field.use<TestState>(props);
+      const hello = field.$.hello.useDiscriminate("lang");
 
       return (
         <div>
@@ -1341,7 +1341,7 @@ describe("State", () => {
             <div>
               <button
                 onClick={() =>
-                  hello.state.set({
+                  hello.field.set({
                     lang: "human",
                     text: "Hola",
                   })
@@ -1352,7 +1352,7 @@ describe("State", () => {
 
               <button
                 onClick={() =>
-                  state.$.hello.set({
+                  field.$.hello.set({
                     lang: "machine",
                     binary: 0b1101010,
                   })
@@ -1361,13 +1361,13 @@ describe("State", () => {
                 Switch to binary
               </button>
 
-              <StringComponent string={hello.state.$.text} />
+              <StringComponent string={hello.field.$.text} />
             </div>
           ) : (
             <div>
               <button
                 onClick={() =>
-                  state.$.hello.set({
+                  field.$.hello.set({
                     lang: "machine",
                     binary: 0b1010101,
                   })
@@ -1376,7 +1376,7 @@ describe("State", () => {
                 Say 1010101
               </button>
 
-              <NumberComponent number={hello.state.$.binary} />
+              <NumberComponent number={hello.field.$.binary} />
             </div>
           )}
         </div>
@@ -1416,29 +1416,29 @@ describe("State", () => {
       .toHaveTextContent("2");
   });
 
-  it("allows to compute state", async () => {
+  it("allows to compute field", async () => {
     function Component() {
       const count = useRenderCount();
-      const state = State.use({ message: "Hello" });
-      const codes = state.$.message.useInto(toCodes).from(fromCodes);
+      const field = Field.use({ message: "Hello" });
+      const codes = field.$.message.useInto(toCodes).from(fromCodes);
 
       return (
         <div>
           <div data-testid="render-compute">{count}</div>
 
-          <StringComponent string={state.$.message} />
+          <StringComponent string={field.$.message} />
 
           <CodesComponent codes={codes} />
 
           <button onClick={() => codes.set([72, 105, 33])}>Say hi</button>
 
-          <button onClick={() => state.$.message.set("Yo")}>Say yo</button>
+          <button onClick={() => field.$.message.set("Yo")}>Say yo</button>
         </div>
       );
     }
 
     interface CodesComponentProps {
-      codes: State<number[]>;
+      codes: Field<number[]>;
     }
 
     function CodesComponent(props: CodesComponentProps) {
@@ -1523,7 +1523,7 @@ interface UserName {
 }
 
 interface UserComponentProps {
-  user: State<User>;
+  user: Field<User>;
 }
 
 function UserComponent(props: UserComponentProps) {
@@ -1543,7 +1543,7 @@ function UserComponent(props: UserComponentProps) {
 }
 
 interface UserNameComponentProps {
-  name: State<UserName>;
+  name: Field<UserName>;
   index?: number;
 }
 
@@ -1590,7 +1590,7 @@ interface UserNameFormComponentProps {
 
 function UserNameFormComponent(props: UserNameFormComponentProps) {
   const count = useRenderCount();
-  const state = State.use<UserName>({ first: "", last: "" });
+  const field = Field.use<UserName>({ first: "", last: "" });
 
   return (
     <div>
@@ -1599,10 +1599,10 @@ function UserNameFormComponent(props: UserNameFormComponentProps) {
       <form
         onSubmit={(event) => {
           event.preventDefault();
-          props.onSubmit?.(state.get());
+          props.onSubmit?.(field.get());
         }}
       >
-        <state.$.first.Control
+        <field.$.first.Control
           render={(control) => (
             <input
               data-testid="input-name-first"
@@ -1612,7 +1612,7 @@ function UserNameFormComponent(props: UserNameFormComponentProps) {
           )}
         />
 
-        <state.$.last.Control
+        <field.$.last.Control
           render={(control) => (
             <input
               data-testid="input-name-last"
@@ -1629,7 +1629,7 @@ function UserNameFormComponent(props: UserNameFormComponentProps) {
 }
 
 interface StringComponentProps {
-  string: State<string>;
+  string: Field<string>;
 }
 
 function StringComponent(props: StringComponentProps) {
@@ -1644,7 +1644,7 @@ function StringComponent(props: StringComponentProps) {
 }
 
 interface NumberComponentProps {
-  number: State<number>;
+  number: Field<number>;
 }
 
 function NumberComponent(props: NumberComponentProps) {

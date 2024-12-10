@@ -3,22 +3,22 @@ import { useRerender } from "../hooks/rerender.ts";
 import { type EnsoUtils } from "../utils.ts";
 import { nanoid } from "nanoid";
 
-//#region State
+//#region Field
 
 const createSymbol = Symbol();
 const clearSymbol = Symbol();
 
-export const statePrivate = Symbol();
+export const fieldPrivate = Symbol();
 
-export class State<Payload> {
-  static use<Payload>(value: Payload): State<Payload> {
-    const state = useMemo(() => new State(value), []);
-    return state;
+export class Field<Payload> {
+  static use<Payload>(value: Payload): Field<Payload> {
+    const field = useMemo(() => new Field(value), []);
+    return field;
   }
 
   #id = nanoid();
-  #parent?: State.Parent<any> | undefined;
-  #use: State.Use<Payload>;
+  #parent?: Field.Parent<any> | undefined;
+  #use: Field.Use<Payload>;
   #onInput;
 
   #internal: InternalState<Payload> = new InternalPrimitiveState(
@@ -29,7 +29,7 @@ export class State<Payload> {
 
   #initial: Payload;
 
-  constructor(value: Payload, parent?: State.Parent<any>) {
+  constructor(value: Payload, parent?: Field.Parent<any>) {
     this.#initial = value;
 
     this.#set(value);
@@ -50,7 +50,7 @@ export class State<Payload> {
         );
         return this;
       },
-    }) as State.Use<Payload>;
+    }) as Field.Use<Payload>;
 
     const onInput = (event: Event) => {
       const target = event.target as HTMLInputElement;
@@ -89,11 +89,11 @@ export class State<Payload> {
   }
 
   get path(): string[] {
-    return this.#parent ? [...this.#parent.state.path, this.#parent.key] : [];
+    return this.#parent ? [...this.#parent.field.path, this.#parent.key] : [];
   }
 
-  get parent(): State<any> | undefined {
-    return this.#parent?.state;
+  get parent(): Field<any> | undefined {
+    return this.#parent?.field;
   }
 
   //#endregion
@@ -109,9 +109,9 @@ export class State<Payload> {
     return this.#cachedGet;
   }
 
-  useGet<Props extends State.UseGetProps | undefined = undefined>(
+  useGet<Props extends Field.UseGetProps | undefined = undefined>(
     props?: Props
-  ): State.UseGet<Payload, Props> {
+  ): Field.UseGet<Payload, Props> {
     const [payload, setPayload] = useState(this.get());
     const watchAllMeta = !!props?.meta;
     const watchMeta =
@@ -132,7 +132,7 @@ export class State<Payload> {
         this.watch((payload, event) => {
           // Ignore only valid-invalid changes
           if (
-            !(event.detail & ~(stateChangeType.valid | stateChangeType.invalid))
+            !(event.detail & ~(fieldChangeType.valid | fieldChangeType.invalid))
           )
             return;
 
@@ -145,27 +145,27 @@ export class State<Payload> {
   }
 
   // [TODO] Exposing the notify parents flag might be dangerous
-  set(value: Payload | UndefinedValue, notifyParents = true): StateChange | 0 {
+  set(value: Payload | UndefinedValue, notifyParents = true): FieldChange | 0 {
     const change = this.#set(value);
     if (change) this.trigger(change, notifyParents);
 
     return change;
   }
 
-  #set(value: Payload | UndefinedValue): StateChange | 0 {
+  #set(value: Payload | UndefinedValue): FieldChange | 0 {
     const ValueConstructor = InternalState.detect(value);
 
-    // The state is already of the same type
+    // The field is already of the same type
     if (this.#internal instanceof ValueConstructor)
       // @ts-ignore: [TODO]
       return this.#internal.set(value);
 
-    // The state is of a different type
+    // The field is of a different type
     this.#internal.unwatch();
 
-    let change = stateChangeType.type;
-    // The state is being removed
-    if (value === undefinedValue) change |= stateChangeType.removed;
+    let change = fieldChangeType.type;
+    // The field is being removed
+    if (value === undefinedValue) change |= fieldChangeType.removed;
 
     // @ts-ignore: This is fine
     this.#internal = new ValueConstructor(this, value);
@@ -174,8 +174,8 @@ export class State<Payload> {
     return change;
   }
 
-  [createSymbol](value: Payload): StateChange | 0 {
-    const change = this.#internal.set(value) | stateChangeType.created;
+  [createSymbol](value: Payload): FieldChange | 0 {
+    const change = this.#internal.set(value) | fieldChangeType.created;
     this.trigger(change, false);
     return change;
   }
@@ -224,7 +224,7 @@ export class State<Payload> {
       this.#internal instanceof InternalObjectState ||
       this.#internal instanceof InternalArrayState
     ) {
-      this.#internal.forEach((state: any) => state.commit());
+      this.#internal.forEach((field: any) => field.commit());
     }
   }
 
@@ -232,17 +232,17 @@ export class State<Payload> {
 
   //#region Tree
 
-  get $(): State.$<Payload> {
+  get $(): Field.$<Payload> {
     return this.#internal.$();
   }
 
-  get try(): State.Try<Payload> {
+  get try(): Field.Try<Payload> {
     return this.#internal.try();
   }
 
   //#endregion
 
-  get use(): State.Use<Payload> {
+  get use(): Field.Use<Payload> {
     return this.#use;
   }
 
@@ -251,9 +251,9 @@ export class State<Payload> {
   #target = new EventTarget();
   #subs = new Set<(event: Event) => void>();
 
-  watch(callback: State.WatchCallback<Payload>): State.Unwatch {
+  watch(callback: Field.WatchCallback<Payload>): Field.Unwatch {
     const handler = (event: Event) => {
-      callback(this.get(), event as StateChangeEvent);
+      callback(this.get(), event as FieldChangeEvent);
     };
 
     this.#subs.add(handler);
@@ -265,7 +265,7 @@ export class State<Payload> {
     };
   }
 
-  useWatch(callback: State.WatchCallback<Payload>): void {
+  useWatch(callback: Field.WatchCallback<Payload>): void {
     useEffect(() => this.watch(callback), [callback]);
   }
 
@@ -277,29 +277,29 @@ export class State<Payload> {
     this.#internal.unwatch();
   }
 
-  trigger(change: StateChange, notifyParents: boolean = false) {
+  trigger(change: FieldChange, notifyParents: boolean = false) {
     this.#clearCache();
 
-    this.#target.dispatchEvent(new StateChangeEvent(change));
+    this.#target.dispatchEvent(new FieldChangeEvent(change));
     // If the updates should flow upstream to parents too
     if (notifyParents && this.#parent)
-      this.#parent.state.#childTrigger(change, this.#parent.key);
+      this.#parent.field.#childTrigger(change, this.#parent.key);
   }
 
-  #childTrigger(type: StateChange, key: string) {
+  #childTrigger(type: FieldChange, key: string) {
     const updated =
-      this.#internal.childUpdate(type, key) | stateChangeType.child;
+      this.#internal.childUpdate(type, key) | fieldChangeType.child;
     this.trigger(updated, true);
   }
 
-  useMeta<Props extends State.UseMetaProps | undefined = undefined>(
+  useMeta<Props extends Field.UseMetaProps | undefined = undefined>(
     props?: Props
-  ): State.Meta<Props> {
+  ): Field.Meta<Props> {
     const invalids = this.useInvalids(!props || !!props.invalids);
     const valid = this.useValid(!props || !!props.valid);
     const error = this.useError(!props || !!props.error);
     const dirty = this.useDirty(!props || !!props.dirty);
-    return { invalids, valid, error, dirty } as State.Meta<Props>;
+    return { invalids, valid, error, dirty } as Field.Meta<Props>;
   }
 
   //#endregion
@@ -307,7 +307,7 @@ export class State<Payload> {
   //#region Mapping
 
   useCompute<Computed>(
-    callback: State.ComputeCallback<Payload, Computed>
+    callback: Field.ComputeCallback<Payload, Computed>
   ): Computed {
     const [computed, setComputed] = useState(() => callback(this.get()));
 
@@ -325,16 +325,16 @@ export class State<Payload> {
     return computed;
   }
 
-  decompose(): State.Decomposed<Payload> {
+  decompose(): Field.Decomposed<Payload> {
     return {
       value: this.get(),
-      state: this,
-    } as unknown as State.Decomposed<Payload>;
+      field: this,
+    } as unknown as Field.Decomposed<Payload>;
   }
 
   useDecompose(
-    callback: State.DecomposeCallback<Payload>
-  ): State.Decomposed<Payload> {
+    callback: Field.DecomposeCallback<Payload>
+  ): Field.Decomposed<Payload> {
     const rerender = useRerender();
     const initial = useMemo(() => this.decompose(), []);
     const ref = useRef(initial);
@@ -353,18 +353,18 @@ export class State<Payload> {
 
   discriminate<Discriminator extends keyof Exclude<Payload, undefined>>(
     discriminator: Discriminator
-  ): State.Discriminated<Payload, Discriminator> {
+  ): Field.Discriminated<Payload, Discriminator> {
     // @ts-ignore: [TODO]
     return {
       // @ts-ignore: [TODO]
       discriminator: this.$[discriminator]?.get(),
-      state: this,
+      field: this,
     };
   }
 
-  useDiscriminate<Discriminator extends State.DiscriminatorKey<Payload>>(
+  useDiscriminate<Discriminator extends Field.DiscriminatorKey<Payload>>(
     discriminator: Discriminator
-  ): State.Discriminated<Payload, Discriminator> {
+  ): Field.Discriminated<Payload, Discriminator> {
     const rerender = useRerender();
     const initial = useMemo(() => this.discriminate(discriminator), []);
     const ref = useRef(initial);
@@ -382,11 +382,11 @@ export class State<Payload> {
   }
 
   into<Computed>(
-    intoCallback: State.IntoCallback<Payload, Computed>
-  ): State.Into<Payload, Computed> {
+    intoCallback: Field.IntoCallback<Payload, Computed>
+  ): Field.Into<Payload, Computed> {
     const computed = new ComputedState(intoCallback(this.get()), this);
     // [TODO] This creates a leak, so rather than holding on to the computed
-    // state, store it as a weak ref and unsubscribe when it's no longer needed.
+    // field, store it as a weak ref and unsubscribe when it's no longer needed.
     this.watch((payload) => computed.set(intoCallback(payload)));
 
     return {
@@ -398,8 +398,8 @@ export class State<Payload> {
   }
 
   useInto<Computed>(
-    intoCallback: State.IntoCallback<Payload, Computed>
-  ): State.Into<Payload, Computed> {
+    intoCallback: Field.IntoCallback<Payload, Computed>
+  ): Field.Into<Payload, Computed> {
     const computed = useMemo(
       () => new ComputedState(intoCallback(this.get()), this),
       []
@@ -428,8 +428,8 @@ export class State<Payload> {
   }
 
   narrow<Narrowed extends Payload>(
-    callback: State.NarrowCallback<Payload, Narrowed>
-  ): State<Narrowed> | undefined {
+    callback: Field.NarrowCallback<Payload, Narrowed>
+  ): Field<Narrowed> | undefined {
     let matching = false;
     const payload = this.get();
     // @ts-ignore: [TODO]
@@ -443,8 +443,8 @@ export class State<Payload> {
   }
 
   useNarrow<Narrowed extends Payload>(
-    callback: State.NarrowCallback<Payload, Narrowed>
-  ): State<Narrowed> | undefined {
+    callback: Field.NarrowCallback<Payload, Narrowed>
+  ): Field<Narrowed> | undefined {
     const rerender = useRerender();
     const initial = useMemo(() => !!this.narrow(callback), []);
     const ref = useRef(initial);
@@ -470,21 +470,21 @@ export class State<Payload> {
 
   //#region Collections
 
-  forEach: State.ForEachFn<Payload> = ((callback: any) => {
+  forEach: Field.ForEachFn<Payload> = ((callback: any) => {
     if (
       this.#internal instanceof InternalObjectState ||
       this.#internal instanceof InternalArrayState
     )
       this.#internal.forEach(callback);
-  }) as State.ForEachFn<Payload>;
+  }) as Field.ForEachFn<Payload>;
 
-  map: State.MapFn<Payload> = ((callback: any) => {
+  map: Field.MapFn<Payload> = ((callback: any) => {
     if (
       this.#internal instanceof InternalObjectState ||
       this.#internal instanceof InternalArrayState
     )
       return this.#internal.map(callback);
-  }) as State.MapFn<Payload>;
+  }) as Field.MapFn<Payload>;
 
   // @ts-ignore: This is fine
   push: Payload extends Array<infer Item> ? (item: Item) => void : never = (
@@ -494,7 +494,7 @@ export class State<Payload> {
       throw new Error("State is not an array");
 
     const length = this.#internal.push(item);
-    this.trigger(stateChangeType.childAdded, true);
+    this.trigger(fieldChangeType.childAdded, true);
     return length;
   };
 
@@ -518,7 +518,7 @@ export class State<Payload> {
     ValidEnable extends boolean = false,
     InvalidsEnable extends boolean = false,
   >(
-    props: State.InputProps<
+    props: Field.InputProps<
       Payload,
       MetaEnable,
       DirtyEnable,
@@ -545,7 +545,7 @@ export class State<Payload> {
     return props.render(control, meta as any);
   }
 
-  input<Element extends HTMLElement>(): State.Registration<Element> {
+  input<Element extends HTMLElement>(): Field.Registration<Element> {
     return {
       name: this.path.join(".") || ".",
       ref: this.ref,
@@ -553,7 +553,7 @@ export class State<Payload> {
   }
 
   #element: HTMLElement | null = null;
-  #elementUnwatch: State.Unwatch | undefined;
+  #elementUnwatch: Field.Unwatch | undefined;
 
   ref<Element extends HTMLElement>(element: Element | null) {
     if (this.#element === element) return;
@@ -586,15 +586,15 @@ export class State<Payload> {
 
   //#region Errors
 
-  #error: State.Error | undefined;
+  #error: Field.Error | undefined;
 
-  get error(): State.Error | undefined {
+  get error(): Field.Error | undefined {
     return this.#error;
   }
 
   useError<Enable extends boolean | undefined = undefined>(
     enable?: Enable
-  ): Enable extends true | undefined ? State.Error | undefined : undefined {
+  ): Enable extends true | undefined ? Field.Error | undefined : undefined {
     const [error, setError] = useState(
       enable === false ? undefined : this.error
     );
@@ -615,7 +615,7 @@ export class State<Payload> {
     return enable === false ? undefined : error;
   }
 
-  setError(error?: string | State.Error | undefined) {
+  setError(error?: string | Field.Error | undefined) {
     const prevError = this.#error;
     error = typeof error === "string" ? { message: error } : error;
 
@@ -626,16 +626,16 @@ export class State<Payload> {
         prevError.message !== error.message)
     ) {
       this.#error = error;
-      this.trigger(stateChangeType.invalid, true);
+      this.trigger(fieldChangeType.invalid, true);
     } else if (!error && prevError) {
       this.#error = error;
-      this.trigger(stateChangeType.valid, true);
+      this.trigger(fieldChangeType.valid, true);
     }
   }
 
-  #cachedInvalids: Map<State<any>, State.Error> | undefined;
+  #cachedInvalids: Map<Field<any>, Field.Error> | undefined;
 
-  get invalids(): State.Invalids {
+  get invalids(): Field.Invalids {
     if (!this.#cachedInvalids) {
       const invalids = new Map();
 
@@ -648,7 +648,7 @@ export class State<Payload> {
         // @ts-ignore: [TODO]
         this.forEach((item) => {
           // @ts-ignore: [TODO]
-          item.invalids.forEach((error, state) => invalids.set(state, error));
+          item.invalids.forEach((error, field) => invalids.set(field, error));
         });
       }
 
@@ -660,7 +660,7 @@ export class State<Payload> {
 
   useInvalids<Enable extends boolean | undefined = undefined>(
     enable?: Enable
-  ): Enable extends true | undefined ? State.Invalids : undefined {
+  ): Enable extends true | undefined ? Field.Invalids : undefined {
     const emptyMap = useMemo(() => new Map(), []);
     const [invalids, setInvalids] = useState(
       enable === false ? emptyMap : this.invalids
@@ -675,7 +675,7 @@ export class State<Payload> {
             nextInvalids === invalids ||
             (nextInvalids.size === invalids.size &&
               Array.from(nextInvalids).every(
-                ([state, error]) => invalids.get(state) === error
+                ([field, error]) => invalids.get(field) === error
               ));
           if (!equal) setInvalids(nextInvalids);
         });
@@ -716,7 +716,7 @@ export class State<Payload> {
   //#endregion
 }
 
-export namespace State {
+export namespace Field {
   //#region Value
 
   export interface UseGetProps extends UseMetaProps {
@@ -751,15 +751,15 @@ export namespace State {
 
   export interface Parent<Payload> {
     key: string;
-    state: State<Payload>;
+    field: Field<Payload>;
   }
 
   export type $<Payload> = Payload extends object
     ? $Object<Payload>
-    : State<Payload>;
+    : Field<Payload>;
 
   export type $Object<Payload> = $Fn<Payload> & {
-    [Key in keyof Payload]-?: State<
+    [Key in keyof Payload]-?: Field<
       EnsoUtils.StaticKey<Payload, Key> extends true
         ? Payload[Key]
         : Payload[Key] | undefined
@@ -768,7 +768,7 @@ export namespace State {
 
   export type $Fn<Payload> = <Key extends keyof Payload>(
     key: Key
-  ) => State<
+  ) => Field<
     EnsoUtils.StaticKey<Payload, Key> extends true
       ? Payload[Key]
       : Payload[Key] | undefined
@@ -799,8 +799,8 @@ export namespace State {
     | (null extends Payload ? null : never)
     // Add undefined to the union
     | (undefined extends Payload ? undefined : never)
-    // Resolve state without null or undefined
-    | State<Exclude<Payload, null | undefined>>;
+    // Resolve field without null or undefined
+    | Field<Exclude<Payload, null | undefined>>;
 
   //#endregion
 
@@ -808,13 +808,13 @@ export namespace State {
 
   export type Use<Payload> =
     Payload extends Array<any>
-      ? State.HookStateUseFn<Payload>
+      ? Field.HookStateUseFn<Payload>
       : Payload extends object
-        ? State.HookStateUse<Payload>
+        ? Field.HookStateUse<Payload>
         : never;
 
   export interface HookStateUseFn<Payload> {
-    (): State<Payload>;
+    (): Field<Payload>;
 
     <Key extends keyof Payload>(
       key: Key
@@ -830,7 +830,7 @@ export namespace State {
   };
 
   export interface HookState<Payload> {
-    (): State<Payload>;
+    (): Field<Payload>;
 
     get use(): HookStateUse<Payload>;
   }
@@ -841,7 +841,7 @@ export namespace State {
 
   export type WatchCallback<Payload> = (
     payload: Payload,
-    event: StateChangeEvent
+    event: FieldChangeEvent
   ) => void;
 
   export type Unwatch = () => void;
@@ -889,7 +889,7 @@ export namespace State {
   export type Decomposed<Payload> = Payload extends Payload
     ? {
         value: Payload;
-        state: State<Payload>;
+        field: Field<Payload>;
       }
     : never;
 
@@ -907,14 +907,14 @@ export namespace State {
         ? DiscriminatorValue extends Payload[Discriminator]
           ? {
               discriminator: DiscriminatorValue;
-              state: State<Payload>;
+              field: Field<Payload>;
             }
           : never
         : never
       : // Add the payload type without the discriminator (i.e. undefined)
         {
           discriminator: undefined;
-          state: State<Payload>;
+          field: Field<Payload>;
         }
     : never;
 
@@ -960,13 +960,13 @@ export namespace State {
 
   export type ObjectForEach<Payload extends object> = (
     callback: <Key extends keyof Payload>(
-      item: State<Payload[Key]>,
+      item: Field<Payload[Key]>,
       key: Key
     ) => void
   ) => void;
 
   export type ArrayForEach<Payload extends Array<any>> = (
-    callback: (item: State<Payload[number]>, index: number) => void
+    callback: (item: Field<Payload[number]>, index: number) => void
   ) => void;
 
   export type MapFn<Payload> =
@@ -978,13 +978,13 @@ export namespace State {
 
   export type ObjectMap<Payload extends object> = <Return>(
     callback: <Key extends keyof Payload>(
-      item: State<Payload[Key]>,
+      item: Field<Payload[Key]>,
       key: Key
     ) => Return
   ) => Return[];
 
   export type ArrayMap<Payload extends Array<any>> = <Return>(
-    callback: (item: State<Payload[number]>, index: number) => Return
+    callback: (item: Field<Payload[number]>, index: number) => Return
   ) => Return[];
 
   //#endregion
@@ -1057,7 +1057,7 @@ export namespace State {
     message: string;
   }
 
-  export type Invalids = Map<State<any>, State.Error>;
+  export type Invalids = Map<Field<any>, Field.Error>;
 
   //#endregion
 }
@@ -1066,10 +1066,10 @@ export namespace State {
 
 //#region ComputedState
 
-export class ComputedState<Payload, Computed> extends State<Computed> {
-  #source: State<Payload>;
+export class ComputedState<Payload, Computed> extends Field<Computed> {
+  #source: Field<Payload>;
 
-  constructor(payload: Computed, source: State<Payload>) {
+  constructor(payload: Computed, source: Field<Payload>) {
     super(payload);
     this.#source = source;
   }
@@ -1086,15 +1086,15 @@ export class ComputedState<Payload, Computed> extends State<Computed> {
     return this.#source.path;
   }
 
-  override get invalids(): State.Invalids {
+  override get invalids(): Field.Invalids {
     return this.#source.invalids;
   }
 
-  override get parent(): State<any> | undefined {
+  override get parent(): Field<any> | undefined {
     return this.#source.parent;
   }
 
-  override setError(error?: string | State.Error | undefined): void {
+  override setError(error?: string | Field.Error | undefined): void {
     this.#source.setError(error);
   }
 }
@@ -1120,27 +1120,27 @@ export abstract class InternalState<Payload> {
     return InternalPrimitiveState;
   }
 
-  #external: State<Payload>;
+  #external: Field<Payload>;
 
-  constructor(state: State<Payload>, _value: Payload | UndefinedValue) {
-    this.#external = state;
+  constructor(field: Field<Payload>, _value: Payload | UndefinedValue) {
+    this.#external = field;
   }
 
   abstract unwatch(): void;
 
-  abstract set(value: Payload | UndefinedValue): StateChange | 0;
+  abstract set(value: Payload | UndefinedValue): FieldChange | 0;
 
   abstract get(): Payload;
 
-  abstract $(): State.$<Payload>;
+  abstract $(): Field.$<Payload>;
 
-  abstract try(): State.Try<Payload>;
+  abstract try(): Field.Try<Payload>;
 
-  childUpdate(type: StateChange, _key: string): StateChange {
+  childUpdate(type: FieldChange, _key: string): FieldChange {
     return type;
   }
 
-  abstract updated(event: StateChangeEvent): boolean;
+  abstract updated(event: FieldChangeEvent): boolean;
 
   abstract dirty(value: Payload): boolean;
 
@@ -1156,21 +1156,21 @@ export abstract class InternalState<Payload> {
 export class InternalPrimitiveState<Payload> extends InternalState<Payload> {
   #value: Payload;
 
-  constructor(state: State<Payload>, value: Payload) {
-    super(state, value);
+  constructor(field: Field<Payload>, value: Payload) {
+    super(field, value);
     this.#value = value;
   }
 
-  set(value: Payload): StateChange | 0 {
+  set(value: Payload): FieldChange | 0 {
     let change = 0;
 
     if (this.#value === undefinedValue && value !== undefinedValue)
-      change |= stateChangeType.type | stateChangeType.created;
+      change |= fieldChangeType.type | fieldChangeType.created;
     else if (this.#value !== undefinedValue && value === undefinedValue)
-      change |= stateChangeType.type | stateChangeType.removed;
+      change |= fieldChangeType.type | fieldChangeType.removed;
     else if (typeof this.#value !== typeof value)
-      change |= stateChangeType.type;
-    else if (this.#value !== value) change |= stateChangeType.value;
+      change |= fieldChangeType.type;
+    else if (this.#value !== value) change |= fieldChangeType.value;
 
     if (this.#value !== value) this.#value = value;
 
@@ -1183,22 +1183,22 @@ export class InternalPrimitiveState<Payload> extends InternalState<Payload> {
       : this.#value;
   }
 
-  $(): State.$<Payload> {
-    return this.external as State.$<Payload>;
+  $(): Field.$<Payload> {
+    return this.external as Field.$<Payload>;
   }
 
-  try(): State.Try<Payload> {
+  try(): Field.Try<Payload> {
     const value = this.get();
     if (value === undefined || value === null)
-      return value as State.Try<Payload>;
-    return this.external as State.Try<Payload>;
+      return value as Field.Try<Payload>;
+    return this.external as Field.Try<Payload>;
   }
 
-  updated(event: StateChangeEvent): boolean {
+  updated(event: FieldChangeEvent): boolean {
     return !!(
-      event.detail & stateChangeType.created ||
-      event.detail & stateChangeType.removed ||
-      event.detail & stateChangeType.type
+      event.detail & fieldChangeType.created ||
+      event.detail & fieldChangeType.removed ||
+      event.detail & fieldChangeType.type
     );
   }
 
@@ -1216,16 +1216,16 @@ export class InternalPrimitiveState<Payload> extends InternalState<Payload> {
 export class InternalObjectState<
   Payload extends object,
 > extends InternalState<Payload> {
-  #children: Map<string, State<any>> = new Map();
+  #children: Map<string, Field<any>> = new Map();
   #undefined;
 
-  constructor(external: State<Payload>, value: Payload) {
+  constructor(external: Field<Payload>, value: Payload) {
     super(external, value);
     // @ts-ignore: [TODO]
     this.#undefined = new UndefinedStateRegistry(external);
   }
 
-  set(newValue: Payload): StateChange | 0 {
+  set(newValue: Payload): FieldChange | 0 {
     let change = 0;
 
     this.#children.forEach((child, key) => {
@@ -1234,7 +1234,7 @@ export class InternalObjectState<
         child[clearSymbol]();
         // @ts-ignore: This is fine
         this.#undefined.register(key, child);
-        change |= stateChangeType.childRemoved;
+        change |= fieldChangeType.childRemoved;
       }
     });
 
@@ -1242,7 +1242,7 @@ export class InternalObjectState<
       const child = this.#children.get(key);
       if (child) {
         const childChange = child.set(value, false);
-        if (childChange) change |= stateChangeType.child;
+        if (childChange) change |= fieldChangeType.child;
       } else {
         const undefinedState = this.#undefined.claim(key);
         if (undefinedState) undefinedState[createSymbol](value);
@@ -1250,9 +1250,9 @@ export class InternalObjectState<
         this.#children.set(
           key,
           // @ts-ignore: [TODO]
-          undefinedState || new State(value, { key, state: this.external })
+          undefinedState || new Field(value, { key, field: this.external })
         );
-        change |= stateChangeType.childAdded;
+        change |= fieldChangeType.childAdded;
       }
     }
 
@@ -1265,11 +1265,11 @@ export class InternalObjectState<
     ) as Payload;
   }
 
-  $(): State.$<Payload> {
+  $(): Field.$<Payload> {
     return this.#$;
   }
 
-  #$ = new Proxy((() => {}) as unknown as State.$<Payload>, {
+  #$ = new Proxy((() => {}) as unknown as Field.$<Payload>, {
     apply: (_, __, [key]: [string]) => this.#$field(key),
     get: (_, key: string) => this.#$field(key),
   });
@@ -1281,11 +1281,11 @@ export class InternalObjectState<
     return this.#undefined.ensure(key);
   }
 
-  try(): State.Try<Payload> {
+  try(): Field.Try<Payload> {
     return this.#try;
   }
 
-  #try = new Proxy((() => {}) as unknown as State.Try<Payload>, {
+  #try = new Proxy((() => {}) as unknown as Field.Try<Payload>, {
     apply: (_, __, [key]: [string]) => this.#tryField(key),
     get: (_, key: string) => this.#tryField(key),
   });
@@ -1299,36 +1299,36 @@ export class InternalObjectState<
     return field;
   }
 
-  updated(event: StateChangeEvent): boolean {
+  updated(event: FieldChangeEvent): boolean {
     return !!(
-      event.detail & stateChangeType.created ||
-      event.detail & stateChangeType.removed ||
-      event.detail & stateChangeType.type ||
-      event.detail & stateChangeType.childRemoved ||
-      event.detail & stateChangeType.childAdded
+      event.detail & fieldChangeType.created ||
+      event.detail & fieldChangeType.removed ||
+      event.detail & fieldChangeType.type ||
+      event.detail & fieldChangeType.childRemoved ||
+      event.detail & fieldChangeType.childAdded
     );
   }
 
-  override childUpdate(childChange: StateChange, key: string): StateChange {
-    let change = stateChangeType.child;
+  override childUpdate(childChange: FieldChange, key: string): FieldChange {
+    let change = fieldChangeType.child;
 
     // Handle when child goes from undefined to defined
-    if (childChange & stateChangeType.created) {
+    if (childChange & fieldChangeType.created) {
       const child = this.#undefined.claim(key);
       if (!child)
-        throw new Error("Failed to find the child state when updating");
+        throw new Error("Failed to find the child field when updating");
       // @ts-ignore: [TODO]
       this.#children.set(key, child);
-      change |= stateChangeType.childAdded;
+      change |= fieldChangeType.childAdded;
     }
 
-    if (childChange & stateChangeType.removed) {
+    if (childChange & fieldChangeType.removed) {
       const child = this.#children.get(key);
       if (!child)
-        throw new Error("Failed to find the child state when updating");
+        throw new Error("Failed to find the child field when updating");
       this.#children.delete(key);
       child.unwatch();
-      change |= stateChangeType.childRemoved;
+      change |= fieldChangeType.childRemoved;
     }
 
     return change;
@@ -1347,9 +1347,9 @@ export class InternalObjectState<
     if (entries.length !== this.#children.size) return true;
 
     for (const [key, value] of entries) {
-      const state = this.#children.get(key);
+      const field = this.#children.get(key);
 
-      if (!state || state.initial !== value || state.dirty) return true;
+      if (!field || field.initial !== value || field.dirty) return true;
     }
 
     return false;
@@ -1359,27 +1359,27 @@ export class InternalObjectState<
 
   forEach(
     callback: <Key extends keyof Payload>(
-      item: State<Payload[Key]>,
+      item: Field<Payload[Key]>,
       index: Key
     ) => void
   ) {
-    this.#children.forEach((state, key) =>
+    this.#children.forEach((field, key) =>
       // @ts-ignore: [TODO]
-      callback(state, key as keyof Payload)
+      callback(field, key as keyof Payload)
     );
   }
 
   map<Return>(
     callback: <Key extends keyof Payload>(
-      item: State<Payload[Key]>,
+      item: Field<Payload[Key]>,
       index: Key
     ) => Return
   ): Return[] {
     // @ts-ignore: [TODO]
     const result = [];
-    this.#children.forEach((state, key) =>
+    this.#children.forEach((field, key) =>
       // @ts-ignore: [TODO]
-      result.push(callback(state, key as keyof Payload))
+      result.push(callback(field, key as keyof Payload))
     );
     // @ts-ignore: [TODO]
     return result;
@@ -1395,10 +1395,10 @@ export class InternalObjectState<
 export class InternalArrayState<
   Payload extends Array<any>,
 > extends InternalState<Payload> {
-  #children: State<any>[] = [];
+  #children: Field<any>[] = [];
   #undefined;
 
-  constructor(external: State<Payload>, value: Payload) {
+  constructor(external: Field<Payload>, value: Payload) {
     super(external, value);
 
     // @ts-ignore: This is fine
@@ -1409,7 +1409,7 @@ export class InternalArrayState<
     return this.#children.map((child) => child.get()) as Payload;
   }
 
-  set(newValue: Payload): StateChange | 0 {
+  set(newValue: Payload): FieldChange | 0 {
     let change = 0;
 
     this.#children.forEach((item, index) => {
@@ -1418,7 +1418,7 @@ export class InternalArrayState<
         item[clearSymbol]();
         // @ts-ignore: This is fine
         this.#undefined.register(index.toString(), item);
-        change |= stateChangeType.childRemoved;
+        change |= fieldChangeType.childRemoved;
       }
     });
 
@@ -1427,7 +1427,7 @@ export class InternalArrayState<
       const child = this.#children[index];
       if (child) {
         const childChange = child.set(value, false);
-        if (childChange) change |= stateChangeType.child;
+        if (childChange) change |= fieldChangeType.child;
         return child;
       } else {
         const undefinedState = this.#undefined.claim(index.toString());
@@ -1435,12 +1435,12 @@ export class InternalArrayState<
 
         const newChild =
           undefinedState ||
-          new State(value, {
+          new Field(value, {
             key: String(index),
             // @ts-ignore: This is fine
-            state: this.external,
+            field: this.external,
           });
-        change |= stateChangeType.childAdded;
+        change |= fieldChangeType.childAdded;
         return newChild;
       }
     });
@@ -1448,11 +1448,11 @@ export class InternalArrayState<
     return change;
   }
 
-  $(): State.$<Payload> {
+  $(): Field.$<Payload> {
     return this.#$;
   }
 
-  #$ = new Proxy((() => {}) as unknown as State.$<Payload>, {
+  #$ = new Proxy((() => {}) as unknown as Field.$<Payload>, {
     apply: (_, __, [index]: [number]) => this.#item(index),
     get: (_, index: string) => this.#item(Number(index)),
   });
@@ -1465,11 +1465,11 @@ export class InternalArrayState<
     return this.#undefined.ensure(indexStr);
   }
 
-  try(): State.Try<Payload> {
+  try(): Field.Try<Payload> {
     return this.#try;
   }
 
-  #try = new Proxy((() => {}) as unknown as State.Try<Payload>, {
+  #try = new Proxy((() => {}) as unknown as Field.Try<Payload>, {
     apply: (_, __, [index]: [number]) => this.#tryItem(index),
     // @ts-ignore: [TODO]
     get: (_, index: number) => this.#tryItem(index),
@@ -1484,38 +1484,38 @@ export class InternalArrayState<
     return field;
   }
 
-  updated(event: StateChangeEvent): boolean {
+  updated(event: FieldChangeEvent): boolean {
     return !!(
-      event.detail & stateChangeType.created ||
-      event.detail & stateChangeType.removed ||
-      event.detail & stateChangeType.type ||
-      event.detail & stateChangeType.childRemoved ||
-      event.detail & stateChangeType.childAdded ||
-      event.detail & stateChangeType.childrenReordered
+      event.detail & fieldChangeType.created ||
+      event.detail & fieldChangeType.removed ||
+      event.detail & fieldChangeType.type ||
+      event.detail & fieldChangeType.childRemoved ||
+      event.detail & fieldChangeType.childAdded ||
+      event.detail & fieldChangeType.childrenReordered
     );
   }
 
-  override childUpdate(childChange: StateChange, key: string): StateChange {
-    let change = stateChangeType.child;
+  override childUpdate(childChange: FieldChange, key: string): FieldChange {
+    let change = fieldChangeType.child;
 
     // Handle when child goes from undefined to defined
-    if (childChange & stateChangeType.created) {
+    if (childChange & fieldChangeType.created) {
       const child = this.#undefined.claim(key);
       if (!child)
-        throw new Error("Failed to find the child state when updating");
+        throw new Error("Failed to find the child field when updating");
       // @ts-ignore: [TODO]
       this.#children[Number(key)] = child;
-      change |= stateChangeType.childAdded;
+      change |= fieldChangeType.childAdded;
     }
 
     // Handle when child goes from defined to undefined
-    if (childChange & stateChangeType.removed) {
+    if (childChange & fieldChangeType.removed) {
       const child = this.#children[Number(key)];
       if (!child)
-        throw new Error("Failed to find the child state when updating");
+        throw new Error("Failed to find the child field when updating");
       delete this.#children[Number(key)];
       child.unwatch();
-      change |= stateChangeType.childRemoved;
+      change |= fieldChangeType.childRemoved;
     }
 
     return change;
@@ -1534,9 +1534,9 @@ export class InternalArrayState<
 
     for (const index in initial) {
       const value = initial[index];
-      const state = this.#children[index];
+      const field = this.#children[index];
 
-      if (!state || state.initial !== value || state.dirty) return true;
+      if (!field || field.initial !== value || field.dirty) return true;
     }
 
     return false;
@@ -1561,10 +1561,10 @@ export class InternalArrayState<
   push(item: Payload[number]) {
     const length = this.#children.length;
     // @ts-ignore: [TODO]
-    this.#children[length] = new State(item, {
+    this.#children[length] = new Field(item, {
       key: String(length),
       // @ts-ignore: This is fine
-      state: this.external,
+      field: this.external,
     });
     return length + 1;
   }
@@ -1578,89 +1578,89 @@ export class InternalArrayState<
 
 export class UndefinedStateRegistry {
   #external;
-  #refsMap = new Map<string, WeakRef<State<any>>>();
+  #refsMap = new Map<string, WeakRef<Field<any>>>();
   #registry;
 
-  constructor(external: State<any>) {
+  constructor(external: Field<any>) {
     this.#external = external;
     this.#registry = new FinalizationRegistry<string>((key) =>
       this.#refsMap.delete(key)
     );
   }
 
-  register(key: string, state: State<UndefinedValue>) {
-    const stateRef = new WeakRef(state);
+  register(key: string, field: Field<UndefinedValue>) {
+    const fieldRef = new WeakRef(field);
     // @ts-ignore: [TODO]
-    this.#refsMap.set(key, stateRef);
-    this.#registry.register(stateRef, key);
+    this.#refsMap.set(key, fieldRef);
+    this.#registry.register(fieldRef, key);
   }
 
-  claim(key: string): State<undefined> | undefined {
-    // Look up if the undefined state exists
+  claim(key: string): Field<undefined> | undefined {
+    // Look up if the undefined field exists
     const ref = this.#refsMap.get(key);
     const registered = ref?.deref();
     if (!ref || !registered) return;
 
-    // Unregisted the state and allow the caller to claim it
+    // Unregisted the field and allow the caller to claim it
     this.#registry.unregister(ref);
     this.#refsMap.delete(key);
     // @ts-ignore: This is fine
     return registered;
   }
 
-  ensure(key: string): State<UndefinedValue> {
+  ensure(key: string): Field<UndefinedValue> {
     // Try to look up registed undefined item
     const registered = this.#refsMap.get(key)?.deref();
     // @ts-ignore: This is fine
     if (registered) return registered;
 
     // Or create and register a new one
-    const state = new State(undefinedValue, {
+    const field = new Field(undefinedValue, {
       key,
-      state: this.#external,
+      field: this.#external,
     });
-    this.register(key, state);
-    return state;
+    this.register(key, field);
+    return field;
   }
 }
 
 //#endregion
 
-//# StateChange
+//# FieldChange
 
-export type StateChange = number;
+export type FieldChange = number;
 
-export const stateChangeType = {
+export const fieldChangeType = {
   /** Nothing has change, the initial value. */
   nothing: 0,
-  /** The state has been inserted into an object or an array. */
+  /** The field has been inserted into an object or an array. */
   created: 0b000000000001, // 1
-  /** The state has been removed from an object or an array. */
+  /** The field has been removed from an object or an array. */
   removed: 0b000000000010, // 2
-  /** The primitive value of the state has change. */
+  /** The primitive value of the field has change. */
   value: 0b000000000100, // 4
-  /** The type of the state has change. */
+  /** The type of the field has change. */
   type: 0b000000001000, // 8
-  /** An object state or an array item has changed. */
+  /** An object field or an array item has changed. */
   child: 0b000000010000, // 16
-  /** An object state or an array item has been removed. */
+  /** An object field or an array item has been removed. */
   childRemoved: 0b000000100000, // 32
-  /** An object state or an array item has been added. */
+  /** An object field or an array item has been added. */
   childAdded: 0b000001000000, // 64
   /** The order of array items has change. */
   childrenReordered: 0b000010000000, // 128
-  /** The state become invalid. */
+  /** The field become invalid. */
   invalid: 0b000100000000, // 256
-  /** The state become valid. */
+  /** The field become valid. */
   valid: 0b001000000000, // 512,
-  /** The current state got commited as initial */
+  /** The current field got commited as initial */
   committed: 0b010000000000, // 1024
   // Just in case to give a little room, first 12 bits are reserved for State
   // reserved: 0b100000000000, // 2048
 };
 
-export class StateChangeEvent extends CustomEvent<StateChange> {
-  constructor(type: StateChange) {
+export class FieldChangeEvent extends CustomEvent<FieldChange> {
+  constructor(type: FieldChange) {
     super("change", { detail: type });
   }
 }
@@ -1678,9 +1678,9 @@ export type UndefinedValue = typeof undefinedValue;
 //#region PoC
 
 export function useUndefinedStringField(
-  state: State<string | undefined>
-): State<string> {
-  return state
+  field: Field<string | undefined>
+): Field<string> {
+  return field
     .useInto((value) => value ?? "")
     .from((value) => value || undefined);
 }

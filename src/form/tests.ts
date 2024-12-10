@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 import { Form } from "./index.tsx";
-import { State } from "../state/index.tsx";
+import { Field } from "../field/index.tsx";
 
 describe("Form", () => {
   it("creates a form instance", () => {
@@ -10,7 +10,7 @@ describe("Form", () => {
 
   describe("attributes", () => {
     it("delegates id", () => {
-      const spy = vi.spyOn(State.prototype, "id", "get").mockReturnValue("42");
+      const spy = vi.spyOn(Field.prototype, "id", "get").mockReturnValue("42");
       const form = new Form(42);
       expect(form.id).toBe("42");
       expect(spy).toHaveBeenCalled();
@@ -19,7 +19,7 @@ describe("Form", () => {
 
   describe("value", () => {
     it("delegates set", () => {
-      const spy = vi.spyOn(State.prototype, "set").mockReturnValue(8);
+      const spy = vi.spyOn(Field.prototype, "set").mockReturnValue(8);
       const form = new Form(42);
       expect(form.set(24)).toBe(8);
       expect(spy).toHaveBeenCalledWith(24);
@@ -27,7 +27,7 @@ describe("Form", () => {
 
     it("delegates initial", () => {
       const spy = vi
-        .spyOn(State.prototype, "initial", "get")
+        .spyOn(Field.prototype, "initial", "get")
         .mockReturnValue(123);
       const form = new Form(42);
       expect(form.initial).toBe(123);
@@ -36,7 +36,7 @@ describe("Form", () => {
 
     it("delegates dirty", () => {
       const spy = vi
-        .spyOn(State.prototype, "dirty", "get")
+        .spyOn(Field.prototype, "dirty", "get")
         .mockReturnValue(true);
       const form = new Form(42);
       expect(form.dirty).toBe(true);
@@ -44,7 +44,7 @@ describe("Form", () => {
     });
 
     it("delegates commit", () => {
-      const spy = vi.spyOn(State.prototype, "commit").mockReturnValue();
+      const spy = vi.spyOn(Field.prototype, "commit").mockReturnValue();
       const form = new Form(42);
       expect(form.commit()).toBe(undefined);
       expect(spy).toHaveBeenCalled();
@@ -54,7 +54,7 @@ describe("Form", () => {
   describe("tree", () => {
     it("delegates $", () => {
       const spy = vi
-        .spyOn(State.prototype, "$", "get")
+        .spyOn(Field.prototype, "$", "get")
         .mockReturnValue("Ok" as any);
       const form = new Form(42);
       expect(form.$).toBe("Ok");
@@ -65,7 +65,7 @@ describe("Form", () => {
   describe("watching", () => {
     it("delegates watch", () => {
       const unwatch = () => {};
-      const spy = vi.spyOn(State.prototype, "watch").mockReturnValue(unwatch);
+      const spy = vi.spyOn(Field.prototype, "watch").mockReturnValue(unwatch);
       const form = new Form(42);
       const watchCb = () => {};
       expect(form.watch(watchCb)).toBe(unwatch);
@@ -77,7 +77,7 @@ describe("Form", () => {
     it("useCompute", () => {
       const compute = {};
       const spy = vi
-        .spyOn(State.prototype, "useCompute")
+        .spyOn(Field.prototype, "useCompute")
         .mockReturnValue(compute as any);
       const form = new Form(42);
       const computeCb = () => {};
@@ -88,7 +88,7 @@ describe("Form", () => {
     it("delegates decompose", () => {
       const decomposed = {};
       const spy = vi
-        .spyOn(State.prototype, "decompose")
+        .spyOn(Field.prototype, "decompose")
         .mockReturnValue(decomposed as any);
       const form = new Form({ type: "hello", value: 42 });
       expect(form.decompose()).toBe(decomposed);
@@ -98,7 +98,7 @@ describe("Form", () => {
     it("delegates useDecompose", () => {
       const decomposed = {};
       const spy = vi
-        .spyOn(State.prototype, "useDecompose")
+        .spyOn(Field.prototype, "useDecompose")
         .mockReturnValue(decomposed as any);
       const form = new Form({ type: "hello", value: 42 });
       const decomposeCb = () => {};
@@ -109,7 +109,7 @@ describe("Form", () => {
     it("delegates discriminate", () => {
       const discriminated = {};
       const spy = vi
-        .spyOn(State.prototype, "discriminate")
+        .spyOn(Field.prototype, "discriminate")
         .mockReturnValue(discriminated as any);
       const form = new Form({ type: "hello", value: 42 });
       expect(form.discriminate("type")).toBe(discriminated);
@@ -119,7 +119,7 @@ describe("Form", () => {
     it("delegates useDiscriminate", () => {
       const discriminated = {};
       const spy = vi
-        .spyOn(State.prototype, "discriminate")
+        .spyOn(Field.prototype, "discriminate")
         .mockReturnValue(discriminated as any);
       const form = new Form({ type: "hello", value: 42 });
       expect(form.discriminate("type")).toBe(discriminated);
@@ -129,7 +129,7 @@ describe("Form", () => {
     it("delegates into", () => {
       const into = {};
       const spy = vi
-        .spyOn(State.prototype, "into")
+        .spyOn(Field.prototype, "into")
         .mockReturnValue(into as any);
       const form = new Form({ type: "hello", value: 42 });
       const intoCb = () => {};
@@ -140,7 +140,7 @@ describe("Form", () => {
     it("delegates useInto", () => {
       const into = {};
       const spy = vi
-        .spyOn(State.prototype, "useInto")
+        .spyOn(Field.prototype, "useInto")
         .mockReturnValue(into as any);
       const form = new Form({ type: "hello", value: 42 });
       const intoCb = () => {};
@@ -151,7 +151,7 @@ describe("Form", () => {
     it("delegates narrow", () => {
       const narrow = {};
       const spy = vi
-        .spyOn(State.prototype, "narrow")
+        .spyOn(Field.prototype, "narrow")
         .mockReturnValue(narrow as any);
       const form = new Form({ type: "hello", value: 42 });
       const narrowCb = () => {};
@@ -162,7 +162,7 @@ describe("Form", () => {
     it("delegates useNarrow", () => {
       const narrow = {};
       const spy = vi
-        .spyOn(State.prototype, "useNarrow")
+        .spyOn(Field.prototype, "useNarrow")
         .mockReturnValue(narrow as any);
       const form = new Form({ type: "hello", value: 42 });
       const narrowCb = () => {};
@@ -175,7 +175,7 @@ describe("Form", () => {
     it("delegates invalids", () => {
       const invalids = [] as any;
       const spy = vi
-        .spyOn(State.prototype, "invalids", "get")
+        .spyOn(Field.prototype, "invalids", "get")
         .mockReturnValue(invalids);
       const form = new Form(42);
       expect(form.invalids).toBe(invalids);
@@ -184,7 +184,7 @@ describe("Form", () => {
 
     it("delegates valid", () => {
       const spy = vi
-        .spyOn(State.prototype, "valid", "get")
+        .spyOn(Field.prototype, "valid", "get")
         .mockReturnValue(false);
       const form = new Form(42);
       expect(form.valid).toBe(false);

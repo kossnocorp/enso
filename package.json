@@ -33,14 +33,14 @@
           "default": "./form/index.js"
         }
       },
-      "./state": {
+      "./field": {
         "require": {
-          "types": "./state/index.d.cts",
-          "default": "./state/index.cjs"
+          "types": "./field/index.d.cts",
+          "default": "./field/index.cjs"
         },
         "import": {
-          "types": "./state/index.d.ts",
-          "default": "./state/index.js"
+          "types": "./field/index.d.ts",
+          "default": "./field/index.js"
         }
       }
     }

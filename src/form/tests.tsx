@@ -24,7 +24,7 @@ describe("Form", () => {
           <div data-testid="render-submit">{count}</div>
 
           <button onClick={() => form.$.hello.set("Sasha")}>
-            Update state
+            Update field
           </button>
 
           <form
@@ -47,7 +47,7 @@ describe("Form", () => {
       .element(screen.getByTestId("submitting"))
       .toHaveTextContent("false");
 
-    await screen.getByText("Update state").click();
+    await screen.getByText("Update field").click();
 
     await expect
       .element(screen.getByTestId("render-submit"))
@@ -96,7 +96,7 @@ describe("Form", () => {
           <div data-testid="render-submit">{count}</div>
 
           <button onClick={() => form.$.hello.set("Sasha")}>
-            Update state
+            Update field
           </button>
 
           <form.Control
