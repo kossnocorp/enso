@@ -1,7 +1,7 @@
+import { nanoid } from "nanoid";
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { useRerender } from "../hooks/rerender.ts";
 import { type EnsoUtils } from "../utils.ts";
-import { nanoid } from "nanoid";
 
 //#region Field
 
@@ -113,9 +113,7 @@ export class Field<Payload> {
       () =>
         this.watch((payload, event) => {
           // Ignore only valid-invalid changes
-          if (
-            !(event.detail & ~(fieldChangeType.valid | fieldChangeType.invalid))
-          )
+          if (!(event.changes & ~(fieldChange.valid | fieldChange.invalid)))
             return;
 
           setPayload(payload);
@@ -145,9 +143,9 @@ export class Field<Payload> {
     // The field is of a different type
     this.#internal.unwatch();
 
-    let change = fieldChangeType.type;
+    let change = fieldChange.type;
     // The field is being removed
-    if (value === undefinedValue) change |= fieldChangeType.removed;
+    if (value === undefinedValue) change |= fieldChange.removed;
 
     // @ts-ignore: This is fine
     this.#internal = new ValueConstructor(this, value);
@@ -157,7 +155,7 @@ export class Field<Payload> {
   }
 
   [createSymbol](value: Payload): FieldChange | 0 {
-    const change = this.#internal.set(value) | fieldChangeType.created;
+    const change = this.#internal.set(value) | fieldChange.created;
     this.trigger(change, false);
     return change;
   }
@@ -279,8 +277,7 @@ export class Field<Payload> {
   }
 
   #childTrigger(type: FieldChange, key: string) {
-    const updated =
-      this.#internal.childUpdate(type, key) | fieldChangeType.child;
+    const updated = this.#internal.childUpdate(type, key) | fieldChange.child;
     this.trigger(updated, true);
   }
 
@@ -486,7 +483,7 @@ export class Field<Payload> {
       throw new Error("State is not an array");
 
     const length = this.#internal.push(item);
-    this.trigger(fieldChangeType.childAdded, true);
+    this.trigger(fieldChange.childAdded, true);
     return length;
   };
 
@@ -618,10 +615,10 @@ export class Field<Payload> {
         prevError.message !== error.message)
     ) {
       this.#error = error;
-      this.trigger(fieldChangeType.invalid, true);
+      this.trigger(fieldChange.invalid, true);
     } else if (!error && prevError) {
       this.#error = error;
-      this.trigger(fieldChangeType.valid, true);
+      this.trigger(fieldChange.valid, true);
     }
   }
 
@@ -1124,12 +1121,11 @@ export class InternalPrimitiveState<Payload> extends InternalState<Payload> {
     let change = 0;
 
     if (this.#value === undefinedValue && value !== undefinedValue)
-      change |= fieldChangeType.type | fieldChangeType.created;
+      change |= fieldChange.type | fieldChange.created;
     else if (this.#value !== undefinedValue && value === undefinedValue)
-      change |= fieldChangeType.type | fieldChangeType.removed;
-    else if (typeof this.#value !== typeof value)
-      change |= fieldChangeType.type;
-    else if (this.#value !== value) change |= fieldChangeType.value;
+      change |= fieldChange.type | fieldChange.removed;
+    else if (typeof this.#value !== typeof value) change |= fieldChange.type;
+    else if (this.#value !== value) change |= fieldChange.value;
 
     if (this.#value !== value) this.#value = value;
 
@@ -1155,9 +1151,9 @@ export class InternalPrimitiveState<Payload> extends InternalState<Payload> {
 
   updated(event: FieldChangeEvent): boolean {
     return !!(
-      event.detail & fieldChangeType.created ||
-      event.detail & fieldChangeType.removed ||
-      event.detail & fieldChangeType.type
+      event.changes & fieldChange.created ||
+      event.changes & fieldChange.removed ||
+      event.changes & fieldChange.type
     );
   }
 
@@ -1193,7 +1189,7 @@ export class InternalObjectState<
         child[clearSymbol]();
         // @ts-ignore: This is fine
         this.#undefined.register(key, child);
-        change |= fieldChangeType.childRemoved;
+        change |= fieldChange.childRemoved;
       }
     });
 
@@ -1201,7 +1197,7 @@ export class InternalObjectState<
       const child = this.#children.get(key);
       if (child) {
         const childChange = child.set(value, false);
-        if (childChange) change |= fieldChangeType.child;
+        if (childChange) change |= fieldChange.child;
       } else {
         const undefinedState = this.#undefined.claim(key);
         if (undefinedState) undefinedState[createSymbol](value);
@@ -1211,7 +1207,7 @@ export class InternalObjectState<
           // @ts-ignore: [TODO]
           undefinedState || new Field(value, { key, field: this.external })
         );
-        change |= fieldChangeType.childAdded;
+        change |= fieldChange.childAdded;
       }
     }
 
@@ -1260,34 +1256,34 @@ export class InternalObjectState<
 
   updated(event: FieldChangeEvent): boolean {
     return !!(
-      event.detail & fieldChangeType.created ||
-      event.detail & fieldChangeType.removed ||
-      event.detail & fieldChangeType.type ||
-      event.detail & fieldChangeType.childRemoved ||
-      event.detail & fieldChangeType.childAdded
+      event.changes & fieldChange.created ||
+      event.changes & fieldChange.removed ||
+      event.changes & fieldChange.type ||
+      event.changes & fieldChange.childRemoved ||
+      event.changes & fieldChange.childAdded
     );
   }
 
   override childUpdate(childChange: FieldChange, key: string): FieldChange {
-    let change = fieldChangeType.child;
+    let change = fieldChange.child;
 
     // Handle when child goes from undefined to defined
-    if (childChange & fieldChangeType.created) {
+    if (childChange & fieldChange.created) {
       const child = this.#undefined.claim(key);
       if (!child)
         throw new Error("Failed to find the child field when updating");
       // @ts-ignore: [TODO]
       this.#children.set(key, child);
-      change |= fieldChangeType.childAdded;
+      change |= fieldChange.childAdded;
     }
 
-    if (childChange & fieldChangeType.removed) {
+    if (childChange & fieldChange.removed) {
       const child = this.#children.get(key);
       if (!child)
         throw new Error("Failed to find the child field when updating");
       this.#children.delete(key);
       child.unwatch();
-      change |= fieldChangeType.childRemoved;
+      change |= fieldChange.childRemoved;
     }
 
     return change;
@@ -1377,7 +1373,7 @@ export class InternalArrayState<
         item[clearSymbol]();
         // @ts-ignore: This is fine
         this.#undefined.register(index.toString(), item);
-        change |= fieldChangeType.childRemoved;
+        change |= fieldChange.childRemoved;
       }
     });
 
@@ -1386,7 +1382,7 @@ export class InternalArrayState<
       const child = this.#children[index];
       if (child) {
         const childChange = child.set(value, false);
-        if (childChange) change |= fieldChangeType.child;
+        if (childChange) change |= fieldChange.child;
         return child;
       } else {
         const undefinedState = this.#undefined.claim(index.toString());
@@ -1399,7 +1395,7 @@ export class InternalArrayState<
             // @ts-ignore: This is fine
             field: this.external,
           });
-        change |= fieldChangeType.childAdded;
+        change |= fieldChange.childAdded;
         return newChild;
       }
     });
@@ -1445,36 +1441,36 @@ export class InternalArrayState<
 
   updated(event: FieldChangeEvent): boolean {
     return !!(
-      event.detail & fieldChangeType.created ||
-      event.detail & fieldChangeType.removed ||
-      event.detail & fieldChangeType.type ||
-      event.detail & fieldChangeType.childRemoved ||
-      event.detail & fieldChangeType.childAdded ||
-      event.detail & fieldChangeType.childrenReordered
+      event.changes & fieldChange.created ||
+      event.changes & fieldChange.removed ||
+      event.changes & fieldChange.type ||
+      event.changes & fieldChange.childRemoved ||
+      event.changes & fieldChange.childAdded ||
+      event.changes & fieldChange.childrenReordered
     );
   }
 
   override childUpdate(childChange: FieldChange, key: string): FieldChange {
-    let change = fieldChangeType.child;
+    let change = fieldChange.child;
 
     // Handle when child goes from undefined to defined
-    if (childChange & fieldChangeType.created) {
+    if (childChange & fieldChange.created) {
       const child = this.#undefined.claim(key);
       if (!child)
         throw new Error("Failed to find the child field when updating");
       // @ts-ignore: [TODO]
       this.#children[Number(key)] = child;
-      change |= fieldChangeType.childAdded;
+      change |= fieldChange.childAdded;
     }
 
     // Handle when child goes from defined to undefined
-    if (childChange & fieldChangeType.removed) {
+    if (childChange & fieldChange.removed) {
       const child = this.#children[Number(key)];
       if (!child)
         throw new Error("Failed to find the child field when updating");
       delete this.#children[Number(key)];
       child.unwatch();
-      change |= fieldChangeType.childRemoved;
+      change |= fieldChange.childRemoved;
     }
 
     return change;
@@ -1589,7 +1585,7 @@ export class UndefinedStateRegistry {
 
 export type FieldChange = number;
 
-export const fieldChangeType = {
+export const fieldChange = {
   /** Nothing has change, the initial value. */
   nothing: 0,
   /** The field has been inserted into an object or an array. */
@@ -1618,9 +1614,12 @@ export const fieldChangeType = {
   // reserved: 0b100000000000, // 2048
 };
 
-export class FieldChangeEvent extends CustomEvent<FieldChange> {
-  constructor(type: FieldChange) {
-    super("change", { detail: type });
+export class FieldChangeEvent extends Event {
+  changes: FieldChange;
+
+  constructor(changes: FieldChange) {
+    super("change");
+    this.changes = changes;
   }
 }
 

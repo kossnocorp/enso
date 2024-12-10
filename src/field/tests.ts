@@ -1,5 +1,5 @@
 import { assert, describe, expect, it, vi } from "vitest";
-import { Field, fieldChangeType, undefinedValue } from "./index.tsx";
+import { Field, fieldChange, undefinedValue } from "./index.tsx";
 
 describe("Field", () => {
   it("creates a field instance", () => {
@@ -98,12 +98,12 @@ describe("Field", () => {
 
         it("returns value change type if the field has changed", () => {
           const field = new Field(42);
-          expect(field.set(43)).toBe(fieldChangeType.value);
+          expect(field.set(43)).toBe(fieldChange.value);
         });
 
         it("returns value change type if the field has changed", () => {
           const field = new Field<number | string>(42);
-          expect(field.set("42")).toBe(fieldChangeType.type);
+          expect(field.set("42")).toBe(fieldChange.type);
         });
       });
 
@@ -127,19 +127,19 @@ describe("Field", () => {
 
         it("returns child change type if a child field has changed", () => {
           const field = new Field({ num: 42 });
-          expect(field.set({ num: 43 })).toBe(fieldChangeType.child);
+          expect(field.set({ num: 43 })).toBe(fieldChange.child);
         });
 
         it("returns added change type if a child has been added", () => {
           const field = new Field<{ num?: number; str?: string }>({ num: 42 });
           expect(field.set({ num: 42, str: "hello" })).toBe(
-            fieldChangeType.childAdded
+            fieldChange.childAdded
           );
         });
 
         it("returns remove change type if a child has been removed", () => {
           const field = new Field<{ num?: number; str?: string }>({ num: 42 });
-          expect(field.set({})).toBe(fieldChangeType.childRemoved);
+          expect(field.set({})).toBe(fieldChange.childRemoved);
         });
 
         it("returns combined change type", () => {
@@ -149,12 +149,10 @@ describe("Field", () => {
             bool?: boolean;
           }>({ num: 42, str: "hello" });
           const change = field.set({ num: 43, bool: true });
-          expect(change & fieldChangeType.child).toBe(fieldChangeType.child);
-          expect(change & fieldChangeType.childAdded).toBe(
-            fieldChangeType.childAdded
-          );
-          expect(change & fieldChangeType.childRemoved).toBe(
-            fieldChangeType.childRemoved
+          expect(change & fieldChange.child).toBe(fieldChange.child);
+          expect(change & fieldChange.childAdded).toBe(fieldChange.childAdded);
+          expect(change & fieldChange.childRemoved).toBe(
+            fieldChange.childRemoved
           );
         });
 
@@ -165,7 +163,7 @@ describe("Field", () => {
           field.set({ num: 43 });
           expect(spy).toHaveBeenCalledWith(
             43,
-            expect.objectContaining({ detail: fieldChangeType.value })
+            expect.objectContaining({ changes: fieldChange.value })
           );
           field.set({ str: "hello" });
           expect(spy).toHaveBeenCalledOnce();
@@ -179,7 +177,7 @@ describe("Field", () => {
           field.set({ num: 43 });
           expect(spy).toHaveBeenCalledWith(
             43,
-            expect.objectContaining({ detail: fieldChangeType.value })
+            expect.objectContaining({ changes: fieldChange.value })
           );
           field.set({ str: "hello" });
           field.set({ num: 44, str: "hello" });
@@ -189,7 +187,7 @@ describe("Field", () => {
           expect(spy).toHaveBeenCalledWith(
             44,
             expect.objectContaining({
-              detail: fieldChangeType.type | fieldChangeType.created,
+              changes: fieldChange.type | fieldChange.created,
             })
           );
         });
@@ -204,7 +202,7 @@ describe("Field", () => {
           field.set({ num: 43 });
           expect(spy).toHaveBeenCalledWith(
             43,
-            expect.objectContaining({ detail: fieldChangeType.value })
+            expect.objectContaining({ changes: fieldChange.value })
           );
           field.set({ str: "hello" });
           field.set({ num: undefined, str: "hello" });
@@ -213,7 +211,7 @@ describe("Field", () => {
             expect.objectContaining({
               // This test lacks StateChangeType.Type unlike the above,
               // indicating that the value is still undefined
-              detail: fieldChangeType.created,
+              changes: fieldChange.created,
             })
           );
         });
@@ -241,17 +239,17 @@ describe("Field", () => {
 
         it("returns child change type if a child field has changed", () => {
           const field = new Field([1, 2, 3]);
-          expect(field.set([1, 2, 1])).toBe(fieldChangeType.child);
+          expect(field.set([1, 2, 1])).toBe(fieldChange.child);
         });
 
         it("returns added change type if a child has been added", () => {
           const field = new Field([1, 2, 3]);
-          expect(field.set([1, 2, 3, 4])).toBe(fieldChangeType.childAdded);
+          expect(field.set([1, 2, 3, 4])).toBe(fieldChange.childAdded);
         });
 
         it("returns remove change type if a child has been removed", () => {
           const field = new Field([1, 2, 3]);
-          expect(field.set([1, 2])).toBe(fieldChangeType.childRemoved);
+          expect(field.set([1, 2])).toBe(fieldChange.childRemoved);
         });
 
         it("returns combined change type", () => {
@@ -259,12 +257,10 @@ describe("Field", () => {
           const arr = [0, 2, 3];
           delete arr[1];
           const change = field.set(arr);
-          expect(change & fieldChangeType.child).toBe(fieldChangeType.child);
-          expect(change & fieldChangeType.childAdded).toBe(
-            fieldChangeType.childAdded
-          );
-          expect(change & fieldChangeType.childRemoved).toBe(
-            fieldChangeType.childRemoved
+          expect(change & fieldChange.child).toBe(fieldChange.child);
+          expect(change & fieldChange.childAdded).toBe(fieldChange.childAdded);
+          expect(change & fieldChange.childRemoved).toBe(
+            fieldChange.childRemoved
           );
         });
 
@@ -276,7 +272,7 @@ describe("Field", () => {
           expect(spy).toHaveBeenCalledWith(
             33,
             expect.objectContaining({
-              detail: fieldChangeType.value,
+              changes: fieldChange.value,
             })
           );
           field.set([1, 2]);
@@ -291,7 +287,7 @@ describe("Field", () => {
           field.set([1, 2, 33, 4]);
           expect(spy).toHaveBeenCalledWith(
             33,
-            expect.objectContaining({ detail: fieldChangeType.value })
+            expect.objectContaining({ changes: fieldChange.value })
           );
           field.set([1, 2]);
           field.set([1, 2, 333]);
@@ -301,7 +297,7 @@ describe("Field", () => {
           expect(spy).toHaveBeenCalledWith(
             333,
             expect.objectContaining({
-              detail: fieldChangeType.type | fieldChangeType.created,
+              changes: fieldChange.type | fieldChange.created,
             })
           );
         });
@@ -314,7 +310,7 @@ describe("Field", () => {
           field.set([1, 2, 33, 4]);
           expect(spy).toHaveBeenCalledWith(
             33,
-            expect.objectContaining({ detail: fieldChangeType.value })
+            expect.objectContaining({ changes: fieldChange.value })
           );
           field.set([1, 2]);
           field.set([1, 2, undefined]);
@@ -323,7 +319,7 @@ describe("Field", () => {
             expect.objectContaining({
               // This test lacks StateChangeType.Type unlike the above,
               // indicating that the value is still undefined
-              detail: fieldChangeType.created,
+              changes: fieldChange.created,
             })
           );
         });
@@ -713,12 +709,12 @@ describe("Field", () => {
           field.set(43);
         }));
 
-      it("provides event object with change type as detail", async () =>
+      it("provides event object with change type as changes", async () =>
         new Promise<void>((resolve) => {
           const field = new Field(42);
 
           const unsub = field.watch((value, event) => {
-            expect(event.detail).toBe(fieldChangeType.value);
+            expect(event.changes).toBe(fieldChange.value);
             unsub();
             resolve();
           });
@@ -810,10 +806,10 @@ describe("Field", () => {
         const field = new Field(42);
         const spy = vi.fn();
         field.watch(spy);
-        field.trigger(fieldChangeType.value);
+        field.trigger(fieldChange.value);
         expect(spy).toHaveBeenCalledWith(
           42,
-          expect.objectContaining({ detail: fieldChangeType.value })
+          expect.objectContaining({ changes: fieldChange.value })
         );
       });
 
@@ -821,7 +817,7 @@ describe("Field", () => {
         const field = new Field({ num: 42 });
         const spy = vi.fn();
         field.watch(spy);
-        field.$.num.trigger(fieldChangeType.value);
+        field.$.num.trigger(fieldChange.value);
         expect(spy).not.toHaveBeenCalled();
       });
 
@@ -829,10 +825,10 @@ describe("Field", () => {
         const field = new Field({ num: 42 });
         const spy = vi.fn();
         field.watch(spy);
-        field.$.num.trigger(fieldChangeType.value, true);
+        field.$.num.trigger(fieldChange.value, true);
         expect(spy).toHaveBeenCalledWith(
           { num: 42 },
-          expect.objectContaining({ detail: fieldChangeType.child })
+          expect.objectContaining({ changes: fieldChange.child })
         );
       });
     });
@@ -1017,7 +1013,7 @@ describe("Field", () => {
           setTimeout(() => {
             expect(spy).toHaveBeenCalledWith(
               42,
-              expect.objectContaining({ detail: fieldChangeType.invalid })
+              expect.objectContaining({ changes: fieldChange.invalid })
             );
             resolve();
           });
@@ -1034,7 +1030,7 @@ describe("Field", () => {
             expect(spy).toHaveBeenCalledTimes(2);
             expect(spy).toHaveBeenCalledWith(
               42,
-              expect.objectContaining({ detail: fieldChangeType.valid })
+              expect.objectContaining({ changes: fieldChange.valid })
             );
             resolve();
           });

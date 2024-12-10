@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo } from "react";
-import { Field, fieldChangeType } from "../field/index.tsx";
+import { Field, fieldChange } from "../field/index.tsx";
 import { useRerender } from "../hooks/rerender.ts";
 
 //#region Form
@@ -14,10 +14,7 @@ export class Form<Payload> {
         form.#field.watch((_, event) => {
           // Only react to form-specific changes, as everything else is
           // handled by the field's use hook.
-          if (
-            event.detail &
-            ~(formChangeType.submitting | formChangeType.submitted)
-          )
+          if (event.changes & ~(formChange.submitting | formChange.submitted))
             return;
           rerender();
         }),
@@ -185,12 +182,12 @@ export class Form<Payload> {
     event.stopPropagation();
 
     this.#submitting = true;
-    this.#field.trigger(formChangeType.submitting, true);
+    this.#field.trigger(formChange.submitting, true);
 
     await callback(this.#field.get());
 
     this.#submitting = false;
-    this.#field.trigger(formChangeType.submitted, true);
+    this.#field.trigger(formChange.submitted, true);
   }
 
   get $() {
@@ -222,8 +219,8 @@ export namespace Form {
 
 //# FormChange
 
-export const formChangeType = {
-  ...fieldChangeType,
+export const formChange = {
+  ...fieldChange,
   submitting: 0b01000000000000, // 4096
   submitted: 0b10000000000000, // 8192
 };
