@@ -1,20 +1,5 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { useRerender } from "../hooks/rerender.ts";
-import {
-  type DecomposeMixin,
-  decomposeMixin,
-  useDecomposeMixin,
-} from "../mixins/decompose.js";
-import {
-  type DiscriminateMixin,
-  discriminateMixin,
-  useDiscriminateMixin,
-} from "../mixins/discriminate.js";
-import {
-  type NarrowMixin,
-  narrowMixin,
-  useNarrowMixin,
-} from "../mixins/narrow.js";
 import { type EnsoUtils } from "../utils.ts";
 import { nanoid } from "nanoid";
 
@@ -340,25 +325,65 @@ export class State<Payload> {
     return computed;
   }
 
-  decompose: () => State.Decomposed<Payload> = decomposeMixin("state");
+  decompose(): State.Decomposed<Payload> {
+    return {
+      value: this.get(),
+      state: this,
+    } as unknown as State.Decomposed<Payload>;
+  }
 
-  useDecompose: (
-    callback: DecomposeMixin.Callback<Payload>
-  ) => State.Decomposed<Payload> = useDecomposeMixin();
+  useDecompose(
+    callback: State.DecomposeCallback<Payload>
+  ): State.Decomposed<Payload> {
+    const rerender = useRerender();
+    const initial = useMemo(() => this.decompose(), []);
+    const ref = useRef(initial);
+    const prevRef = useRef(ref.current.value);
+    useEffect(
+      () =>
+        this.watch((next) => {
+          ref.current = this.decompose();
+          if (callback(next, prevRef.current)) rerender();
+          prevRef.current = next;
+        }),
+      []
+    );
+    return ref.current;
+  }
 
-  discriminate: <Discriminator extends keyof Exclude<Payload, undefined>>(
+  discriminate<Discriminator extends keyof Exclude<Payload, undefined>>(
     discriminator: Discriminator
-  ) => State.Discriminated<Payload, Discriminator> = discriminateMixin("state");
+  ): State.Discriminated<Payload, Discriminator> {
+    // @ts-ignore: [TODO]
+    return {
+      // @ts-ignore: [TODO]
+      discriminator: this.$[discriminator]?.get(),
+      state: this,
+    };
+  }
 
-  useDiscriminate: <
-    Discriminator extends DiscriminateMixin.DiscriminatorKey<Payload>,
-  >(
+  useDiscriminate<Discriminator extends State.DiscriminatorKey<Payload>>(
     discriminator: Discriminator
-  ) => State.Discriminated<Payload, Discriminator> = useDiscriminateMixin();
+  ): State.Discriminated<Payload, Discriminator> {
+    const rerender = useRerender();
+    const initial = useMemo(() => this.discriminate(discriminator), []);
+    const ref = useRef(initial);
+    useEffect(
+      () =>
+        this.watch(() => {
+          const discriminated = this.discriminate(discriminator);
+          if (discriminated.discriminator !== ref.current.discriminator)
+            rerender();
+          ref.current = discriminated;
+        }),
+      []
+    );
+    return ref.current;
+  }
 
-  into: <Computed>(
+  into<Computed>(
     intoCallback: State.IntoCallback<Payload, Computed>
-  ) => State.Into<Payload, Computed> = (intoCallback) => {
+  ): State.Into<Payload, Computed> {
     const computed = new ComputedState(intoCallback(this.get()), this);
     // [TODO] This creates a leak, so rather than holding on to the computed
     // state, store it as a weak ref and unsubscribe when it's no longer needed.
@@ -370,11 +395,11 @@ export class State<Payload> {
         return computed;
       },
     };
-  };
+  }
 
-  useInto: <Computed>(
+  useInto<Computed>(
     intoCallback: State.IntoCallback<Payload, Computed>
-  ) => State.Into<Payload, Computed> = (intoCallback) => {
+  ): State.Into<Payload, Computed> {
     const computed = useMemo(
       () => new ComputedState(intoCallback(this.get()), this),
       []
@@ -400,15 +425,42 @@ export class State<Payload> {
       }),
       [computed]
     );
-  };
+  }
 
-  narrow: <Narrowed extends Payload>(
-    callback: NarrowMixin.Callback<Payload, Narrowed>
-  ) => State<Narrowed> | undefined = narrowMixin();
+  narrow<Narrowed extends Payload>(
+    callback: State.NarrowCallback<Payload, Narrowed>
+  ): State<Narrowed> | undefined {
+    let matching = false;
+    const payload = this.get();
+    // @ts-ignore: [TODO]
+    callback(payload, (narrowed) => {
+      // @ts-ignore: [TODO]
+      if (payload === narrowed) matching = true;
+      return {};
+    });
+    // @ts-ignore: [TODO]
+    if (matching) return this;
+  }
 
-  useNarrow: <Narrowed extends Payload>(
-    callback: NarrowMixin.Callback<Payload, Narrowed>
-  ) => State<Narrowed> | undefined = useNarrowMixin();
+  useNarrow<Narrowed extends Payload>(
+    callback: State.NarrowCallback<Payload, Narrowed>
+  ): State<Narrowed> | undefined {
+    const rerender = useRerender();
+    const initial = useMemo(() => !!this.narrow(callback), []);
+    const ref = useRef(initial);
+    useEffect(
+      () =>
+        this.watch(() => {
+          const narrowed = !!this.narrow(callback);
+          if (narrowed === ref.current) return;
+          ref.current = narrowed;
+          rerender();
+        }),
+      []
+    );
+    // @ts-ignore: [TODO]
+    return ref.current ? this : undefined;
+  }
 
   //#endregion
 
@@ -841,6 +893,11 @@ export namespace State {
       }
     : never;
 
+  export type DecomposeCallback<Payload> = (
+    newPayload: Payload,
+    prevPayload: Payload
+  ) => boolean;
+
   export type Discriminated<
     Payload,
     Discriminator extends keyof Exclude<Payload, undefined>,
@@ -861,6 +918,8 @@ export namespace State {
         }
     : never;
 
+  export type DiscriminatorKey<Payload> = keyof Exclude<Payload, undefined>;
+
   export interface Into<Payload, Computed> {
     from(
       callback: FromCallback<Payload, Computed>
@@ -872,6 +931,21 @@ export namespace State {
   export type FromCallback<Payload, ComputedPayload> = (
     payload: ComputedPayload
   ) => Payload;
+
+  export type NarrowCallback<Payload, Narrowed> = (
+    payload: Payload,
+    wrap: NarrowWrap
+  ) => NarrowWrapper<Narrowed> | EnsoUtils.Falsy;
+
+  export type NarrowWrap = <Payload>(
+    payload: Payload
+  ) => NarrowWrapper<Payload>;
+
+  export type NarrowWrapper<Payload> = {
+    [narrowBrapperBrand]: Payload;
+  };
+
+  declare const narrowBrapperBrand: unique symbol;
 
   //#endregion
 
