@@ -266,7 +266,7 @@ export class Field<Payload> {
     this.#internal.unwatch();
   }
 
-  useBind(): Field<Payload> {
+  useBind(): BoundField<Payload> {
     const rerender = useRerender();
 
     useEffect(
@@ -277,7 +277,7 @@ export class Field<Payload> {
       [rerender]
     );
 
-    return this;
+    return this as unknown as BoundField<Payload>;
   }
 
   trigger(change: FieldChange, notifyParents: boolean = false) {
@@ -386,7 +386,7 @@ export class Field<Payload> {
   into<Computed>(
     intoCallback: Field.IntoCallback<Payload, Computed>
   ): Field.Into<Payload, Computed> {
-    const computed = new ComputedState(intoCallback(this.get()), this);
+    const computed = new ComputedField(intoCallback(this.get()), this);
     // [TODO] This creates a leak, so rather than holding on to the computed
     // field, store it as a weak ref and unsubscribe when it's no longer needed.
     this.watch((payload) => computed.set(intoCallback(payload)));
@@ -403,7 +403,7 @@ export class Field<Payload> {
     intoCallback: Field.IntoCallback<Payload, Computed>
   ): Field.Into<Payload, Computed> {
     const computed = useMemo(
-      () => new ComputedState(intoCallback(this.get()), this),
+      () => new ComputedField(intoCallback(this.get()), this),
       []
     );
 
@@ -899,7 +899,7 @@ export namespace Field {
   export interface Into<Payload, Computed> {
     from(
       callback: FromCallback<Payload, Computed>
-    ): ComputedState<Payload, Computed>;
+    ): ComputedField<Payload, Computed>;
   }
 
   export type IntoCallback<Payload, Computed> = (payload: Payload) => Computed;
@@ -1050,9 +1050,19 @@ export namespace Field {
 
 //#endregion
 
-//#region ComputedState
+//#region BoundField
 
-export class ComputedState<Payload, Computed> extends Field<Computed> {
+export interface BoundField<Payload> extends Field<Payload> {
+  [boundBrand]: true;
+}
+
+declare const boundBrand: unique symbol;
+
+//#endregion
+
+//#region ComputedField
+
+export class ComputedField<Payload, Computed> extends Field<Computed> {
   #source: Field<Payload>;
 
   constructor(payload: Computed, source: Field<Payload>) {
