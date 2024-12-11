@@ -954,6 +954,44 @@ describe("Field", () => {
     });
   });
 
+  describe("collections", () => {
+    describe("remove", () => {
+      describe("object", () => {
+        it("removes a record field by key", () => {
+          const field = new Field<Record<string, number>>({
+            one: 1,
+            two: 2,
+            three: 3,
+          });
+          field.remove("one");
+          expect(field.get()).toEqual({ two: 2, three: 3 });
+        });
+
+        it("removes a optional field by key", () => {
+          const field = new Field<{ one: 1; two: 2 | undefined; three?: 3 }>({
+            one: 1,
+            two: 2,
+            three: 3,
+          });
+          field.remove("three");
+          expect(field.get()).toEqual({ one: 1, two: 2 });
+          // @ts-expect-error
+          field.remove("one");
+          // @ts-expect-error
+          field.remove("two");
+        });
+      });
+
+      describe("array", () => {
+        it("removes a field by index", () => {
+          const field = new Field([1, 2, 3]);
+          field.remove(1);
+          expect(field.get()).toEqual([1, , 3]);
+        });
+      });
+    });
+  });
+
   describe("array", () => {
     describe("length", () => {
       it("returns the length of the array", () => {

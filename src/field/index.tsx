@@ -509,6 +509,11 @@ export class Field<Payload> {
     return this.#internal.length;
   }
 
+  remove: Field.RemoveFn<Payload> = (<Key extends keyof Payload>(key: Key) => {
+    // @ts-ignore: [TODO]
+    this.at(key).detach();
+  }) as Field.RemoveFn<Payload>;
+
   //#endregion
 
   //#region Input
@@ -762,7 +767,7 @@ export namespace Field {
 
   export type $Object<Payload> = {
     [Key in keyof Payload]-?: Field<
-      EnsoUtils.StaticKey<Payload, Key> extends true
+      EnsoUtils.IsStaticKey<Payload, Key> extends true
         ? Payload[Key]
         : Payload[Key] | undefined
     >;
@@ -773,7 +778,7 @@ export namespace Field {
     : (key: never) => never;
 
   export type At<Payload, Key extends keyof Payload> = Field<
-    EnsoUtils.StaticKey<Payload, Key> extends true
+    EnsoUtils.IsStaticKey<Payload, Key> extends true
       ? Payload[Key]
       : Payload[Key] | undefined
   >;
@@ -784,7 +789,7 @@ export namespace Field {
 
   export type TryObject<Payload> = TryFn<Payload> & {
     [Key in keyof Payload]-?: TryState<
-      EnsoUtils.StaticKey<Payload, Key> extends true
+      EnsoUtils.IsStaticKey<Payload, Key> extends true
         ? Payload[Key]
         : Payload[Key] | undefined
     >;
@@ -793,7 +798,7 @@ export namespace Field {
   export type TryFn<Payload> = <Key extends keyof Payload>(
     key: Key
   ) => TryState<
-    EnsoUtils.StaticKey<Payload, Key> extends true
+    EnsoUtils.IsStaticKey<Payload, Key> extends true
       ? Payload[Key]
       : Payload[Key] | undefined
   >;
@@ -957,6 +962,16 @@ export namespace Field {
   export type ArrayMap<Payload extends Array<any>> = <Return>(
     callback: (item: Field<Payload[number]>, index: number) => Return
   ) => Return[];
+
+  export type RemoveFn<Payload> = Payload extends object
+    ? ObjectRemoveFn<Payload>
+    : (key: never) => void;
+
+  export interface ObjectRemoveFn<Payload extends object> {
+    <Key extends EnsoUtils.OptionalKeys<Payload>>(key: Key): At<Payload, Key>;
+
+    <Key extends EnsoUtils.IndexedKeys<Payload>>(key: Key): At<Payload, Key>;
+  }
 
   //#endregion
 
