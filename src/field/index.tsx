@@ -216,6 +216,14 @@ export class Field<Payload> {
     return this.#internal.$();
   }
 
+  at: Field.AtFn<Payload> = (<Key extends keyof Payload>(key: Key) => {
+    if (
+      this.#internal instanceof InternalObjectState ||
+      this.#internal instanceof InternalArrayState
+    )
+      return this.#internal.at(key);
+  }) as Field.AtFn<Payload>;
+
   get try(): Field.Try<Payload> {
     return this.#internal.try();
   }
@@ -747,7 +755,7 @@ export namespace Field {
     ? $Object<Payload>
     : Field<Payload>;
 
-  export type $Object<Payload> = $Fn<Payload> & {
+  export type $Object<Payload> = {
     [Key in keyof Payload]-?: Field<
       EnsoUtils.StaticKey<Payload, Key> extends true
         ? Payload[Key]
@@ -755,9 +763,11 @@ export namespace Field {
     >;
   };
 
-  export type $Fn<Payload> = <Key extends keyof Payload>(
-    key: Key
-  ) => Field<
+  export type AtFn<Payload> = Payload extends object
+    ? <Key extends keyof Payload>(key: Key) => At<Payload, Key>
+    : (key: never) => never;
+
+  export type At<Payload, Key extends keyof Payload> = Field<
     EnsoUtils.StaticKey<Payload, Key> extends true
       ? Payload[Key]
       : Payload[Key] | undefined
@@ -1224,10 +1234,13 @@ export class InternalObjectState<
     return this.#$;
   }
 
-  #$ = new Proxy((() => {}) as unknown as Field.$<Payload>, {
-    apply: (_, __, [key]: [string]) => this.#$field(key),
+  #$ = new Proxy({} as Field.$<Payload>, {
     get: (_, key: string) => this.#$field(key),
   });
+
+  at<Key extends keyof Payload>(key: Key): Field.At<Payload, Key> {
+    return this.#$field(String(key)) as Field.At<Payload, Key>;
+  }
 
   #$field(key: string) {
     const field = this.#children.get(key);
@@ -1407,10 +1420,13 @@ export class InternalArrayState<
     return this.#$;
   }
 
-  #$ = new Proxy((() => {}) as unknown as Field.$<Payload>, {
-    apply: (_, __, [index]: [number]) => this.#item(index),
+  #$ = new Proxy({} as Field.$<Payload>, {
     get: (_, index: string) => this.#item(Number(index)),
   });
+
+  at<Key extends keyof Payload>(key: Key): Field.At<Payload, Key> {
+    return this.#item(Number(key)) as Field.At<Payload, Key>;
+  }
 
   #item(index: number) {
     const item = this.#children[index];

@@ -282,7 +282,7 @@ describe("Field", () => {
         it("preserves detached items", () => {
           const field = new Field<number[]>([1, 2, 3, 4]);
           const spy = vi.fn();
-          const itemA = field.$(2);
+          const itemA = field.at(2);
           itemA.watch(spy);
           field.set([1, 2, 33, 4]);
           expect(spy).toHaveBeenCalledWith(
@@ -291,7 +291,7 @@ describe("Field", () => {
           );
           field.set([1, 2]);
           field.set([1, 2, 333]);
-          const itemB = field.$(2);
+          const itemB = field.at(2);
           expect(itemA).toBeInstanceOf(Field);
           expect(itemA).toBe(itemB);
           expect(spy).toHaveBeenCalledWith(
@@ -305,7 +305,7 @@ describe("Field", () => {
         it("indicates no type change on adding undefined", () => {
           const field = new Field<Array<number | undefined>>([1, 2, 3, 4]);
           const spy = vi.fn();
-          const itemA = field.$(2);
+          const itemA = field.at(2);
           itemA.watch(spy);
           field.set([1, 2, 33, 4]);
           expect(spy).toHaveBeenCalledWith(
@@ -326,8 +326,7 @@ describe("Field", () => {
 
         it("does not trigger update when setting undefined value to undefined value", () => {
           const field = new Field<number[]>([1, 2, 3, 4]);
-          // @ts-ignore: This is fine
-          expect(field.$(5).set(undefinedValue)).toBe(0);
+          expect(field.at(5).set(undefinedValue)).toBe(0);
         });
       });
     });
@@ -416,11 +415,11 @@ describe("Field", () => {
         it("returns true if any of the items has changed", () => {
           const field = new Field<number[][]>([[1, 2], [3]]);
           expect(field.dirty).toBe(false);
-          expect(field.$(0).dirty).toBe(false);
+          expect(field.at(0).dirty).toBe(false);
           expect(field.try(0)?.try(0)?.dirty).toBe(false);
           expect(field.try(0)?.try(1)?.dirty).toBe(false);
           expect(field.try(1)?.try(0)?.dirty).toBe(false);
-          field.try(1)?.$(0).set(5);
+          field.try(1)?.at(0).set(5);
           expect(field.dirty).toBe(true);
           expect(field.try(0)?.dirty).toBe(false);
           expect(field.try(0)?.try(0)?.dirty).toBe(false);
@@ -430,8 +429,8 @@ describe("Field", () => {
 
         it("returns false after restoring to the initial value", () => {
           const field = new Field<number[][]>([[1, 2], [3]]);
-          field.try(1)?.$(0).set(5);
-          field.try(1)?.$(0).set(3);
+          field.try(1)?.at(0).set(5);
+          field.try(1)?.at(0).set(3);
           expect(field.dirty).toBe(false);
           expect(field.try(0)?.dirty).toBe(false);
           expect(field.try(0)?.try(0)?.dirty).toBe(false);
@@ -442,10 +441,10 @@ describe("Field", () => {
         it("returns true if a child changed type", () => {
           const field = new Field<Array<string | object>>(["hello", {}]);
           expect(field.dirty).toBe(false);
-          field.$(0).set({});
+          field.at(0).set({});
           expect(field.dirty).toBe(true);
-          expect(field.$(0).dirty).toBe(true);
-          expect(field.$(1).dirty).toBe(false);
+          expect(field.at(0).dirty).toBe(true);
+          expect(field.at(1).dirty).toBe(false);
         });
 
         it("returns true if a child changed shape", () => {
@@ -454,10 +453,10 @@ describe("Field", () => {
             { first: "Sasha" },
           ]);
           expect(field.dirty).toBe(false);
-          field.$(0).set({ last: "Koss" });
+          field.at(0).set({ last: "Koss" });
           expect(field.dirty).toBe(true);
-          expect(field.$(0).dirty).toBe(true);
-          expect(field.$(1).dirty).toBe(false);
+          expect(field.at(0).dirty).toBe(true);
+          expect(field.at(1).dirty).toBe(false);
         });
       });
 
@@ -503,7 +502,7 @@ describe("Field", () => {
           codes: [1, 2, 3],
         });
         field.$.name.$.first.set("Sasha");
-        field.$.codes.$(1).set(5);
+        field.$.codes.at(1).set(5);
         field.commit();
         expect(field.initial).toEqual({
           name: { first: "Sasha" },
@@ -516,8 +515,8 @@ describe("Field", () => {
         expect(field.dirty).toBe(false);
         expect(field.$.name.$.first.initial).toBe("Sasha");
         expect(field.$.name.$.first.dirty).toBe(false);
-        expect(field.$.codes.$(1).initial).toBe(5);
-        expect(field.$.codes.$(1).dirty).toBe(false);
+        expect(field.$.codes.at(1).initial).toBe(5);
+        expect(field.$.codes.at(1).dirty).toBe(false);
       });
     });
   });
@@ -543,7 +542,7 @@ describe("Field", () => {
           const numA = field.$["num"];
           numA satisfies Field<number | undefined> | undefined;
           expect(numA?.get()).toBe(42);
-          const numB = field.$("num");
+          const numB = field.at("num");
           numB satisfies Field<number | undefined>;
           expect(numB.get()).toBe(42);
         });
@@ -593,7 +592,7 @@ describe("Field", () => {
 
         it("allows to access undefined items", () => {
           const field = new Field([1, 2, 3, 4]);
-          const item = field.$(10);
+          const item = field.at(10);
           item satisfies Field<number | undefined>;
           expect(item).toBeInstanceOf(Field);
           expect(item.get()).toBe(undefined);
@@ -601,8 +600,8 @@ describe("Field", () => {
 
         it("preserves undefined items", () => {
           const field = new Field([1, 2, 3, 4]);
-          const itemA = field.$(10);
-          const itemB = field.$(10);
+          const itemA = field.at(10);
+          const itemB = field.at(10);
           expect(itemA).toBe(itemB);
         });
       });
@@ -763,7 +762,7 @@ describe("Field", () => {
               resolve();
             });
 
-            field.$(1).set(43);
+            field.at(1).set(43);
           }));
 
         it("listens to items create", async () =>
@@ -776,7 +775,7 @@ describe("Field", () => {
               resolve();
             });
 
-            field.$(5).set(43);
+            field.at(5).set(43);
           }));
       });
     });
@@ -1057,21 +1056,21 @@ describe("Field", () => {
         field.setError("Something is wrong");
         field.$.age.setError("Are you an immortal?");
         field.$.name.$.first.setError("First name is required");
-        field.$.ids.$(1).setError("Is it a valid ID?");
+        field.$.ids.at(1).setError("Is it a valid ID?");
         const { invalids } = field;
         expect(invalids.size).toBe(4);
-        // @ts-ignore: [TODO]
+        // @ts-expect-error: [TODO]
         expect(invalids.get(field)).toEqual({ message: "Something is wrong" });
-        // @ts-ignore: [TODO]
+        // @ts-expect-error: [TODO]
         expect(invalids.get(field.$.age)).toEqual({
           message: "Are you an immortal?",
         });
-        // @ts-ignore: [TODO]
+        // @ts-expect-error: [TODO]
         expect(invalids.get(field.$.name.$.first)).toEqual({
           message: "First name is required",
         });
-        // @ts-ignore: [TODO]
-        expect(invalids.get(field.$.ids.$(1))).toEqual({
+        // @ts-expect-error: [TODO]
+        expect(invalids.get(field.$.ids.at(1))).toEqual({
           message: "Is it a valid ID?",
         });
       });
@@ -1083,11 +1082,11 @@ describe("Field", () => {
         field.$.name.$.last.setError("Last name is required");
         const { invalids } = computed;
         expect(invalids.size).toBe(2);
-        // @ts-ignore: [TODO]
+        // @ts-expect-error: [TODO]
         expect(invalids.get(field.$.name.$.first)).toEqual({
           message: "First name is required",
         });
-        // @ts-ignore: [TODO]
+        // @ts-expect-error: [TODO]
         expect(invalids.get(field.$.name.$.last)).toEqual({
           message: "Last name is required",
         });
