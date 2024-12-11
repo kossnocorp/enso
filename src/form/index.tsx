@@ -193,6 +193,12 @@ export class Form<Payload> {
   get $() {
     return this.#field.$;
   }
+
+  at<Key extends keyof Payload>(
+    key: Payload extends object ? Key : never
+  ): Payload extends object ? Field.At<Payload, Key> : void {
+    return this.#field.at(key);
+  }
 }
 
 export namespace Form {

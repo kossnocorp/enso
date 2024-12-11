@@ -221,13 +221,17 @@ export class Field<Payload> {
     return this.#internal.$();
   }
 
-  at: Field.AtFn<Payload> = (<Key extends keyof Payload>(key: Key) => {
+  at<Key extends keyof Payload>(
+    key: Payload extends object ? Key : never
+    // @ts-ignore: [TODO]
+  ): Payload extends object ? Field.At<Payload, Key> : void {
     if (
       this.#internal instanceof InternalObjectState ||
       this.#internal instanceof InternalArrayState
     )
+      // @ts-ignore: [TODO]
       return this.#internal.at(key);
-  }) as Field.AtFn<Payload>;
+  }
 
   get try(): Field.Try<Payload> {
     return this.#internal.try();

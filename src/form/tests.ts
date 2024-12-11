@@ -67,6 +67,13 @@ describe("Form", () => {
       expect(form.$).toBe("Ok");
       expect(spy).toHaveBeenCalled();
     });
+
+    it("delegates at", () => {
+      const spy = vi.spyOn(Field.prototype, "at").mockReturnValue("Ok" as any);
+      const form = new Form<string[]>([]);
+      expect(form.at(5)).toBe("Ok");
+      expect(spy).toHaveBeenCalledWith(5);
+    });
   });
 
   describe("watching", () => {
