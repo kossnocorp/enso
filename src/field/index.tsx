@@ -208,6 +208,11 @@ export class Field<Payload> {
     }
   }
 
+  reset() {
+    this.set(this.#initial);
+    this.#clearCache();
+  }
+
   //#endregion
 
   //#region Tree

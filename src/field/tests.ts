@@ -519,6 +519,37 @@ describe("Field", () => {
         expect(field.$.codes.at(1).dirty).toBe(false);
       });
     });
+
+    describe("reset", () => {
+      it("resets the current field to initial state", () => {
+        const field = new Field(42);
+        field.set(43);
+        expect(field.dirty).toBe(true);
+        field.reset();
+        expect(field.initial).toBe(42);
+        expect(field.dirty).toBe(false);
+      });
+
+      it("resets the nested children", () => {
+        const field = new Field({
+          name: { first: "Alexander" },
+          codes: [1, 2, 3],
+        });
+        field.$.name.$.first.set("Sasha");
+        field.$.codes.at(1).set(5);
+        expect(field.dirty).toBe(true);
+        expect(field.$.name.$.first.dirty).toBe(true);
+        expect(field.$.codes.at(1).dirty).toBe(true);
+        field.reset();
+        expect(field.get()).toEqual({
+          name: { first: "Alexander" },
+          codes: [1, 2, 3],
+        });
+        expect(field.dirty).toBe(false);
+        expect(field.$.name.$.first.dirty).toBe(false);
+        expect(field.$.codes.at(1).dirty).toBe(false);
+      });
+    });
   });
 
   describe("tree", () => {
