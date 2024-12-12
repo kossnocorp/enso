@@ -725,6 +725,27 @@ export class Field<Payload> {
   }
 
   //#endregion
+
+  //#region Validation
+
+  validate<Payload, Context>(
+    validator: Field.Validator<Payload, Context>,
+    context: Context
+  ): void;
+
+  validate<Payload>(
+    validator: Field.Validator<Payload, undefined>,
+    context?: undefined
+  ): void;
+
+  validate<Payload, Context>(
+    validator: Field.Validator<Payload, undefined>,
+    context?: Context | undefined
+  ) {
+    // return this.#field.validate(validator, context);
+  }
+
+  //#endregion
 }
 
 export namespace Field {
@@ -1048,6 +1069,27 @@ export namespace Field {
   }
 
   export type Invalids = Map<Field<any>, Field.Error>;
+
+  //#endregion
+
+  //#region Validation
+
+  export type Validator<Payload, Context = undefined> = Payload extends object
+    ? () => Promise<unknown> | unknown
+    : PrimitiveValidator<Payload, Context>;
+
+  export type PrimitiveValidator<Payload, Context> = Context extends undefined
+    ? (payload: Ref<Payload>) => Promise<void> | void
+    : (payload: Ref<Payload>, context: Context) => Promise<void> | void;
+
+  //#endregion
+
+  //#region Ref
+
+  export interface Ref<Payload> {
+    value: Payload;
+    error(error: Field.Error | string): void;
+  }
 
   //#endregion
 }

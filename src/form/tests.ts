@@ -15,6 +15,14 @@ describe("Form", () => {
       expect(form.id).toBe("42");
       expect(spy).toHaveBeenCalled();
     });
+
+    it("returns the internal field", () => {
+      const form = new Form(42);
+      const { field } = form;
+      expect(field.get()).toBe(42);
+      expect(field).toBeInstanceOf(Field);
+      expect(field.id).toBe(form.id);
+    });
   });
 
   describe("value", () => {
@@ -96,7 +104,7 @@ describe("Form", () => {
   });
 
   describe("mapping", () => {
-    it("useCompute", () => {
+    it("delegates useCompute", () => {
       const compute = {};
       const spy = vi
         .spyOn(Field.prototype, "useCompute")
@@ -211,6 +219,18 @@ describe("Form", () => {
       const form = new Form(42);
       expect(form.valid).toBe(false);
       expect(spy).toHaveBeenCalled();
+    });
+  });
+
+  describe("validation", () => {
+    it("delegates validate", () => {
+      const spy = vi
+        .spyOn(Field.prototype, "validate")
+        .mockReturnValue("Ok" as any);
+      const form = new Form(42);
+      const validateCb = () => {};
+      expect(form.validate(validateCb as any)).toBe("Ok");
+      expect(spy).toHaveBeenCalledWith(validateCb);
     });
   });
 });

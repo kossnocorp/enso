@@ -1189,6 +1189,19 @@ describe("Field", () => {
       });
     });
   });
+
+  describe("validation", () => {
+    it("allows to validate the state", () => {
+      const field = new Field(42);
+      field.validate((ref) => {
+        if (ref.value !== 43) {
+          ref.error("Invalid value");
+        }
+      });
+      expect(field.valid).toBe(false);
+      expect(field.error).toEqual({ message: "Invalid value" });
+    });
+  });
 });
 
 function toCodes(message: string) {

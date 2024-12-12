@@ -42,6 +42,10 @@ export class Form<Payload> {
     return this.#field.id;
   }
 
+  get field() {
+    return this.#field;
+  }
+
   //#endregion
 
   //#region Value
@@ -148,6 +152,27 @@ export class Form<Payload> {
 
   get valid() {
     return this.#field.valid;
+  }
+
+  //#endregion
+
+  //#region Validation
+
+  validate<Payload, Context>(
+    validator: Field.Validator<Payload, Context>,
+    context: Context
+  ): void;
+
+  validate<Payload>(
+    validator: Field.Validator<Payload, undefined>,
+    context?: undefined
+  ): void;
+
+  validate<Payload, Context>(
+    validator: Field.Validator<Payload, undefined>,
+    context?: Context | undefined
+  ) {
+    return this.#field.validate(validator, context);
   }
 
   //#endregion
