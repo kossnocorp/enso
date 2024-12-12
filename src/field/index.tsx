@@ -240,10 +240,64 @@ export class Field<Payload> {
 
   //#endregion
 
-  //#region Watching
+  //#region Events
 
   #target = new EventTarget();
   #subs = new Set<(event: Event) => void>();
+
+  trigger(changes: FieldChange, notifyParents: boolean = false) {
+    this.#clearCache();
+
+    if (this.#withholded) {
+      this.#withholded[0] |= changes;
+
+      if (
+        this.#withholded[0] & fieldChange.valid &&
+        changes & fieldChange.invalid
+      )
+        this.#withholded[0] &= ~fieldChange.valid;
+
+      if (
+        this.#withholded[0] & fieldChange.invalid &&
+        changes & fieldChange.valid
+      )
+        this.#withholded[0] &= ~(fieldChange.invalid | fieldChange.valid);
+
+      if (notifyParents) this.#withholded[1] = true;
+
+      return;
+    }
+
+    this.#target.dispatchEvent(new FieldChangeEvent(changes));
+    // If the updates should flow upstream to parents too
+    if (notifyParents && this.#parent)
+      this.#parent.field.#childTrigger(changes, this.#parent.key);
+  }
+
+  #childTrigger(type: FieldChange, key: string) {
+    const updated = this.#internal.childUpdate(type, key) | fieldChange.child;
+    this.trigger(updated, true);
+  }
+
+  #withholded: [FieldChange, boolean] | undefined;
+
+  withhold() {
+    this.#withholded = [0, false];
+    this.#internal.withhold();
+  }
+
+  unleash() {
+    this.#internal.unleash();
+    const withholded = this.#withholded;
+    if (withholded?.[0]) {
+      this.#withholded = undefined;
+      this.trigger(...withholded);
+    }
+  }
+
+  //#endregion
+
+  //#region Watching
 
   watch(callback: Field.WatchCallback<Payload>): Field.Unwatch {
     const handler = (event: Event) => {
@@ -283,20 +337,6 @@ export class Field<Payload> {
     );
 
     return this as unknown as BoundField<Payload>;
-  }
-
-  trigger(change: FieldChange, notifyParents: boolean = false) {
-    this.#clearCache();
-
-    this.#target.dispatchEvent(new FieldChangeEvent(change));
-    // If the updates should flow upstream to parents too
-    if (notifyParents && this.#parent)
-      this.#parent.field.#childTrigger(change, this.#parent.key);
-  }
-
-  #childTrigger(type: FieldChange, key: string) {
-    const updated = this.#internal.childUpdate(type, key) | fieldChange.child;
-    this.trigger(updated, true);
   }
 
   useMeta<Props extends Field.UseMetaProps | undefined = undefined>(
@@ -725,6 +765,11 @@ export class Field<Payload> {
     return enable === false ? undefined : valid;
   }
 
+  expunge() {
+    this.setError(undefined);
+    this.#internal.expunge();
+  }
+
   //#endregion
 
   //#region Validation
@@ -743,9 +788,11 @@ export class Field<Payload> {
     validator: Field.Validator<Payload, undefined>,
     context?: Context | undefined
   ) {
-    const ref = new FieldRef(this);
+    this.expunge();
+    this.withhold();
     // @ts-expect-error: [TODO]
-    return validator(ref, context);
+    validator(FieldRef.get(this), context);
+    this.unleash();
   }
 
   //#endregion
@@ -1182,6 +1229,12 @@ export abstract class InternalState<Payload> {
   protected get external() {
     return this.#external;
   }
+
+  abstract expunge(): void;
+
+  abstract withhold(): void;
+
+  abstract unleash(): void;
 }
 
 //#endregion
@@ -1241,6 +1294,12 @@ export class InternalPrimitiveState<Payload> extends InternalState<Payload> {
   dirty(initial: Payload): boolean {
     return initial !== this.#value;
   }
+
+  override expunge(): void {}
+
+  override withhold(): void {}
+
+  override unleash(): void {}
 }
 
 //#endregion
@@ -1390,6 +1449,18 @@ export class InternalObjectState<
     }
 
     return false;
+  }
+
+  override expunge(): void {
+    this.#children.forEach((field) => field.expunge());
+  }
+
+  override withhold(): void {
+    this.#children.forEach((field) => field.withhold());
+  }
+
+  override unleash(): void {
+    this.#children.forEach((field) => field.unleash());
   }
 
   //#region Array methods
@@ -1580,6 +1651,18 @@ export class InternalArrayState<
     }
 
     return false;
+  }
+
+  override expunge(): void {
+    this.#children.forEach((field) => field.expunge());
+  }
+
+  override withhold(): void {
+    this.#children.forEach((field) => field.withhold());
+  }
+
+  override unleash(): void {
+    this.#children.forEach((field) => field.unleash());
   }
 
   //#region Array methods

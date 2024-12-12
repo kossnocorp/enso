@@ -723,6 +723,104 @@ describe("Field", () => {
     });
   });
 
+  describe("events", () => {
+    describe("trigger", () => {
+      it("triggers the watchers", () => {
+        const field = new Field(42);
+        const spy = vi.fn();
+        field.watch(spy);
+        field.trigger(fieldChange.value);
+        expect(spy).toHaveBeenCalledWith(
+          42,
+          expect.objectContaining({ changes: fieldChange.value })
+        );
+      });
+
+      it("doesn't trigger parent fields", () => {
+        const field = new Field({ num: 42 });
+        const spy = vi.fn();
+        field.watch(spy);
+        field.$.num.trigger(fieldChange.value);
+        expect(spy).not.toHaveBeenCalled();
+      });
+
+      it("allows to notify parent fields", () => {
+        const field = new Field({ num: 42 });
+        const spy = vi.fn();
+        field.watch(spy);
+        field.$.num.trigger(fieldChange.value, true);
+        expect(spy).toHaveBeenCalledWith(
+          { num: 42 },
+          expect.objectContaining({ changes: fieldChange.child })
+        );
+      });
+    });
+
+    describe("withhold", () => {
+      it("allows to withhold the events until it's unleashed", () => {
+        const field = new Field({ num: 42 });
+        const spy = vi.fn();
+        field.watch(spy);
+        field.withhold();
+        field.$.num.trigger(fieldChange.value, true);
+        field.$.num.trigger(fieldChange.childDetached, true);
+        field.$.num.trigger(fieldChange.childAdded, true);
+
+        expect(spy).not.toHaveBeenCalled();
+
+        field.unleash();
+
+        expect(spy).toHaveBeenCalledWith(
+          { num: 42 },
+          expect.objectContaining({ changes: fieldChange.child })
+        );
+      });
+
+      it("combines the changes into a single event", () => {
+        const field = new Field(42);
+        const spy = vi.fn();
+        field.watch(spy);
+        field.withhold();
+        field.trigger(fieldChange.value, true);
+        field.trigger(fieldChange.childDetached, true);
+        field.trigger(fieldChange.childAdded, true);
+
+        expect(spy).not.toHaveBeenCalled();
+
+        field.unleash();
+
+        expect(spy).toHaveBeenCalledWith(
+          42,
+          expect.objectContaining({
+            changes:
+              fieldChange.value |
+              fieldChange.childDetached |
+              fieldChange.childAdded,
+          })
+        );
+      });
+
+      it("neutralizes valid/invalid changes", () => {
+        const field = new Field(42);
+        const spy = vi.fn();
+        field.watch(spy);
+        field.withhold();
+        field.trigger(fieldChange.value, true);
+        field.trigger(fieldChange.invalid, true);
+        field.trigger(fieldChange.valid, true);
+
+        expect(spy).not.toHaveBeenCalled();
+
+        field.unleash();
+
+        expect(spy).toHaveBeenCalledWith(
+          42,
+          expect.objectContaining({ changes: fieldChange.value })
+        );
+      });
+    });
+  });
+
   describe("watching", () => {
     describe("watch", () => {
       it("allows to subscribe for field changes", async () =>
@@ -829,38 +927,6 @@ describe("Field", () => {
         field.unwatch();
         field.$.num?.set(43);
         expect(spy).not.toHaveBeenCalled();
-      });
-    });
-
-    describe("trigger", () => {
-      it("triggers the watchers", () => {
-        const field = new Field(42);
-        const spy = vi.fn();
-        field.watch(spy);
-        field.trigger(fieldChange.value);
-        expect(spy).toHaveBeenCalledWith(
-          42,
-          expect.objectContaining({ changes: fieldChange.value })
-        );
-      });
-
-      it("doesn't trigger parent fields", () => {
-        const field = new Field({ num: 42 });
-        const spy = vi.fn();
-        field.watch(spy);
-        field.$.num.trigger(fieldChange.value);
-        expect(spy).not.toHaveBeenCalled();
-      });
-
-      it("allows to notify parent fields", () => {
-        const field = new Field({ num: 42 });
-        const spy = vi.fn();
-        field.watch(spy);
-        field.$.num.trigger(fieldChange.value, true);
-        expect(spy).toHaveBeenCalledWith(
-          { num: 42 },
-          expect.objectContaining({ changes: fieldChange.child })
-        );
       });
     });
   });
@@ -1189,6 +1255,25 @@ describe("Field", () => {
         expect(computed.valid).toBe(false);
       });
     });
+
+    describe("expunge", () => {
+      it("clears all errors", () => {
+        const field = new Field({
+          name: { first: "" },
+          age: 370,
+          ids: [123, 456],
+        });
+        field.setError("Something is wrong");
+        field.$.age.setError("Are you an immortal?");
+        field.$.name.$.first.setError("First name is required");
+        field.$.ids.at(1).setError("Is it a valid ID?");
+        expect(field.valid).toBe(false);
+        expect(field.invalids.size).toBe(4);
+        field.expunge();
+        expect(field.invalids.size).toBe(0);
+        expect(field.valid).toBe(true);
+      });
+    });
   });
 
   describe("validation", () => {
@@ -1197,31 +1282,76 @@ describe("Field", () => {
         const field = new Field(42);
         field.validate((ref) => {
           if (ref.get() !== 43) {
-            ref.setError("Invalid value");
+            ref.setError("Invalid");
           }
         });
         expect(field.valid).toBe(false);
-        expect(field.error).toEqual({ message: "Invalid value" });
+        expect(field.error).toEqual({ message: "Invalid" });
+      });
+
+      it("clears previous errors on validation", () => {
+        function validateNum(ref: FieldRef<number>) {
+          if (ref.get() !== 43) {
+            ref.setError("Invalid");
+          }
+        }
+        const field = new Field(42);
+        field.validate(validateNum);
+        field.set(43);
+        field.validate(validateNum);
+        expect(field.valid).toBe(true);
       });
     });
 
     describe("object", () => {
       it("allows to validate the state", () => {
-        const field = new Field<{ first: string; last?: string | undefined }>({
-          first: "",
-        });
-        function validateRequired(ref: FieldRef.Variable<string | undefined>) {
-          if (!ref.get()?.trim()) {
-            ref.setError("Required");
-          }
-        }
-        field.validate((ref) => {
-          validateRequired(ref.$.first);
-          validateRequired(ref.$.last);
-        });
+        const field = new Field<Name>({ first: "" });
+
+        field.validate(validateName);
+
         expect(field.valid).toBe(false);
         expect(field.$.first.error).toEqual({ message: "Required" });
         expect(field.$.last.error).toEqual({ message: "Required" });
+      });
+
+      it("clears previous errors on validation", () => {
+        const field = new Field<Name>({ first: "" });
+
+        field.validate(validateName);
+
+        expect(field.valid).toBe(false);
+        expect(field.$.first.error).toEqual({ message: "Required" });
+        expect(field.$.last.error).toEqual({ message: "Required" });
+
+        field.set({ first: "Sasha", last: "Koss" });
+        field.validate(validateName);
+
+        expect(field.valid).toBe(true);
+        expect(field.$.first.error).toBe(undefined);
+        expect(field.$.last.error).toBe(undefined);
+      });
+
+      it("sends a single watch event on validation", () => {
+        const field = new Field<Name>({ first: "" });
+
+        const fieldSpy = vi.fn();
+        const nameSpy = vi.fn();
+        field.watch(fieldSpy);
+        field.$.first.watch(nameSpy);
+
+        field.validate(validateName);
+
+        expect(fieldSpy).toHaveBeenCalledOnce();
+        expect(fieldSpy).toHaveBeenCalledWith(
+          { first: "" },
+          expect.objectContaining({ changes: fieldChange.child })
+        );
+
+        expect(nameSpy).toHaveBeenCalledOnce();
+        expect(nameSpy).toHaveBeenCalledWith(
+          "",
+          expect.objectContaining({ changes: fieldChange.invalid })
+        );
       });
 
       it("allows to iterate the fields", () => {
@@ -1256,6 +1386,20 @@ describe("Field", () => {
   });
 });
 
+interface Name {
+  first: string;
+  last?: string | undefined;
+}
+
+function toFullName(name: Required<Name>) {
+  return `${name.first} ${name.last}`;
+}
+
+function fromFullName(fullName: string) {
+  const [first = "", last = ""] = fullName.split(" ");
+  return { first, last };
+}
+
 function toCodes(message: string) {
   return Array.from(message).map((c) => c.charCodeAt(0));
 }
@@ -1264,11 +1408,13 @@ function fromCodes(codes: number[]) {
   return codes.map((c) => String.fromCharCode(c)).join("");
 }
 
-function toFullName(name: { first: string; last: string }) {
-  return `${name.first} ${name.last}`;
+const field = new Field<Name>({ first: "" });
+
+function validateRequired(ref: FieldRef.Variable<string | undefined>) {
+  if (!ref.get()?.trim()) ref.setError("Required");
 }
 
-function fromFullName(fullName: string) {
-  const [first = "", last = ""] = fullName.split(" ");
-  return { first, last };
+function validateName(ref: FieldRef<Name>) {
+  validateRequired(ref.$.first);
+  validateRequired(ref.$.last);
 }
