@@ -1,5 +1,6 @@
 import { assert, describe, expect, it, vi } from "vitest";
 import { Field, fieldChange, undefinedValue } from "./index.tsx";
+import { FieldRef } from "./ref/index.ts";
 
 describe("Field", () => {
   it("creates a field instance", () => {
@@ -1191,15 +1192,66 @@ describe("Field", () => {
   });
 
   describe("validation", () => {
-    it("allows to validate the state", () => {
-      const field = new Field(42);
-      field.validate((ref) => {
-        if (ref.value !== 43) {
-          ref.error("Invalid value");
-        }
+    describe("primitive", () => {
+      it("allows to validate the state", () => {
+        const field = new Field(42);
+        field.validate((ref) => {
+          if (ref.get() !== 43) {
+            ref.setError("Invalid value");
+          }
+        });
+        expect(field.valid).toBe(false);
+        expect(field.error).toEqual({ message: "Invalid value" });
       });
-      expect(field.valid).toBe(false);
-      expect(field.error).toEqual({ message: "Invalid value" });
+    });
+
+    describe("object", () => {
+      it("allows to validate the state", () => {
+        const field = new Field<{ first: string; last?: string | undefined }>({
+          first: "",
+        });
+        function validateRequired(ref: FieldRef.Variable<string | undefined>) {
+          if (!ref.get()?.trim()) {
+            ref.setError("Required");
+          }
+        }
+        field.validate((ref) => {
+          validateRequired(ref.$.first);
+          validateRequired(ref.$.last);
+        });
+        expect(field.valid).toBe(false);
+        expect(field.$.first.error).toEqual({ message: "Required" });
+        expect(field.$.last.error).toEqual({ message: "Required" });
+      });
+
+      it("allows to iterate the fields", () => {
+        const field = new Field<{ first: string; last?: string | undefined }>({
+          first: "",
+          last: undefined,
+        });
+        field.validate((ref) => {
+          ref.forEach((valueRef, key) => {
+            if (!valueRef.get()?.trim()) {
+              valueRef.setError("Required");
+            }
+          });
+        });
+        expect(field.valid).toBe(false);
+        expect(field.$.first.error).toEqual({ message: "Required" });
+        expect(field.$.last.error).toEqual({ message: "Required" });
+      });
+
+      it("allows to validate records", () => {
+        const field = new Field<Record<string, number>>({
+          one: 1,
+          two: 2,
+        });
+        field.validate((ref) => {
+          ref.at("two").setError("Invalid");
+        });
+        expect(field.valid).toBe(false);
+        expect(field.at("two").error).toEqual({ message: "Invalid" });
+      });
     });
   });
 });

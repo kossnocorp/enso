@@ -729,17 +729,17 @@ export class Field<Payload> {
 
   //#region Validation
 
-  validate<Payload, Context>(
+  validate<Context>(
     validator: Field.Validator<Payload, Context>,
     context: Context
   ): void;
 
-  validate<Payload>(
+  validate(
     validator: Field.Validator<Payload, undefined>,
     context?: undefined
   ): void;
 
-  validate<Payload, Context>(
+  validate<Context>(
     validator: Field.Validator<Payload, undefined>,
     context?: Context | undefined
   ) {
@@ -1077,22 +1077,12 @@ export namespace Field {
 
   //#region Validation
 
-  export type Validator<Payload, Context = undefined> = Payload extends object
-    ? () => Promise<unknown> | unknown
-    : PrimitiveValidator<Payload, Context>;
-
-  export type PrimitiveValidator<Payload, Context> = undefined extends Context
-    ? (payload: Ref<Payload>) => Promise<void> | void
-    : (payload: Ref<Payload>, context: Context) => Promise<void> | void;
-
-  //#endregion
-
-  //#region Ref
-
-  export interface Ref<Payload> {
-    value: Payload;
-    error(error: Field.Error | string): void;
-  }
+  export type Validator<
+    Payload,
+    Context = undefined,
+  > = undefined extends Context
+    ? (payload: FieldRef<Payload>) => Promise<void> | void
+    : (payload: FieldRef<Payload>, context: Context) => Promise<void> | void;
 
   //#endregion
 }
