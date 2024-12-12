@@ -2,6 +2,7 @@ import { nanoid } from "nanoid";
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { useRerender } from "../hooks/rerender.ts";
 import { type EnsoUtils } from "../utils.ts";
+import { FieldRef } from "./ref/index.ts";
 
 //#region Field
 
@@ -742,7 +743,9 @@ export class Field<Payload> {
     validator: Field.Validator<Payload, undefined>,
     context?: Context | undefined
   ) {
-    // return this.#field.validate(validator, context);
+    const ref = new FieldRef(this);
+    // @ts-expect-error: [TODO]
+    return validator(ref, context);
   }
 
   //#endregion
@@ -1078,7 +1081,7 @@ export namespace Field {
     ? () => Promise<unknown> | unknown
     : PrimitiveValidator<Payload, Context>;
 
-  export type PrimitiveValidator<Payload, Context> = Context extends undefined
+  export type PrimitiveValidator<Payload, Context> = undefined extends Context
     ? (payload: Ref<Payload>) => Promise<void> | void
     : (payload: Ref<Payload>, context: Context) => Promise<void> | void;
 

@@ -230,7 +230,7 @@ describe("Form", () => {
       const form = new Form(42);
       const validateCb = () => {};
       expect(form.validate(validateCb as any)).toBe("Ok");
-      expect(spy).toHaveBeenCalledWith(validateCb);
+      expect(spy).toHaveBeenCalledWith(validateCb, undefined);
     });
   });
 });
