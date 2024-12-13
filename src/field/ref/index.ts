@@ -58,7 +58,7 @@ export class FieldRef<Payload> {
     // @ts-ignore: [TODO]
     return {
       // @ts-ignore: [TODO]
-      discriminator: this.$[discriminator].get(),
+      discriminator: this.$[discriminator]?.get(),
       field: this,
     };
   }
