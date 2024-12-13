@@ -39,6 +39,28 @@ export class FieldRef<Payload> {
 
   //#endregion
 
+  //#region Mapping
+
+  decompose(): FieldRef.Decomposed<Payload> {
+    return {
+      value: this.get(),
+      field: this,
+    } as unknown as FieldRef.Decomposed<Payload>;
+  }
+
+  discriminate<Discriminator extends keyof Exclude<Payload, undefined>>(
+    discriminator: Discriminator
+  ): FieldRef.Discriminated<Payload, Discriminator> {
+    // @ts-ignore: [TODO]
+    return {
+      // @ts-ignore: [TODO]
+      discriminator: this.$[discriminator].get(),
+      field: this,
+    };
+  }
+
+  //#endregion
+
   //#region Errors
 
   setError(error: Field.Error | string): void {
@@ -76,6 +98,37 @@ export namespace FieldRef {
       ? Payload[Key]
       : Payload[Key] | undefined
   >;
+
+  //#endregion
+
+  //#region Mapping
+
+  export type Decomposed<Payload> = Payload extends Payload
+    ? {
+        value: Payload;
+        field: FieldRef<Payload>;
+      }
+    : never;
+
+  export type Discriminated<
+    Payload,
+    Discriminator extends keyof Exclude<Payload, undefined>,
+  > = Payload extends Payload
+    ? Discriminator extends keyof Payload
+      ? Payload[Discriminator] extends infer DiscriminatorValue
+        ? DiscriminatorValue extends Payload[Discriminator]
+          ? {
+              discriminator: DiscriminatorValue;
+              field: FieldRef<Payload>;
+            }
+          : never
+        : never
+      : // Add the payload type without the discriminator (i.e. undefined)
+        {
+          discriminator: undefined;
+          field: FieldRef<Payload>;
+        }
+    : never;
 
   //#endregion
 
