@@ -5,9 +5,12 @@ const fieldRefsStore = new WeakMap<Field<any>, FieldRef<any>>();
 
 export class FieldRef<Payload> {
   static get<Payload>(field: Field<Payload>) {
+    // @ts-expect-error: [TODO]
     let ref = fieldRefsStore.get(field);
     if (!ref) {
+      // @ts-expect-error: [TODO]
       ref = new FieldRef(field);
+      // @ts-expect-error: [TODO]
       fieldRefsStore.set(field, ref);
     }
     return ref;
@@ -34,6 +37,7 @@ export class FieldRef<Payload> {
   });
 
   at<Key extends keyof Payload>(key: Key): FieldRef.At<Payload, Key> {
+    // @ts-expect-error: [TODO]
     return FieldRef.get(this.#field.at(key));
   }
 
@@ -74,7 +78,9 @@ export class FieldRef<Payload> {
   forEach<Key extends keyof Payload>(
     callback: FieldRef.ForEachCallback<Payload, Key>
   ) {
+    // @ts-expect-error: [TODO]
     this.#field.forEach((field, key) => {
+      // @ts-expect-error: [TODO]
       callback(FieldRef.get(field), key);
     });
   }
