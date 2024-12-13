@@ -228,9 +228,10 @@ export class Form<Payload> {
   Control(
     props: Form.ControlProps<Payload>
   ): React.ReactElement<HTMLFormElement> {
+    const { onSubmit, children, ...restProps } = props;
     return (
-      <form {...this.control(props.onSubmit || (() => {}))}>
-        {props.children}
+      <form {...restProps} {...this.control(onSubmit || (() => {}))}>
+        {children}
       </form>
     );
   }
