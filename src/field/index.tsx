@@ -4,6 +4,8 @@ import { useRerender } from "../hooks/rerender.ts";
 import { type EnsoUtils } from "../utils.ts";
 import { FieldRef } from "./ref/index.ts";
 
+export { FieldRef };
+
 //#region Field
 
 const createSymbol = Symbol();
@@ -113,8 +115,20 @@ export class Field<Payload> {
     useEffect(
       () =>
         this.watch((payload, event) => {
-          // Ignore only valid-invalid changes
-          if (!(event.changes & ~(fieldChange.valid | fieldChange.invalid)))
+          // Ignore only valid-invalid and focus-blur changes
+          if (
+            !(
+              event.changes &
+              // [TODO] Change to allowlist instead as event might contain
+              // changes from wrappers such as Form.
+              ~(
+                fieldChange.valid |
+                fieldChange.invalid |
+                fieldChange.blurred |
+                fieldChange.childBlurred
+              )
+            )
+          )
             return;
 
           setPayload(payload);
@@ -274,8 +288,18 @@ export class Field<Payload> {
       this.#parent.field.#childTrigger(changes, this.#parent.key);
   }
 
-  #childTrigger(type: FieldChange, key: string) {
-    const updated = this.#internal.childUpdate(type, key) | fieldChange.child;
+  #childTrigger(changes: FieldChange, key: string) {
+    // Always propagate the blurred change to the parents
+    const blurredChange =
+      changes & fieldChange.blurred || changes & fieldChange.childBlurred
+        ? fieldChange.childBlurred
+        : 0;
+
+    const updated =
+      this.#internal.childUpdate(changes, key) |
+      fieldChange.child |
+      blurredChange;
+
     this.trigger(updated, true);
   }
 
@@ -289,10 +313,8 @@ export class Field<Payload> {
   unleash() {
     this.#internal.unleash();
     const withholded = this.#withholded;
-    if (withholded?.[0]) {
-      this.#withholded = undefined;
-      this.trigger(...withholded);
-    }
+    this.#withholded = undefined;
+    if (withholded?.[0]) this.trigger(...withholded);
   }
 
   //#endregion
@@ -588,10 +610,12 @@ export class Field<Payload> {
     });
 
     const control = {
+      name: this.path.join(".") || ".",
       value,
       onChange: this.set,
-      // [TODO] Connect it to the validation?
-      onBlur: () => {},
+      onBlur: () => {
+        this.trigger(fieldChange.blurred, true);
+      },
     };
 
     return props.render(control, meta as any);
@@ -601,6 +625,7 @@ export class Field<Payload> {
     return {
       name: this.path.join(".") || ".",
       ref: this.ref,
+      onBlur: () => this.trigger(fieldChange.blurred, true),
     };
   }
 
@@ -766,6 +791,7 @@ export class Field<Payload> {
   }
 
   expunge() {
+    this.#cachedInvalids = undefined;
     this.setError(undefined);
     this.#internal.expunge();
   }
@@ -777,21 +803,21 @@ export class Field<Payload> {
   validate<Context>(
     validator: Field.Validator<Payload, Context>,
     context: Context
-  ): void;
+  ): Promise<void>;
 
   validate(
     validator: Field.Validator<Payload, undefined>,
     context?: undefined
-  ): void;
+  ): Promise<void>;
 
-  validate<Context>(
+  async validate<Context>(
     validator: Field.Validator<Payload, undefined>,
     context?: Context | undefined
   ) {
     this.expunge();
     this.withhold();
     // @ts-expect-error: [TODO]
-    validator(FieldRef.get(this), context);
+    await validator(FieldRef.get(this), context);
     this.unleash();
   }
 
@@ -1091,6 +1117,7 @@ export namespace Field {
   > = (input: Input<Payload>, meta: Meta<InputMetaProps>) => React.ReactNode;
 
   export type Input<Payload> = {
+    name: string;
     value: Payload;
     onChange: OnChange<Payload>;
     onBlur: OnBlur;
@@ -1103,6 +1130,7 @@ export namespace Field {
   export interface Registration<Element extends HTMLElement> {
     name: string;
     ref: RegistrationRef<Element>;
+    onBlur: OnBlur;
   }
 
   // [TODO] Add possible types
@@ -1754,32 +1782,32 @@ export class UndefinedStateRegistry {
 export type FieldChange = number;
 
 export const fieldChange = {
-  /** Nothing has change, the initial value. */
-  nothing: 0,
   /** The field has been inserted into an object or an array. */
-  created: 0b000000000001, // 1
+  created: 2 ** 0,
   /** The field has been detached from an object or an array. */
-  detached: 0b000000000010, // 2
+  detached: 2 ** 1,
   /** The primitive value of the field has change. */
-  value: 0b000000000100, // 4
+  value: 2 ** 2,
   /** The type of the field has change. */
-  type: 0b000000001000, // 8
-  /** An object field or an array item has changed. */
-  child: 0b000000010000, // 16
-  /** An object field or an array item has been detached. */
-  childDetached: 0b000000100000, // 32
-  /** An object field or an array item has been added. */
-  childAdded: 0b000001000000, // 64
-  /** The order of array items has change. */
-  childrenReordered: 0b000010000000, // 128
-  /** The field become invalid. */
-  invalid: 0b000100000000, // 256
-  /** The field become valid. */
-  valid: 0b001000000000, // 512,
+  type: 2 ** 3,
   /** The current field got commited as initial */
-  committed: 0b010000000000, // 1024
-  // Just in case to give a little room, first 12 bits are reserved for State
-  // reserved: 0b100000000000, // 2048
+  committed: 2 ** 4,
+  /** The field become invalid. */
+  invalid: 2 ** 5,
+  /** The field become valid. */
+  valid: 2 ** 6,
+  /** The field lost its focus. */
+  blurred: 2 ** 7,
+  /** An object field or an array item has changed. */
+  child: 2 ** 8,
+  /** An object field or an array item has been detached. */
+  childDetached: 2 ** 9,
+  /** An object field or an array item has been added. */
+  childAdded: 2 ** 10,
+  /** The order of array items has change. */
+  childrenReordered: 2 ** 11,
+  /** A child field lost its focus.  */
+  childBlurred: 2 ** 12,
 };
 
 export class FieldChangeEvent extends Event {

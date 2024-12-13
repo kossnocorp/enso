@@ -223,14 +223,25 @@ describe("Form", () => {
   });
 
   describe("validation", () => {
-    it("delegates validate", () => {
-      const spy = vi
+    it("delegates validate", async () => {
+      const validateSpy = vi
         .spyOn(Field.prototype, "validate")
-        .mockReturnValue("Ok" as any);
-      const form = new Form(42);
+        .mockReturnValue(Promise.resolve(void 0));
+      const validSpy = vi
+        .spyOn(Field.prototype, "valid", "get")
+        .mockReturnValue(false);
       const validateCb = () => {};
-      expect(form.validate(validateCb as any)).toBe("Ok");
-      expect(spy).toHaveBeenCalledWith(validateCb, undefined);
+      const form = new Form(42, { validate: validateCb });
+      expect(await form.validate()).toBe(false);
+      expect(validateSpy).toHaveBeenCalledWith(validateCb);
+      expect(validSpy).toHaveBeenCalled();
+    });
+
+    it("expunges errors even if the validate function is not provided", async () => {
+      const form = new Form(42);
+      form.field.setError("Nope");
+      expect(await form.validate()).toBe(true);
+      expect(form.field.error).toBe(undefined);
     });
   });
 });

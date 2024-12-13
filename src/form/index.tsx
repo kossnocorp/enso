@@ -5,17 +5,29 @@ import { useRerender } from "../hooks/rerender.ts";
 //#region Form
 
 export class Form<Payload> {
-  static use<Payload>(value: Payload): Form<Payload> {
-    const form = useMemo(() => new Form(value), []);
+  static use<Payload>(
+    value: Payload,
+    options?: Form.Options<Payload>
+  ): Form<Payload> {
+    const form = useMemo(() => new Form(value, options), []);
     const rerender = useRerender();
 
     useEffect(
       () =>
         form.#field.watch((_, event) => {
           // Only react to form-specific changes, as everything else is
-          // handled by the field's use hook.
-          if (event.changes & ~(formChange.submitting | formChange.submitted))
+          // handled by the field's useBind hook below.
+          if (
+            event.changes &
+            ~(
+              formChange.formSubmitting |
+              formChange.formSubmitted |
+              formChange.formValid |
+              formChange.formInvalid
+            )
+          )
             return;
+
           rerender();
         }),
       [form, rerender]
@@ -28,10 +40,22 @@ export class Form<Payload> {
 
   #field: Field<Payload>;
 
-  constructor(initial: Payload) {
+  constructor(initial: Payload, options?: Form.Options<Payload>) {
     this.#field = new Field(initial);
+    this.#validate = options?.validate;
 
     this.Control = this.Control.bind(this);
+
+    this.#field.watch((_, event) => {
+      if (
+        this.#valid ||
+        (!(event.changes & fieldChange.blurred) &&
+          !(event.changes & fieldChange.childBlurred))
+      )
+        return;
+
+      this.validate();
+    });
   }
 
   //#region Attributes
@@ -156,21 +180,41 @@ export class Form<Payload> {
 
   //#region Validation
 
-  validate<Payload, Context>(
-    validator: Field.Validator<Payload, Context>,
-    context: Context
-  ): void;
+  /**
+   * @private
+   * The validation function provided to the form. It gets called when the form
+   * is submitted. If the validation fails, the form does not submit.
+   */
+  #validate: Field.Validator<Payload, undefined> | undefined;
 
-  validate<Payload>(
-    validator: Field.Validator<Payload, undefined>,
-    context?: undefined
-  ): void;
+  /**
+   * @private
+   * Form validation state. The false state indicates that the validate method
+   * got called and it resulted in failing validation. It allows to know when to
+   * revalidate the form on certain user interactions, such as input blur or
+   * change.
+   */
+  #valid = true;
 
-  validate<Payload, Context>(
-    validator: Field.Validator<Payload, undefined>,
-    context?: Context | undefined
-  ) {
-    return this.#field.validate(validator, context);
+  async validate() {
+    // Even if the validate function is not provided, we still want to expunge
+    // the errors, so we call the validate method with an empty function.
+    await this.#field.validate(this.#validate || (() => {}));
+
+    // If we're currently submitting the form, we want to send the submitting
+    // event to the field along with the submitting state.
+    if (this.#submitting) this.#field.withhold();
+
+    const valid = this.#field.valid;
+    if (this.#valid !== valid) {
+      this.#valid = valid;
+      this.#field.trigger(
+        valid ? formChange.formValid : formChange.formInvalid,
+        false
+      );
+    }
+
+    return valid;
   }
 
   //#endregion
@@ -204,13 +248,26 @@ export class Form<Payload> {
     event.preventDefault();
     event.stopPropagation();
 
+    // We set it before the validation to make it withold sending the changes
     this.#submitting = true;
-    this.#field.trigger(formChange.submitting, true);
+
+    if (!(await this.validate())) {
+      // We're skipping to send the submitting event to the field
+      this.#submitting = false;
+      this.#field.unleash();
+
+      return;
+    }
+
+    this.#field.trigger(formChange.formSubmitting, true);
+    // We unleash the field to send the changes that happened during and after
+    // the validation process.
+    this.#field.unleash();
 
     await callback(this.#field.get());
 
     this.#submitting = false;
-    this.#field.trigger(formChange.submitted, true);
+    this.#field.trigger(formChange.formSubmitted, true);
   }
 
   get $() {
@@ -225,6 +282,10 @@ export class Form<Payload> {
 }
 
 export namespace Form {
+  export interface Options<Payload> {
+    validate?: Field.Validator<Payload, undefined>;
+  }
+
   export interface ControlProps<Payload>
     extends Omit<React.FormHTMLAttributes<HTMLFormElement>, "onSubmit"> {
     onSubmit?: SubmitCallback<Payload>;
@@ -250,8 +311,10 @@ export namespace Form {
 
 export const formChange = {
   ...fieldChange,
-  submitting: 0b01000000000000, // 4096
-  submitted: 0b10000000000000, // 8192
+  formSubmitting: 2 ** 13,
+  formSubmitted: 2 ** 14,
+  formValid: 2 ** 15,
+  formInvalid: 2 ** 16,
 };
 
 //#endregion

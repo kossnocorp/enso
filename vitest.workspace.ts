@@ -4,6 +4,7 @@ export default defineWorkspace([
   {
     test: {
       include: ["src/**/tests.ts"],
+      restoreMocks: true,
       name: "unit",
       environment: "node",
     },

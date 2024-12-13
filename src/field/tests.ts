@@ -754,6 +754,32 @@ describe("Field", () => {
           expect.objectContaining({ changes: fieldChange.child })
         );
       });
+
+      it("notifies parents about child blurring", () => {
+        const field = new Field({ num: 42 });
+        const spy = vi.fn();
+        field.watch(spy);
+        field.$.num.trigger(fieldChange.blurred, true);
+        expect(spy).toHaveBeenCalledWith(
+          { num: 42 },
+          expect.objectContaining({
+            changes: fieldChange.child | fieldChange.childBlurred,
+          })
+        );
+      });
+
+      it("notifies parents about nested child blurring", () => {
+        const field = new Field({ user: { name: { first: "Sasha" } } });
+        const spy = vi.fn();
+        field.watch(spy);
+        field.$.user.$.name.$.first.trigger(fieldChange.blurred, true);
+        expect(spy).toHaveBeenCalledWith(
+          { user: { name: { first: "Sasha" } } },
+          expect.objectContaining({
+            changes: fieldChange.child | fieldChange.childBlurred,
+          })
+        );
+      });
     });
 
     describe("withhold", () => {
@@ -1331,7 +1357,7 @@ describe("Field", () => {
         expect(field.$.last.error).toBe(undefined);
       });
 
-      it("sends a single watch event on validation", () => {
+      it("sends a single watch event on validation", async () => {
         const field = new Field<Name>({ first: "" });
 
         const fieldSpy = vi.fn();
@@ -1339,7 +1365,7 @@ describe("Field", () => {
         field.watch(fieldSpy);
         field.$.first.watch(nameSpy);
 
-        field.validate(validateName);
+        await field.validate(validateName);
 
         expect(fieldSpy).toHaveBeenCalledOnce();
         expect(fieldSpy).toHaveBeenCalledWith(

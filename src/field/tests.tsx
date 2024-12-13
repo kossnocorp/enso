@@ -31,6 +31,24 @@ describe("Field", () => {
     );
 
     await userEvent.fill(screen.getByTestId("name-first-0-input"), "Sasha");
+
+    await expect
+      .element(screen.getByTestId("name-first-0"))
+      .toHaveTextContent("Sasha");
+    await expect
+      .element(screen.getByTestId("name-last-0"))
+      .toHaveTextContent("");
+
+    await expect
+      .element(screen.getByTestId("render-profile"))
+      .toHaveTextContent("1");
+    await expect
+      .element(screen.getByTestId("render-user"))
+      .toHaveTextContent("1");
+    await expect
+      .element(screen.getByTestId("render-name-0"))
+      .toHaveTextContent("2");
+
     await userEvent.fill(screen.getByTestId("name-last-0-input"), "Koss");
 
     await expect
@@ -48,7 +66,7 @@ describe("Field", () => {
       .toHaveTextContent("2");
     await expect
       .element(screen.getByTestId("render-name-0"))
-      .toHaveTextContent("3");
+      .toHaveTextContent("4");
   });
 
   it("allows to control array field", async () => {
@@ -1531,6 +1549,7 @@ function UserComponent(props: UserComponentProps) {
   const user = props.user;
   // Makes the component re-render when the name shape changes
   const name = user.$.name.useBind();
+
   return (
     <div>
       <div data-testid="render-user">{count}</div>
