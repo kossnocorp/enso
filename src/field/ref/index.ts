@@ -75,15 +75,12 @@ export class FieldRef<Payload> {
 
   //#region Collections
 
-  forEach<Key extends keyof Payload>(
-    callback: FieldRef.ForEachCallback<Payload, Key>
-  ) {
+  forEach: FieldRef.ForEachFn<Payload> = ((callback: any) => {
     // @ts-expect-error: [TODO]
     this.#field.forEach((field, key) => {
-      // @ts-expect-error: [TODO]
       callback(FieldRef.get(field), key);
     });
-  }
+  }) as FieldRef.ForEachFn<Payload>;
 
   //#endregion
 }
@@ -140,9 +137,22 @@ export namespace FieldRef {
 
   //#region Collections
 
-  export type ForEachCallback<Payload, Key extends keyof Payload> = (
-    field: FieldRef<Payload[Key]>,
-    key: Key
+  export type ForEachFn<Payload> =
+    Payload extends Array<any>
+      ? ArrayForEach<Payload>
+      : Payload extends object
+        ? ObjectForEach<Payload>
+        : (cb: never) => never;
+
+  export type ObjectForEach<Payload extends object> = (
+    callback: <Key extends keyof Payload>(
+      item: FieldRef<Payload[Key]>,
+      key: Key
+    ) => void
+  ) => void;
+
+  export type ArrayForEach<Payload extends Array<any>> = (
+    callback: (item: FieldRef<Payload[number]>, index: number) => void
   ) => void;
 
   //#endregion
