@@ -1,10 +1,10 @@
 import React, { useRef, useState } from "react";
 import { render } from "vitest-browser-react";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 // [TODO] Figure out a way to get rid of it:
 // https://github.com/vitest-dev/vitest/issues/6965
 import "@vitest/browser/matchers.d.ts";
-import { Field } from "./index.tsx";
+import { Field, fieldChange } from "./index.tsx";
 import { userEvent } from "@vitest/browser/context";
 
 describe("Field", () => {
@@ -598,53 +598,161 @@ describe("Field", () => {
     });
   });
 
-  it("allows to watch for field using a function", async () => {
-    function Component() {
-      const count = useRenderCount();
-      const field = Field.use({ name: { first: "Alexander" } });
-      const [name, setName] = useState(field.$.name.get());
-      field.$.name.useWatch(setName);
+  describe("useWatch", () => {
+    it("allows to watch for field using a function", async () => {
+      function Component() {
+        const count = useRenderCount();
+        const field = Field.use({ name: { first: "Alexander" } });
+        const [name, setName] = useState(field.$.name.get());
+        field.$.name.useWatch(setName);
 
-      return (
-        <div>
-          <div data-testid="render-watch">{count}</div>
+        return (
+          <div>
+            <div data-testid="render-watch">{count}</div>
 
-          <button onClick={() => field.$.name.$.first.set("Sasha")}>
-            Rename
-          </button>
+            <button onClick={() => field.$.name.$.first.set("Sasha")}>
+              Rename
+            </button>
 
-          <button onClick={() => field.$.name.setError("Nope")}>
-            Add error
-          </button>
+            <button onClick={() => field.$.name.setError("Nope")}>
+              Add error
+            </button>
 
-          <div data-testid="name">{name.first}</div>
-        </div>
+            <div data-testid="name">{name.first}</div>
+          </div>
+        );
+      }
+
+      const screen = render(<Component />);
+
+      await expect
+        .element(screen.getByTestId("name"))
+        .toHaveTextContent("Alexander");
+
+      await expect
+        .element(screen.getByTestId("render-watch"))
+        .toHaveTextContent("1");
+
+      await screen.getByText("Add error").click();
+
+      await expect
+        .element(screen.getByTestId("render-watch"))
+        .toHaveTextContent("2");
+
+      await screen.getByText("rename").click();
+
+      await expect
+        .element(screen.getByTestId("name"))
+        .toHaveTextContent("Sasha");
+
+      await expect
+        .element(screen.getByTestId("render-watch"))
+        .toHaveTextContent("3");
+    });
+
+    it("depends on the field id", async () => {
+      const spy = vi.fn();
+
+      function Component() {
+        const count = useRenderCount();
+        const field = Field.use([{ name: "Alexander" }, { name: "Sasha" }]);
+        const [index, setIndex] = useState(0);
+        field.at(index).useWatch(spy);
+
+        return (
+          <div>
+            <div data-testid="render-watch">{count}</div>
+
+            <button onClick={() => setIndex(1)}>Set index to 1</button>
+
+            <button onClick={() => field.at(1).set({ name: "Alex" })}>
+              Rename item 1
+            </button>
+          </div>
+        );
+      }
+
+      const screen = render(<Component />);
+
+      await expect
+        .element(screen.getByTestId("render-watch"))
+        .toHaveTextContent("1");
+
+      await screen.getByText("Set index to 1").click();
+
+      expect(spy).toHaveBeenCalledOnce();
+      expect(spy).toHaveBeenCalledWith(
+        { name: "Sasha" },
+        expect.objectContaining({
+          changes: fieldChange.swapped,
+        })
       );
-    }
 
-    const screen = render(<Component />);
+      await screen.getByText("Rename item 1").click();
 
-    await expect
-      .element(screen.getByTestId("name"))
-      .toHaveTextContent("Alexander");
+      expect(spy).toHaveBeenCalledTimes(2);
+      expect(spy).toHaveBeenCalledWith(
+        { name: "Alex" },
+        expect.objectContaining({
+          changes: fieldChange.child,
+        })
+      );
 
-    await expect
-      .element(screen.getByTestId("render-watch"))
-      .toHaveTextContent("1");
+      await expect
+        .element(screen.getByTestId("render-watch"))
+        .toHaveTextContent("2");
+    });
 
-    await screen.getByText("Add error").click();
+    it("updates the watcher on field id change", async () => {
+      const spy = vi.fn();
 
-    await expect
-      .element(screen.getByTestId("render-watch"))
-      .toHaveTextContent("2");
+      function Component() {
+        const count = useRenderCount();
+        const field = Field.use([{ name: "Alexander" }, { name: "Sasha" }]);
+        const [index, setIndex] = useState(0);
+        field.at(index).useWatch(spy);
 
-    await screen.getByText("rename").click();
+        return (
+          <div>
+            <div data-testid="render-watch">{count}</div>
 
-    await expect.element(screen.getByTestId("name")).toHaveTextContent("Sasha");
+            <button onClick={() => setIndex(1)}>Set index to 1</button>
 
-    await expect
-      .element(screen.getByTestId("render-watch"))
-      .toHaveTextContent("3");
+            <button onClick={() => field.at(1).set({ name: "Alex" })}>
+              Rename item 1
+            </button>
+
+            <button onClick={() => field.at(0).set({ name: "A." })}>
+              Rename item 0
+            </button>
+          </div>
+        );
+      }
+
+      const screen = render(<Component />);
+
+      await expect
+        .element(screen.getByTestId("render-watch"))
+        .toHaveTextContent("1");
+
+      await screen.getByText("Set index to 1").click();
+
+      expect(spy).toHaveBeenCalledOnce();
+      expect(spy).toHaveBeenCalledWith(
+        { name: "Sasha" },
+        expect.objectContaining({
+          changes: fieldChange.swapped,
+        })
+      );
+
+      await screen.getByText("Rename item 0").click();
+
+      expect(spy).toHaveBeenCalledOnce();
+
+      await expect
+        .element(screen.getByTestId("render-watch"))
+        .toHaveTextContent("2");
+    });
   });
 
   it("allows to listen to dirty field", async () => {

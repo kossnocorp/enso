@@ -356,7 +356,15 @@ export class Field<Payload> {
   }
 
   useWatch(callback: Field.WatchCallback<Payload>): void {
-    useEffect(() => this.watch(callback), [callback]);
+    const idRef = useRef(this.id);
+
+    useEffect(() => {
+      if (idRef.current === this.id) return;
+      idRef.current = this.id;
+      callback(this.get(), new FieldChangeEvent(fieldChange.swapped));
+    }, [this.id, callback]);
+
+    useEffect(() => this.watch(callback), [this.id, callback]);
   }
 
   unwatch() {
@@ -1818,16 +1826,18 @@ export const fieldChange = {
   valid: 2 ** 6,
   /** The field lost its focus. */
   blurred: 2 ** 7,
+  /** The watched target field is not different. */
+  swapped: 2 ** 8,
   /** An object field or an array item has changed. */
-  child: 2 ** 8,
+  child: 2 ** 9,
   /** An object field or an array item has been detached. */
-  childDetached: 2 ** 9,
+  childDetached: 2 ** 10,
   /** An object field or an array item has been added. */
-  childAdded: 2 ** 10,
+  childAdded: 2 ** 11,
   /** The order of array items has change. */
-  childrenReordered: 2 ** 11,
+  childrenReordered: 2 ** 12,
   /** A child field lost its focus.  */
-  childBlurred: 2 ** 12,
+  childBlurred: 2 ** 13,
 };
 
 export class FieldChangeEvent extends Event {

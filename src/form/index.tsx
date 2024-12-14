@@ -312,10 +312,10 @@ export namespace Form {
 
 export const formChange = {
   ...fieldChange,
-  formSubmitting: 2 ** 13,
-  formSubmitted: 2 ** 14,
-  formValid: 2 ** 15,
-  formInvalid: 2 ** 16,
+  formSubmitting: 2 ** 14,
+  formSubmitted: 2 ** 15,
+  formValid: 2 ** 16,
+  formInvalid: 2 ** 17,
 };
 
 //#endregion
