@@ -400,52 +400,202 @@ describe("Field", () => {
       .toHaveTextContent("1");
   });
 
-  it("allows to watch for field", async () => {
-    function Component() {
-      const count = useRenderCount();
-      const field = Field.use({ name: { first: "Alexander" } });
-      const name = field.$.name.useGet();
+  describe("useGet", () => {
+    it("allows to watch for field", async () => {
+      function Component() {
+        const count = useRenderCount();
+        const field = Field.use({ name: { first: "Alexander" } });
+        const name = field.$.name.useGet();
 
-      return (
-        <div>
-          <div data-testid="render-watch">{count}</div>
+        return (
+          <div>
+            <div data-testid="render-watch">{count}</div>
 
-          <button onClick={() => field.$.name.$.first.set("Sasha")}>
-            Rename
-          </button>
+            <button onClick={() => field.$.name.$.first.set("Sasha")}>
+              Rename
+            </button>
 
-          <button onClick={() => field.$.name.setError("Nope")}>
-            Add error
-          </button>
+            <button onClick={() => field.$.name.setError("Nope")}>
+              Add error
+            </button>
 
-          <div data-testid="name">{name.first}</div>
-        </div>
-      );
-    }
+            <div data-testid="name">{name.first}</div>
+          </div>
+        );
+      }
 
-    const screen = render(<Component />);
+      const screen = render(<Component />);
 
-    await expect
-      .element(screen.getByTestId("name"))
-      .toHaveTextContent("Alexander");
+      await expect
+        .element(screen.getByTestId("name"))
+        .toHaveTextContent("Alexander");
 
-    await expect
-      .element(screen.getByTestId("render-watch"))
-      .toHaveTextContent("1");
+      await expect
+        .element(screen.getByTestId("render-watch"))
+        .toHaveTextContent("1");
 
-    await screen.getByText("Add error").click();
+      await screen.getByText("Add error").click();
 
-    await expect
-      .element(screen.getByTestId("render-watch"))
-      .toHaveTextContent("1");
+      await expect
+        .element(screen.getByTestId("render-watch"))
+        .toHaveTextContent("1");
 
-    await screen.getByText("rename").click();
+      await screen.getByText("rename").click();
 
-    await expect.element(screen.getByTestId("name")).toHaveTextContent("Sasha");
+      await expect
+        .element(screen.getByTestId("name"))
+        .toHaveTextContent("Sasha");
 
-    await expect
-      .element(screen.getByTestId("render-watch"))
-      .toHaveTextContent("2");
+      await expect
+        .element(screen.getByTestId("render-watch"))
+        .toHaveTextContent("2");
+    });
+
+    it("depends on the field id", async () => {
+      function Component() {
+        const count = useRenderCount();
+        const field = Field.use([{ name: "Alexander" }, { name: "Sasha" }]);
+        const [index, setIndex] = useState(0);
+        const item = field.at(index).useGet();
+
+        return (
+          <div>
+            <div data-testid="render-watch">{count}</div>
+
+            <button onClick={() => setIndex(1)}>Set index to 1</button>
+
+            <div data-testid="name">{item?.name}</div>
+          </div>
+        );
+      }
+
+      const screen = render(<Component />);
+
+      await expect
+        .element(screen.getByTestId("name"))
+        .toHaveTextContent("Alexander");
+
+      await expect
+        .element(screen.getByTestId("render-watch"))
+        .toHaveTextContent("1");
+
+      await screen.getByText("Set index to 1").click();
+
+      await expect
+        .element(screen.getByTestId("name"))
+        .toHaveTextContent("Sasha");
+
+      await expect
+        .element(screen.getByTestId("render-watch"))
+        .toHaveTextContent("2");
+    });
+
+    it("updates the watcher on field id change", async () => {
+      function Component() {
+        const count = useRenderCount();
+        const field = Field.use([{ name: "Alexander" }, { name: "Sasha" }]);
+        const [index, setIndex] = useState(0);
+        const item = field.at(index).useGet();
+
+        return (
+          <div>
+            <div data-testid="render-watch">{count}</div>
+
+            <button onClick={() => setIndex(1)}>Set index to 1</button>
+
+            <button onClick={() => field.at(0).set({ name: "Alex" })}>
+              Rename 0 to Alex
+            </button>
+
+            <button onClick={() => field.at(1).set({ name: "Sashka" })}>
+              Rename 1 to Sashka
+            </button>
+
+            <div data-testid="name">{item?.name}</div>
+          </div>
+        );
+      }
+
+      const screen = render(<Component />);
+
+      await expect
+        .element(screen.getByTestId("name"))
+        .toHaveTextContent("Alexander");
+
+      await expect
+        .element(screen.getByTestId("render-watch"))
+        .toHaveTextContent("1");
+
+      await screen.getByText("Set index to 1").click();
+
+      await expect
+        .element(screen.getByTestId("name"))
+        .toHaveTextContent("Sasha");
+
+      await expect
+        .element(screen.getByTestId("render-watch"))
+        .toHaveTextContent("2");
+
+      await screen.getByText("Rename 0 to Alex").click();
+
+      await expect
+        .element(screen.getByTestId("name"))
+        .toHaveTextContent("Sasha");
+
+      await expect
+        .element(screen.getByTestId("render-watch"))
+        .toHaveTextContent("2");
+
+      await screen.getByText("Rename 1 to Sashka").click();
+
+      await expect
+        .element(screen.getByTestId("name"))
+        .toHaveTextContent("Sashka");
+
+      await expect
+        .element(screen.getByTestId("render-watch"))
+        .toHaveTextContent("3");
+    });
+
+    it("doesn't rerender when setting the same primitive", async () => {
+      function Component() {
+        const count = useRenderCount();
+        const field = Field.use({ name: "Sasha" });
+        const user = field.useGet();
+
+        return (
+          <div>
+            <div data-testid="render-watch">{count}</div>
+
+            <button onClick={() => field.$.name.set("Sasha")}>
+              Assign same name
+            </button>
+
+            <div data-testid="name">{user?.name}</div>
+          </div>
+        );
+      }
+
+      const screen = render(<Component />);
+
+      await expect
+        .element(screen.getByTestId("name"))
+        .toHaveTextContent("Sasha");
+
+      await expect
+        .element(screen.getByTestId("render-watch"))
+        .toHaveTextContent("1");
+
+      await screen.getByText("Assign same name").click();
+
+      await expect
+        .element(screen.getByTestId("name"))
+        .toHaveTextContent("Sasha");
+
+      await expect
+        .element(screen.getByTestId("render-watch"))
+        .toHaveTextContent("1");
+    });
   });
 
   it("allows to watch for field using a function", async () => {

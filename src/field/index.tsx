@@ -97,7 +97,17 @@ export class Field<Payload> {
   useGet<Props extends Field.UseGetProps | undefined = undefined>(
     props?: Props
   ): Field.UseGet<Payload, Props> {
-    const [payload, setPayload] = useState(this.get());
+    const initial = useMemo(() => this.get(), [this.id]);
+    const payloadRef = useRef({ id: this.id, payload: initial });
+
+    // When the id changes, we update the payload
+    useEffect(() => {
+      if (payloadRef.current.id === this.id) return;
+      payloadRef.current = { id: this.id, payload: this.get() };
+      // We don't need to rerender as the payload will resolve to initial and we
+      // don't want to trigger another render.
+    }, [this.id]);
+
     const watchAllMeta = !!props?.meta;
     const watchMeta =
       watchAllMeta || props?.invalids || props?.valid || props?.dirty;
@@ -105,13 +115,14 @@ export class Field<Payload> {
       watchAllMeta
         ? undefined
         : {
-            invalids: !!props?.invalids,
-            valid: !!props?.valid,
-            error: !!props?.error,
             dirty: !!props?.dirty,
+            error: !!props?.error,
+            valid: !!props?.valid,
+            invalids: !!props?.invalids,
           }
     );
 
+    const rerender = useRerender();
     useEffect(
       () =>
         this.watch((payload, event) => {
@@ -131,12 +142,21 @@ export class Field<Payload> {
           )
             return;
 
-          setPayload(payload);
+          payloadRef.current = { id: this.id, payload };
+          rerender();
         }),
-      []
+      [this.id]
     );
-    // @ts-ignore: [TODO]
-    return watchMeta ? [payload, meta] : payload;
+
+    // If the ref payload id doesn't match the current id, use initial value.
+    // Otherwise, use the payload from the ref.
+    const payload =
+      payloadRef.current.id === this.id ? payloadRef.current.payload : initial;
+
+    return (watchMeta ? [payload, meta] : payload) as Field.UseGet<
+      Payload,
+      Props
+    >;
   }
 
   // [TODO] Exposing the notify parents flag might be dangerous
