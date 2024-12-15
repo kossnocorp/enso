@@ -215,7 +215,7 @@ export class Field<Payload> {
   useDirty<Enable extends boolean | undefined = undefined>(
     enable?: Enable
   ): Enable extends true | undefined ? boolean : undefined {
-    // Default to true
+    // Defaults to true
     // [TODO] Can I use the default value instead of setting it to undefined?
     enable ??= true as Enable;
 
@@ -726,24 +726,47 @@ export class Field<Payload> {
   useError<Enable extends boolean | undefined = undefined>(
     enable?: Enable
   ): Enable extends true | undefined ? Field.Error | undefined : undefined {
-    const [error, setError] = useState(
-      enable === false ? undefined : this.error
-    );
+    // Defaults to true
+    // [TODO] Can I use the default value instead of setting it to undefined?
+    enable ??= true as Enable;
 
-    useEffect(
-      () => {
-        if (enable === false) return;
-        return this.watch(() => {
-          const nextError = this.error;
-          if (nextError !== error) setError(nextError);
-        });
-      },
-      // [TODO] Consider using a ref for performance
-      [enable, error, setError]
-    );
+    const initial = useMemo(() => enable && this.error, [this.id, enable]);
+    const resultRef = useRef({ id: this.id, result: initial, enable });
+
+    // When the id changes, we update the result
+    useEffect(() => {
+      if (
+        resultRef.current.id === this.id &&
+        resultRef.current.enable === enable
+      )
+        return;
+
+      resultRef.current = { id: this.id, result: enable && this.error, enable };
+      // We don't need to rerender as the result will resolve to initial and we
+      // don't want to trigger another render.
+    }, [this.id, enable]);
+
+    const rerender = useRerender();
+    useEffect(() => {
+      if (enable === false) return;
+
+      return this.watch(() => {
+        const prevError = resultRef.current.result;
+        const error = this.error;
+        resultRef.current = { id: this.id, result: error, enable };
+        if (error !== prevError) rerender();
+      });
+    }, [this.id, rerender, enable]);
+
+    // If the ref result id doesn't match the current id, use initial value.
+    // Otherwise, use the result from the ref.
+    const result =
+      resultRef.current.id === this.id && resultRef.current.enable === enable
+        ? resultRef.current.result
+        : initial;
 
     // @ts-ignore: This is fine
-    return enable === false ? undefined : error;
+    return enable === false ? undefined : result;
   }
 
   setError(error?: string | Field.Error | undefined) {
