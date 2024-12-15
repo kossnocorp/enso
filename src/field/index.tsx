@@ -400,20 +400,13 @@ export class Field<Payload> {
   useDecompose(
     callback: Field.DecomposeCallback<Payload>
   ): Field.Decomposed<Payload> {
-    const rerender = useRerender();
-    const initial = useMemo(() => this.decompose(), []);
-    const ref = useRef(initial);
-    const prevRef = useRef(ref.current.value);
-    useEffect(
-      () =>
-        this.watch((next) => {
-          ref.current = this.decompose();
-          if (callback(next, prevRef.current)) rerender();
-          prevRef.current = next;
-        }),
-      []
-    );
-    return ref.current;
+    // @ts-expect-error: [TODO]
+    return useFieldHook({
+      // @ts-expect-error: [TODO]
+      field: this,
+      getValue: () => this.decompose(),
+      shouldRender: (prev, next) => !!prev && callback(next.value, prev.value),
+    });
   }
 
   discriminate<Discriminator extends keyof Exclude<Payload, undefined>>(

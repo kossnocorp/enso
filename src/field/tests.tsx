@@ -2402,87 +2402,191 @@ describe("Field", () => {
     });
   });
 
-  it("allows to decompose union field", async () => {
-    interface ComponentProps {
-      address: Address;
-    }
+  describe("useDecompose", () => {
+    it("allows to decompose union field", async () => {
+      function Component() {
+        const count = useRenderCount();
+        const address = Field.use<Address>({ name: { first: "Alexander" } });
+        const name = address.$.name.useDecompose(
+          (newName, prevName) => typeof newName !== typeof prevName
+        );
 
-    function Component(props: ComponentProps) {
-      const count = useRenderCount();
-      const address = Field.use<Address>(props.address);
-      const name = address.$.name.useDecompose(
-        (newName, prevName) => typeof newName !== typeof prevName
-      );
+        // [TODO] Figure out if that's a bug or intended behavior and adjust the API
+        // accordingly: https://github.com/microsoft/TypeScript/issues/60685
+        return (
+          <div>
+            <div data-testid="render-decompose">{count}</div>
 
-      // [TODO] Figure out if that's a bug or intended behavior and adjust the API
-      // accordingly: https://github.com/microsoft/TypeScript/issues/60685
-      return (
-        <div>
-          <div data-testid="render-address">{count}</div>
+            {typeof name.value === "string" ? (
+              <div>
+                <button
+                  onClick={() => (name.field as Field<string>).set("Alexander")}
+                >
+                  Rename
+                </button>
 
-          {typeof name.value === "string" ? (
-            <div>
-              <button
-                onClick={() => (name.field as Field<string>).set("Alexander")}
-              >
-                Rename
-              </button>
+                <StringComponent string={name.field as Field<string>} />
+              </div>
+            ) : (
+              <div>
+                <input
+                  data-testid="input-name-first"
+                  {...(name.field as Field<UserName>).$.first.input()}
+                />
 
-              <StringComponent string={name.field as Field<string>} />
-            </div>
-          ) : (
-            <div>
-              <input
-                data-testid="input-name-first"
-                {...(name.field as Field<UserName>).$.first.input()}
-              />
+                <button onClick={() => address.$.name.set("Alex")}>
+                  Set string name
+                </button>
 
-              <button onClick={() => address.$.name.set("Alex")}>
-                Set string name
-              </button>
+                <UserNameComponent name={name.field as Field<UserName>} />
+              </div>
+            )}
+          </div>
+        );
+      }
 
-              <UserNameComponent name={name.field as Field<UserName>} />
-            </div>
-          )}
-        </div>
-      );
-    }
+      const screen = render(<Component />);
 
-    const screen = render(
-      <Component address={{ name: { first: "Alexander" } }} />
-    );
+      await expect
+        .element(screen.getByTestId("name-0"))
+        .toHaveTextContent("1Alexander");
 
-    await expect
-      .element(screen.getByTestId("name-0"))
-      .toHaveTextContent("1Alexander");
+      await userEvent.fill(screen.getByTestId("input-name-first"), "Sasha");
 
-    await userEvent.fill(screen.getByTestId("input-name-first"), "Sasha");
+      await expect
+        .element(screen.getByTestId("name-0"))
+        .toHaveTextContent("2Sasha");
 
-    await expect
-      .element(screen.getByTestId("name-0"))
-      .toHaveTextContent("2Sasha");
+      await expect
+        .element(screen.getByTestId("render-decompose"))
+        .toHaveTextContent("1");
 
-    await expect
-      .element(screen.getByTestId("render-address"))
-      .toHaveTextContent("1");
+      await screen.getByText("Set string name").click();
 
-    await screen.getByText("Set string name").click();
+      await expect.element(screen.getByTestId("name")).not.toBeInTheDocument();
 
-    await expect.element(screen.getByTestId("name")).not.toBeInTheDocument();
+      await expect
+        .element(screen.getByTestId("string"))
+        .toHaveTextContent("Alex");
 
-    await expect
-      .element(screen.getByTestId("string"))
-      .toHaveTextContent("Alex");
+      await screen.getByText("Rename").click();
 
-    await screen.getByText("Rename").click();
+      await expect
+        .element(screen.getByTestId("string"))
+        .toHaveTextContent("Alexander");
 
-    await expect
-      .element(screen.getByTestId("string"))
-      .toHaveTextContent("Alexander");
+      await expect
+        .element(screen.getByTestId("render-decompose"))
+        .toHaveTextContent("2");
+    });
 
-    await expect
-      .element(screen.getByTestId("render-address"))
-      .toHaveTextContent("2");
+    it("depends on the field id", async () => {
+      function Component() {
+        const count = useRenderCount();
+        const field = Field.use<Array<string | UserName>>([
+          "Alexander",
+          { first: "Sasha", last: "Koss" },
+        ]);
+        const [index, setIndex] = useState(0);
+        const name = field
+          .at(index)
+          .useDecompose((a, b) => typeof a !== typeof b);
+        const nameType = typeof name.value;
+
+        return (
+          <div>
+            <div data-testid="render-decompose">{count}</div>
+
+            <button onClick={() => setIndex(1)}>Set index to 1</button>
+
+            <div data-testid="decomposed">{nameType}</div>
+          </div>
+        );
+      }
+
+      const screen = render(<Component />);
+
+      await expect
+        .element(screen.getByTestId("decomposed"))
+        .toHaveTextContent("string");
+
+      await expect
+        .element(screen.getByTestId("render-decompose"))
+        .toHaveTextContent("1");
+
+      await screen.getByText("Set index to 1").click();
+
+      await expect
+        .element(screen.getByTestId("decomposed"))
+        .toHaveTextContent("object");
+
+      await expect
+        .element(screen.getByTestId("render-decompose"))
+        .toHaveTextContent("2");
+    });
+
+    it("updates the watcher on field id change", async () => {
+      function Component() {
+        const count = useRenderCount();
+        const field = Field.use<Array<string | UserName>>([
+          "Alexander",
+          { first: "Sasha", last: "Koss" },
+        ]);
+        const [index, setIndex] = useState(0);
+        const name = field
+          .at(index)
+          .useDecompose((a, b) => typeof a !== typeof b);
+        const nameType = typeof name.value;
+
+        return (
+          <div>
+            <div data-testid="render-decompose">{count}</div>
+
+            <button onClick={() => setIndex(1)}>Set index to 1</button>
+
+            <button
+              onClick={() =>
+                field.at(0).set({ first: "Alexander", last: "Koss" })
+              }
+            >
+              Make item 1 object
+            </button>
+
+            <div data-testid="decomposed">{nameType}</div>
+          </div>
+        );
+      }
+
+      const screen = render(<Component />);
+
+      await expect
+        .element(screen.getByTestId("decomposed"))
+        .toHaveTextContent("string");
+
+      await expect
+        .element(screen.getByTestId("render-decompose"))
+        .toHaveTextContent("1");
+
+      await screen.getByText("Set index to 1").click();
+
+      await expect
+        .element(screen.getByTestId("decomposed"))
+        .toHaveTextContent("object");
+
+      await expect
+        .element(screen.getByTestId("render-decompose"))
+        .toHaveTextContent("2");
+
+      await screen.getByText("Make item 1 object").click();
+
+      await expect
+        .element(screen.getByTestId("decomposed"))
+        .toHaveTextContent("object");
+
+      await expect
+        .element(screen.getByTestId("render-decompose"))
+        .toHaveTextContent("2");
+    });
   });
 
   it("allows to narrow union field", async () => {
@@ -2502,7 +2606,7 @@ describe("Field", () => {
 
       return (
         <div>
-          <div data-testid="render-address">{count}</div>
+          <div data-testid="render-narrow">{count}</div>
 
           {nameStr && (
             <div>
@@ -2543,7 +2647,7 @@ describe("Field", () => {
       .toHaveTextContent("2Sasha");
 
     await expect
-      .element(screen.getByTestId("render-address"))
+      .element(screen.getByTestId("render-narrow"))
       .toHaveTextContent("1");
 
     await screen.getByText("Set string name").click();
@@ -2561,7 +2665,7 @@ describe("Field", () => {
       .toHaveTextContent("Alexander");
 
     await expect
-      .element(screen.getByTestId("render-address"))
+      .element(screen.getByTestId("render-narrow"))
       .toHaveTextContent("2");
   });
 
