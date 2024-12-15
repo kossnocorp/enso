@@ -898,7 +898,7 @@ describe("Field", () => {
   });
 
   describe("useDirty", () => {
-    it("allows to listen to dirty field", async () => {
+    it("allows to listen to field dirty", async () => {
       function Component() {
         const count = useRenderCount();
         const field = Field.use({ name: { first: "Alexander" } });
@@ -1116,7 +1116,7 @@ describe("Field", () => {
   });
 
   describe("useError", () => {
-    it("allows to listen to error field", async () => {
+    it("allows to listen to field error", async () => {
       function Component() {
         const count = useRenderCount();
         const field = Field.use({ name: { first: "Alexander", last: "" } });
@@ -1365,7 +1365,7 @@ describe("Field", () => {
     });
   });
 
-  it("allows to listen to valid field", async () => {
+  it("allows to listen to field valid", async () => {
     function Component() {
       const count = useRenderCount();
       const field = Field.use({ name: { first: "Alexander" } });
@@ -1433,7 +1433,7 @@ describe("Field", () => {
       .toHaveTextContent("3");
   });
 
-  it("allows to listen to errors field", async () => {
+  it("allows to listen to field invalids", async () => {
     function Component() {
       const count = useRenderCount();
       const field = Field.use({ name: { first: "Alexander", last: "" } });

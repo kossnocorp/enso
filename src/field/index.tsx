@@ -97,18 +97,6 @@ export class Field<Payload> {
   useGet<Props extends Field.UseGetProps | undefined = undefined>(
     props?: Props
   ): Field.UseGet<Payload, Props> {
-    const initial = useMemo(() => this.get(), [this.id]);
-    const resultRef = useRef({ id: this.id, result: initial });
-
-    // When the id changes, we update the result
-    useEffect(() => {
-      if (resultRef.current.id === this.id) return;
-
-      resultRef.current = { id: this.id, result: this.get() };
-      // We don't need to rerender as the result will resolve to initial and we
-      // don't want to trigger another render.
-    }, [this.id]);
-
     const watchAllMeta = !!props?.meta;
     const watchMeta =
       watchAllMeta || props?.invalids || props?.valid || props?.dirty;
@@ -123,9 +111,12 @@ export class Field<Payload> {
           }
     );
 
-    const rerender = useRerender();
-    useEffect(
-      () =>
+    // @ts-expect-error: [TODO]
+    return useFieldHook({
+      // @ts-expect-error: [TODO]
+      field: this,
+      getValue: () => this.get(),
+      watch: ({ valueRef, rerender }) =>
         this.watch((payload, event) => {
           // Ignore only valid-invalid and focus-blur changes
           if (
@@ -143,21 +134,12 @@ export class Field<Payload> {
           )
             return;
 
-          resultRef.current = { id: this.id, result: payload };
+          valueRef.current = { id: this.id, enable: true, value: payload };
           rerender();
         }),
-      [this.id, rerender]
-    );
-
-    // If the ref result id doesn't match the current id, use initial value.
-    // Otherwise, use the result from the ref.
-    const result =
-      resultRef.current.id === this.id ? resultRef.current.result : initial;
-
-    return (watchMeta ? [result, meta] : result) as Field.UseGet<
-      Payload,
-      Props
-    >;
+      // @ts-expect-error: [TODO]
+      toResult: (result) => (watchMeta ? [result, meta] : result),
+    });
   }
 
   // [TODO] Exposing the notify parents flag might be dangerous
@@ -215,47 +197,14 @@ export class Field<Payload> {
   useDirty<Enable extends boolean | undefined = undefined>(
     enable?: Enable
   ): Enable extends true | undefined ? boolean : undefined {
-    // Defaults to true
-    // [TODO] Can I use the default value instead of setting it to undefined?
-    enable ??= true as Enable;
-
-    const initial = useMemo(() => enable && this.dirty, [this.id, enable]);
-    const resultRef = useRef({ id: this.id, result: initial, enable });
-
-    // When the id changes, we update the result
-    useEffect(() => {
-      if (
-        resultRef.current.id === this.id &&
-        resultRef.current.enable === enable
-      )
-        return;
-
-      resultRef.current = { id: this.id, result: enable && this.dirty, enable };
-      // We don't need to rerender as the result will resolve to initial and we
-      // don't want to trigger another render.
-    }, [this.id, enable]);
-
-    const rerender = useRerender();
-    useEffect(() => {
-      if (!enable) return;
-
-      return this.watch(() => {
-        const prevDirty = resultRef.current.result;
-        const dirty = this.dirty;
-        resultRef.current = { id: this.id, result: dirty, enable };
-        if (dirty !== prevDirty) rerender();
-      });
-    }, [this.id, rerender, enable]);
-
-    // If the ref result id doesn't match the current id, use initial value.
-    // Otherwise, use the result from the ref.
-    const result =
-      resultRef.current.id === this.id && resultRef.current.enable === enable
-        ? resultRef.current.result
-        : initial;
-
-    // @ts-ignore: This is fine
-    return enable === false ? undefined : result;
+    // @ts-expect-error: [TODO]
+    return useFieldHook({
+      enable,
+      // @ts-expect-error: [TODO]
+      field: this,
+      getValue: () => this.dirty,
+      shouldRender: (prev, next) => prev !== next,
+    });
   }
 
   commit() {
@@ -726,47 +675,13 @@ export class Field<Payload> {
   useError<Enable extends boolean | undefined = undefined>(
     enable?: Enable
   ): Enable extends true | undefined ? Field.Error | undefined : undefined {
-    // Defaults to true
-    // [TODO] Can I use the default value instead of setting it to undefined?
-    enable ??= true as Enable;
-
-    const initial = useMemo(() => enable && this.error, [this.id, enable]);
-    const resultRef = useRef({ id: this.id, result: initial, enable });
-
-    // When the id changes, we update the result
-    useEffect(() => {
-      if (
-        resultRef.current.id === this.id &&
-        resultRef.current.enable === enable
-      )
-        return;
-
-      resultRef.current = { id: this.id, result: enable && this.error, enable };
-      // We don't need to rerender as the result will resolve to initial and we
-      // don't want to trigger another render.
-    }, [this.id, enable]);
-
-    const rerender = useRerender();
-    useEffect(() => {
-      if (enable === false) return;
-
-      return this.watch(() => {
-        const prevError = resultRef.current.result;
-        const error = this.error;
-        resultRef.current = { id: this.id, result: error, enable };
-        if (error !== prevError) rerender();
-      });
-    }, [this.id, rerender, enable]);
-
-    // If the ref result id doesn't match the current id, use initial value.
-    // Otherwise, use the result from the ref.
-    const result =
-      resultRef.current.id === this.id && resultRef.current.enable === enable
-        ? resultRef.current.result
-        : initial;
-
-    // @ts-ignore: This is fine
-    return enable === false ? undefined : result;
+    return useFieldHook({
+      enable,
+      // @ts-expect-error: [TODO]
+      field: this,
+      getValue: () => this.error,
+      shouldRender: (prev, next) => prev !== next,
+    });
   }
 
   setError(error?: string | Field.Error | undefined) {
@@ -1916,6 +1831,88 @@ export function useUndefinedStringField(
   return field
     .useInto((value) => value ?? "")
     .from((value) => value || undefined);
+}
+
+//#endregion
+
+//#region Internals
+
+interface UseFieldHookRef<Value> {
+  id: string;
+  value: Value | undefined;
+  enable: boolean;
+}
+
+interface UseFieldHookWatchProps<Value> {
+  valueRef: React.MutableRefObject<UseFieldHookRef<Value>>;
+  rerender: () => void;
+}
+
+interface UseFieldHookProps<Value, Result = Value> {
+  enable: boolean | undefined;
+  field: Field<any>;
+  getValue(): Value;
+  shouldRender?(prevValue: Value | undefined, nextValue: Value): boolean;
+  watch?(props: UseFieldHookWatchProps<Value>): Field.Unwatch;
+  toResult?(value: Value | undefined): Result;
+}
+
+function useFieldHook<Value, Result = Value>(
+  props: UseFieldHookProps<Value, Result>
+): Result | undefined {
+  // Defaults to true
+  // [TODO] Can I use the default value instead of setting it to undefined?
+  const enable = props.enable ?? true;
+
+  const { field, getValue, shouldRender, watch, toResult } = props;
+
+  const initial = useMemo(
+    () => (enable ? getValue() : undefined),
+    [field.id, enable]
+  );
+  const valueRef = useRef({ id: field.id, value: initial, enable });
+
+  // When the id changes, we update the value
+  useEffect(() => {
+    if (valueRef.current.id === field.id && valueRef.current.enable === enable)
+      return;
+
+    valueRef.current = {
+      id: field.id,
+      value: enable ? getValue() : undefined,
+      enable,
+    };
+    // We don't need to rerender as the value will resolve to initial and we
+    // don't want to trigger another render.
+  }, [field.id, enable]);
+
+  const rerender = useRerender();
+  useEffect(() => {
+    if (enable === false) return;
+
+    return (
+      watch?.({ valueRef, rerender }) ||
+      field.watch(() => {
+        const prevValue = valueRef.current.value;
+
+        const nextValue = getValue();
+        valueRef.current = { id: field.id, value: nextValue, enable };
+
+        if (!shouldRender || shouldRender(prevValue, nextValue)) rerender();
+      })
+    );
+  }, [field.id, rerender, enable]);
+
+  // If the ref value id doesn't match the current id, use initial value.
+  // Otherwise, use the value from the ref.
+  const value =
+    valueRef.current.id === field.id && valueRef.current.enable === enable
+      ? valueRef.current.value
+      : initial;
+
+  const result = enable ? value : undefined;
+  // @ts-expect-error: [TODO]
+  return toResult ? toResult(result) : result;
 }
 
 //#endregion
