@@ -730,31 +730,21 @@ export class Field<Payload> {
   useInvalids<Enable extends boolean | undefined = undefined>(
     enable?: Enable
   ): Enable extends true | undefined ? Field.Invalids : undefined {
-    const emptyMap = useMemo(() => new Map(), []);
-    const [invalids, setInvalids] = useState(
-      enable === false ? emptyMap : this.invalids
-    );
-
-    useEffect(
-      () => {
-        if (enable === false) return;
-        return this.watch(() => {
-          const nextInvalids = this.invalids;
-          const equal =
-            nextInvalids === invalids ||
-            (nextInvalids.size === invalids.size &&
-              Array.from(nextInvalids).every(
-                ([field, error]) => invalids.get(field) === error
-              ));
-          if (!equal) setInvalids(nextInvalids);
-        });
-      },
-      // [TODO] Consider using a ref for performance
-      [enable, invalids, setInvalids]
-    );
-
-    // @ts-ignore: This is fine
-    return enable === false ? undefined : invalids;
+    // @ts-expect-error: [TODO]
+    return useFieldHook({
+      enable,
+      // @ts-expect-error: [TODO]
+      field: this,
+      getValue: () => this.invalids,
+      shouldRender: (prev, next) =>
+        !(
+          next === prev ||
+          (next.size === prev?.size &&
+            Array.from(next).every(
+              ([field, error]) => prev?.get(field) === error
+            ))
+        ),
+    });
   }
 
   get valid(): boolean {
