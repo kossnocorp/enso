@@ -764,22 +764,14 @@ export class Field<Payload> {
   useValid<Enable extends boolean | undefined = undefined>(
     enable?: Enable
   ): Enable extends true | undefined ? boolean : undefined {
-    const [valid, setValid] = useState(enable === false ? true : this.valid);
-
-    useEffect(
-      () => {
-        if (enable === false) return;
-        return this.watch(() => {
-          const nextValid = this.valid;
-          if (nextValid !== valid) setValid(nextValid);
-        });
-      },
-      // [TODO] Consider using a ref for performance
-      [enable, valid, setValid]
-    );
-
-    // @ts-ignore: This is fine
-    return enable === false ? undefined : valid;
+    // @ts-expect-error: [TODO]
+    return useFieldHook({
+      enable,
+      // @ts-expect-error: [TODO]
+      field: this,
+      getValue: () => this.valid,
+      shouldRender: (prev, next) => prev !== next,
+    });
   }
 
   expunge() {

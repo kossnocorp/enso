@@ -1365,72 +1365,246 @@ describe("Field", () => {
     });
   });
 
-  it("allows to listen to field valid", async () => {
-    function Component() {
-      const count = useRenderCount();
-      const field = Field.use({ name: { first: "Alexander" } });
-      const valid = field.useValid();
+  describe("useValid", () => {
+    it("allows to listen to field valid", async () => {
+      function Component() {
+        const count = useRenderCount();
+        const field = Field.use({ name: { first: "Alexander" } });
+        const valid = field.useValid();
 
-      return (
-        <div>
-          <div data-testid="render-valid">{count}</div>
+        return (
+          <div>
+            <div data-testid="render-valid">{count}</div>
 
-          <button
-            onClick={() =>
-              field.$.name.$.first.setError(`Nope ${Math.random()}`)
-            }
-          >
-            Set error
-          </button>
+            <button
+              onClick={() =>
+                field.$.name.$.first.setError(`Nope ${Math.random()}`)
+              }
+            >
+              Set error
+            </button>
 
-          <button onClick={() => field.$.name.$.first.setError()}>
-            Clear error
-          </button>
+            <button onClick={() => field.$.name.$.first.setError()}>
+              Clear error
+            </button>
 
-          <button onClick={() => field.$.name.$.first.set("Sasha")}>
-            Trigger field update
-          </button>
+            <button onClick={() => field.$.name.$.first.set("Sasha")}>
+              Trigger field update
+            </button>
 
-          <div data-testid="valid">{String(valid)}</div>
-        </div>
-      );
-    }
+            <div data-testid="valid">{String(valid)}</div>
+          </div>
+        );
+      }
 
-    const screen = render(<Component />);
+      const screen = render(<Component />);
 
-    await expect.element(screen.getByTestId("valid")).toHaveTextContent("true");
+      await expect
+        .element(screen.getByTestId("valid"))
+        .toHaveTextContent("true");
 
-    await screen.getByText("Set error").click();
+      await screen.getByText("Set error").click();
 
-    await expect
-      .element(screen.getByTestId("valid"))
-      .toHaveTextContent("false");
+      await expect
+        .element(screen.getByTestId("valid"))
+        .toHaveTextContent("false");
 
-    await expect
-      .element(screen.getByTestId("render-valid"))
-      .toHaveTextContent("2");
+      await expect
+        .element(screen.getByTestId("render-valid"))
+        .toHaveTextContent("2");
 
-    await screen.getByText("Set error").click();
-    await screen.getByText("Set error").click();
+      await screen.getByText("Set error").click();
+      await screen.getByText("Set error").click();
 
-    await expect
-      .element(screen.getByTestId("render-valid"))
-      .toHaveTextContent("2");
+      await expect
+        .element(screen.getByTestId("render-valid"))
+        .toHaveTextContent("2");
 
-    await screen.getByText("Trigger field update").click();
+      await screen.getByText("Trigger field update").click();
 
-    await expect
-      .element(screen.getByTestId("render-valid"))
-      .toHaveTextContent("2");
+      await expect
+        .element(screen.getByTestId("render-valid"))
+        .toHaveTextContent("2");
 
-    await screen.getByText("Set error").click();
-    await screen.getByText("Clear error").click();
+      await screen.getByText("Set error").click();
+      await screen.getByText("Clear error").click();
 
-    await expect.element(screen.getByTestId("valid")).toHaveTextContent("true");
+      await expect
+        .element(screen.getByTestId("valid"))
+        .toHaveTextContent("true");
 
-    await expect
-      .element(screen.getByTestId("render-valid"))
-      .toHaveTextContent("3");
+      await expect
+        .element(screen.getByTestId("render-valid"))
+        .toHaveTextContent("3");
+    });
+
+    it("depends on the field id", async () => {
+      function Component() {
+        const count = useRenderCount();
+        const field = Field.use([{ name: "Alexander" }, { name: "Sasha" }]);
+        const [index, setIndex] = useState(0);
+        const valid = field.at(index).useValid();
+
+        return (
+          <div>
+            <div data-testid="render-valid">{count}</div>
+
+            <button onClick={() => setIndex(1)}>Set index to 1</button>
+
+            <button onClick={() => field.at(1).setError("Nope")}>
+              Set item 1 error
+            </button>
+
+            <div data-testid="valid">{String(valid)}</div>
+          </div>
+        );
+      }
+
+      const screen = render(<Component />);
+
+      await expect
+        .element(screen.getByTestId("valid"))
+        .toHaveTextContent("true");
+
+      await expect
+        .element(screen.getByTestId("render-valid"))
+        .toHaveTextContent("1");
+
+      await screen.getByText("Set item 1 error").click();
+
+      await expect
+        .element(screen.getByTestId("render-valid"))
+        .toHaveTextContent("1");
+
+      await screen.getByText("Set index to 1").click();
+
+      await expect
+        .element(screen.getByTestId("valid"))
+        .toHaveTextContent("false");
+
+      await expect
+        .element(screen.getByTestId("render-valid"))
+        .toHaveTextContent("2");
+    });
+
+    it("updates the watcher on field id change", async () => {
+      function Component() {
+        const count = useRenderCount();
+        const field = Field.use([{ name: "Alexander" }, { name: "Sasha" }]);
+        const [index, setIndex] = useState(0);
+        const valid = field.at(index).useValid();
+
+        return (
+          <div>
+            <div data-testid="render-valid">{count}</div>
+
+            <button onClick={() => setIndex(1)}>Set index to 1</button>
+
+            <button onClick={() => field.at(0).setError("Nope")}>
+              Set item 0 error
+            </button>
+
+            <div data-testid="valid">{String(valid)}</div>
+          </div>
+        );
+      }
+
+      const screen = render(<Component />);
+
+      await expect
+        .element(screen.getByTestId("valid"))
+        .toHaveTextContent("true");
+
+      await expect
+        .element(screen.getByTestId("render-valid"))
+        .toHaveTextContent("1");
+
+      await screen.getByText("Set index to 1").click();
+
+      await expect
+        .element(screen.getByTestId("valid"))
+        .toHaveTextContent("true");
+
+      await expect
+        .element(screen.getByTestId("render-valid"))
+        .toHaveTextContent("2");
+
+      await screen.getByText("Set item 0 error").click();
+
+      await expect
+        .element(screen.getByTestId("valid"))
+        .toHaveTextContent("true");
+
+      await expect
+        .element(screen.getByTestId("render-valid"))
+        .toHaveTextContent("2");
+    });
+
+    it("allows to enable/disable the error listener", async () => {
+      function Component() {
+        const count = useRenderCount();
+        const field = Field.use([{ name: "Alexander" }, { name: "Sasha" }]);
+        const [index, setIndex] = useState(0);
+        const [enabled, setEnabled] = useState(false);
+        const valid = field.at(index).useValid(enabled);
+
+        return (
+          <div>
+            <div data-testid="render-valid">{count}</div>
+
+            <button onClick={() => setIndex(1)}>Set index to 1</button>
+
+            <button onClick={() => field.at(1).setError("Nope")}>
+              Set item 1 error
+            </button>
+
+            <button onClick={() => setEnabled(true)}>Enable valid</button>
+
+            <div data-testid="valid">{String(valid)}</div>
+          </div>
+        );
+      }
+
+      const screen = render(<Component />);
+
+      await expect
+        .element(screen.getByTestId("valid"))
+        .toHaveTextContent("undefined");
+
+      await expect
+        .element(screen.getByTestId("render-valid"))
+        .toHaveTextContent("1");
+
+      await screen.getByText("Set index to 1").click();
+
+      await expect
+        .element(screen.getByTestId("valid"))
+        .toHaveTextContent("undefined");
+
+      await expect
+        .element(screen.getByTestId("render-valid"))
+        .toHaveTextContent("2");
+
+      await screen.getByText("Set item 1 error").click();
+
+      await expect
+        .element(screen.getByTestId("valid"))
+        .toHaveTextContent("undefined");
+
+      await expect
+        .element(screen.getByTestId("render-valid"))
+        .toHaveTextContent("2");
+
+      await screen.getByText("Enable valid").click();
+
+      await expect
+        .element(screen.getByTestId("valid"))
+        .toHaveTextContent("false");
+
+      await expect
+        .element(screen.getByTestId("render-valid"))
+        .toHaveTextContent("3");
+    });
   });
 
   it("allows to listen to field invalids", async () => {
