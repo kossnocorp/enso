@@ -2589,84 +2589,188 @@ describe("Field", () => {
     });
   });
 
-  it("allows to narrow union field", async () => {
-    interface ComponentProps {
-      address: Address;
-    }
+  describe("useNarrow", () => {
+    it("allows to narrow union field", async () => {
+      function Component() {
+        const count = useRenderCount();
+        const address = Field.use<Address>({ name: { first: "Alexander" } });
+        const nameStr = address.$.name.useNarrow(
+          (name, ok) => typeof name === "string" && ok(name)
+        );
+        const nameObj = address.$.name.useNarrow(
+          (name, ok) => typeof name !== "string" && ok(name)
+        );
 
-    function Component(props: ComponentProps) {
-      const count = useRenderCount();
-      const address = Field.use<Address>(props.address);
-      const nameStr = address.$.name.useNarrow(
-        (name, ok) => typeof name === "string" && ok(name)
-      );
-      const nameObj = address.$.name.useNarrow(
-        (name, ok) => typeof name !== "string" && ok(name)
-      );
+        return (
+          <div>
+            <div data-testid="render-narrow">{count}</div>
 
-      return (
-        <div>
-          <div data-testid="render-narrow">{count}</div>
+            {nameStr && (
+              <div>
+                <button onClick={() => nameStr.set("Alexander")}>Rename</button>
+                <StringComponent string={nameStr} />
+              </div>
+            )}
 
-          {nameStr && (
-            <div>
-              <button onClick={() => nameStr.set("Alexander")}>Rename</button>
-              <StringComponent string={nameStr} />
-            </div>
-          )}
+            {nameObj && (
+              <div>
+                <button onClick={() => nameObj.$.first.set("Sasha")}>
+                  Rename first
+                </button>
 
-          {nameObj && (
-            <div>
-              <button onClick={() => nameObj.$.first.set("Sasha")}>
-                Rename first
-              </button>
+                <button onClick={() => address.$.name.set("Alex")}>
+                  Set string name
+                </button>
 
-              <button onClick={() => address.$.name.set("Alex")}>
-                Set string name
-              </button>
+                <UserNameComponent name={nameObj} />
+              </div>
+            )}
+          </div>
+        );
+      }
 
-              <UserNameComponent name={nameObj} />
-            </div>
-          )}
-        </div>
-      );
-    }
+      const screen = render(<Component />);
 
-    const screen = render(
-      <Component address={{ name: { first: "Alexander" } }} />
-    );
+      await expect
+        .element(screen.getByTestId("name-0"))
+        .toHaveTextContent("1Alexander");
 
-    await expect
-      .element(screen.getByTestId("name-0"))
-      .toHaveTextContent("1Alexander");
+      await screen.getByText("Rename first").click();
 
-    await screen.getByText("Rename first").click();
+      await expect
+        .element(screen.getByTestId("name-0"))
+        .toHaveTextContent("2Sasha");
 
-    await expect
-      .element(screen.getByTestId("name-0"))
-      .toHaveTextContent("2Sasha");
+      await expect
+        .element(screen.getByTestId("render-narrow"))
+        .toHaveTextContent("1");
 
-    await expect
-      .element(screen.getByTestId("render-narrow"))
-      .toHaveTextContent("1");
+      await screen.getByText("Set string name").click();
 
-    await screen.getByText("Set string name").click();
+      await expect
+        .element(screen.getByTestId("name-0"))
+        .not.toBeInTheDocument();
 
-    await expect.element(screen.getByTestId("name-0")).not.toBeInTheDocument();
+      await expect
+        .element(screen.getByTestId("string"))
+        .toHaveTextContent("Alex");
 
-    await expect
-      .element(screen.getByTestId("string"))
-      .toHaveTextContent("Alex");
+      await screen.getByText("Rename").click();
 
-    await screen.getByText("Rename").click();
+      await expect
+        .element(screen.getByTestId("string"))
+        .toHaveTextContent("Alexander");
 
-    await expect
-      .element(screen.getByTestId("string"))
-      .toHaveTextContent("Alexander");
+      await expect
+        .element(screen.getByTestId("render-narrow"))
+        .toHaveTextContent("2");
+    });
 
-    await expect
-      .element(screen.getByTestId("render-narrow"))
-      .toHaveTextContent("2");
+    it("depends on the field id", async () => {
+      function Component() {
+        const count = useRenderCount();
+        const field = Field.use<Array<string | UserName>>([
+          "Alexander",
+          { first: "Sasha", last: "Koss" },
+        ]);
+        const [index, setIndex] = useState(0);
+        const nameObj = field
+          .at(index)
+          .useNarrow((name, ok) => typeof name === "object" && ok(name));
+
+        return (
+          <div>
+            <div data-testid="render-narrow">{count}</div>
+
+            <button onClick={() => setIndex(1)}>Set index to 1</button>
+
+            <div data-testid="narrow">{String(!!nameObj)}</div>
+          </div>
+        );
+      }
+
+      const screen = render(<Component />);
+
+      await expect
+        .element(screen.getByTestId("narrow"))
+        .toHaveTextContent("false");
+
+      await expect
+        .element(screen.getByTestId("render-narrow"))
+        .toHaveTextContent("1");
+
+      await screen.getByText("Set index to 1").click();
+
+      await expect
+        .element(screen.getByTestId("narrow"))
+        .toHaveTextContent("true");
+
+      await expect
+        .element(screen.getByTestId("render-narrow"))
+        .toHaveTextContent("2");
+    });
+
+    it("updates the watcher on field id change", async () => {
+      function Component() {
+        const count = useRenderCount();
+        const field = Field.use<Array<string | UserName>>([
+          "Alexander",
+          { first: "Sasha", last: "Koss" },
+        ]);
+        const [index, setIndex] = useState(0);
+        const nameObj = field
+          .at(index)
+          .useNarrow((name, ok) => typeof name === "object" && ok(name));
+
+        return (
+          <div>
+            <div data-testid="render-narrow">{count}</div>
+
+            <button onClick={() => setIndex(1)}>Set index to 1</button>
+
+            <button
+              onClick={() =>
+                field.at(0).set({ first: "Alexander", last: "Koss" })
+              }
+            >
+              Make item 1 object
+            </button>
+
+            <div data-testid="narrow">{String(!!nameObj)}</div>
+          </div>
+        );
+      }
+
+      const screen = render(<Component />);
+
+      await expect
+        .element(screen.getByTestId("narrow"))
+        .toHaveTextContent("false");
+
+      await expect
+        .element(screen.getByTestId("render-narrow"))
+        .toHaveTextContent("1");
+
+      await screen.getByText("Set index to 1").click();
+
+      await expect
+        .element(screen.getByTestId("narrow"))
+        .toHaveTextContent("true");
+
+      await expect
+        .element(screen.getByTestId("render-narrow"))
+        .toHaveTextContent("2");
+
+      await screen.getByText("Make item 1 object").click();
+
+      await expect
+        .element(screen.getByTestId("narrow"))
+        .toHaveTextContent("true");
+
+      await expect
+        .element(screen.getByTestId("render-narrow"))
+        .toHaveTextContent("2");
+    });
   });
 
   it("allows to discriminate union field", async () => {

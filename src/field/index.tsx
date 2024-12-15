@@ -203,7 +203,6 @@ export class Field<Payload> {
       // @ts-expect-error: [TODO]
       field: this,
       getValue: () => this.dirty,
-      shouldRender: (prev, next) => prev !== next,
     });
   }
 
@@ -386,7 +385,6 @@ export class Field<Payload> {
       // @ts-expect-error: [TODO]
       field: this,
       getValue: () => callback(this.get()),
-      shouldRender: (prev, next) => prev !== next,
     });
   }
 
@@ -503,21 +501,11 @@ export class Field<Payload> {
   useNarrow<Narrowed extends Payload>(
     callback: Field.NarrowCallback<Payload, Narrowed>
   ): Field<Narrowed> | undefined {
-    const rerender = useRerender();
-    const initial = useMemo(() => !!this.narrow(callback), []);
-    const ref = useRef(initial);
-    useEffect(
-      () =>
-        this.watch(() => {
-          const narrowed = !!this.narrow(callback);
-          if (narrowed === ref.current) return;
-          ref.current = narrowed;
-          rerender();
-        }),
-      []
-    );
-    // @ts-ignore: [TODO]
-    return ref.current ? this : undefined;
+    return useFieldHook({
+      // @ts-expect-error: [TODO]
+      field: this,
+      getValue: () => this.narrow(callback),
+    });
   }
 
   //#endregion
@@ -666,7 +654,6 @@ export class Field<Payload> {
       // @ts-expect-error: [TODO]
       field: this,
       getValue: () => this.error,
-      shouldRender: (prev, next) => prev !== next,
     });
   }
 
@@ -746,7 +733,6 @@ export class Field<Payload> {
       // @ts-expect-error: [TODO]
       field: this,
       getValue: () => this.valid,
-      shouldRender: (prev, next) => prev !== next,
     });
   }
 
@@ -1825,6 +1811,13 @@ interface UseFieldHookProps<Value, Result = Value> {
   toResult?(value: Value | undefined): Result;
 }
 
+function defaultShouldRender<Value>(
+  prev: Value | undefined,
+  next: Value
+): boolean {
+  return prev !== next;
+}
+
 function useFieldHook<Value, Result = Value>(
   props: UseFieldHookProps<Value, Result>
 ): Result | undefined {
@@ -1832,7 +1825,13 @@ function useFieldHook<Value, Result = Value>(
   // [TODO] Can I use the default value instead of setting it to undefined?
   const enable = props.enable ?? true;
 
-  const { field, getValue, shouldRender, watch, toResult } = props;
+  const {
+    field,
+    getValue,
+    shouldRender = defaultShouldRender,
+    watch,
+    toResult,
+  } = props;
 
   const initial = useMemo(
     () => (enable ? getValue() : undefined),
@@ -1866,7 +1865,7 @@ function useFieldHook<Value, Result = Value>(
         const nextValue = getValue();
         valueRef.current = { id: field.id, value: nextValue, enable };
 
-        if (!shouldRender || shouldRender(prevValue, nextValue)) rerender();
+        if (shouldRender(prevValue, nextValue)) rerender();
       })
     );
   }, [field.id, rerender, enable]);
