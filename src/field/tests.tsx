@@ -755,50 +755,222 @@ describe("Field", () => {
     });
   });
 
-  it("allows to listen to dirty field", async () => {
-    function Component() {
-      const count = useRenderCount();
-      const field = Field.use({ name: { first: "Alexander" } });
-      const dirty = field.useDirty();
+  describe("useDirty", () => {
+    it("allows to listen to dirty field", async () => {
+      function Component() {
+        const count = useRenderCount();
+        const field = Field.use({ name: { first: "Alexander" } });
+        const dirty = field.useDirty();
 
-      return (
-        <div>
-          <div data-testid="render-dirty">{count}</div>
+        return (
+          <div>
+            <div data-testid="render-dirty">{count}</div>
 
-          <input
-            data-testid="name-first-input"
-            {...field.$.name.$.first.input()}
-          />
+            <input
+              data-testid="name-first-input"
+              {...field.$.name.$.first.input()}
+            />
 
-          <div data-testid="dirty">{String(dirty)}</div>
-        </div>
-      );
-    }
+            <div data-testid="dirty">{String(dirty)}</div>
+          </div>
+        );
+      }
 
-    const screen = render(<Component />);
+      const screen = render(<Component />);
 
-    await expect
-      .element(screen.getByTestId("dirty"))
-      .toHaveTextContent("false");
+      await expect
+        .element(screen.getByTestId("dirty"))
+        .toHaveTextContent("false");
 
-    await userEvent.fill(screen.getByTestId("name-first-input"), "Sa");
-    await userEvent.fill(screen.getByTestId("name-first-input"), "Sasha");
+      await userEvent.fill(screen.getByTestId("name-first-input"), "Sa");
+      await userEvent.fill(screen.getByTestId("name-first-input"), "Sasha");
 
-    await expect.element(screen.getByTestId("dirty")).toHaveTextContent("true");
+      await expect
+        .element(screen.getByTestId("dirty"))
+        .toHaveTextContent("true");
 
-    await expect
-      .element(screen.getByTestId("render-dirty"))
-      .toHaveTextContent("2");
+      await expect
+        .element(screen.getByTestId("render-dirty"))
+        .toHaveTextContent("2");
 
-    await userEvent.fill(screen.getByTestId("name-first-input"), "Alexander");
+      await userEvent.fill(screen.getByTestId("name-first-input"), "Alexander");
 
-    await expect
-      .element(screen.getByTestId("dirty"))
-      .toHaveTextContent("false");
+      await expect
+        .element(screen.getByTestId("dirty"))
+        .toHaveTextContent("false");
 
-    await expect
-      .element(screen.getByTestId("render-dirty"))
-      .toHaveTextContent("3");
+      await expect
+        .element(screen.getByTestId("render-dirty"))
+        .toHaveTextContent("3");
+    });
+
+    it("depends on the field id", async () => {
+      function Component() {
+        const count = useRenderCount();
+        const field = Field.use([{ name: "Alexander" }, { name: "Sasha" }]);
+        const [index, setIndex] = useState(0);
+        const dirty = field.at(index).useDirty();
+
+        return (
+          <div>
+            <div data-testid="render-dirty">{count}</div>
+
+            <button onClick={() => setIndex(1)}>Set index to 1</button>
+
+            <button onClick={() => field.at(1).set({ name: "Alex" })}>
+              Rename item 1
+            </button>
+
+            <div data-testid="dirty">{String(dirty)}</div>
+          </div>
+        );
+      }
+
+      const screen = render(<Component />);
+
+      await expect
+        .element(screen.getByTestId("dirty"))
+        .toHaveTextContent("false");
+
+      await expect
+        .element(screen.getByTestId("render-dirty"))
+        .toHaveTextContent("1");
+
+      await screen.getByText("Rename item 1").click();
+
+      await expect
+        .element(screen.getByTestId("render-dirty"))
+        .toHaveTextContent("1");
+
+      await screen.getByText("Set index to 1").click();
+
+      await expect
+        .element(screen.getByTestId("dirty"))
+        .toHaveTextContent("true");
+
+      await expect
+        .element(screen.getByTestId("render-dirty"))
+        .toHaveTextContent("2");
+    });
+
+    it("updates the watcher on field id change", async () => {
+      function Component() {
+        const count = useRenderCount();
+        const field = Field.use([{ name: "Alexander" }, { name: "Sasha" }]);
+        const [index, setIndex] = useState(0);
+        const dirty = field.at(index).useDirty();
+
+        return (
+          <div>
+            <div data-testid="render-dirty">{count}</div>
+
+            <button onClick={() => setIndex(1)}>Set index to 1</button>
+
+            <button onClick={() => field.at(0).set({ name: "Alex" })}>
+              Rename item 0
+            </button>
+
+            <div data-testid="dirty">{String(dirty)}</div>
+          </div>
+        );
+      }
+
+      const screen = render(<Component />);
+
+      await expect
+        .element(screen.getByTestId("dirty"))
+        .toHaveTextContent("false");
+
+      await expect
+        .element(screen.getByTestId("render-dirty"))
+        .toHaveTextContent("1");
+
+      await screen.getByText("Set index to 1").click();
+
+      await expect
+        .element(screen.getByTestId("dirty"))
+        .toHaveTextContent("false");
+
+      await expect
+        .element(screen.getByTestId("render-dirty"))
+        .toHaveTextContent("2");
+
+      await screen.getByText("Rename item 0").click();
+
+      await expect
+        .element(screen.getByTestId("dirty"))
+        .toHaveTextContent("false");
+
+      await expect
+        .element(screen.getByTestId("render-dirty"))
+        .toHaveTextContent("2");
+    });
+
+    it("allows to enable the dirty field", async () => {
+      function Component() {
+        const count = useRenderCount();
+        const field = Field.use([{ name: "Alexander" }, { name: "Sasha" }]);
+        const [index, setIndex] = useState(0);
+        const [enabled, setEnabled] = useState(false);
+        const dirty = field.at(index).useDirty(enabled);
+
+        return (
+          <div>
+            <div data-testid="render-dirty">{count}</div>
+
+            <button onClick={() => setIndex(1)}>Set index to 1</button>
+
+            <button onClick={() => field.at(1).set({ name: "Alex" })}>
+              Rename item 1
+            </button>
+
+            <button onClick={() => setEnabled(true)}>Enable dirty</button>
+
+            <div data-testid="dirty">{String(dirty)}</div>
+          </div>
+        );
+      }
+
+      const screen = render(<Component />);
+
+      await expect
+        .element(screen.getByTestId("dirty"))
+        .toHaveTextContent("undefined");
+
+      await expect
+        .element(screen.getByTestId("render-dirty"))
+        .toHaveTextContent("1");
+
+      await screen.getByText("Set index to 1").click();
+
+      await expect
+        .element(screen.getByTestId("dirty"))
+        .toHaveTextContent("undefined");
+
+      await expect
+        .element(screen.getByTestId("render-dirty"))
+        .toHaveTextContent("2");
+
+      await screen.getByText("Rename item 1").click();
+
+      await expect
+        .element(screen.getByTestId("dirty"))
+        .toHaveTextContent("undefined");
+
+      await expect
+        .element(screen.getByTestId("render-dirty"))
+        .toHaveTextContent("2");
+
+      await screen.getByText("Enable dirty").click();
+
+      await expect
+        .element(screen.getByTestId("dirty"))
+        .toHaveTextContent("true");
+
+      await expect
+        .element(screen.getByTestId("render-dirty"))
+        .toHaveTextContent("3");
+    });
   });
 
   it("allows to listen to error field", async () => {

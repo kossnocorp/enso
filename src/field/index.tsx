@@ -98,13 +98,14 @@ export class Field<Payload> {
     props?: Props
   ): Field.UseGet<Payload, Props> {
     const initial = useMemo(() => this.get(), [this.id]);
-    const payloadRef = useRef({ id: this.id, payload: initial });
+    const resultRef = useRef({ id: this.id, result: initial });
 
-    // When the id changes, we update the payload
+    // When the id changes, we update the result
     useEffect(() => {
-      if (payloadRef.current.id === this.id) return;
-      payloadRef.current = { id: this.id, payload: this.get() };
-      // We don't need to rerender as the payload will resolve to initial and we
+      if (resultRef.current.id === this.id) return;
+
+      resultRef.current = { id: this.id, result: this.get() };
+      // We don't need to rerender as the result will resolve to initial and we
       // don't want to trigger another render.
     }, [this.id]);
 
@@ -142,18 +143,18 @@ export class Field<Payload> {
           )
             return;
 
-          payloadRef.current = { id: this.id, payload };
+          resultRef.current = { id: this.id, result: payload };
           rerender();
         }),
-      [this.id]
+      [this.id, rerender]
     );
 
-    // If the ref payload id doesn't match the current id, use initial value.
-    // Otherwise, use the payload from the ref.
-    const payload =
-      payloadRef.current.id === this.id ? payloadRef.current.payload : initial;
+    // If the ref result id doesn't match the current id, use initial value.
+    // Otherwise, use the result from the ref.
+    const result =
+      resultRef.current.id === this.id ? resultRef.current.result : initial;
 
-    return (watchMeta ? [payload, meta] : payload) as Field.UseGet<
+    return (watchMeta ? [result, meta] : result) as Field.UseGet<
       Payload,
       Props
     >;
@@ -214,22 +215,47 @@ export class Field<Payload> {
   useDirty<Enable extends boolean | undefined = undefined>(
     enable?: Enable
   ): Enable extends true | undefined ? boolean : undefined {
-    const [dirty, setDirty] = useState(enable === false ? true : this.dirty);
+    // Default to true
+    // [TODO] Can I use the default value instead of setting it to undefined?
+    enable ??= true as Enable;
 
-    useEffect(
-      () => {
-        if (enable === false) return;
-        return this.watch(() => {
-          const nextDirty = this.dirty;
-          if (nextDirty !== dirty) setDirty(nextDirty);
-        });
-      },
-      // [TODO] Consider using a ref for performance
-      [enable, dirty, setDirty]
-    );
+    const initial = useMemo(() => enable && this.dirty, [this.id, enable]);
+    const resultRef = useRef({ id: this.id, result: initial, enable });
+
+    // When the id changes, we update the result
+    useEffect(() => {
+      if (
+        resultRef.current.id === this.id &&
+        resultRef.current.enable === enable
+      )
+        return;
+
+      resultRef.current = { id: this.id, result: enable && this.dirty, enable };
+      // We don't need to rerender as the result will resolve to initial and we
+      // don't want to trigger another render.
+    }, [this.id, enable]);
+
+    const rerender = useRerender();
+    useEffect(() => {
+      if (!enable) return;
+
+      return this.watch(() => {
+        const prevDirty = resultRef.current.result;
+        const dirty = this.dirty;
+        resultRef.current = { id: this.id, result: dirty, enable };
+        if (dirty !== prevDirty) rerender();
+      });
+    }, [this.id, rerender, enable]);
+
+    // If the ref result id doesn't match the current id, use initial value.
+    // Otherwise, use the result from the ref.
+    const result =
+      resultRef.current.id === this.id && resultRef.current.enable === enable
+        ? resultRef.current.result
+        : initial;
 
     // @ts-ignore: This is fine
-    return enable === false ? undefined : dirty;
+    return enable === false ? undefined : result;
   }
 
   commit() {
