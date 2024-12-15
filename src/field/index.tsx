@@ -409,7 +409,7 @@ export class Field<Payload> {
         this.watch((_, event) => {
           if (this.#internal.updated(event)) rerender();
         }),
-      [rerender]
+      [this.id, rerender]
     );
 
     return this as unknown as BoundField<Payload>;

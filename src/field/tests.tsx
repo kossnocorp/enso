@@ -755,6 +755,148 @@ describe("Field", () => {
     });
   });
 
+  describe("useBind", () => {
+    it("allows to bind object field changes to the component", async () => {
+      function Component() {
+        const count = useRenderCount();
+        const field = Field.use<UserName>({ first: "Alexander" });
+        const name = field.useBind();
+
+        return (
+          <div>
+            <div data-testid="render-bind">{count}</div>
+
+            <button onClick={() => name.$.first.set("Alex")}>
+              Rename first
+            </button>
+
+            <button onClick={() => name.$.last.set("Koss")}>
+              Give last name
+            </button>
+          </div>
+        );
+      }
+
+      const screen = render(<Component />);
+
+      await expect
+        .element(screen.getByTestId("render-bind"))
+        .toHaveTextContent("1");
+
+      await screen.getByText("Rename first").click();
+
+      await expect
+        .element(screen.getByTestId("render-bind"))
+        .toHaveTextContent("1");
+
+      await screen.getByText("Give last name").click();
+
+      await expect
+        .element(screen.getByTestId("render-bind"))
+        .toHaveTextContent("2");
+    });
+
+    it("depends on the field id", async () => {
+      function Component() {
+        const count = useRenderCount();
+        const field = Field.use<UserName[]>([
+          { first: "Alexander" },
+          { first: "Sasha" },
+        ]);
+        const [index, setIndex] = useState(0);
+        const _ = field.at(index).useBind();
+
+        return (
+          <div>
+            <div data-testid="render-bind">{count}</div>
+
+            <button onClick={() => setIndex(1)}>Set index to 1</button>
+
+            <button onClick={() => field.at(1).set({ first: "Alex" })}>
+              Rename item 1
+            </button>
+
+            <button
+              onClick={() => field.at(1).set({ first: "Alex", last: "Koss" })}
+            >
+              Give item 1 last name
+            </button>
+          </div>
+        );
+      }
+
+      const screen = render(<Component />);
+
+      await expect
+        .element(screen.getByTestId("render-bind"))
+        .toHaveTextContent("1");
+
+      await screen.getByText("Set index to 1").click();
+
+      await expect
+        .element(screen.getByTestId("render-bind"))
+        .toHaveTextContent("2");
+
+      await screen.getByText("Rename item 1").click();
+
+      await expect
+        .element(screen.getByTestId("render-bind"))
+        .toHaveTextContent("2");
+
+      await screen.getByText("Give item 1 last name").click();
+
+      await expect
+        .element(screen.getByTestId("render-bind"))
+        .toHaveTextContent("3");
+    });
+
+    it("updates the watcher on field id change", async () => {
+      function Component() {
+        const count = useRenderCount();
+        const field = Field.use<UserName[]>([
+          { first: "Alexander" },
+          { first: "Sasha" },
+        ]);
+        const [index, setIndex] = useState(0);
+        const _ = field.at(index).useBind();
+
+        return (
+          <div>
+            <div data-testid="render-bind">{count}</div>
+
+            <button onClick={() => setIndex(1)}>Set index to 1</button>
+
+            <button
+              onClick={() =>
+                field.at(0).set({ first: "Alexander", last: "Koss" })
+              }
+            >
+              Give item 0 last name
+            </button>
+          </div>
+        );
+      }
+
+      const screen = render(<Component />);
+
+      await expect
+        .element(screen.getByTestId("render-bind"))
+        .toHaveTextContent("1");
+
+      await screen.getByText("Set index to 1").click();
+
+      await expect
+        .element(screen.getByTestId("render-bind"))
+        .toHaveTextContent("2");
+
+      await screen.getByText("Give item 0 last name").click();
+
+      await expect
+        .element(screen.getByTestId("render-bind"))
+        .toHaveTextContent("2");
+    });
+  });
+
   describe("useDirty", () => {
     it("allows to listen to dirty field", async () => {
       function Component() {
