@@ -381,20 +381,13 @@ export class Field<Payload> {
   useCompute<Computed>(
     callback: Field.ComputeCallback<Payload, Computed>
   ): Computed {
-    const [computed, setComputed] = useState(() => callback(this.get()));
-
-    useEffect(
-      () =>
-        this.watch((payload) => {
-          const nextComputed = callback(payload);
-          // [TODO] Use deep object comparison?
-          if (nextComputed !== computed) setComputed(nextComputed);
-        }),
-      // [TODO] Consider using a ref for performance
-      [computed, setComputed]
-    );
-
-    return computed;
+    // @ts-expect-error: [TODO]
+    return useFieldHook({
+      // @ts-expect-error: [TODO]
+      field: this,
+      getValue: () => callback(this.get()),
+      shouldRender: (prev, next) => prev !== next,
+    });
   }
 
   decompose(): Field.Decomposed<Payload> {

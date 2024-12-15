@@ -451,6 +451,165 @@ describe("Field", () => {
         .toHaveTextContent("2");
     });
 
+    it("allows to listen to value with meta information", async () => {
+      function Component() {
+        const count = useRenderCount();
+        const field = Field.use({ name: { first: "Alexander", last: "" } });
+        const [value, { dirty, error, valid, invalids }] = field.useGet({
+          meta: true,
+        });
+
+        return (
+          <div>
+            <div data-testid="render-meta">{count}</div>
+
+            <button
+              onClick={() =>
+                field.$.name.$.first.setError(`Nope ${Math.random()}`)
+              }
+            >
+              Set first name error
+            </button>
+
+            <button
+              onClick={() =>
+                field.$.name.$.last.setError(`Nah ${Math.random()}`)
+              }
+            >
+              Set last name error
+            </button>
+
+            <button
+              onClick={() =>
+                field.$.name.$.last.setError(field.$.name.$.last.error?.message)
+              }
+            >
+              Set same last name error
+            </button>
+
+            <button onClick={() => field.setError("Nope")}>
+              Set field error
+            </button>
+
+            <button
+              onClick={() => {
+                field.$.name.$.first.setError();
+                field.$.name.$.last.setError();
+              }}
+            >
+              Clear errors
+            </button>
+
+            <button
+              onClick={() => field.$.name.set({ first: "Sasha", last: "Koss" })}
+            >
+              Rename
+            </button>
+
+            <div data-testid="full-name">
+              {value.name.first} {value.name.last}
+            </div>
+
+            <div data-testid="dirty">{String(dirty)}</div>
+            <div data-testid="error">{error?.message}</div>
+            <div data-testid="valid">{String(valid)}</div>
+            <div data-testid="errors">{invalids.size}</div>
+          </div>
+        );
+      }
+
+      const screen = render(<Component />);
+
+      await expect
+        .element(screen.getByTestId("full-name"))
+        .toHaveTextContent("Alexander");
+
+      await expect
+        .element(screen.getByTestId("dirty"))
+        .toHaveTextContent("false");
+      await expect
+        .element(screen.getByTestId("valid"))
+        .toHaveTextContent("true");
+      await expect.element(screen.getByTestId("errors")).toHaveTextContent("0");
+
+      await screen.getByText("Set first name error").click();
+
+      await expect
+        .element(screen.getByTestId("dirty"))
+        .toHaveTextContent("false");
+      await expect
+        .element(screen.getByTestId("valid"))
+        .toHaveTextContent("false");
+      await expect.element(screen.getByTestId("errors")).toHaveTextContent("1");
+
+      await screen.getByText("Set last name error").click();
+
+      await expect.element(screen.getByTestId("errors")).toHaveTextContent("2");
+
+      await expect
+        .element(screen.getByTestId("render-meta"))
+        .toHaveTextContent("3");
+
+      await screen.getByText("Set first name error").click();
+      await screen.getByText("Set last name error").click();
+
+      await expect
+        .element(screen.getByTestId("render-meta"))
+        .toHaveTextContent("5");
+
+      await screen.getByText("Set same last name error").click();
+      await screen.getByText("Set same last name error").click();
+
+      await expect.element(screen.getByTestId("errors")).toHaveTextContent("2");
+
+      await expect
+        .element(screen.getByTestId("render-meta"))
+        .toHaveTextContent("5");
+
+      await expect.element(screen.getByTestId("render-meta"));
+
+      await screen.getByText("Rename").click();
+
+      await expect
+        .element(screen.getByTestId("full-name"))
+        .toHaveTextContent("Sasha Koss");
+
+      await expect
+        .element(screen.getByTestId("dirty"))
+        .toHaveTextContent("true");
+      await expect
+        .element(screen.getByTestId("valid"))
+        .toHaveTextContent("false");
+      await expect
+        .element(screen.getByTestId("render-meta"))
+        .toHaveTextContent("6");
+
+      await screen.getByText("Clear errors").click();
+
+      await expect
+        .element(screen.getByTestId("dirty"))
+        .toHaveTextContent("true");
+      await expect
+        .element(screen.getByTestId("valid"))
+        .toHaveTextContent("true");
+      await expect.element(screen.getByTestId("errors")).toHaveTextContent("0");
+
+      await expect
+        .element(screen.getByTestId("render-meta"))
+        .toHaveTextContent("7");
+
+      await screen.getByText("Set field error").click();
+
+      await expect
+        .element(screen.getByTestId("error"))
+        .toHaveTextContent("Nope");
+      await expect.element(screen.getByTestId("errors")).toHaveTextContent("1");
+
+      await expect
+        .element(screen.getByTestId("render-meta"))
+        .toHaveTextContent("8");
+    });
+
     it("depends on the field id", async () => {
       function Component() {
         const count = useRenderCount();
@@ -1876,364 +2035,371 @@ describe("Field", () => {
     });
   });
 
-  it("allows to listen to meta information", async () => {
-    function Component() {
-      const count = useRenderCount();
-      const field = Field.use({ name: { first: "Alexander", last: "" } });
-      const { dirty, error, valid, invalids: errors } = field.useMeta();
+  describe("useMeta", () => {
+    it("allows to listen to meta information", async () => {
+      function Component() {
+        const count = useRenderCount();
+        const field = Field.use({ name: { first: "Alexander", last: "" } });
+        const { dirty, error, valid, invalids: errors } = field.useMeta();
 
-      return (
-        <div>
-          <div data-testid="render-meta">{count}</div>
+        return (
+          <div>
+            <div data-testid="render-meta">{count}</div>
 
-          <button
-            onClick={() =>
-              field.$.name.$.first.setError(`Nope ${Math.random()}`)
-            }
-          >
-            Set first name error
-          </button>
+            <button
+              onClick={() =>
+                field.$.name.$.first.setError(`Nope ${Math.random()}`)
+              }
+            >
+              Set first name error
+            </button>
 
-          <button
-            onClick={() => field.$.name.$.last.setError(`Nah ${Math.random()}`)}
-          >
-            Set last name error
-          </button>
+            <button
+              onClick={() =>
+                field.$.name.$.last.setError(`Nah ${Math.random()}`)
+              }
+            >
+              Set last name error
+            </button>
 
-          <button
-            onClick={() =>
-              field.$.name.$.last.setError(field.$.name.$.last.error?.message)
-            }
-          >
-            Set same last name error
-          </button>
+            <button
+              onClick={() =>
+                field.$.name.$.last.setError(field.$.name.$.last.error?.message)
+              }
+            >
+              Set same last name error
+            </button>
 
-          <button onClick={() => field.setError("Nope")}>
-            Set field error
-          </button>
+            <button onClick={() => field.setError("Nope")}>
+              Set field error
+            </button>
 
-          <button
-            onClick={() => {
-              field.$.name.$.first.setError();
-              field.$.name.$.last.setError();
-            }}
-          >
-            Clear errors
-          </button>
+            <button
+              onClick={() => {
+                field.$.name.$.first.setError();
+                field.$.name.$.last.setError();
+              }}
+            >
+              Clear errors
+            </button>
 
-          <button onClick={() => field.$.name.$.last.set("Koss")}>
-            Trigger field update
-          </button>
+            <button onClick={() => field.$.name.$.last.set("Koss")}>
+              Trigger field update
+            </button>
 
-          <div data-testid="dirty">{String(dirty)}</div>
-          <div data-testid="error">{error?.message}</div>
-          <div data-testid="valid">{String(valid)}</div>
-          <div data-testid="errors">{errors.size}</div>
-        </div>
-      );
-    }
-
-    const screen = render(<Component />);
-
-    await expect
-      .element(screen.getByTestId("dirty"))
-      .toHaveTextContent("false");
-    await expect.element(screen.getByTestId("valid")).toHaveTextContent("true");
-    await expect.element(screen.getByTestId("errors")).toHaveTextContent("0");
-
-    await screen.getByText("Set first name error").click();
-
-    await expect
-      .element(screen.getByTestId("dirty"))
-      .toHaveTextContent("false");
-    await expect
-      .element(screen.getByTestId("valid"))
-      .toHaveTextContent("false");
-    await expect.element(screen.getByTestId("errors")).toHaveTextContent("1");
-
-    await screen.getByText("Set last name error").click();
-
-    await expect.element(screen.getByTestId("errors")).toHaveTextContent("2");
-
-    await expect
-      .element(screen.getByTestId("render-meta"))
-      .toHaveTextContent("3");
-
-    await screen.getByText("Set first name error").click();
-    await screen.getByText("Set last name error").click();
-
-    await expect
-      .element(screen.getByTestId("render-meta"))
-      .toHaveTextContent("5");
-
-    await screen.getByText("Set same last name error").click();
-    await screen.getByText("Set same last name error").click();
-
-    await expect.element(screen.getByTestId("errors")).toHaveTextContent("2");
-
-    await expect
-      .element(screen.getByTestId("render-meta"))
-      .toHaveTextContent("5");
-
-    await expect.element(screen.getByTestId("render-meta"));
-
-    await screen.getByText("Trigger field update").click();
-
-    await expect.element(screen.getByTestId("dirty")).toHaveTextContent("true");
-    await expect
-      .element(screen.getByTestId("valid"))
-      .toHaveTextContent("false");
-    await expect
-      .element(screen.getByTestId("render-meta"))
-      .toHaveTextContent("6");
-
-    await screen.getByText("Clear errors").click();
-
-    await expect.element(screen.getByTestId("dirty")).toHaveTextContent("true");
-    await expect.element(screen.getByTestId("valid")).toHaveTextContent("true");
-    await expect.element(screen.getByTestId("errors")).toHaveTextContent("0");
-
-    await expect
-      .element(screen.getByTestId("render-meta"))
-      .toHaveTextContent("7");
-
-    await screen.getByText("Set field error").click();
-
-    await expect.element(screen.getByTestId("error")).toHaveTextContent("Nope");
-    await expect.element(screen.getByTestId("errors")).toHaveTextContent("1");
-
-    await expect
-      .element(screen.getByTestId("render-meta"))
-      .toHaveTextContent("8");
-  });
-
-  it("allows to listen to value with meta information", async () => {
-    function Component() {
-      const count = useRenderCount();
-      const field = Field.use({ name: { first: "Alexander", last: "" } });
-      const [value, { dirty, error, valid, invalids }] = field.useGet({
-        meta: true,
-      });
-
-      return (
-        <div>
-          <div data-testid="render-meta">{count}</div>
-
-          <button
-            onClick={() =>
-              field.$.name.$.first.setError(`Nope ${Math.random()}`)
-            }
-          >
-            Set first name error
-          </button>
-
-          <button
-            onClick={() => field.$.name.$.last.setError(`Nah ${Math.random()}`)}
-          >
-            Set last name error
-          </button>
-
-          <button
-            onClick={() =>
-              field.$.name.$.last.setError(field.$.name.$.last.error?.message)
-            }
-          >
-            Set same last name error
-          </button>
-
-          <button onClick={() => field.setError("Nope")}>
-            Set field error
-          </button>
-
-          <button
-            onClick={() => {
-              field.$.name.$.first.setError();
-              field.$.name.$.last.setError();
-            }}
-          >
-            Clear errors
-          </button>
-
-          <button
-            onClick={() => field.$.name.set({ first: "Sasha", last: "Koss" })}
-          >
-            Rename
-          </button>
-
-          <div data-testid="full-name">
-            {value.name.first} {value.name.last}
+            <div data-testid="dirty">{String(dirty)}</div>
+            <div data-testid="error">{error?.message}</div>
+            <div data-testid="valid">{String(valid)}</div>
+            <div data-testid="errors">{errors.size}</div>
           </div>
+        );
+      }
 
-          <div data-testid="dirty">{String(dirty)}</div>
-          <div data-testid="error">{error?.message}</div>
-          <div data-testid="valid">{String(valid)}</div>
-          <div data-testid="errors">{invalids.size}</div>
-        </div>
-      );
-    }
+      const screen = render(<Component />);
 
-    const screen = render(<Component />);
+      await expect
+        .element(screen.getByTestId("dirty"))
+        .toHaveTextContent("false");
+      await expect
+        .element(screen.getByTestId("valid"))
+        .toHaveTextContent("true");
+      await expect.element(screen.getByTestId("errors")).toHaveTextContent("0");
 
-    await expect
-      .element(screen.getByTestId("full-name"))
-      .toHaveTextContent("Alexander");
+      await screen.getByText("Set first name error").click();
 
-    await expect
-      .element(screen.getByTestId("dirty"))
-      .toHaveTextContent("false");
-    await expect.element(screen.getByTestId("valid")).toHaveTextContent("true");
-    await expect.element(screen.getByTestId("errors")).toHaveTextContent("0");
+      await expect
+        .element(screen.getByTestId("dirty"))
+        .toHaveTextContent("false");
+      await expect
+        .element(screen.getByTestId("valid"))
+        .toHaveTextContent("false");
+      await expect.element(screen.getByTestId("errors")).toHaveTextContent("1");
 
-    await screen.getByText("Set first name error").click();
+      await screen.getByText("Set last name error").click();
 
-    await expect
-      .element(screen.getByTestId("dirty"))
-      .toHaveTextContent("false");
-    await expect
-      .element(screen.getByTestId("valid"))
-      .toHaveTextContent("false");
-    await expect.element(screen.getByTestId("errors")).toHaveTextContent("1");
+      await expect.element(screen.getByTestId("errors")).toHaveTextContent("2");
 
-    await screen.getByText("Set last name error").click();
+      await expect
+        .element(screen.getByTestId("render-meta"))
+        .toHaveTextContent("3");
 
-    await expect.element(screen.getByTestId("errors")).toHaveTextContent("2");
+      await screen.getByText("Set first name error").click();
+      await screen.getByText("Set last name error").click();
 
-    await expect
-      .element(screen.getByTestId("render-meta"))
-      .toHaveTextContent("3");
+      await expect
+        .element(screen.getByTestId("render-meta"))
+        .toHaveTextContent("5");
 
-    await screen.getByText("Set first name error").click();
-    await screen.getByText("Set last name error").click();
+      await screen.getByText("Set same last name error").click();
+      await screen.getByText("Set same last name error").click();
 
-    await expect
-      .element(screen.getByTestId("render-meta"))
-      .toHaveTextContent("5");
+      await expect.element(screen.getByTestId("errors")).toHaveTextContent("2");
 
-    await screen.getByText("Set same last name error").click();
-    await screen.getByText("Set same last name error").click();
+      await expect
+        .element(screen.getByTestId("render-meta"))
+        .toHaveTextContent("5");
 
-    await expect.element(screen.getByTestId("errors")).toHaveTextContent("2");
+      await expect.element(screen.getByTestId("render-meta"));
 
-    await expect
-      .element(screen.getByTestId("render-meta"))
-      .toHaveTextContent("5");
+      await screen.getByText("Trigger field update").click();
 
-    await expect.element(screen.getByTestId("render-meta"));
+      await expect
+        .element(screen.getByTestId("dirty"))
+        .toHaveTextContent("true");
+      await expect
+        .element(screen.getByTestId("valid"))
+        .toHaveTextContent("false");
+      await expect
+        .element(screen.getByTestId("render-meta"))
+        .toHaveTextContent("6");
 
-    await screen.getByText("Rename").click();
+      await screen.getByText("Clear errors").click();
 
-    await expect
-      .element(screen.getByTestId("full-name"))
-      .toHaveTextContent("Sasha Koss");
+      await expect
+        .element(screen.getByTestId("dirty"))
+        .toHaveTextContent("true");
+      await expect
+        .element(screen.getByTestId("valid"))
+        .toHaveTextContent("true");
+      await expect.element(screen.getByTestId("errors")).toHaveTextContent("0");
 
-    await expect.element(screen.getByTestId("dirty")).toHaveTextContent("true");
-    await expect
-      .element(screen.getByTestId("valid"))
-      .toHaveTextContent("false");
-    await expect
-      .element(screen.getByTestId("render-meta"))
-      .toHaveTextContent("6");
+      await expect
+        .element(screen.getByTestId("render-meta"))
+        .toHaveTextContent("7");
 
-    await screen.getByText("Clear errors").click();
+      await screen.getByText("Set field error").click();
 
-    await expect.element(screen.getByTestId("dirty")).toHaveTextContent("true");
-    await expect.element(screen.getByTestId("valid")).toHaveTextContent("true");
-    await expect.element(screen.getByTestId("errors")).toHaveTextContent("0");
+      await expect
+        .element(screen.getByTestId("error"))
+        .toHaveTextContent("Nope");
+      await expect.element(screen.getByTestId("errors")).toHaveTextContent("1");
 
-    await expect
-      .element(screen.getByTestId("render-meta"))
-      .toHaveTextContent("7");
-
-    await screen.getByText("Set field error").click();
-
-    await expect.element(screen.getByTestId("error")).toHaveTextContent("Nope");
-    await expect.element(screen.getByTestId("errors")).toHaveTextContent("1");
-
-    await expect
-      .element(screen.getByTestId("render-meta"))
-      .toHaveTextContent("8");
+      await expect
+        .element(screen.getByTestId("render-meta"))
+        .toHaveTextContent("8");
+    });
   });
 
-  it("allows to compute value", async () => {
-    function Component() {
-      const count = useRenderCount();
-      const field = Field.use<User>({ name: { first: "Alexander" } });
-      const hasLastName = field.$.name.useCompute((name) => !!name.last);
+  describe("useCompute", () => {
+    it("allows to compute value", async () => {
+      function Component() {
+        const count = useRenderCount();
+        const field = Field.use<User>({ name: { first: "Alexander" } });
+        const hasLastName = field.$.name.useCompute((name) => !!name.last);
 
-      return (
-        <div>
-          <div data-testid="render-compute">{count}</div>
+        return (
+          <div>
+            <div data-testid="render-compute">{count}</div>
 
-          <button
-            onClick={() => field.$.name.$.first.set(`Sasha ${Math.random()}`)}
-          >
-            Rename first
-          </button>
+            <button
+              onClick={() => field.$.name.$.first.set(`Sasha ${Math.random()}`)}
+            >
+              Rename first
+            </button>
 
-          <button onClick={() => field.$.name.setError("Nope")}>
-            Add error
-          </button>
+            <button onClick={() => field.$.name.setError("Nope")}>
+              Add error
+            </button>
 
-          <button onClick={() => field.$.name.$.last.set("Koss")}>
-            Set last name
-          </button>
+            <button onClick={() => field.$.name.$.last.set("Koss")}>
+              Set last name
+            </button>
 
-          <button onClick={() => field.$.name.$.last.set(undefined)}>
-            Clear last name
-          </button>
+            <button onClick={() => field.$.name.$.last.set(undefined)}>
+              Clear last name
+            </button>
 
-          <div data-testid="computed">{String(hasLastName)}</div>
-        </div>
-      );
-    }
+            <div data-testid="computed">{String(hasLastName)}</div>
+          </div>
+        );
+      }
 
-    const screen = render(<Component />);
+      const screen = render(<Component />);
 
-    await expect
-      .element(screen.getByTestId("computed"))
-      .toHaveTextContent("false");
+      await expect
+        .element(screen.getByTestId("computed"))
+        .toHaveTextContent("false");
 
-    await expect
-      .element(screen.getByTestId("render-compute"))
-      .toHaveTextContent("1");
+      await expect
+        .element(screen.getByTestId("render-compute"))
+        .toHaveTextContent("1");
 
-    await screen.getByText("Add error").click();
-    await screen.getByText("Rename first").click();
-    await screen.getByText("Add error").click();
-    await screen.getByText("Rename first").click();
+      await screen.getByText("Add error").click();
+      await screen.getByText("Rename first").click();
+      await screen.getByText("Add error").click();
+      await screen.getByText("Rename first").click();
 
-    await expect
-      .element(screen.getByTestId("render-compute"))
-      .toHaveTextContent("1");
+      await expect
+        .element(screen.getByTestId("render-compute"))
+        .toHaveTextContent("1");
 
-    await screen.getByText("Set last name").click();
+      await screen.getByText("Set last name").click();
 
-    await expect
-      .element(screen.getByTestId("computed"))
-      .toHaveTextContent("true");
+      await expect
+        .element(screen.getByTestId("computed"))
+        .toHaveTextContent("true");
 
-    await expect
-      .element(screen.getByTestId("render-compute"))
-      .toHaveTextContent("2");
+      await expect
+        .element(screen.getByTestId("render-compute"))
+        .toHaveTextContent("2");
 
-    await screen.getByText("Add error").click();
-    await screen.getByText("Rename first").click();
-    await screen.getByText("Add error").click();
-    await screen.getByText("Rename first").click();
+      await screen.getByText("Add error").click();
+      await screen.getByText("Rename first").click();
+      await screen.getByText("Add error").click();
+      await screen.getByText("Rename first").click();
 
-    await expect
-      .element(screen.getByTestId("render-compute"))
-      .toHaveTextContent("2");
+      await expect
+        .element(screen.getByTestId("render-compute"))
+        .toHaveTextContent("2");
 
-    await screen.getByText("Clear last name").click();
+      await screen.getByText("Clear last name").click();
 
-    await expect
-      .element(screen.getByTestId("computed"))
-      .toHaveTextContent("false");
+      await expect
+        .element(screen.getByTestId("computed"))
+        .toHaveTextContent("false");
 
-    await expect
-      .element(screen.getByTestId("render-compute"))
-      .toHaveTextContent("3");
+      await expect
+        .element(screen.getByTestId("render-compute"))
+        .toHaveTextContent("3");
+    });
+
+    it("depends on the field id", async () => {
+      function Component() {
+        const count = useRenderCount();
+        const field = Field.use<UserName[]>([
+          { first: "Alexander" },
+          { first: "Sasha", last: "Koss" },
+        ]);
+        const [index, setIndex] = useState(0);
+        const hasLastName = field.at(index).useCompute((name) => !!name?.last);
+
+        return (
+          <div>
+            <div data-testid="render-computed">{count}</div>
+
+            <button onClick={() => setIndex(1)}>Set index to 1</button>
+
+            <div data-testid="computed">{String(hasLastName)}</div>
+          </div>
+        );
+      }
+
+      const screen = render(<Component />);
+
+      await expect
+        .element(screen.getByTestId("computed"))
+        .toHaveTextContent("false");
+
+      await expect
+        .element(screen.getByTestId("render-computed"))
+        .toHaveTextContent("1");
+
+      await screen.getByText("Set index to 1").click();
+
+      await expect
+        .element(screen.getByTestId("computed"))
+        .toHaveTextContent("true");
+
+      await expect
+        .element(screen.getByTestId("render-computed"))
+        .toHaveTextContent("2");
+    });
+
+    it("updates the watcher on field id change", async () => {
+      function Component() {
+        const count = useRenderCount();
+        const field = Field.use<UserName[]>([
+          { first: "Alexander" },
+          { first: "Sasha", last: "Koss" },
+        ]);
+        const [index, setIndex] = useState(0);
+        const hasLastName = field.at(index).useCompute((name) => !!name?.last);
+
+        return (
+          <div>
+            <div data-testid="render-computed">{count}</div>
+
+            <button onClick={() => setIndex(1)}>Set index to 1</button>
+
+            <button
+              onClick={() =>
+                field.at(0).set({ first: "Alexander", last: "Koss" })
+              }
+            >
+              Give item 0 last name
+            </button>
+
+            <div data-testid="computed">{String(hasLastName)}</div>
+          </div>
+        );
+      }
+
+      const screen = render(<Component />);
+
+      await expect
+        .element(screen.getByTestId("computed"))
+        .toHaveTextContent("false");
+
+      await expect
+        .element(screen.getByTestId("render-computed"))
+        .toHaveTextContent("1");
+
+      await screen.getByText("Set index to 1").click();
+
+      await expect
+        .element(screen.getByTestId("computed"))
+        .toHaveTextContent("true");
+
+      await expect
+        .element(screen.getByTestId("render-computed"))
+        .toHaveTextContent("2");
+
+      await screen.getByText("Give item 0 last name").click();
+
+      await expect
+        .element(screen.getByTestId("computed"))
+        .toHaveTextContent("true");
+    });
+
+    it("doesn't rerender when setting the same primitive", async () => {
+      function Component() {
+        const count = useRenderCount();
+        const field = Field.use<UserName>({ first: "Alexander" });
+        const hasLastName = field.useCompute((name) => !!name?.last);
+
+        return (
+          <div>
+            <div data-testid="render-computed">{count}</div>
+
+            <button onClick={() => field.set({ first: "Alex" })}>
+              Rename item 0
+            </button>
+
+            <div data-testid="computed">{String(hasLastName)}</div>
+          </div>
+        );
+      }
+
+      const screen = render(<Component />);
+
+      await expect
+        .element(screen.getByTestId("computed"))
+        .toHaveTextContent("false");
+
+      await expect
+        .element(screen.getByTestId("render-computed"))
+        .toHaveTextContent("1");
+
+      await screen.getByText("Rename item 0").click();
+
+      await expect
+        .element(screen.getByTestId("computed"))
+        .toHaveTextContent("false");
+
+      await expect
+        .element(screen.getByTestId("render-computed"))
+        .toHaveTextContent("1");
+    });
   });
 
   it("allows to decompose union field", async () => {
