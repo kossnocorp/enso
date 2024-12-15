@@ -421,20 +421,13 @@ export class Field<Payload> {
   useDiscriminate<Discriminator extends Field.DiscriminatorKey<Payload>>(
     discriminator: Discriminator
   ): Field.Discriminated<Payload, Discriminator> {
-    const rerender = useRerender();
-    const initial = useMemo(() => this.discriminate(discriminator), []);
-    const ref = useRef(initial);
-    useEffect(
-      () =>
-        this.watch(() => {
-          const discriminated = this.discriminate(discriminator);
-          if (discriminated.discriminator !== ref.current.discriminator)
-            rerender();
-          ref.current = discriminated;
-        }),
-      []
-    );
-    return ref.current;
+    // @ts-expect-error: [TODO]
+    return useFieldHook({
+      // @ts-expect-error: [TODO]
+      field: this,
+      getValue: () => this.discriminate(discriminator),
+      shouldRender: (prev, next) => prev?.discriminator !== next.discriminator,
+    });
   }
 
   into<Computed>(

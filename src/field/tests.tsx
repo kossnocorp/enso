@@ -2773,8 +2773,209 @@ describe("Field", () => {
     });
   });
 
-  it("allows to discriminate union field", async () => {
-    type Hello = HelloMachine | HelloHuman;
+  describe("useDiscriminate", () => {
+    it("allows to discriminate union field", async () => {
+      interface TestState {
+        hello: Hello;
+      }
+
+      function Component() {
+        const count = useRenderCount();
+        const field = Field.use<TestState>({
+          hello: { lang: "human", text: "Hello" },
+        });
+        const hello = field.$.hello.useDiscriminate("lang");
+
+        return (
+          <div>
+            <div data-testid="render-hello">{count}</div>
+
+            {hello.discriminator === "human" ? (
+              <div>
+                <button
+                  onClick={() =>
+                    hello.field.set({
+                      lang: "human",
+                      text: "Hola",
+                    })
+                  }
+                >
+                  Say hola
+                </button>
+
+                <button
+                  onClick={() =>
+                    field.$.hello.set({
+                      lang: "machine",
+                      binary: 0b1101010,
+                    })
+                  }
+                >
+                  Switch to binary
+                </button>
+
+                <StringComponent string={hello.field.$.text} />
+              </div>
+            ) : (
+              hello.discriminator === "machine" && (
+                <div>
+                  <button
+                    onClick={() =>
+                      field.$.hello.set({
+                        lang: "machine",
+                        binary: 0b1010101,
+                      })
+                    }
+                  >
+                    Say 1010101
+                  </button>
+
+                  <NumberComponent number={hello.field.$.binary} />
+                </div>
+              )
+            )}
+          </div>
+        );
+      }
+
+      const screen = render(<Component />);
+
+      await expect
+        .element(screen.getByTestId("string"))
+        .toHaveTextContent("Hello");
+
+      await screen.getByText("Say hola").click();
+
+      await expect
+        .element(screen.getByTestId("string"))
+        .toHaveTextContent("Hola");
+
+      await expect
+        .element(screen.getByTestId("render-hello"))
+        .toHaveTextContent("1");
+
+      await screen.getByText("Switch to binary").click();
+
+      await expect
+        .element(screen.getByTestId("string"))
+        .not.toBeInTheDocument();
+
+      await expect
+        .element(screen.getByTestId("number"))
+        .toHaveTextContent("106");
+
+      await screen.getByText("Say 1010101").click();
+
+      await expect
+        .element(screen.getByTestId("number"))
+        .toHaveTextContent("85");
+
+      await expect
+        .element(screen.getByTestId("render-hello"))
+        .toHaveTextContent("2");
+    });
+
+    it("depends on the field id", async () => {
+      function Component() {
+        const count = useRenderCount();
+        const field = Field.use<Hello[]>([
+          { lang: "human", text: "Hello" },
+          { lang: "machine", binary: 0b1101010 },
+        ]);
+        const [index, setIndex] = useState(0);
+        const hello = field.at(index).useDiscriminate("lang");
+
+        return (
+          <div>
+            <div data-testid="render-discriminate">{count}</div>
+
+            <button onClick={() => setIndex(1)}>Set index to 1</button>
+
+            <div data-testid="discriminate">{hello.discriminator}</div>
+          </div>
+        );
+      }
+
+      const screen = render(<Component />);
+
+      await expect
+        .element(screen.getByTestId("discriminate"))
+        .toHaveTextContent("human");
+
+      await expect
+        .element(screen.getByTestId("render-discriminate"))
+        .toHaveTextContent("1");
+
+      await screen.getByText("Set index to 1").click();
+
+      await expect
+        .element(screen.getByTestId("discriminate"))
+        .toHaveTextContent("machine");
+
+      await expect
+        .element(screen.getByTestId("render-discriminate"))
+        .toHaveTextContent("2");
+    });
+
+    it("updates the watcher on field id change", async () => {
+      function Component() {
+        const count = useRenderCount();
+        const field = Field.use<Hello[]>([
+          { lang: "human", text: "Hello" },
+          { lang: "machine", binary: 0b1101010 },
+        ]);
+        const [index, setIndex] = useState(0);
+        const hello = field.at(index).useDiscriminate("lang");
+
+        return (
+          <div>
+            <div data-testid="render-discriminate">{count}</div>
+
+            <button onClick={() => setIndex(1)}>Set index to 1</button>
+
+            <button
+              onClick={() => field.at(0).set({ lang: "dog", chicken: true })}
+            >
+              Make item 1 dog
+            </button>
+
+            <div data-testid="discriminate">{hello.discriminator}</div>
+          </div>
+        );
+      }
+
+      const screen = render(<Component />);
+
+      await expect
+        .element(screen.getByTestId("discriminate"))
+        .toHaveTextContent("human");
+
+      await expect
+        .element(screen.getByTestId("render-discriminate"))
+        .toHaveTextContent("1");
+
+      await screen.getByText("Set index to 1").click();
+
+      await expect
+        .element(screen.getByTestId("discriminate"))
+        .toHaveTextContent("machine");
+
+      await expect
+        .element(screen.getByTestId("render-discriminate"))
+        .toHaveTextContent("2");
+
+      await screen.getByText("Make item 1 dog").click();
+
+      await expect
+        .element(screen.getByTestId("discriminate"))
+        .toHaveTextContent("machine");
+
+      await expect
+        .element(screen.getByTestId("render-discriminate"))
+        .toHaveTextContent("2");
+    });
+
+    type Hello = HelloMachine | HelloHuman | HelloDog;
 
     interface HelloMachine {
       lang: "machine";
@@ -2786,100 +2987,10 @@ describe("Field", () => {
       text: string;
     }
 
-    interface TestState {
-      hello: Hello;
+    interface HelloDog {
+      lang: "dog";
+      chicken: true;
     }
-
-    interface ComponentProps {
-      hello: Hello;
-    }
-
-    function Component(props: ComponentProps) {
-      const count = useRenderCount();
-      const field = Field.use<TestState>(props);
-      const hello = field.$.hello.useDiscriminate("lang");
-
-      return (
-        <div>
-          <div data-testid="render-hello">{count}</div>
-
-          {hello.discriminator === "human" ? (
-            <div>
-              <button
-                onClick={() =>
-                  hello.field.set({
-                    lang: "human",
-                    text: "Hola",
-                  })
-                }
-              >
-                Say hola
-              </button>
-
-              <button
-                onClick={() =>
-                  field.$.hello.set({
-                    lang: "machine",
-                    binary: 0b1101010,
-                  })
-                }
-              >
-                Switch to binary
-              </button>
-
-              <StringComponent string={hello.field.$.text} />
-            </div>
-          ) : (
-            <div>
-              <button
-                onClick={() =>
-                  field.$.hello.set({
-                    lang: "machine",
-                    binary: 0b1010101,
-                  })
-                }
-              >
-                Say 1010101
-              </button>
-
-              <NumberComponent number={hello.field.$.binary} />
-            </div>
-          )}
-        </div>
-      );
-    }
-
-    const screen = render(
-      <Component hello={{ lang: "human", text: "Hello" }} />
-    );
-
-    await expect
-      .element(screen.getByTestId("string"))
-      .toHaveTextContent("Hello");
-
-    await screen.getByText("Say hola").click();
-
-    await expect
-      .element(screen.getByTestId("string"))
-      .toHaveTextContent("Hola");
-
-    await expect
-      .element(screen.getByTestId("render-hello"))
-      .toHaveTextContent("1");
-
-    await screen.getByText("Switch to binary").click();
-
-    await expect.element(screen.getByTestId("string")).not.toBeInTheDocument();
-
-    await expect.element(screen.getByTestId("number")).toHaveTextContent("106");
-
-    await screen.getByText("Say 1010101").click();
-
-    await expect.element(screen.getByTestId("number")).toHaveTextContent("85");
-
-    await expect
-      .element(screen.getByTestId("render-hello"))
-      .toHaveTextContent("2");
   });
 
   it("allows to compute field", async () => {
