@@ -17,10 +17,10 @@ describe("Field", () => {
         expect(field1.id).not.toBe(field2.id);
       });
 
-      it("returns the source id for computed fields", () => {
+      it("computed fields returns unique ids", () => {
         const field = new Field({ name: { first: "Sasha" } });
         const computed = field.$.name.$.first.into(toCodes).from(fromCodes);
-        expect(computed.id).toBe(field.$.name.$.first.id);
+        expect(computed.id).not.toBe(field.$.name.$.first.id);
       });
     });
 

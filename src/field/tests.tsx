@@ -2993,87 +2993,162 @@ describe("Field", () => {
     }
   });
 
-  it("allows to compute field", async () => {
-    function Component() {
-      const count = useRenderCount();
-      const field = Field.use({ message: "Hello" });
-      const codes = field.$.message.useInto(toCodes).from(fromCodes);
+  describe("useInto", () => {
+    it("allows to compute field", async () => {
+      function Component() {
+        const count = useRenderCount();
+        const field = Field.use({ message: "Hello" });
+        const codes = field.$.message.useInto(toCodes).from(fromCodes);
 
-      return (
-        <div>
-          <div data-testid="render-compute">{count}</div>
+        return (
+          <div>
+            <div data-testid="render-compute">{count}</div>
 
-          <StringComponent string={field.$.message} />
+            <StringComponent string={field.$.message} />
 
-          <CodesComponent codes={codes} />
+            <CodesComponent codes={codes} />
 
-          <button onClick={() => codes.set([72, 105, 33])}>Say hi</button>
+            <button onClick={() => codes.set([72, 105, 33])}>Say hi</button>
 
-          <button onClick={() => field.$.message.set("Yo")}>Say yo</button>
-        </div>
-      );
-    }
+            <button onClick={() => field.$.message.set("Yo")}>Say yo</button>
+          </div>
+        );
+      }
 
-    interface CodesComponentProps {
-      codes: Field<number[]>;
-    }
+      const screen = render(<Component />);
 
-    function CodesComponent(props: CodesComponentProps) {
-      const count = useRenderCount();
-      const codes = props.codes.useGet();
-      return (
-        <div>
-          <div data-testid="render-codes">{count}</div>
-          <div data-testid="codes">{codes.join(" ")}</div>
-        </div>
-      );
-    }
+      await expect
+        .element(screen.getByTestId("string"))
+        .toHaveTextContent("Hello");
 
-    function toCodes(message: string) {
-      return Array.from(message).map((c) => c.charCodeAt(0));
-    }
+      await expect
+        .element(screen.getByTestId("codes"))
+        .toHaveTextContent("72 101 108 108 111");
 
-    function fromCodes(codes: number[]) {
-      return codes.map((c) => String.fromCharCode(c)).join("");
-    }
+      await screen.getByText("Say hi").click();
 
-    const screen = render(<Component />);
+      await expect
+        .element(screen.getByTestId("string"))
+        .toHaveTextContent("Hi");
 
-    await expect
-      .element(screen.getByTestId("string"))
-      .toHaveTextContent("Hello");
+      await expect
+        .element(screen.getByTestId("codes"))
+        .toHaveTextContent("72 105 33");
 
-    await expect
-      .element(screen.getByTestId("codes"))
-      .toHaveTextContent("72 101 108 108 111");
+      await screen.getByText("Say yo").click();
 
-    await screen.getByText("Say hi").click();
+      await expect
+        .element(screen.getByTestId("string"))
+        .toHaveTextContent("Yo");
 
-    await expect.element(screen.getByTestId("string")).toHaveTextContent("Hi");
+      await expect
+        .element(screen.getByTestId("codes"))
+        .toHaveTextContent("89 111");
 
-    await expect
-      .element(screen.getByTestId("codes"))
-      .toHaveTextContent("72 105 33");
+      await expect
+        .element(screen.getByTestId("render-compute"))
+        .toHaveTextContent("1");
 
-    await screen.getByText("Say yo").click();
+      await expect
+        .element(screen.getByTestId("render-string"))
+        .toHaveTextContent("3");
 
-    await expect.element(screen.getByTestId("string")).toHaveTextContent("Yo");
+      await expect
+        .element(screen.getByTestId("render-codes"))
+        .toHaveTextContent("3");
+    });
 
-    await expect
-      .element(screen.getByTestId("codes"))
-      .toHaveTextContent("89 111");
+    it("depends on the field id", async () => {
+      function Component() {
+        const count = useRenderCount();
+        const field = Field.use<string[]>(["Hello", "Yo"]);
+        const [index, setIndex] = useState(0);
+        const codes = field.at(index).useInto(toCodes).from(fromCodes);
 
-    await expect
-      .element(screen.getByTestId("render-compute"))
-      .toHaveTextContent("1");
+        return (
+          <div>
+            <div data-testid="render-into">{count}</div>
 
-    await expect
-      .element(screen.getByTestId("render-string"))
-      .toHaveTextContent("3");
+            <button onClick={() => setIndex(1)}>Set index to 1</button>
 
-    await expect
-      .element(screen.getByTestId("render-codes"))
-      .toHaveTextContent("3");
+            <CodesComponent codes={codes} />
+          </div>
+        );
+      }
+
+      const screen = render(<Component />);
+
+      await expect
+        .element(screen.getByTestId("codes"))
+        .toHaveTextContent("72 101 108 108 111");
+
+      await expect
+        .element(screen.getByTestId("render-into"))
+        .toHaveTextContent("1");
+
+      await screen.getByText("Set index to 1").click();
+
+      await expect
+        .element(screen.getByTestId("codes"))
+        .toHaveTextContent("89 111");
+
+      await expect
+        .element(screen.getByTestId("render-into"))
+        .toHaveTextContent("2");
+    });
+
+    it("updates the watcher on field id change", async () => {
+      function Component() {
+        const count = useRenderCount();
+        const field = Field.use<string[]>(["Hello", "Yo"]);
+        const [index, setIndex] = useState(0);
+        const codes = field.at(index).useInto(toCodes).from(fromCodes);
+
+        return (
+          <div>
+            <div data-testid="render-into">{count}</div>
+
+            <button onClick={() => setIndex(1)}>Set index to 1</button>
+
+            <button onClick={() => field.at(0).set("Duh")}>
+              Rename item 1
+            </button>
+
+            <CodesComponent codes={codes} />
+          </div>
+        );
+      }
+
+      const screen = render(<Component />);
+
+      await expect
+        .element(screen.getByTestId("codes"))
+        .toHaveTextContent("72 101 108 108 111");
+
+      await expect
+        .element(screen.getByTestId("render-into"))
+        .toHaveTextContent("1");
+
+      await screen.getByText("Set index to 1").click();
+
+      await expect
+        .element(screen.getByTestId("codes"))
+        .toHaveTextContent("89 111");
+
+      await expect
+        .element(screen.getByTestId("render-into"))
+        .toHaveTextContent("2");
+
+      await screen.getByText("Rename item 1").click();
+
+      await expect
+        .element(screen.getByTestId("codes"))
+        .toHaveTextContent("89 111");
+
+      await expect
+        .element(screen.getByTestId("render-into"))
+        .toHaveTextContent("2");
+    });
   });
 });
 
@@ -3234,6 +3309,29 @@ function NumberComponent(props: NumberComponentProps) {
       <div data-testid="number">{number}</div>
     </div>
   );
+}
+
+interface CodesComponentProps {
+  codes: Field<number[]>;
+}
+
+function CodesComponent(props: CodesComponentProps) {
+  const count = useRenderCount();
+  const codes = props.codes.useGet();
+  return (
+    <div>
+      <div data-testid="render-codes">{count}</div>
+      <div data-testid="codes">{codes.join(" ")}</div>
+    </div>
+  );
+}
+
+function toCodes(message: string | undefined) {
+  return Array.from(message || "").map((c) => c.charCodeAt(0));
+}
+
+function fromCodes(codes: number[]) {
+  return codes.map((c) => String.fromCharCode(c)).join("");
 }
 
 function useRenderCount() {

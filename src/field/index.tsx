@@ -451,7 +451,7 @@ export class Field<Payload> {
   ): Field.Into<Payload, Computed> {
     const computed = useMemo(
       () => new ComputedField(intoCallback(this.get()), this),
-      []
+      [this.id]
     );
 
     useEffect(() => {
@@ -460,19 +460,19 @@ export class Field<Payload> {
       // if the into and from callbacks are memoized.
       computed.set(intoCallback(this.get()));
       return this.watch((payload) => computed.set(intoCallback(payload)));
-    }, [intoCallback]);
+    }, [this.id, intoCallback]);
 
     return useMemo(
       () => ({
         from: (fromCallback) => {
           useEffect(
             () => computed.watch((payload) => this.set(fromCallback(payload))),
-            [computed, fromCallback]
+            [this.id, computed, fromCallback]
           );
           return computed;
         },
       }),
-      [computed]
+      [this.id, computed]
     );
   }
 
@@ -1123,9 +1123,7 @@ export class ComputedField<Payload, Computed> extends Field<Computed> {
     this.#source = source;
   }
 
-  override get id(): string {
-    return this.#source.id;
-  }
+  // [NOTE] id mustn't be overridden as it's used as the hooks dependency
 
   override get key(): string | undefined {
     return this.#source.key;
