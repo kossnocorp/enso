@@ -87,10 +87,10 @@ describe("Field", () => {
             <div data-testid={`name-${index}`} key={name.id}>
               <UserNameComponent name={name} />
               <button
-                onClick={() => name.detach()}
-                data-testid={`detach-${index}`}
+                onClick={() => name.remove()}
+                data-testid={`remove-${index}`}
               >
-                Detach
+                Remove
               </button>
             </div>
           ))}
@@ -108,9 +108,9 @@ describe("Field", () => {
 
     await expect
       .element(screen.getByTestId("name-1"))
-      .toHaveTextContent("1SashaKossDetach");
+      .toHaveTextContent("1SashaKossRemove");
 
-    await screen.getByTestId("detach-1").click();
+    await screen.getByTestId("remove-1").click();
 
     await expect.element(screen.getByTestId("name-1")).not.toBeInTheDocument();
 
