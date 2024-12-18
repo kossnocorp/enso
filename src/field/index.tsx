@@ -173,13 +173,13 @@ export class Field<Payload> {
   }
 
   [createSymbol](value: Payload): FieldChange | 0 {
-    const change = this.#internal.set(value) | fieldChange.created;
+    const change = this.#set(value) | fieldChange.created;
     this.trigger(change, false);
     return change;
   }
 
   [clearSymbol]() {
-    this.#internal.set(undefined as Payload);
+    this.#set(undefined as Payload);
   }
 
   get initial(): Payload {

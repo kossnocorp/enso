@@ -216,6 +216,44 @@ describe("Field", () => {
             })
           );
         });
+
+        it("works when assigning undefined instead of an object item", () => {
+          const field = new Field<Record<string, { n: number }>>({
+            one: { n: 1 },
+            two: { n: 2 },
+            three: { n: 3 },
+          });
+          const changes = field.set({ one: { n: 1 }, two: { n: 2 } });
+          expect(changes).toBe(fieldChange.childRemoved);
+          expect(field.get()).toEqual({ one: { n: 1 }, two: { n: 2 } });
+        });
+
+        it("works when assigning object instead of an undefined item", () => {
+          const field = new Field<Record<string, { n: number }>>({
+            one: { n: 1 },
+            two: { n: 2 },
+          });
+          const spy = vi.fn();
+          const undefinedField = field.at("three");
+          // @ts-expect-error: This is fine!
+          undefinedField.map(spy);
+          expect(spy).not.toBeCalled();
+          expect(undefinedField.get()).toBe(undefined);
+          const changes = field.set({
+            one: { n: 1 },
+            two: { n: 2 },
+            three: { n: 3 },
+          });
+          expect(changes).toBe(fieldChange.childAdded);
+          expect(field.get()).toEqual({
+            one: { n: 1 },
+            two: { n: 2 },
+            three: { n: 3 },
+          });
+          // @ts-expect-error: This is fine!
+          undefinedField.map(spy);
+          expect(spy).toBeCalled();
+        });
       });
 
       describe("array", () => {
@@ -328,6 +366,32 @@ describe("Field", () => {
         it("does not trigger update when setting undefined value to undefined value", () => {
           const field = new Field<number[]>([1, 2, 3, 4]);
           expect(field.at(5).set(undefinedValue)).toBe(0);
+        });
+
+        it("works when assigning undefined instead of an object item", () => {
+          const field = new Field<Array<{ n: number }>>([
+            { n: 1 },
+            { n: 2 },
+            { n: 3 },
+          ]);
+          const changes = field.set([{ n: 1 }, { n: 2 }]);
+          expect(changes).toBe(fieldChange.childRemoved);
+          expect(field.get()).toEqual([{ n: 1 }, { n: 2 }]);
+        });
+
+        it("works when assigning object instead of an undefined item", () => {
+          const field = new Field<Array<{ n: number }>>([{ n: 1 }, { n: 2 }]);
+          const spy = vi.fn();
+          const undefinedField = field.at(2);
+          // @ts-expect-error: This is fine!
+          undefinedField.map(spy);
+          expect(undefinedField.get()).toBe(undefined);
+          const changes = field.set([{ n: 1 }, { n: 2 }, { n: 3 }]);
+          expect(changes).toBe(fieldChange.childAdded);
+          expect(field.get()).toEqual([{ n: 1 }, { n: 2 }, { n: 3 }]);
+          // @ts-expect-error: This is fine!
+          undefinedField.map(spy);
+          expect(spy).toBeCalled();
         });
       });
     });
