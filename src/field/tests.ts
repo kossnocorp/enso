@@ -1196,6 +1196,11 @@ describe("Field", () => {
           // @ts-expect-error
           field.remove("two");
         });
+
+        it("doesn't throw on removing non-existing field", () => {
+          const field = new Field<Record<string, number>>({ one: 1 });
+          expect(() => field.remove("two")).not.toThrow();
+        });
       });
 
       describe("array", () => {
@@ -1203,6 +1208,11 @@ describe("Field", () => {
           const field = new Field([1, 2, 3]);
           field.remove(1);
           expect(field.get()).toEqual([1, 3]);
+        });
+
+        it("doesn't throw on removing non-existing item", () => {
+          const field = new Field([1, 2, 3]);
+          expect(() => field.remove(6)).not.toThrow();
         });
       });
 
