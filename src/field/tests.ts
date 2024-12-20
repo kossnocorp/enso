@@ -134,7 +134,7 @@ describe("Field", () => {
         it("returns added change type if a child has been added", () => {
           const field = new Field<{ num?: number; str?: string }>({ num: 42 });
           expect(field.set({ num: 42, str: "hello" })).toBe(
-            fieldChange.childAdded
+            fieldChange.childCreated
           );
         });
 
@@ -151,7 +151,9 @@ describe("Field", () => {
           }>({ num: 42, str: "hello" });
           const change = field.set({ num: 43, bool: true });
           expect(change & fieldChange.child).toBe(fieldChange.child);
-          expect(change & fieldChange.childAdded).toBe(fieldChange.childAdded);
+          expect(change & fieldChange.childCreated).toBe(
+            fieldChange.childCreated
+          );
           expect(change & fieldChange.childRemoved).toBe(
             fieldChange.childRemoved
           );
@@ -244,7 +246,7 @@ describe("Field", () => {
             two: { n: 2 },
             three: { n: 3 },
           });
-          expect(changes).toBe(fieldChange.childAdded);
+          expect(changes).toBe(fieldChange.childCreated);
           expect(field.get()).toEqual({
             one: { n: 1 },
             two: { n: 2 },
@@ -253,6 +255,12 @@ describe("Field", () => {
           // @ts-expect-error: This is fine!
           undefinedField.map(spy);
           expect(spy).toBeCalled();
+        });
+
+        it("returns created event when adding a new field", () => {
+          const field = new Field<{ num?: number; str?: string }>({ num: 42 });
+          const changes = field.at("str").set("hello");
+          expect(changes).toBe(fieldChange.type | fieldChange.created);
         });
       });
 
@@ -283,7 +291,7 @@ describe("Field", () => {
 
         it("returns added change type if a child has been added", () => {
           const field = new Field([1, 2, 3]);
-          expect(field.set([1, 2, 3, 4])).toBe(fieldChange.childAdded);
+          expect(field.set([1, 2, 3, 4])).toBe(fieldChange.childCreated);
         });
 
         it("returns child removed change type if a child has been removed", () => {
@@ -297,7 +305,9 @@ describe("Field", () => {
           delete arr[1];
           const change = field.set(arr);
           expect(change & fieldChange.child).toBe(fieldChange.child);
-          expect(change & fieldChange.childAdded).toBe(fieldChange.childAdded);
+          expect(change & fieldChange.childCreated).toBe(
+            fieldChange.childCreated
+          );
           expect(change & fieldChange.childRemoved).toBe(
             fieldChange.childRemoved
           );
@@ -387,11 +397,17 @@ describe("Field", () => {
           undefinedField.map(spy);
           expect(undefinedField.get()).toBe(undefined);
           const changes = field.set([{ n: 1 }, { n: 2 }, { n: 3 }]);
-          expect(changes).toBe(fieldChange.childAdded);
+          expect(changes).toBe(fieldChange.childCreated);
           expect(field.get()).toEqual([{ n: 1 }, { n: 2 }, { n: 3 }]);
           // @ts-expect-error: This is fine!
           undefinedField.map(spy);
           expect(spy).toBeCalled();
+        });
+
+        it("returns created event when adding a new field", () => {
+          const field = new Field<number[]>([1, 2]);
+          const changes = field.at(2).set(3);
+          expect(changes).toBe(fieldChange.type | fieldChange.created);
         });
       });
     });
@@ -854,7 +870,7 @@ describe("Field", () => {
         field.withhold();
         field.$.num.trigger(fieldChange.value, true);
         field.$.num.trigger(fieldChange.childRemoved, true);
-        field.$.num.trigger(fieldChange.childAdded, true);
+        field.$.num.trigger(fieldChange.childCreated, true);
 
         expect(spy).not.toHaveBeenCalled();
 
@@ -873,7 +889,7 @@ describe("Field", () => {
         field.withhold();
         field.trigger(fieldChange.value, true);
         field.trigger(fieldChange.childRemoved, true);
-        field.trigger(fieldChange.childAdded, true);
+        field.trigger(fieldChange.childCreated, true);
 
         expect(spy).not.toHaveBeenCalled();
 
@@ -885,7 +901,7 @@ describe("Field", () => {
             changes:
               fieldChange.value |
               fieldChange.childRemoved |
-              fieldChange.childAdded,
+              fieldChange.childCreated,
           })
         );
       });
@@ -946,7 +962,8 @@ describe("Field", () => {
           new Promise<void>((resolve) => {
             const field = new Field({ num: 42 });
 
-            const unsub = field.watch((value) => {
+            const unsub = field.watch((value, event) => {
+              expect(event.changes).toBe(fieldChange.child);
               expect(value.num).toBe(43);
               unsub();
               resolve();
@@ -961,13 +978,35 @@ describe("Field", () => {
               num: 42,
             });
 
-            const unsub = field.watch((value) => {
+            const unsub = field.watch((value, event) => {
+              expect(event.changes).toBe(
+                fieldChange.childCreated | fieldChange.child
+              );
               expect(value.str).toBe("Hello!");
               unsub();
               resolve();
             });
 
             field.$.str.set("Hello!");
+          }));
+
+        it("listens to field object create", async () =>
+          new Promise<void>((resolve) => {
+            const field = new Field<Record<number, { n: number }>>({
+              1: { n: 1 },
+              2: { n: 2 },
+            });
+
+            const unsub = field.watch((value, event) => {
+              expect(event.changes).toBe(
+                fieldChange.childCreated | fieldChange.child
+              );
+              expect(value[3]).toEqual({ n: 3 });
+              unsub();
+              resolve();
+            });
+
+            field.at(3).set({ n: 3 });
           }));
       });
 
@@ -976,7 +1015,8 @@ describe("Field", () => {
           new Promise<void>((resolve) => {
             const field = new Field([1, 2, 3]);
 
-            const unsub = field.watch((value) => {
+            const unsub = field.watch((value, event) => {
+              expect(event.changes).toBe(fieldChange.child);
               expect(value[1]).toBe(43);
               unsub();
               resolve();
@@ -989,13 +1029,32 @@ describe("Field", () => {
           new Promise<void>((resolve) => {
             const field = new Field([1, 2, 3]);
 
-            const unsub = field.watch((value) => {
+            const unsub = field.watch((value, event) => {
+              expect(event.changes).toBe(
+                fieldChange.childCreated | fieldChange.child
+              );
               expect(value[5]).toBe(43);
               unsub();
               resolve();
             });
 
             field.at(5).set(43);
+          }));
+
+        it("listens to items object create", async () =>
+          new Promise<void>((resolve) => {
+            const field = new Field<Array<{ n: number }>>([{ n: 1 }, { n: 2 }]);
+
+            const unsub = field.watch((value, event) => {
+              expect(event.changes).toBe(
+                fieldChange.childCreated | fieldChange.child
+              );
+              expect(value[2]).toEqual({ n: 3 });
+              unsub();
+              resolve();
+            });
+
+            field.at(2).set({ n: 3 });
           }));
       });
     });

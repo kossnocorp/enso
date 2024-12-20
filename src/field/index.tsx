@@ -174,6 +174,8 @@ export class Field<Payload> {
     let changes = fieldChange.type;
     // The field is being removed
     if (value === undefinedValue) changes |= fieldChange.removed;
+    // The field is being created
+    if (this.#internal.detached()) changes |= fieldChange.created;
 
     // @ts-ignore: This is fine
     this.#internal = new ValueConstructor(this, value);
@@ -539,7 +541,7 @@ export class Field<Payload> {
       throw new Error("State is not an array");
 
     const length = this.#internal.push(item);
-    this.trigger(fieldChange.childAdded, true);
+    this.trigger(fieldChange.childCreated, true);
     return length;
   };
 
@@ -1233,6 +1235,10 @@ export abstract class InternalState<Payload> {
   abstract withhold(): void;
 
   abstract unleash(): void;
+
+  detached(): boolean {
+    return false;
+  }
 }
 
 //#endregion
@@ -1298,6 +1304,10 @@ export class InternalPrimitiveState<Payload> extends InternalState<Payload> {
   override withhold(): void {}
 
   override unleash(): void {}
+
+  override detached(): boolean {
+    return this.#value === undefinedValue;
+  }
 }
 
 //#endregion
@@ -1343,7 +1353,7 @@ export class InternalObjectState<
           // @ts-ignore: [TODO]
           undefinedState || new Field(value, { key, field: this.external })
         );
-        change |= fieldChange.childAdded;
+        change |= fieldChange.childCreated;
       }
     }
 
@@ -1399,7 +1409,7 @@ export class InternalObjectState<
       event.changes & fieldChange.removed ||
       event.changes & fieldChange.type ||
       event.changes & fieldChange.childRemoved ||
-      event.changes & fieldChange.childAdded
+      event.changes & fieldChange.childCreated
     );
   }
 
@@ -1413,7 +1423,7 @@ export class InternalObjectState<
         throw new Error("Failed to find the child field when updating");
       // @ts-ignore: [TODO]
       this.#children.set(key, child);
-      change |= fieldChange.childAdded;
+      change |= fieldChange.childCreated;
     }
 
     if (childChange & fieldChange.removed) {
@@ -1546,7 +1556,7 @@ export class InternalArrayState<
             // @ts-ignore: This is fine
             field: this.external,
           });
-        change |= fieldChange.childAdded;
+        change |= fieldChange.childCreated;
         return newChild;
       }
     });
@@ -1599,7 +1609,7 @@ export class InternalArrayState<
       event.changes & fieldChange.removed ||
       event.changes & fieldChange.type ||
       event.changes & fieldChange.childRemoved ||
-      event.changes & fieldChange.childAdded ||
+      event.changes & fieldChange.childCreated ||
       event.changes & fieldChange.childrenReordered
     );
   }
@@ -1614,7 +1624,7 @@ export class InternalArrayState<
         throw new Error("Failed to find the child field when updating");
       // @ts-ignore: [TODO]
       this.#children[Number(key)] = child;
-      change |= fieldChange.childAdded;
+      change |= fieldChange.childCreated;
     }
 
     // Handle when child goes from defined to undefined
@@ -1774,8 +1784,8 @@ export const fieldChange = {
   child: 2 ** 9,
   /** An object field or an array item has been removed. */
   childRemoved: 2 ** 10,
-  /** An object field or an array item has been added. */
-  childAdded: 2 ** 11,
+  /** An object field or an array item has been created. */
+  childCreated: 2 ** 11,
   /** The order of array items has change. */
   childrenReordered: 2 ** 12,
   /** A child field lost its focus.  */
