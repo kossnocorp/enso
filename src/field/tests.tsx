@@ -2989,6 +2989,134 @@ describe("Field", () => {
           .element(screen.getByTestId("render-input"))
           .toHaveTextContent("1");
       });
+
+      it("syncronizes textarea with the state", async () => {
+        function Component() {
+          const count = useRenderCount();
+          const field = Field.use<User>({ name: { first: "Alexander" } });
+
+          return (
+            <div>
+              <div data-testid="render-input">{count}</div>
+
+              <textarea
+                data-testid="name-first-input"
+                {...field.$.name.$.first.input()}
+              />
+
+              <button onClick={() => field.$.name.$.first.set("Sasha")}>
+                Rename
+              </button>
+
+              <UserNameComponent name={field.$.name} />
+            </div>
+          );
+        }
+
+        const screen = render(<Component />);
+
+        await expect
+          .element(screen.getByTestId("name-first-0"))
+          .toHaveTextContent("Alexander");
+        await expect
+          .element(screen.getByTestId("name-first-input"))
+          .toHaveValue("Alexander");
+
+        await userEvent.fill(screen.getByTestId("name-first-input"), "Alex");
+
+        await expect
+          .element(screen.getByTestId("name-first-0"))
+          .toHaveTextContent("Alex");
+        await expect
+          .element(screen.getByTestId("name-first-input"))
+          .toHaveValue("Alex");
+
+        await screen.getByText("Rename").click();
+
+        await expect
+          .element(screen.getByTestId("name-first-0"))
+          .toHaveTextContent("Sasha");
+        await expect
+          .element(screen.getByTestId("name-first-input"))
+          .toHaveValue("Sasha");
+
+        await expect
+          .element(screen.getByTestId("render-input"))
+          .toHaveTextContent("1");
+      });
+
+      it("allows to pass ref and onBlur props", async () => {
+        const refSpy = vi.fn();
+        const onBlurSpy = vi.fn();
+
+        function Component() {
+          const count = useRenderCount();
+          const field = Field.use<User>({ name: { first: "Alexander" } });
+
+          return (
+            <div>
+              <div data-testid="render-input">{count}</div>
+
+              <input
+                data-testid="name-first-input"
+                {...field.$.name.$.first.input({
+                  ref: refSpy,
+                  onBlur: onBlurSpy,
+                })}
+              />
+
+              <button onClick={() => field.$.name.$.first.set("Sasha")}>
+                Rename
+              </button>
+
+              <UserNameComponent name={field.$.name} />
+            </div>
+          );
+        }
+
+        const screen = render(<Component />);
+
+        expect(refSpy).toHaveBeenCalledWith(
+          expect.objectContaining({
+            name: "name.first",
+          })
+        );
+
+        expect(onBlurSpy).not.toHaveBeenCalled();
+
+        await expect
+          .element(screen.getByTestId("name-first-0"))
+          .toHaveTextContent("Alexander");
+        await expect
+          .element(screen.getByTestId("name-first-input"))
+          .toHaveValue("Alexander");
+
+        await userEvent.fill(screen.getByTestId("name-first-input"), "Alex");
+
+        await expect
+          .element(screen.getByTestId("name-first-0"))
+          .toHaveTextContent("Alex");
+        await expect
+          .element(screen.getByTestId("name-first-input"))
+          .toHaveValue("Alex");
+
+        await screen.getByText("Rename").click();
+
+        await expect
+          .element(screen.getByTestId("name-first-0"))
+          .toHaveTextContent("Sasha");
+        await expect
+          .element(screen.getByTestId("name-first-input"))
+          .toHaveValue("Sasha");
+
+        await expect
+          .element(screen.getByTestId("render-input"))
+          .toHaveTextContent("1");
+
+        expect(onBlurSpy).toBeCalledWith(
+          expect.objectContaining({ type: "blur" })
+        );
+      });
     });
 
     describe("Control", () => {

@@ -1,5 +1,12 @@
 import { nanoid } from "nanoid";
-import React, { useEffect, useMemo, useRef } from "react";
+import React, {
+  FocusEventHandler,
+  FocusEvent,
+  RefCallback,
+  useEffect,
+  useMemo,
+  useRef,
+} from "react";
 import { useRerender } from "../hooks/rerender.ts";
 import { type EnsoUtils } from "../utils.ts";
 import { FieldRef } from "./ref/index.ts";
@@ -38,7 +45,7 @@ export class Field<Payload> {
     this.#parent = parent;
 
     const onInput = (event: Event) => {
-      const target = event.target as HTMLInputElement;
+      const target = event.target as HTMLInputElement | HTMLTextAreaElement;
       const value = target.value as Payload;
       this.set(value);
     };
@@ -46,6 +53,7 @@ export class Field<Payload> {
     this.#onInput = <Element extends HTMLElement>(element: Element) => {
       switch (true) {
         case element instanceof HTMLInputElement:
+        case element instanceof HTMLTextAreaElement:
         // [TODO]
         default:
           return onInput;
@@ -55,6 +63,7 @@ export class Field<Payload> {
     this.set = this.set.bind(this);
     this.Control = this.Control.bind(this);
     this.ref = this.ref.bind(this);
+    this.onBlur = this.onBlur.bind(this);
   }
 
   #clearCache() {
@@ -562,7 +571,7 @@ export class Field<Payload> {
     ValidEnable extends boolean = false,
     InvalidsEnable extends boolean = false,
   >(
-    props: Field.InputProps<
+    props: Field.ControlProps<
       Payload,
       MetaEnable,
       DirtyEnable,
@@ -591,18 +600,26 @@ export class Field<Payload> {
     return props.render(control, meta as any);
   }
 
-  input<Element extends HTMLElement>(): Field.Registration<Element> {
+  input<Element extends HTMLElement>(
+    props?: Field.InputProps<Element>
+  ): Field.Registration<Element> {
+    this.#customRef = props?.ref;
+    this.#customOnBlur = props?.onBlur;
+
     return {
       name: this.path.join(".") || ".",
       ref: this.ref,
-      onBlur: () => this.trigger(fieldChange.blurred, true),
+      onBlur: this.onBlur,
     };
   }
 
   #element: HTMLElement | null = null;
   #elementUnwatch: Field.Unwatch | undefined;
+  #customRef: RefCallback<HTMLElement> | undefined;
 
   ref<Element extends HTMLElement>(element: Element | null) {
+    this.#customRef?.(element);
+
     if (this.#element === element) return;
 
     if (this.#element)
@@ -617,6 +634,7 @@ export class Field<Payload> {
 
     switch (true) {
       case element instanceof HTMLInputElement:
+      case element instanceof HTMLTextAreaElement:
         // [TODO] Watch for changes and set the value
         element.value = String(this.get()) as string;
         this.#elementUnwatch = this.watch((value) => {
@@ -627,6 +645,13 @@ export class Field<Payload> {
 
     element.addEventListener("input", this.#onInput(element));
     this.#element = element;
+  }
+
+  #customOnBlur: FocusEventHandler<Element> | undefined;
+
+  onBlur<Element extends HTMLElement>(event: FocusEvent<Element>) {
+    this.trigger(fieldChange.blurred, true);
+    this.#customOnBlur?.(event);
   }
 
   //#endregion
@@ -1019,7 +1044,7 @@ export namespace Field {
 
   //#region Input
 
-  export type InputProps<
+  export type ControlProps<
     Payload,
     MetaEnable extends boolean | undefined = undefined,
     DirtyEnable extends boolean = false,
@@ -1061,22 +1086,21 @@ export namespace Field {
     name: string;
     value: Payload;
     onChange: OnChange<Payload>;
-    onBlur: OnBlur;
+    onBlur: FocusEventHandler<Element>;
   };
 
   export type OnChange<Payload> = (value: Payload) => void;
 
-  export type OnBlur = () => void;
+  export interface InputProps<Element extends HTMLElement> {
+    ref?: RefCallback<Element> | undefined;
+    onBlur?: FocusEventHandler<Element> | undefined;
+  }
 
   export interface Registration<Element extends HTMLElement> {
     name: string;
-    ref: RegistrationRef<Element>;
-    onBlur: OnBlur;
+    ref: RefCallback<Element>;
+    onBlur: FocusEventHandler<Element>;
   }
-
-  // [TODO] Add possible types
-  export type RegistrationRef<Element extends HTMLElement> =
-    React.LegacyRef<Element>;
 
   //#endregion
 
