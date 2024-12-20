@@ -6,6 +6,7 @@ import React, {
   useEffect,
   useMemo,
   useRef,
+  MutableRefObject,
 } from "react";
 import { useRerender } from "../hooks/rerender.ts";
 import { type EnsoUtils } from "../utils.ts";
@@ -615,10 +616,16 @@ export class Field<Payload> {
 
   #element: HTMLElement | null = null;
   #elementUnwatch: Field.Unwatch | undefined;
-  #customRef: RefCallback<HTMLElement> | undefined;
+  #customRef:
+    | RefCallback<Element>
+    | MutableRefObject<Element | null>
+    | undefined;
 
   ref<Element extends HTMLElement>(element: Element | null) {
-    this.#customRef?.(element);
+    if (this.#customRef) {
+      if (typeof this.#customRef === "function") this.#customRef(element);
+      else this.#customRef.current = element;
+    }
 
     if (this.#element === element) return;
 
@@ -1092,7 +1099,7 @@ export namespace Field {
   export type OnChange<Payload> = (value: Payload) => void;
 
   export interface InputProps<Element extends HTMLElement> {
-    ref?: RefCallback<Element> | undefined;
+    ref?: RefCallback<Element> | MutableRefObject<Element | null> | undefined;
     onBlur?: FocusEventHandler<Element> | undefined;
   }
 
