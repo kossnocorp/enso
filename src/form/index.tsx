@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo } from "react";
+import React, { useEffect, useId, useMemo } from "react";
 import { Field, fieldChange } from "../field/index.tsx";
 import { useRerender } from "../hooks/rerender.ts";
 
@@ -9,7 +9,8 @@ export class Form<Payload> {
     value: Payload,
     options?: Form.Options<Payload>
   ): Form<Payload> {
-    const form = useMemo(() => new Form(value, options), []);
+    const id = useId();
+    const form = useMemo(() => new Form(id, value, options), [id]);
     const rerender = useRerender();
 
     useEffect(
@@ -38,9 +39,11 @@ export class Form<Payload> {
     return form;
   }
 
+  #id: string;
   #field: Field<Payload>;
 
-  constructor(initial: Payload, options?: Form.Options<Payload>) {
+  constructor(id: string, initial: Payload, options?: Form.Options<Payload>) {
+    this.#id = id;
     this.#field = new Field(initial);
     this.#validate = options?.validate;
 
@@ -61,7 +64,7 @@ export class Form<Payload> {
   //#region Attributes
 
   get id() {
-    return this.#field.id;
+    return this.#id;
   }
 
   get field() {
@@ -230,7 +233,11 @@ export class Form<Payload> {
   ): React.ReactElement<HTMLFormElement> {
     const { onSubmit, children, ...restProps } = props;
     return (
-      <form {...restProps} {...this.control(onSubmit || (() => {}))}>
+      <form
+        {...restProps}
+        {...this.control(onSubmit || (() => {}))}
+        id={this.#id}
+      >
         {children}
       </form>
     );

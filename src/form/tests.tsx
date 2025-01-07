@@ -155,6 +155,24 @@ describe("Form", () => {
       .toHaveTextContent("3");
   });
 
+  it("assigns form id", async () => {
+    let formId: string | undefined;
+
+    function Component() {
+      const form = Form.use({ hello: "world" });
+      formId = form.id;
+      return <form.Control data-testid="form" onSubmit={() => {}} />;
+    }
+
+    const screen = render(<Component />);
+
+    expect(formId).toBeTypeOf("string");
+
+    await expect
+      .element(screen.getByTestId("form"))
+      .toHaveAttribute("id", formId);
+  });
+
   it("validates form on submit", async () => {
     const spy = vi.fn();
 
