@@ -634,10 +634,10 @@ describe("Field", () => {
   });
 
   describe("tree", () => {
-    describe("$", () => {
-      it("points to itself for a primitive", () => {
+    describe("$/at", () => {
+      it("returns undefined for primitive", () => {
         const field = new Field(42);
-        expect(field.$).toBe(field);
+        expect(field.$).toBe(undefined);
       });
 
       describe("object", () => {
@@ -681,6 +681,15 @@ describe("Field", () => {
           const fieldA = field.$.str;
           const fieldB = field.$.str;
           expect(fieldA).toBe(fieldB);
+        });
+
+        it("allows to use undefined key", () => {
+          const field = new Field<Record<string, number>>({ num: 42 });
+          // @ts-expect-error: But not in $!
+          field.$[undefined];
+          const numB = field.at(undefined);
+          numB satisfies Field<undefined>;
+          expect(numB.get()).toBe(undefined);
         });
       });
 

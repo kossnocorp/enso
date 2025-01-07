@@ -1,8 +1,8 @@
-tests:
+test:
 	@pnpm exec vitest run
 .PHONY: test
 
-tests-watch:
+test-watch:
 	@pnpm exec vitest
 
 types:

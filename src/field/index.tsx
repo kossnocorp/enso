@@ -242,7 +242,7 @@ export class Field<Payload> {
     return this.#internal.$();
   }
 
-  at<Key extends keyof Payload>(
+  at<Key extends keyof Payload | undefined>(
     key: Payload extends object ? Key : never
     // @ts-ignore: [TODO]
   ): Payload extends object ? Field.At<Payload, Key> : void {
@@ -425,7 +425,7 @@ export class Field<Payload> {
     // @ts-ignore: [TODO]
     return {
       // @ts-ignore: [TODO]
-      discriminator: this.$[discriminator]?.get(),
+      discriminator: this.$?.[discriminator]?.get(),
       field: this,
     };
   }
@@ -837,7 +837,7 @@ export namespace Field {
 
   export type $<Payload> = Payload extends object
     ? $Object<Payload>
-    : Field<Payload>;
+    : undefined;
 
   export type $Object<Payload> = {
     [Key in keyof Payload]-?: Field<
@@ -851,11 +851,16 @@ export namespace Field {
     ? <Key extends keyof Payload>(key: Key) => At<Payload, Key>
     : (key: never) => never;
 
-  export type At<Payload, Key extends keyof Payload> = Field<
-    EnsoUtils.IsStaticKey<Payload, Key> extends true
-      ? Payload[Key]
-      : Payload[Key] | undefined
-  >;
+  export type At<
+    Payload,
+    Key extends keyof Payload | undefined,
+  > = Key extends keyof Payload
+    ? Field<
+        EnsoUtils.IsStaticKey<Payload, Key> extends true
+          ? Payload[Key]
+          : Payload[Key] | undefined
+      >
+    : Field<undefined>;
 
   export type Try<Payload> = [Payload] extends [object]
     ? TryObject<Payload>
@@ -1275,7 +1280,7 @@ export class InternalPrimitiveState<Payload> extends InternalState<Payload> {
   }
 
   $(): Field.$<Payload> {
-    return this.external as Field.$<Payload>;
+    return undefined as Field.$<Payload>;
   }
 
   try(): Field.Try<Payload> {
