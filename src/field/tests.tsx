@@ -1,11 +1,11 @@
-import React, { useRef, useState } from "react";
-import { render } from "vitest-browser-react";
+import React, { useMemo, useRef, useState } from "react";
 import { describe, expect, it, vi } from "vitest";
+import { render } from "vitest-browser-react";
+import { userEvent } from "@vitest/browser/context";
 // [TODO] Figure out a way to get rid of it:
 // https://github.com/vitest-dev/vitest/issues/6965
 import "@vitest/browser/matchers.d.ts";
 import { Field, fieldChange } from "./index.tsx";
-import { userEvent } from "@vitest/browser/context";
 
 describe("Field", () => {
   it("allows to control object field", async () => {
@@ -2938,7 +2938,8 @@ describe("Field", () => {
           const count = useRenderCount();
           const [field, setField] = useState<Field<string> | undefined>();
           const actualField = Field.use("Hello!");
-          const [ensuredField, dummyField] = Field.useEnsure(field);
+          const ensuredField = Field.useEnsure(field);
+          const dummyField = useMemo(() => ensuredField, []);
           const fieldValue = ensuredField.useGet();
           const dummyValue = dummyField.useGet();
 
@@ -2948,12 +2949,7 @@ describe("Field", () => {
 
               <button onClick={() => setField(actualField)}>Set actual</button>
 
-              <button
-                onClick={() =>
-                  // @ts-expect-error: It's ok, we want to do that!
-                  dummyField.set("Hi!")
-                }
-              >
+              <button onClick={() => dummyField.set("Hi!")}>
                 Update dummy
               </button>
 

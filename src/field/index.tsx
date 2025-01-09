@@ -1,12 +1,12 @@
 import { nanoid } from "nanoid";
 import React, {
-  FocusEventHandler,
   FocusEvent,
+  FocusEventHandler,
+  MutableRefObject,
   RefCallback,
   useEffect,
   useMemo,
   useRef,
-  MutableRefObject,
 } from "react";
 import { useRerender } from "../hooks/rerender.ts";
 import { type EnsoUtils } from "../utils.ts";
@@ -531,11 +531,10 @@ export class Field<Payload> {
    */
   static useEnsure<Payload>(
     field: Field<Payload> | undefined
-  ): Field.Ensured<Payload> {
+  ): Field<Payload | undefined> {
     const dummy = Field.use(undefined);
     const frozenDummy = useMemo(() => Object.freeze(dummy), [dummy]);
-    const ensured = field || frozenDummy;
-    return [ensured as Field<Payload | undefined>, frozenDummy];
+    return (field || frozenDummy) as Field<Payload | undefined>;
   }
 
   //#endregion
