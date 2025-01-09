@@ -5,8 +5,6 @@
     "target": "ESNext",
     "module": "NodeNext",
     "allowImportingTsExtensions": true,
-    "emitDeclarationOnly": true,
-    "declaration": true,
     "forceConsistentCasingInFileNames": true,
     "strict": true,
     "exactOptionalPropertyTypes": true,
@@ -14,7 +12,13 @@
     "noImplicitOverride": true,
     "skipLibCheck": true,
     "allowJs": true,
-    "jsx": "preserve"
+    "jsx": "preserve",
+    // Project References setup
+    "composite": true,
+    "incremental": true,
+    "declaration": true,
+    "declarationMap": true,
+    "emitDeclarationOnly": true
   },
   "exclude": []
 }
