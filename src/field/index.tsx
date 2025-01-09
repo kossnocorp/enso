@@ -161,6 +161,9 @@ export class Field<Payload> {
   }
 
   #set(value: Payload | UndefinedValue): FieldChange | 0 {
+    // Frozen fields should not change!
+    if (Object.isFrozen(this)) return 0;
+
     const ValueConstructor = InternalState.detect(value);
 
     // The field is already of the same type
@@ -511,6 +514,28 @@ export class Field<Payload> {
       field: this,
       getValue: () => this.narrow(callback),
     });
+  }
+
+  /**
+   * Ensures that the field is not undefined. It returns a tuple with ensured
+   * field and dummy field. If the field is undefined, the dummy field will
+   * return as the ensured, otherwise the passed field.
+   *
+   * It allows to workaround the React Hooks limitation of not being able to
+   * call hooks conditionally.
+   *
+   * The dummy field is frozen and won't change or trigger any events.
+   *
+   * @param field - The field to ensure. Can be undefined.
+   * @returns Fields tuple, first element - ensured field, second - dummy field
+   */
+  static useEnsure<Payload>(
+    field: Field<Payload> | undefined
+  ): Field.Ensured<Payload> {
+    const dummy = Field.use(undefined);
+    const frozenDummy = useMemo(() => Object.freeze(dummy), [dummy]);
+    const ensured = field || frozenDummy;
+    return [ensured as Field<Payload | undefined>, frozenDummy];
   }
 
   //#endregion
@@ -1001,6 +1026,11 @@ export namespace Field {
   };
 
   declare const narrowBrapperBrand: unique symbol;
+
+  export type Ensured<Payload> = [
+    Field<Payload | undefined>,
+    Readonly<Field<undefined>>,
+  ];
 
   //#endregion
 
