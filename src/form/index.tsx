@@ -278,7 +278,10 @@ export class Form<Payload> {
     // the validation process.
     this.#field.unleash();
 
-    await callback(this.#field.get(), event);
+    const result = await callback(this.#field.get(), event);
+
+    // Commit unless the callback explicetly returned false
+    if (result !== false) this.commit();
 
     this.#submitting = false;
     this.#field.trigger(formChange.formSubmitted, true);

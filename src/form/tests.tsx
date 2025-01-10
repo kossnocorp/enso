@@ -86,6 +86,172 @@ describe("Form", () => {
           .toHaveTextContent("3");
       });
 
+      it("commits form after submit", async () => {
+        let resolveSubmit: ((value: unknown) => void) | undefined;
+        const submitPromise = new Promise((resolve) => {
+          resolveSubmit = resolve;
+        });
+
+        function Component() {
+          const count = useRenderCount();
+          const form = Form.use({ hello: "world" });
+          const dirty = form.useDirty();
+
+          return (
+            <div>
+              <div data-testid="render-submit">{count}</div>
+
+              <button onClick={() => form.$.hello.set("Sasha")}>
+                Update field
+              </button>
+
+              <form
+                {...form.control({
+                  onSubmit: () => submitPromise,
+                })}
+              >
+                <div data-testid="submitting">{String(form.submitting)}</div>
+
+                <div data-testid="dirty">{String(dirty)}</div>
+
+                <button type="submit">Submit</button>
+              </form>
+            </div>
+          );
+        }
+
+        const screen = render(<Component />);
+
+        await expect
+          .element(screen.getByTestId("submitting"))
+          .toHaveTextContent("false");
+
+        await expect
+          .element(screen.getByTestId("dirty"))
+          .toHaveTextContent("false");
+
+        await expect
+          .element(screen.getByTestId("render-submit"))
+          .toHaveTextContent("1");
+
+        await screen.getByText("Update field").click();
+
+        await expect
+          .element(screen.getByTestId("render-submit"))
+          .toHaveTextContent("2");
+
+        await screen.getByText("Submit").click();
+
+        await expect
+          .element(screen.getByTestId("dirty"))
+          .toHaveTextContent("true");
+
+        await expect
+          .element(screen.getByTestId("submitting"))
+          .toHaveTextContent("true");
+
+        await expect
+          .element(screen.getByTestId("render-submit"))
+          .toHaveTextContent("3");
+
+        resolveSubmit?.(void 0);
+
+        await expect
+          .element(screen.getByTestId("dirty"))
+          .toHaveTextContent("false");
+
+        await expect
+          .element(screen.getByTestId("submitting"))
+          .toHaveTextContent("false");
+
+        await expect
+          .element(screen.getByTestId("render-submit"))
+          .toHaveTextContent("4");
+      });
+
+      it("it allows to cancel commit", async () => {
+        let resolveSubmit: ((value: unknown) => void) | undefined;
+        const submitPromise = new Promise((resolve) => {
+          resolveSubmit = resolve;
+        });
+
+        function Component() {
+          const count = useRenderCount();
+          const form = Form.use({ hello: "world" });
+          const dirty = form.useDirty();
+
+          return (
+            <div>
+              <div data-testid="render-submit">{count}</div>
+
+              <button onClick={() => form.$.hello.set("Sasha")}>
+                Update field
+              </button>
+
+              <form
+                {...form.control({
+                  onSubmit: () => submitPromise,
+                })}
+              >
+                <div data-testid="submitting">{String(form.submitting)}</div>
+
+                <div data-testid="dirty">{String(dirty)}</div>
+
+                <button type="submit">Submit</button>
+              </form>
+            </div>
+          );
+        }
+
+        const screen = render(<Component />);
+
+        await expect
+          .element(screen.getByTestId("submitting"))
+          .toHaveTextContent("false");
+
+        await expect
+          .element(screen.getByTestId("dirty"))
+          .toHaveTextContent("false");
+
+        await expect
+          .element(screen.getByTestId("render-submit"))
+          .toHaveTextContent("1");
+
+        await screen.getByText("Update field").click();
+
+        await expect
+          .element(screen.getByTestId("render-submit"))
+          .toHaveTextContent("2");
+
+        await screen.getByText("Submit").click();
+
+        await expect
+          .element(screen.getByTestId("dirty"))
+          .toHaveTextContent("true");
+
+        await expect
+          .element(screen.getByTestId("submitting"))
+          .toHaveTextContent("true");
+
+        await expect
+          .element(screen.getByTestId("render-submit"))
+          .toHaveTextContent("3");
+
+        resolveSubmit?.(false);
+
+        await expect
+          .element(screen.getByTestId("dirty"))
+          .toHaveTextContent("true");
+
+        await expect
+          .element(screen.getByTestId("submitting"))
+          .toHaveTextContent("false");
+
+        await expect
+          .element(screen.getByTestId("render-submit"))
+          .toHaveTextContent("4");
+      });
+
       it("handles reset", async () => {
         function Component() {
           const count = useRenderCount();
