@@ -1,5 +1,6 @@
 import { nanoid } from "nanoid";
 import React, {
+  DependencyList,
   FocusEvent,
   FocusEventHandler,
   MutableRefObject,
@@ -397,13 +398,15 @@ export class Field<Payload> {
   //#region Mapping
 
   useCompute<Computed>(
-    callback: Field.ComputeCallback<Payload, Computed>
+    callback: Field.ComputeCallback<Payload, Computed>,
+    deps?: DependencyList
   ): Computed {
     // @ts-expect-error: [TODO]
     return useFieldHook({
       // @ts-expect-error: [TODO]
       field: this,
       getValue: () => callback(this.get()),
+      deps,
     });
   }
 
@@ -1881,6 +1884,7 @@ interface UseFieldHookProps<Value, Result = Value> {
   shouldRender?(prevValue: Value | undefined, nextValue: Value): boolean;
   watch?(props: UseFieldHookWatchProps<Value>): Field.Unwatch;
   toResult?(value: Value | undefined): Result;
+  deps?: DependencyList;
 }
 
 function defaultShouldRender<Value>(
@@ -1903,6 +1907,7 @@ function useFieldHook<Value, Result = Value>(
     shouldRender = defaultShouldRender,
     watch,
     toResult,
+    deps,
   } = props;
 
   const initial = useMemo(
@@ -1925,22 +1930,31 @@ function useFieldHook<Value, Result = Value>(
     // don't want to trigger another render.
   }, [field.id, enable]);
 
+  function onUpdate() {
+    const prevValue = valueRef.current.value;
+
+    const nextValue = getValue();
+    valueRef.current = { id: field.id, value: nextValue, enable };
+
+    if (shouldRender(prevValue, nextValue)) rerender();
+  }
+
   const rerender = useRerender();
   useEffect(() => {
     if (enable === false) return;
 
-    return (
-      watch?.({ valueRef, rerender }) ||
-      field.watch(() => {
-        const prevValue = valueRef.current.value;
+    return watch?.({ valueRef, rerender }) || field.watch(onUpdate);
+  }, [field.id, rerender, enable, ...(deps || [])]);
 
-        const nextValue = getValue();
-        valueRef.current = { id: field.id, value: nextValue, enable };
+  // Handle dependencies. When they change, we trigger update.
+  const depsInitialized = useRef(false);
+  useEffect(() => {
+    if (enable === false) return;
 
-        if (shouldRender(prevValue, nextValue)) rerender();
-      })
-    );
-  }, [field.id, rerender, enable]);
+    // Prevent unnecessary update on first render
+    if (depsInitialized.current) onUpdate();
+    else depsInitialized.current = true;
+  }, [rerender, enable, ...(deps || [])]);
 
   // If the ref value id doesn't match the current id, use initial value.
   // Otherwise, use the value from the ref.

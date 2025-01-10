@@ -2175,6 +2175,60 @@ describe("Field", () => {
           .element(screen.getByTestId("render-computed"))
           .toHaveTextContent("1");
       });
+
+      it("allows to specify dependencies", async () => {
+        function Component() {
+          const count = useRenderCount();
+          const field = Field.use("Alexander");
+          const [lastName, setLastName] = useState("Koss");
+          const fullName = field.useCompute(
+            (name) => `${name} ${lastName}`,
+            [lastName]
+          );
+
+          return (
+            <div>
+              <div data-testid="render-compute">{count}</div>
+
+              <button onClick={() => field.set("Sasha")}>Rename first</button>
+
+              <button onClick={() => setLastName("K.")}>Rename last</button>
+
+              <div data-testid="computed">{fullName}</div>
+            </div>
+          );
+        }
+
+        const screen = render(<Component />);
+
+        await expect
+          .element(screen.getByTestId("computed"))
+          .toHaveTextContent("Alexander Koss");
+
+        await expect
+          .element(screen.getByTestId("render-compute"))
+          .toHaveTextContent("1");
+
+        await screen.getByText("Rename last").click();
+
+        await expect
+          .element(screen.getByTestId("computed"))
+          .toHaveTextContent("Alexander K.");
+
+        await expect
+          .element(screen.getByTestId("render-compute"))
+          .toHaveTextContent("3");
+
+        await screen.getByText("Rename first").click();
+
+        await expect
+          .element(screen.getByTestId("computed"))
+          .toHaveTextContent("Sasha K.");
+
+        await expect
+          .element(screen.getByTestId("render-compute"))
+          .toHaveTextContent("4");
+      });
     });
 
     describe("useDecompose", () => {
