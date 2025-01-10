@@ -226,10 +226,14 @@ export class Form<Payload> {
 
   //#endregion
 
-  control(props?: Form.ControlProps<Payload> | undefined): Form.Control {
-    const { onSubmit, onReset } = props || {};
+  control<IsServer extends boolean | undefined = undefined>(
+    props?: Form.ControlProps<Payload, IsServer> | undefined
+  ): Form.Control {
+    const { onSubmit, onReset, server } = props || {};
     return {
-      onSubmit: (event) => this.#submit(event, onSubmit || (() => {})),
+      // @ts-expect-error: We're checking the server flag to determine if
+      // the callback is a server-side one or not.
+      onSubmit: (event) => this.#submit(event, onSubmit || (() => {}), server),
       onReset: (event) => (onReset ? onReset(event) : this.reset()),
     };
   }
@@ -237,11 +241,11 @@ export class Form<Payload> {
   Control(
     props: Form.ControlComponentProps<Payload>
   ): React.ReactElement<HTMLFormElement> {
-    const { onSubmit, onReset, children, ...restProps } = props;
+    const { onSubmit, onReset, server, children, ...restProps } = props;
     return (
       <form
         {...restProps}
-        {...this.control({ onSubmit, onReset })}
+        {...this.control({ onSubmit, onReset, server })}
         id={this.#id}
       >
         {children}
@@ -255,9 +259,10 @@ export class Form<Payload> {
     return this.#submitting;
   }
 
-  async #submit(
+  async #submit<IsServer extends boolean | undefined = undefined>(
     event: React.FormEvent<HTMLFormElement>,
-    callback: Form.ControlOnSubmit<Payload>
+    callback: Form.ControlOnSubmit<Payload, IsServer>,
+    server: IsServer
   ) {
     event.preventDefault();
     event.stopPropagation();
@@ -278,7 +283,13 @@ export class Form<Payload> {
     // the validation process.
     this.#field.unleash();
 
-    const result = await callback(this.#field.get(), event);
+    const values = this.#field.get();
+    // React Server Actions can't accept Event so should not pass it.
+    const result = await (server
+      ? // @ts-expect-error: We're checking the server flag to determine if
+        // the callback is a server-side one or not.
+        callback(values)
+      : callback(values, event));
 
     // Commit unless the callback explicetly returned false
     if (result !== false) this.commit();
@@ -303,15 +314,24 @@ export namespace Form {
     validate?: Field.Validator<Payload, undefined>;
   }
 
-  export interface ControlProps<Payload> {
-    onSubmit?: ControlOnSubmit<Payload> | undefined;
+  export interface ControlProps<
+    Payload,
+    IsServer extends boolean | undefined = undefined,
+  > {
+    onSubmit?: ControlOnSubmit<Payload, IsServer> | undefined;
     onReset?: ControlOnReset | undefined;
+    server?: IsServer;
   }
 
-  export type ControlOnSubmit<Payload> = (
-    payload: Payload,
-    event: React.FormEvent<HTMLFormElement>
-  ) => unknown | Promise<unknown>;
+  export type ControlOnSubmit<
+    Payload,
+    IsServer extends boolean | undefined,
+  > = true extends IsServer
+    ? (payload: Payload) => unknown | Promise<unknown>
+    : (
+        payload: Payload,
+        event: React.FormEvent<HTMLFormElement>
+      ) => unknown | Promise<unknown>;
 
   export type ControlOnReset = (
     event: React.FormEvent<HTMLFormElement>

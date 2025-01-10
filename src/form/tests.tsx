@@ -252,6 +252,36 @@ describe("Form", () => {
           .toHaveTextContent("4");
       });
 
+      it("allows to specify that it is a server form", async () => {
+        const spy = vi.fn();
+
+        function Component() {
+          const count = useRenderCount();
+          const form = Form.use({ hello: "world" });
+
+          return (
+            <div>
+              <div data-testid="render-submit">{count}</div>
+
+              <form
+                {...form.control({
+                  onSubmit: spy,
+                  server: true,
+                })}
+              >
+                <button type="submit">Submit</button>
+              </form>
+            </div>
+          );
+        }
+
+        const screen = render(<Component />);
+
+        await screen.getByText("Submit").click();
+
+        expect(spy).toBeCalledWith({ hello: "world" });
+      });
+
       it("handles reset", async () => {
         function Component() {
           const count = useRenderCount();
