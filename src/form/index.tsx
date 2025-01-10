@@ -99,6 +99,10 @@ export class Form<Payload> {
     return this.#field.commit();
   }
 
+  reset() {
+    return this.#field.reset();
+  }
+
   //#endregion
 
   //#region Watching
@@ -222,20 +226,22 @@ export class Form<Payload> {
 
   //#endregion
 
-  control(callback: Form.SubmitCallback<Payload>): Form.Control {
+  control(props?: Form.ControlProps<Payload> | undefined): Form.Control {
+    const { onSubmit, onReset } = props || {};
     return {
-      onSubmit: (event) => this.#submit(event, callback),
+      onSubmit: (event) => this.#submit(event, onSubmit || (() => {})),
+      onReset: (event) => (onReset ? onReset(event) : this.reset()),
     };
   }
 
   Control(
-    props: Form.ControlProps<Payload>
+    props: Form.ControlComponentProps<Payload>
   ): React.ReactElement<HTMLFormElement> {
-    const { onSubmit, children, ...restProps } = props;
+    const { onSubmit, onReset, children, ...restProps } = props;
     return (
       <form
         {...restProps}
-        {...this.control(onSubmit || (() => {}))}
+        {...this.control({ onSubmit, onReset })}
         id={this.#id}
       >
         {children}
@@ -251,7 +257,7 @@ export class Form<Payload> {
 
   async #submit(
     event: React.FormEvent<HTMLFormElement>,
-    callback: Form.SubmitCallback<Payload>
+    callback: Form.ControlOnSubmit<Payload>
   ) {
     event.preventDefault();
     event.stopPropagation();
@@ -272,7 +278,7 @@ export class Form<Payload> {
     // the validation process.
     this.#field.unleash();
 
-    await callback(this.#field.get());
+    await callback(this.#field.get(), event);
 
     this.#submitting = false;
     this.#field.trigger(formChange.formSubmitted, true);
@@ -294,9 +300,23 @@ export namespace Form {
     validate?: Field.Validator<Payload, undefined>;
   }
 
-  export interface ControlProps<Payload>
-    extends Omit<React.FormHTMLAttributes<HTMLFormElement>, "onSubmit"> {
-    onSubmit?: SubmitCallback<Payload>;
+  export interface ControlProps<Payload> {
+    onSubmit?: ControlOnSubmit<Payload> | undefined;
+    onReset?: ControlOnReset | undefined;
+  }
+
+  export type ControlOnSubmit<Payload> = (
+    payload: Payload,
+    event: React.FormEvent<HTMLFormElement>
+  ) => unknown | Promise<unknown>;
+
+  export type ControlOnReset = (
+    event: React.FormEvent<HTMLFormElement>
+  ) => unknown | Promise<unknown>;
+
+  export interface ControlComponentProps<Payload>
+    extends ControlProps<Payload>,
+      Omit<React.FormHTMLAttributes<HTMLFormElement>, "onSubmit" | "onReset"> {
     children?: React.ReactNode;
   }
 
@@ -305,12 +325,9 @@ export namespace Form {
   ) => any;
 
   export interface Control {
-    onSubmit: (event: React.FormEvent<HTMLFormElement>) => void;
+    onSubmit(event: React.FormEvent<HTMLFormElement>): void;
+    onReset(event: React.FormEvent<HTMLFormElement>): void;
   }
-
-  export type SubmitCallback<Payload> = (
-    payload: Payload
-  ) => unknown | Promise<unknown>;
 }
 
 //#endregion

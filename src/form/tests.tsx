@@ -32,8 +32,8 @@ describe("Form", () => {
 
               <form
                 {...form.control({
-                  onSubmit: (values) => {
-                    spy(values);
+                  onSubmit: (values, event) => {
+                    spy(values, event);
                     return submitPromise;
                   },
                 })}
@@ -62,9 +62,10 @@ describe("Form", () => {
 
         await screen.getByText("Submit").click();
 
-        expect(spy).toBeCalledWith({
-          hello: "Sasha",
-        });
+        expect(spy).toBeCalledWith(
+          { hello: "Sasha" },
+          expect.objectContaining({ target: expect.any(Object) })
+        );
 
         await expect
           .element(screen.getByTestId("submitting"))
@@ -83,6 +84,110 @@ describe("Form", () => {
         await expect
           .element(screen.getByTestId("render-submit"))
           .toHaveTextContent("3");
+      });
+
+      it("handles reset", async () => {
+        function Component() {
+          const count = useRenderCount();
+          const form = Form.use({ hello: "world" });
+          const hello = form.$.hello.useGet();
+
+          return (
+            <div>
+              <div data-testid="render-reset">{count}</div>
+
+              <div data-testid="hello">Hello, {hello}!</div>
+
+              <button onClick={() => form.$.hello.set("Sasha")}>
+                Update field
+              </button>
+
+              <form {...form.control()}>
+                <button type="reset">Reset</button>
+              </form>
+            </div>
+          );
+        }
+
+        const screen = render(<Component />);
+
+        await expect
+          .element(screen.getByTestId("hello"))
+          .toHaveTextContent("Hello, world!");
+
+        await screen.getByText("Update field").click();
+
+        await expect
+          .element(screen.getByTestId("hello"))
+          .toHaveTextContent("Hello, Sasha!");
+
+        await expect
+          .element(screen.getByTestId("render-reset"))
+          .toHaveTextContent("2");
+
+        await screen.getByText("Reset").click();
+
+        await expect
+          .element(screen.getByTestId("hello"))
+          .toHaveTextContent("Hello, world!");
+
+        await expect
+          .element(screen.getByTestId("render-reset"))
+          .toHaveTextContent("3");
+      });
+
+      it("allows to handle onReset", async () => {
+        const spy = vi.fn();
+
+        function Component() {
+          const count = useRenderCount();
+          const form = Form.use({ hello: "world" });
+          const hello = form.$.hello.useGet();
+
+          return (
+            <div>
+              <div data-testid="render-reset">{count}</div>
+
+              <div data-testid="hello">Hello, {hello}!</div>
+
+              <button onClick={() => form.$.hello.set("Sasha")}>
+                Update field
+              </button>
+
+              <form {...form.control({ onReset: spy })}>
+                <button type="reset">Reset</button>
+              </form>
+            </div>
+          );
+        }
+
+        const screen = render(<Component />);
+
+        await expect
+          .element(screen.getByTestId("hello"))
+          .toHaveTextContent("Hello, world!");
+
+        await screen.getByText("Update field").click();
+
+        await expect
+          .element(screen.getByTestId("hello"))
+          .toHaveTextContent("Hello, Sasha!");
+
+        await expect
+          .element(screen.getByTestId("render-reset"))
+          .toHaveTextContent("2");
+
+        expect(spy).not.toBeCalled();
+
+        await screen.getByText("Reset").click();
+
+        expect(spy).toBeCalledWith(
+          expect.objectContaining({ target: expect.any(Object) })
+        );
+
+        await expect
+          .element(screen.getByTestId("render-reset"))
+          .toHaveTextContent("2");
       });
     });
 
@@ -253,7 +358,10 @@ describe("Form", () => {
 
       await expect.element(screen.getByTestId("error")).not.toBeInTheDocument();
 
-      expect(spy).toBeCalledWith({ hello: "Sasha" });
+      expect(spy).toBeCalledWith(
+        { hello: "Sasha" },
+        expect.objectContaining({ target: expect.any(Object) })
+      );
 
       await expect
         .element(screen.getByTestId("render-validate"))

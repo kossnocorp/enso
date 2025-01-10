@@ -63,6 +63,13 @@ describe("Form", () => {
       expect(form.commit()).toBe(undefined);
       expect(spy).toHaveBeenCalled();
     });
+
+    it("delegates reset", () => {
+      const spy = vi.spyOn(Field.prototype, "reset").mockReturnValue();
+      const form = new Form(nanoid(), 42);
+      expect(form.reset()).toBe(undefined);
+      expect(spy).toHaveBeenCalled();
+    });
   });
 
   describe("tree", () => {
