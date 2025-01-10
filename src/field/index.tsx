@@ -87,6 +87,10 @@ export class Field<Payload> {
     return this.#parent ? [...this.#parent.field.path, this.#parent.key] : [];
   }
 
+  get name(): string {
+    return this.path.join(".") || ".";
+  }
+
   get parent(): Field<any> | undefined {
     return this.#parent?.field;
   }
@@ -616,7 +620,7 @@ export class Field<Payload> {
     });
 
     const control = {
-      name: this.path.join(".") || ".",
+      name: this.name,
       value,
       onChange: this.set,
       onBlur: () => {
@@ -634,7 +638,7 @@ export class Field<Payload> {
     this.#customOnBlur = props?.onBlur;
 
     return {
-      name: this.path.join(".") || ".",
+      name: this.name,
       ref: this.ref,
       onBlur: this.onBlur,
     };

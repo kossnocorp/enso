@@ -81,6 +81,26 @@ describe("Field", () => {
         expect(computed.parent).toBe(field.$.name);
       });
     });
+
+    describe("name", () => {
+      it("returns tha field name", () => {
+        const field = new Field({ address: { name: { first: "Sasha" } } });
+        expect(field.$.address.$.name.$.first.name).toEqual(
+          "address.name.first"
+        );
+      });
+
+      it("returns dot for root field", () => {
+        const field = new Field({ name: { first: "Sasha" } });
+        expect(field.name).toEqual(".");
+      });
+
+      it("returns the source name for computed fields", () => {
+        const field = new Field({ name: { first: "Sasha" } });
+        const computed = field.$.name.$.first.into(toCodes).from(fromCodes);
+        expect(computed.name).toEqual("name.first");
+      });
+    });
   });
 
   describe("value", () => {
