@@ -238,13 +238,15 @@ export class Form<Payload> {
     };
   }
 
-  Control(
-    props: Form.ControlComponentProps<Payload>
+  Control<IsServer extends boolean | undefined = undefined>(
+    props: Form.ControlComponentProps<Payload, IsServer>
   ): React.ReactElement<HTMLFormElement> {
     const { onSubmit, onReset, server, children, ...restProps } = props;
     return (
       <form
         {...restProps}
+        // @ts-expect-error: We're checking the server flag to determine if
+        // the callback is a server-side one or not.
         {...this.control({ onSubmit, onReset, server })}
         id={this.#id}
       >
@@ -314,10 +316,7 @@ export namespace Form {
     validate?: Field.Validator<Payload, undefined>;
   }
 
-  export interface ControlProps<
-    Payload,
-    IsServer extends boolean | undefined = undefined,
-  > {
+  export interface ControlProps<Payload, IsServer extends boolean | undefined> {
     onSubmit?: ControlOnSubmit<Payload, IsServer> | undefined;
     onReset?: ControlOnReset | undefined;
     server?: IsServer;
@@ -337,8 +336,10 @@ export namespace Form {
     event: React.FormEvent<HTMLFormElement>
   ) => unknown | Promise<unknown>;
 
-  export interface ControlComponentProps<Payload>
-    extends ControlProps<Payload>,
+  export interface ControlComponentProps<
+    Payload,
+    IsServer extends boolean | undefined,
+  > extends ControlProps<Payload, IsServer>,
       Omit<React.FormHTMLAttributes<HTMLFormElement>, "onSubmit" | "onReset"> {
     children?: React.ReactNode;
   }
