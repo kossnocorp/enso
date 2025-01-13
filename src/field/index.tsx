@@ -128,8 +128,7 @@ export class Field<Payload> {
 
     // @ts-expect-error: [TODO]
     return useFieldHook({
-      // @ts-expect-error: [TODO]
-      field: this,
+      field: this as Field<any>,
       getValue: () => this.get(),
       watch: ({ valueRef, rerender }) =>
         this.watch((payload, event) => {
@@ -152,7 +151,6 @@ export class Field<Payload> {
           valueRef.current = { id: this.id, enable: true, value: payload };
           rerender();
         }),
-      // @ts-expect-error: [TODO]
       toResult: (result) => (watchMeta ? [result, meta] : result),
     });
   }
@@ -220,8 +218,7 @@ export class Field<Payload> {
     // @ts-expect-error: [TODO]
     return useFieldHook({
       enable,
-      // @ts-expect-error: [TODO]
-      field: this,
+      field: this as Field<any>,
       getValue: () => this.dirty,
     });
   }
@@ -403,8 +400,7 @@ export class Field<Payload> {
   ): Computed {
     // @ts-expect-error: [TODO]
     return useFieldHook({
-      // @ts-expect-error: [TODO]
-      field: this,
+      field: this as Field<any>,
       getValue: () => callback(this.get()),
       deps,
     });
@@ -422,8 +418,7 @@ export class Field<Payload> {
   ): Field.Decomposed<Payload> {
     // @ts-expect-error: [TODO]
     return useFieldHook({
-      // @ts-expect-error: [TODO]
-      field: this,
+      field: this as Field<any>,
       getValue: () => this.decompose(),
       shouldRender: (prev, next) => !!prev && callback(next.value, prev.value),
     });
@@ -445,8 +440,7 @@ export class Field<Payload> {
   ): Field.Discriminated<Payload, Discriminator> {
     // @ts-expect-error: [TODO]
     return useFieldHook({
-      // @ts-expect-error: [TODO]
-      field: this,
+      field: this as Field<any>,
       getValue: () => this.discriminate(discriminator),
       shouldRender: (prev, next) => prev?.discriminator !== next.discriminator,
     });
@@ -517,8 +511,7 @@ export class Field<Payload> {
     callback: Field.NarrowCallback<Payload, Narrowed>
   ): Field<Narrowed> | undefined {
     return useFieldHook({
-      // @ts-expect-error: [TODO]
-      field: this,
+      field: this as Field<any>,
       getValue: () => this.narrow(callback),
     });
   }
@@ -709,8 +702,7 @@ export class Field<Payload> {
   ): Enable extends true | undefined ? Field.Error | undefined : undefined {
     return useFieldHook({
       enable,
-      // @ts-expect-error: [TODO]
-      field: this,
+      field: this as Field<any>,
       getValue: () => this.error,
     });
   }
@@ -764,8 +756,7 @@ export class Field<Payload> {
     // @ts-expect-error: [TODO]
     return useFieldHook({
       enable,
-      // @ts-expect-error: [TODO]
-      field: this,
+      field: this as Field<any>,
       getValue: () => this.invalids,
       shouldRender: (prev, next) =>
         !(
@@ -788,8 +779,7 @@ export class Field<Payload> {
     // @ts-expect-error: [TODO]
     return useFieldHook({
       enable,
-      // @ts-expect-error: [TODO]
-      field: this,
+      field: this as Field<any>,
       getValue: () => this.valid,
     });
   }
@@ -1878,7 +1868,7 @@ interface UseFieldHookWatchProps<Value> {
 }
 
 interface UseFieldHookProps<Value, Result = Value> {
-  enable: boolean | undefined;
+  enable?: boolean | undefined;
   field: Field<any>;
   getValue(): Value;
   shouldRender?(prevValue: Value | undefined, nextValue: Value): boolean;
