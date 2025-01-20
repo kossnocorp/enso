@@ -569,6 +569,14 @@ export class Field<Payload> {
     return length;
   };
 
+  // @ts-expect-error: This is fine
+  find: Field.FindFn<Payload> = (predicate) => {
+    if (!(this.#internal instanceof InternalArrayState))
+      throw new Error("State is not an array");
+    // @ts-expect-error: This is fine
+    return this.#internal.find(predicate);
+  };
+
   // @ts-ignore: This is fine
   get length(): Payload extends Array<any> ? number : never {
     if (!(this.#internal instanceof InternalArrayState))
@@ -1071,6 +1079,21 @@ export namespace Field {
   export type RemoveFn<Payload> = Payload extends object
     ? ObjectRemoveFn<Payload>
     : () => void;
+
+  export type ArrayPredicate<Item, Return> = (
+    item: Field<Item>,
+    index: number
+  ) => Return;
+
+  export type FindFn<Payload> =
+    Payload extends Array<infer Item>
+      ? (predicate: FindPredicate<Item>) => Field<Item> | undefined
+      : never;
+
+  export type FindPredicate<Item> = ArrayPredicate<
+    Item,
+    boolean | false | 0 | "" | null | undefined
+  >;
 
   export interface ObjectRemoveFn<Payload extends object> {
     (): void;
@@ -1729,6 +1752,13 @@ export class InternalArrayState<
       field: this.external,
     });
     return length + 1;
+  }
+
+  find(
+    predicate: Field.FindPredicate<Payload[number]>
+  ): Field<Payload[number]> | undefined {
+    // @ts-expect-error: This is fine
+    return this.#children.find(predicate);
   }
 
   //#endregion

@@ -1311,6 +1311,28 @@ describe("Field", () => {
         expect(field.push(4)).toBe(4);
       });
     });
+
+    describe("find", () => {
+      it("finds an item in the array", () => {
+        const field = new Field([1, 2, 3]);
+        const item = field.find((item) => item.get() === 2);
+        expect(item?.get()).toBe(2);
+      });
+
+      it("returns undefined if item not found", () => {
+        const field = new Field([1, 2, 3]);
+        const item = field.find((item) => item.get() === 4);
+        expect(item).toBe(undefined);
+      });
+
+      it("passes index to the predicate", () => {
+        const field = new Field([1, 2, 3]);
+        const item = field.find(
+          (item, index) => item.get() === 2 && index === 1
+        );
+        expect(item?.get()).toBe(2);
+      });
+    });
   });
 
   describe("input", () => {
