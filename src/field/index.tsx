@@ -329,24 +329,27 @@ export class Field<Payload> {
     }
 
     this.#target.dispatchEvent(new FieldChangeEvent(changes));
-    // If the updates should flow upstream to parents too
+
+    // If the updates should flow upstream, trigger parents too
     if (notifyParents && this.#parent)
       this.#parent.field.#childTrigger(changes, this.#parent.key);
   }
 
-  #childTrigger(changes: FieldChange, key: string) {
-    // Always propagate the blurred change to the parents
+  #childTrigger(childChanges: FieldChange, key: string) {
+    // Always propagate the blurred change to the parents so that form might
+    // detect the event and trigger the validation
     const blurredChange =
-      changes & fieldChange.blurred || changes & fieldChange.childBlurred
+      childChanges & fieldChange.blurred ||
+      childChanges & fieldChange.childBlurred
         ? fieldChange.childBlurred
         : 0;
 
-    const updated =
-      this.#internal.childUpdate(changes, key) |
+    const changes =
+      this.#internal.childUpdate(childChanges, key) |
       fieldChange.child |
       blurredChange;
 
-    this.trigger(updated, true);
+    this.trigger(changes, true);
   }
 
   #withholded: [FieldChange, boolean] | undefined;
@@ -382,15 +385,18 @@ export class Field<Payload> {
   }
 
   useWatch(callback: Field.WatchCallback<Payload>): void {
+    // Preserve id to detected the active field swap.
     const idRef = useRef(this.id);
 
     useEffect(() => {
-      if (idRef.current === this.id) return;
-      idRef.current = this.id;
-      callback(this.get(), new FieldChangeEvent(fieldChange.swapped));
-    }, [this.id, callback]);
+      // If the field id changes, trigger the callback with the swapped change.
+      if (idRef.current !== this.id) {
+        idRef.current = this.id;
+        callback(this.get(), new FieldChangeEvent(fieldChange.swapped));
+      }
 
-    useEffect(() => this.watch(callback), [this.id, callback]);
+      return this.watch(callback);
+    }, [this.id, callback]);
   }
 
   unwatch() {
@@ -1821,34 +1827,39 @@ export class UndefinedStateRegistry {
 
 export type FieldChange = number;
 
+/**
+ * Field changes map. Each bit indicates a certain type of change in the field.
+ */
 export const fieldChange = {
-  /** The field has been inserted into an object or an array. */
+  /** Field inserted into object/array. */
   created: 2 ** 0,
-  /** The field has been removed from an object or an array. */
+  /** Field removed from object/array. */
   removed: 2 ** 1,
-  /** The primitive value of the field has change. */
+  /** Field primitive value changed. */
   value: 2 ** 2,
-  /** The type of the field has change. */
+  /** Field type changed. */
   type: 2 ** 3,
-  /** The current field got commited as initial */
+  /** Field value commited as initial */
+  // [TODO] This is not used
   committed: 2 ** 4,
-  /** The field become invalid. */
+  /** Field become invalid. */
   invalid: 2 ** 5,
-  /** The field become valid. */
+  /** Field become valid. */
   valid: 2 ** 6,
-  /** The field lost its focus. */
+  /** Field lost focus. */
   blurred: 2 ** 7,
-  /** The watched target field is not different. */
+  /** Watched target field is now different. */
   swapped: 2 ** 8,
-  /** An object field or an array item has changed. */
+  /** Object/array field property/item changed. */
   child: 2 ** 9,
-  /** An object field or an array item has been removed. */
-  childRemoved: 2 ** 10,
-  /** An object field or an array item has been created. */
-  childCreated: 2 ** 11,
-  /** The order of array items has change. */
+  /** Object/array field property/item created. */
+  childCreated: 2 ** 10,
+  /** Object/array field property/item removed. */
+  childRemoved: 2 ** 11,
+  /** Order of array field items changed. */
+  // [TODO] This is not used
   childrenReordered: 2 ** 12,
-  /** A child field lost its focus.  */
+  /** Child of object/array field lost focus.  */
   childBlurred: 2 ** 13,
 };
 
