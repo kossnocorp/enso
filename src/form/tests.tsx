@@ -7,6 +7,7 @@ import { userEvent } from "@vitest/browser/context";
 import "@vitest/browser/matchers.d.ts";
 import { FieldRef } from "../field/ref/index.ts";
 import { Form } from "./index.tsx";
+import { Field } from "../field/index.tsx";
 
 describe("Form", () => {
   describe("control", () => {
@@ -407,7 +408,8 @@ describe("Form", () => {
                 Update field
               </button>
 
-              <form.Control
+              <Form.Component
+                form={form}
                 onSubmit={(values) => {
                   spy(values);
                   return submitPromise;
@@ -415,10 +417,10 @@ describe("Form", () => {
               >
                 <div data-testid="submitting">{String(form.submitting)}</div>
 
-                <input {...form.$.hello.input()} data-testid="hello-input" />
+                <input {...form.$.hello.control()} data-testid="hello-input" />
 
                 <button type="submit">Submit</button>
-              </form.Control>
+              </Form.Component>
             </div>
           );
         }
@@ -468,7 +470,13 @@ describe("Form", () => {
         function Component() {
           const form = Form.use({ hello: "world" });
           formId = form.id;
-          return <form.Control data-testid="form" onSubmit={() => {}} />;
+          return (
+            <Form.Component
+              form={form}
+              data-testid="form"
+              onSubmit={() => {}}
+            />
+          );
         }
 
         const screen = render(<Component />);
@@ -496,8 +504,9 @@ describe("Form", () => {
 
             <button onClick={() => form.$.hello.set("Sasha")}>Set hello</button>
 
-            <form.Control onSubmit={spy}>
-              <form.$.hello.Control
+            <Form.Component form={form} onSubmit={spy}>
+              <Field.Component
+                field={form.$.hello}
                 error
                 render={(control, { error }) => {
                   return (
@@ -517,7 +526,7 @@ describe("Form", () => {
               />
 
               <button type="submit">Submit</button>
-            </form.Control>
+            </Form.Component>
           </div>
         );
       }
@@ -575,8 +584,9 @@ describe("Form", () => {
           <div>
             <div data-testid="render-validate">{count}</div>
 
-            <form.Control onSubmit={spy}>
-              <form.$.hello.Control
+            <Form.Component form={form} onSubmit={spy}>
+              <Field.Component
+                field={form.$.hello}
                 error
                 render={(control, { error }) => {
                   return (
@@ -596,7 +606,7 @@ describe("Form", () => {
               />
 
               <button type="submit">Submit</button>
-            </form.Control>
+            </Form.Component>
           </div>
         );
       }

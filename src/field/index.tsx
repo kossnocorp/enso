@@ -28,6 +28,44 @@ export class Field<Payload> {
     return field;
   }
 
+  static Component<
+    Payload,
+    MetaEnable extends boolean | undefined = undefined,
+    DirtyEnable extends boolean = false,
+    ErrorEnable extends boolean = false,
+    ValidEnable extends boolean = false,
+    InvalidsEnable extends boolean = false,
+  >(
+    props: Field.ComponentProps<
+      Payload,
+      MetaEnable,
+      DirtyEnable,
+      ErrorEnable,
+      ValidEnable,
+      InvalidsEnable
+    >
+  ): React.ReactNode {
+    const { field } = props;
+    const value = field.useGet();
+    const meta = field.useMeta({
+      dirty: props.meta || !!props.dirty,
+      error: props.meta || !!props.error,
+      valid: props.meta || !!props.valid,
+      invalids: props.meta || !!props.invalids,
+    });
+
+    const control = {
+      name: field.name,
+      value,
+      onChange: field.set,
+      onBlur: () => {
+        field.trigger(fieldChange.blurred, true);
+      },
+    };
+
+    return props.render(control, meta as any);
+  }
+
   #id = nanoid();
   #parent?: Field.Parent<any> | undefined;
   #onInput;
@@ -63,7 +101,6 @@ export class Field<Payload> {
     };
 
     this.set = this.set.bind(this);
-    this.Control = this.Control.bind(this);
     this.ref = this.ref.bind(this);
     this.onBlur = this.onBlur.bind(this);
   }
@@ -573,7 +610,7 @@ export class Field<Payload> {
   find: Field.FindFn<Payload> = (predicate) => {
     if (!(this.#internal instanceof InternalArrayState))
       throw new Error("State is not an array");
-    // @ts-expect-error: This is fine
+    // @ts-ignore: This is fine
     return this.#internal.find(predicate);
   };
 
@@ -597,45 +634,9 @@ export class Field<Payload> {
 
   //#endregion
 
-  //#region Input
+  //#region Control
 
-  Control<
-    MetaEnable extends boolean | undefined = undefined,
-    DirtyEnable extends boolean = false,
-    ErrorEnable extends boolean = false,
-    ValidEnable extends boolean = false,
-    InvalidsEnable extends boolean = false,
-  >(
-    props: Field.ControlProps<
-      Payload,
-      MetaEnable,
-      DirtyEnable,
-      ErrorEnable,
-      ValidEnable,
-      InvalidsEnable
-    >
-  ): React.ReactNode {
-    const value = this.useGet();
-    const meta = this.useMeta({
-      dirty: props.meta || !!props.dirty,
-      error: props.meta || !!props.error,
-      valid: props.meta || !!props.valid,
-      invalids: props.meta || !!props.invalids,
-    });
-
-    const control = {
-      name: this.name,
-      value,
-      onChange: this.set,
-      onBlur: () => {
-        this.trigger(fieldChange.blurred, true);
-      },
-    };
-
-    return props.render(control, meta as any);
-  }
-
-  input<Element extends HTMLElement>(
+  control<Element extends HTMLElement>(
     props?: Field.InputProps<Element>
   ): Field.Registration<Element> {
     this.#customRef = props?.ref;
@@ -1107,7 +1108,7 @@ export namespace Field {
 
   //#region Input
 
-  export type ControlProps<
+  export type ComponentProps<
     Payload,
     MetaEnable extends boolean | undefined = undefined,
     DirtyEnable extends boolean = false,
@@ -1115,6 +1116,7 @@ export namespace Field {
     ValidEnable extends boolean = false,
     InvalidsEnable extends boolean = false,
   > = {
+    field: Field<Payload>;
     render: InputRender<
       Payload,
       MetaEnable extends true
@@ -1757,7 +1759,7 @@ export class InternalArrayState<
   find(
     predicate: Field.FindPredicate<Payload[number]>
   ): Field<Payload[number]> | undefined {
-    // @ts-expect-error: This is fine
+    // @ts-ignore: This is fine
     return this.#children.find(predicate);
   }
 

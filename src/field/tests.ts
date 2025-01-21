@@ -1339,14 +1339,14 @@ describe("Field", () => {
     describe("input", () => {
       it("generates props for a field", () => {
         const field = new Field({ name: { first: "Alexander" } });
-        const props = field.$.name.$.first.input();
+        const props = field.$.name.$.first.control();
         expect(props.name).toEqual("name.first");
         expect(props.ref).toBe(field.$.name.$.first.ref);
       });
 
       it("assigns . name for the root field", () => {
         const field = new Field({ name: { first: "Alexander" } });
-        const props = field.input();
+        const props = field.control();
         expect(props.name).toEqual(".");
       });
     });

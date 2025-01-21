@@ -39,6 +39,23 @@ export class Form<Payload> {
     return form;
   }
 
+  static Component<Payload, IsServer extends boolean | undefined = undefined>(
+    props: Form.ComponentProps<Payload, IsServer>
+  ): React.ReactElement<HTMLFormElement> {
+    const { form, onSubmit, onReset, server, children, ...restProps } = props;
+    return (
+      <form
+        {...restProps}
+        // @ts-expect-error: We're checking the server flag to determine if
+        // the callback is a server-side one or not.
+        {...form.control({ onSubmit, onReset, server })}
+        id={form.#id}
+      >
+        {children}
+      </form>
+    );
+  }
+
   #id: string;
   #field: Field<Payload>;
 
@@ -46,8 +63,6 @@ export class Form<Payload> {
     this.#id = id;
     this.#field = new Field(initial);
     this.#validate = options?.validate;
-
-    this.Control = this.Control.bind(this);
 
     this.#field.watch((_, event) => {
       if (
@@ -238,23 +253,6 @@ export class Form<Payload> {
     };
   }
 
-  Control<IsServer extends boolean | undefined = undefined>(
-    props: Form.ControlComponentProps<Payload, IsServer>
-  ): React.ReactElement<HTMLFormElement> {
-    const { onSubmit, onReset, server, children, ...restProps } = props;
-    return (
-      <form
-        {...restProps}
-        // @ts-expect-error: We're checking the server flag to determine if
-        // the callback is a server-side one or not.
-        {...this.control({ onSubmit, onReset, server })}
-        id={this.#id}
-      >
-        {children}
-      </form>
-    );
-  }
-
   #submitting = false;
 
   get submitting() {
@@ -336,11 +334,10 @@ export namespace Form {
     event: React.FormEvent<HTMLFormElement>
   ) => unknown | Promise<unknown>;
 
-  export interface ControlComponentProps<
-    Payload,
-    IsServer extends boolean | undefined,
-  > extends ControlProps<Payload, IsServer>,
+  export interface ComponentProps<Payload, IsServer extends boolean | undefined>
+    extends ControlProps<Payload, IsServer>,
       Omit<React.FormHTMLAttributes<HTMLFormElement>, "onSubmit" | "onReset"> {
+    form: Form<Payload>;
     children?: React.ReactNode;
   }
 

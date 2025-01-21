@@ -1,4 +1,4 @@
-import React, { useMemo, useRef, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { describe, expect, it, vi } from "vitest";
 import { render } from "vitest-browser-react";
 import { userEvent } from "@vitest/browser/context";
@@ -807,7 +807,7 @@ describe("Field", () => {
 
               <input
                 data-testid="name-first-input"
-                {...field.$.name.$.first.input()}
+                {...field.$.name.$.first.control()}
               />
 
               <div data-testid="dirty">{String(dirty)}</div>
@@ -2262,7 +2262,7 @@ describe("Field", () => {
                 <div>
                   <input
                     data-testid="input-name-first"
-                    {...(name.field as Field<UserName>).$.first.input()}
+                    {...(name.field as Field<UserName>).$.first.control()}
                   />
 
                   <button onClick={() => address.$.name.set("Alex")}>
@@ -3095,7 +3095,7 @@ describe("Field", () => {
 
               <input
                 data-testid="name-first-input"
-                {...field.$.name.$.first.input()}
+                {...field.$.name.$.first.control()}
               />
 
               <button onClick={() => field.$.name.$.first.set("Sasha")}>
@@ -3150,7 +3150,7 @@ describe("Field", () => {
 
               <textarea
                 data-testid="name-first-input"
-                {...field.$.name.$.first.input()}
+                {...field.$.name.$.first.control()}
               />
 
               <button onClick={() => field.$.name.$.first.set("Sasha")}>
@@ -3208,7 +3208,7 @@ describe("Field", () => {
 
               <input
                 data-testid="name-first-input"
-                {...field.$.name.$.first.input({
+                {...field.$.name.$.first.control({
                   ref: refSpy,
                   onBlur: onBlurSpy,
                 })}
@@ -3268,7 +3268,7 @@ describe("Field", () => {
       });
     });
 
-    describe("Control", () => {
+    describe("Component", () => {
       it("allows to control input element", async () => {
         function Component() {
           const count = useRenderCount();
@@ -3278,7 +3278,8 @@ describe("Field", () => {
             <div>
               <div data-testid="render-input">{count}</div>
 
-              <field.$.name.$.first.Control
+              <Field.Component
+                field={field.$.name.$.first}
                 render={(control) => (
                   <input
                     data-testid="name-first-input"
@@ -3338,7 +3339,8 @@ describe("Field", () => {
             <div>
               <div data-testid="render-meta-outside">{outsideCount}</div>
 
-              <field.Control
+              <Field.Component
+                field={field}
                 meta
                 render={({ value }, { invalids, valid, error, dirty }) => {
                   const count = useRenderCount();
@@ -3516,6 +3518,99 @@ describe("Field", () => {
           .element(screen.getByTestId("render-meta-outside"))
           .toHaveTextContent("1");
       });
+
+      it("doesn't cause re-mounts on field change", async () => {
+        const mountSpy = vi.fn();
+        interface InputProps {
+          name: string;
+          value: string;
+          onChange: (value: string) => void;
+          onBlur: React.FocusEventHandler<Element>;
+          "data-testid"?: string;
+        }
+
+        function Input(props: InputProps) {
+          useEffect(mountSpy, []);
+          return (
+            <input
+              {...props}
+              onChange={(event) => props.onChange(event.target.value)}
+            />
+          );
+        }
+
+        function Component() {
+          const count = useRenderCount();
+          const namesField = Field.use<string[]>(["Alexander", "Sasha"]);
+          const [index, setIndex] = useState(0);
+          const decomposedField = namesField.at(index).decompose();
+          if (!decomposedField.value) return null;
+          const { field } = decomposedField;
+
+          return (
+            <div>
+              <div data-testid="render-input">{count}</div>
+
+              <Field.Component
+                field={field}
+                render={(control) => (
+                  <Input {...control} data-testid="name-input" />
+                )}
+              />
+
+              <button onClick={() => field.set("Alex")}>Rename</button>
+
+              <button onClick={() => setIndex(1)}>Switch</button>
+
+              <StringComponent string={field} />
+            </div>
+          );
+        }
+
+        const screen = render(<Component />);
+
+        await expect
+          .element(screen.getByTestId("string"))
+          .toHaveTextContent("Alexander");
+        await expect
+          .element(screen.getByTestId("name-input"))
+          .toHaveValue("Alexander");
+
+        await userEvent.fill(screen.getByTestId("name-input"), "A.");
+
+        await expect
+          .element(screen.getByTestId("string"))
+          .toHaveTextContent("A.");
+        await expect
+          .element(screen.getByTestId("name-input"))
+          .toHaveValue("A.");
+
+        await screen.getByText("Rename").click();
+
+        await expect
+          .element(screen.getByTestId("string"))
+          .toHaveTextContent("Alex");
+        await expect
+          .element(screen.getByTestId("name-input"))
+          .toHaveValue("Alex");
+
+        await expect
+          .element(screen.getByTestId("render-input"))
+          .toHaveTextContent("1");
+
+        expect(mountSpy).toHaveBeenCalledOnce();
+
+        await screen.getByText("Switch").click();
+
+        await expect
+          .element(screen.getByTestId("string"))
+          .toHaveTextContent("Sasha");
+        await expect
+          .element(screen.getByTestId("name-input"))
+          .toHaveValue("Sasha");
+
+        expect(mountSpy).toHaveBeenCalledOnce();
+      });
     });
   });
 });
@@ -3581,7 +3676,8 @@ function UserNameComponent(props: UserNameComponentProps) {
       <div data-testid={`name-first-${index}`}>{first}</div>
       <div data-testid={`name-last-${index}`}>{last}</div>
 
-      <name.$.first.Control
+      <Field.Component
+        field={name.$.first}
         render={(control) => (
           <input
             data-testid={`name-first-${index}-input`}
@@ -3591,7 +3687,8 @@ function UserNameComponent(props: UserNameComponentProps) {
         )}
       />
 
-      <name.$.last.Control
+      <Field.Component
+        field={name.$.last}
         render={(control) => (
           <input
             data-testid={`name-last-${index}-input`}
@@ -3623,7 +3720,8 @@ function UserNameFormComponent(props: UserNameFormComponentProps) {
           props.onSubmit?.(field.get());
         }}
       >
-        <field.$.first.Control
+        <Field.Component
+          field={field.$.first}
           render={(control) => (
             <input
               data-testid="input-name-first"
@@ -3633,7 +3731,8 @@ function UserNameFormComponent(props: UserNameFormComponentProps) {
           )}
         />
 
-        <field.$.last.Control
+        <Field.Component
+          field={field.$.last}
           render={(control) => (
             <input
               data-testid="input-name-last"
