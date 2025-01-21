@@ -46,8 +46,6 @@ export class Form<Payload> {
     return (
       <form
         {...restProps}
-        // @ts-expect-error: We're checking the server flag to determine if
-        // the callback is a server-side one or not.
         {...form.control({ onSubmit, onReset, server })}
         id={form.#id}
       >

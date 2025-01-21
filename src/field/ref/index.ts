@@ -55,9 +55,9 @@ export class FieldRef<Payload> {
   discriminate<Discriminator extends keyof Exclude<Payload, undefined>>(
     discriminator: Discriminator
   ): FieldRef.Discriminated<Payload, Discriminator> {
-    // @ts-ignore: [TODO]
+    // @ts-expect-error: [TODO]
     return {
-      // @ts-ignore: [TODO]
+      // @ts-expect-error: [TODO]
       discriminator: this.$[discriminator]?.get(),
       field: this,
     };
