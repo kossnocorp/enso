@@ -5,7 +5,7 @@ import { render } from "vitest-browser-react";
 // [TODO] Figure out a way to get rid of it:
 // https://github.com/vitest-dev/vitest/issues/6965
 import "@vitest/browser/matchers.d.ts";
-import { change } from "../event/index.ts";
+import { change } from "../change/index.ts";
 import { Field } from "./index.tsx";
 
 describe("Field", () => {
