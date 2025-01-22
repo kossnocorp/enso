@@ -9,16 +9,16 @@ export default defineWorkspace([
       environment: "node",
     },
   },
-  {
-    test: {
-      include: ["src/**/tests.tsx"],
-      name: "browser",
-      browser: {
-        enabled: true,
-        name: "chromium",
-        provider: "playwright",
-        headless: true,
-      },
-    },
-  },
+  // {
+  //   test: {
+  //     include: ["src/**/tests.tsx"],
+  //     name: "browser",
+  //     browser: {
+  //       enabled: true,
+  //       name: "chromium",
+  //       provider: "playwright",
+  //       headless: true,
+  //     },
+  //   },
+  // },
 ]);

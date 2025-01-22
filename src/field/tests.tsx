@@ -1,11 +1,12 @@
+import { userEvent } from "@vitest/browser/context";
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { describe, expect, it, vi } from "vitest";
 import { render } from "vitest-browser-react";
-import { userEvent } from "@vitest/browser/context";
 // [TODO] Figure out a way to get rid of it:
 // https://github.com/vitest-dev/vitest/issues/6965
 import "@vitest/browser/matchers.d.ts";
-import { Field, fieldChange } from "./index.tsx";
+import { change } from "../event/index.ts";
+import { Field } from "./index.tsx";
 
 describe("Field", () => {
   it("allows to control object field", async () => {
@@ -579,7 +580,7 @@ describe("Field", () => {
         expect(spy).toHaveBeenCalledWith(
           { name: "Sasha" },
           expect.objectContaining({
-            changes: fieldChange.swapped,
+            changes: change.field.id,
           })
         );
 
@@ -589,7 +590,7 @@ describe("Field", () => {
         expect(spy).toHaveBeenCalledWith(
           { name: "Alex" },
           expect.objectContaining({
-            changes: fieldChange.child,
+            changes: change.field.child,
           })
         );
 
@@ -636,7 +637,7 @@ describe("Field", () => {
         expect(spy).toHaveBeenCalledWith(
           { name: "Sasha" },
           expect.objectContaining({
-            changes: fieldChange.swapped,
+            changes: change.field.id,
           })
         );
 

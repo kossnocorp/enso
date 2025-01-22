@@ -9,6 +9,7 @@ import React, {
   useMemo,
   useRef,
 } from "react";
+import { change, ChangeEvent, FieldChange } from "../event/index.ts";
 import { useRerender } from "../hooks/rerender.ts";
 import { type EnsoUtils } from "../utils.ts";
 import { FieldRef } from "./ref/index.ts";
@@ -59,7 +60,7 @@ export class Field<Payload> {
       value,
       onChange: field.set,
       onBlur: () => {
-        field.trigger(fieldChange.blurred, true);
+        field.trigger(change.field.blur, true);
       },
     };
 
@@ -73,7 +74,7 @@ export class Field<Payload> {
   #internal: InternalState<Payload> = new InternalPrimitiveState(
     this,
     // @ts-expect-error
-    undefinedValue
+    detachedValue
   );
 
   #initial: Payload;
@@ -106,7 +107,7 @@ export class Field<Payload> {
   }
 
   #clearCache() {
-    this.#cachedGet = undefinedValue;
+    this.#cachedGet = detachedValue;
     this.#cachedDirty = undefined;
     this.#cachedInvalids = undefined;
   }
@@ -137,10 +138,10 @@ export class Field<Payload> {
 
   //#region Value
 
-  #cachedGet: Payload | UndefinedValue = undefinedValue;
+  #cachedGet: Payload | DetachedValue = detachedValue;
 
   get(): Payload {
-    if (this.#cachedGet === undefinedValue) {
+    if (this.#cachedGet === detachedValue) {
       this.#cachedGet = this.#internal.get();
     }
     return this.#cachedGet;
@@ -176,10 +177,10 @@ export class Field<Payload> {
               // [TODO] Change to allowlist instead as event might contain
               // changes from wrappers such as Form.
               ~(
-                fieldChange.valid |
-                fieldChange.invalid |
-                fieldChange.blurred |
-                fieldChange.childBlurred
+                change.field.valid |
+                change.field.invalid |
+                change.field.blur |
+                change.child.blur
               )
             )
           )
@@ -193,16 +194,16 @@ export class Field<Payload> {
   }
 
   // [TODO] Exposing the notify parents flag might be dangerous
-  set(value: Payload | UndefinedValue, notifyParents = true): FieldChange | 0 {
-    const change = this.#set(value);
-    if (change) this.trigger(change, notifyParents);
+  set(value: Payload | DetachedValue, notifyParents = true): FieldChange {
+    const changes = this.#set(value);
+    if (changes) this.trigger(changes, notifyParents);
 
-    return change;
+    return changes;
   }
 
-  #set(value: Payload | UndefinedValue): FieldChange | 0 {
+  #set(value: Payload | DetachedValue): FieldChange {
     // Frozen fields should not change!
-    if (Object.isFrozen(this)) return 0;
+    if (Object.isFrozen(this)) return 0n;
 
     const ValueConstructor = InternalState.detect(value);
 
@@ -213,11 +214,11 @@ export class Field<Payload> {
     // The field is of a different type
     this.#internal.unwatch();
 
-    let changes = fieldChange.type;
+    let changes = change.field.type;
     // The field is being removed
-    if (value === undefinedValue) changes |= fieldChange.removed;
+    if (value === detachedValue) changes |= change.field.detach;
     // The field is being created
-    if (this.#internal.detached()) changes |= fieldChange.created;
+    if (this.#internal.detached()) changes |= change.field.attach;
 
     // @ts-expect-error: This is fine
     this.#internal = new ValueConstructor(this, value);
@@ -225,10 +226,10 @@ export class Field<Payload> {
     return changes;
   }
 
-  [createSymbol](value: Payload): FieldChange | 0 {
-    const change = this.#set(value) | fieldChange.created;
-    this.trigger(change, false);
-    return change;
+  [createSymbol](value: Payload): FieldChange {
+    const changes = this.#set(value) | change.field.attach;
+    this.trigger(changes, false);
+    return changes;
   }
 
   [clearSymbol]() {
@@ -312,23 +313,23 @@ export class Field<Payload> {
       this.#withholded[0] |= changes;
 
       if (
-        this.#withholded[0] & fieldChange.valid &&
-        changes & fieldChange.invalid
+        this.#withholded[0] & change.field.valid &&
+        changes & change.field.invalid
       )
-        this.#withholded[0] &= ~fieldChange.valid;
+        this.#withholded[0] &= ~change.field.valid;
 
       if (
-        this.#withholded[0] & fieldChange.invalid &&
-        changes & fieldChange.valid
+        this.#withholded[0] & change.field.invalid &&
+        changes & change.field.valid
       )
-        this.#withholded[0] &= ~(fieldChange.invalid | fieldChange.valid);
+        this.#withholded[0] &= ~(change.field.invalid | change.field.valid);
 
       if (notifyParents) this.#withholded[1] = true;
 
       return;
     }
 
-    this.#target.dispatchEvent(new FieldChangeEvent(changes));
+    this.#target.dispatchEvent(new ChangeEvent(changes));
 
     // If the updates should flow upstream, trigger parents too
     if (notifyParents && this.#parent)
@@ -339,14 +340,13 @@ export class Field<Payload> {
     // Always propagate the blurred change to the parents so that form might
     // detect the event and trigger the validation
     const blurredChange =
-      childChanges & fieldChange.blurred ||
-      childChanges & fieldChange.childBlurred
-        ? fieldChange.childBlurred
-        : 0;
+      childChanges & change.field.blur || childChanges & change.child.blur
+        ? change.child.blur
+        : 0n;
 
     const changes =
       this.#internal.childUpdate(childChanges, key) |
-      fieldChange.child |
+      change.field.child |
       blurredChange;
 
     this.trigger(changes, true);
@@ -355,7 +355,7 @@ export class Field<Payload> {
   #withholded: [FieldChange, boolean] | undefined;
 
   withhold() {
-    this.#withholded = [0, false];
+    this.#withholded = [0n, false];
     this.#internal.withhold();
   }
 
@@ -372,7 +372,7 @@ export class Field<Payload> {
 
   watch(callback: Field.WatchCallback<Payload>): Field.Unwatch {
     const handler = (event: Event) => {
-      callback(this.get(), event as FieldChangeEvent);
+      callback(this.get(), event as ChangeEvent);
     };
 
     this.#subs.add(handler);
@@ -392,7 +392,7 @@ export class Field<Payload> {
       // If the field id changes, trigger the callback with the swapped change.
       if (idRef.current !== this.id) {
         idRef.current = this.id;
-        callback(this.get(), new FieldChangeEvent(fieldChange.swapped));
+        callback(this.get(), new ChangeEvent(change.field.id));
       }
 
       return this.watch(callback);
@@ -606,7 +606,7 @@ export class Field<Payload> {
       throw new Error("State is not an array");
 
     const length = this.#internal.push(item);
-    this.trigger(fieldChange.childCreated, true);
+    this.trigger(change.child.attach, true);
     return length;
   };
 
@@ -630,7 +630,7 @@ export class Field<Payload> {
     key: Key
   ) {
     // @ts-expect-error: [TODO]
-    if (arguments.length === 0) this.set(undefinedValue);
+    if (arguments.length === 0) this.set(detachedValue);
     // @ts-expect-error: [TODO]
     else return this.at(key).remove();
   } as Field.RemoveFn<Payload>;
@@ -695,7 +695,7 @@ export class Field<Payload> {
   #customOnBlur: FocusEventHandler<Element> | undefined;
 
   onBlur<Element extends HTMLElement>(event: FocusEvent<Element>) {
-    this.trigger(fieldChange.blurred, true);
+    this.trigger(change.field.blur, true);
     this.#customOnBlur?.(event);
   }
 
@@ -730,10 +730,10 @@ export class Field<Payload> {
         prevError.message !== error.message)
     ) {
       this.#error = error;
-      this.trigger(fieldChange.invalid, true);
+      this.trigger(change.field.invalid, true);
     } else if (!error && prevError) {
       this.#error = error;
-      this.trigger(fieldChange.valid, true);
+      this.trigger(change.field.valid, true);
     }
   }
 
@@ -929,7 +929,7 @@ export namespace Field {
 
   export type WatchCallback<Payload> = (
     payload: Payload,
-    event: FieldChangeEvent
+    event: ChangeEvent
   ) => void;
 
   export type Unwatch = () => void;
@@ -1252,10 +1252,10 @@ export abstract class InternalState<Payload> {
     | typeof InternalObjectState
     | typeof InternalPrimitiveState {
     if (
-      value !== undefinedValue &&
+      value !== detachedValue &&
       value !== null &&
       typeof value === "object" &&
-      value !== undefinedValue
+      value !== detachedValue
     )
       return Array.isArray(value) ? InternalArrayState : InternalObjectState;
     return InternalPrimitiveState;
@@ -1263,13 +1263,13 @@ export abstract class InternalState<Payload> {
 
   #external: Field<Payload>;
 
-  constructor(field: Field<Payload>, _value: Payload | UndefinedValue) {
+  constructor(field: Field<Payload>, _value: Payload | DetachedValue) {
     this.#external = field;
   }
 
   abstract unwatch(): void;
 
-  abstract set(value: Payload | UndefinedValue): FieldChange | 0;
+  abstract set(value: Payload | DetachedValue): FieldChange;
 
   abstract get(): Payload;
 
@@ -1281,7 +1281,7 @@ export abstract class InternalState<Payload> {
     return type;
   }
 
-  abstract updated(event: FieldChangeEvent): boolean;
+  abstract updated(event: ChangeEvent): boolean;
 
   abstract dirty(value: Payload): boolean;
 
@@ -1312,25 +1312,23 @@ export class InternalPrimitiveState<Payload> extends InternalState<Payload> {
     this.#value = value;
   }
 
-  set(value: Payload): FieldChange | 0 {
-    let change = 0;
+  set(value: Payload): FieldChange {
+    let changes = 0n;
 
-    if (this.#value === undefinedValue && value !== undefinedValue)
-      change |= fieldChange.type | fieldChange.created;
-    else if (this.#value !== undefinedValue && value === undefinedValue)
-      change |= fieldChange.type | fieldChange.removed;
-    else if (typeof this.#value !== typeof value) change |= fieldChange.type;
-    else if (this.#value !== value) change |= fieldChange.value;
+    if (this.#value === detachedValue && value !== detachedValue)
+      changes |= change.field.type | change.field.attach;
+    else if (this.#value !== detachedValue && value === detachedValue)
+      changes |= change.field.type | change.field.detach;
+    else if (typeof this.#value !== typeof value) changes |= change.field.type;
+    else if (this.#value !== value) changes |= change.field.value;
 
     if (this.#value !== value) this.#value = value;
 
-    return change;
+    return changes;
   }
 
   get(): Payload {
-    return this.#value === undefinedValue
-      ? (undefined as Payload)
-      : this.#value;
+    return this.#value === detachedValue ? (undefined as Payload) : this.#value;
   }
 
   $(): Field.$<Payload> {
@@ -1344,11 +1342,11 @@ export class InternalPrimitiveState<Payload> extends InternalState<Payload> {
     return this.external as Field.Try<Payload>;
   }
 
-  updated(event: FieldChangeEvent): boolean {
+  updated(event: ChangeEvent): boolean {
     return !!(
-      event.changes & fieldChange.created ||
-      event.changes & fieldChange.removed ||
-      event.changes & fieldChange.type
+      event.changes & change.field.attach ||
+      event.changes & change.field.detach ||
+      event.changes & change.field.type
     );
   }
 
@@ -1365,7 +1363,7 @@ export class InternalPrimitiveState<Payload> extends InternalState<Payload> {
   override unleash(): void {}
 
   override detached(): boolean {
-    return this.#value === undefinedValue;
+    return this.#value === detachedValue;
   }
 }
 
@@ -1385,8 +1383,8 @@ export class InternalObjectState<
     this.#undefined = new UndefinedStateRegistry(external);
   }
 
-  set(newValue: Payload): FieldChange | 0 {
-    let change = 0;
+  set(newValue: Payload): FieldChange {
+    let changes = 0n;
 
     this.#children.forEach((child, key) => {
       if (!(key in newValue)) {
@@ -1394,7 +1392,7 @@ export class InternalObjectState<
         child[clearSymbol]();
         // @ts-expect-error: This is fine
         this.#undefined.register(key, child);
-        change |= fieldChange.childRemoved;
+        changes |= change.child.detach;
       }
     });
 
@@ -1402,7 +1400,7 @@ export class InternalObjectState<
       const child = this.#children.get(key);
       if (child) {
         const childChange = child.set(value, false);
-        if (childChange) change |= fieldChange.child;
+        if (childChange) changes |= change.field.child;
       } else {
         const undefinedState = this.#undefined.claim(key);
         if (undefinedState) undefinedState[createSymbol](value);
@@ -1412,11 +1410,11 @@ export class InternalObjectState<
           // @ts-expect-error: [TODO]
           undefinedState || new Field(value, { key, field: this.external })
         );
-        change |= fieldChange.childCreated;
+        changes |= change.child.attach;
       }
     }
 
-    return change;
+    return changes;
   }
 
   get(): Payload {
@@ -1462,39 +1460,39 @@ export class InternalObjectState<
     return field;
   }
 
-  updated(event: FieldChangeEvent): boolean {
+  updated(event: ChangeEvent): boolean {
     return !!(
-      event.changes & fieldChange.created ||
-      event.changes & fieldChange.removed ||
-      event.changes & fieldChange.type ||
-      event.changes & fieldChange.childRemoved ||
-      event.changes & fieldChange.childCreated
+      event.changes & change.field.attach ||
+      event.changes & change.field.detach ||
+      event.changes & change.field.type ||
+      event.changes & change.child.detach ||
+      event.changes & change.child.attach
     );
   }
 
   override childUpdate(childChange: FieldChange, key: string): FieldChange {
-    let change = fieldChange.child;
+    let changes = change.field.child;
 
     // Handle when child goes from undefined to defined
-    if (childChange & fieldChange.created) {
+    if (childChange & change.field.attach) {
       const child = this.#undefined.claim(key);
       if (!child)
         throw new Error("Failed to find the child field when updating");
       // @ts-expect-error: [TODO]
       this.#children.set(key, child);
-      change |= fieldChange.childCreated;
+      changes |= change.child.attach;
     }
 
-    if (childChange & fieldChange.removed) {
+    if (childChange & change.field.detach) {
       const child = this.#children.get(key);
       if (!child)
         throw new Error("Failed to find the child field when updating");
       this.#children.delete(key);
       child.unwatch();
-      change |= fieldChange.childRemoved;
+      changes |= change.child.detach;
     }
 
-    return change;
+    return changes;
   }
 
   unwatch() {
@@ -1584,8 +1582,8 @@ export class InternalArrayState<
     return this.#children.map((child) => child.get()) as Payload;
   }
 
-  set(newValue: Payload): FieldChange | 0 {
-    let change = 0;
+  set(newValue: Payload): FieldChange {
+    let changes = 0n;
 
     this.#children.forEach((item, index) => {
       if (!(index in newValue)) {
@@ -1593,7 +1591,7 @@ export class InternalArrayState<
         item[clearSymbol]();
         // @ts-expect-error: This is fine
         this.#undefined.register(index.toString(), item);
-        change |= fieldChange.childRemoved;
+        changes |= change.child.detach;
       }
     });
 
@@ -1602,7 +1600,7 @@ export class InternalArrayState<
       const child = this.#children[index];
       if (child) {
         const childChange = child.set(value, false);
-        if (childChange) change |= fieldChange.child;
+        if (childChange) changes |= change.field.child;
         return child;
       } else {
         const undefinedState = this.#undefined.claim(index.toString());
@@ -1615,12 +1613,12 @@ export class InternalArrayState<
             // @ts-expect-error: This is fine
             field: this.external,
           });
-        change |= fieldChange.childCreated;
+        changes |= change.child.attach;
         return newChild;
       }
     });
 
-    return change;
+    return changes;
   }
 
   $(): Field.$<Payload> {
@@ -1662,41 +1660,40 @@ export class InternalArrayState<
     return field;
   }
 
-  updated(event: FieldChangeEvent): boolean {
+  updated(event: ChangeEvent): boolean {
     return !!(
-      event.changes & fieldChange.created ||
-      event.changes & fieldChange.removed ||
-      event.changes & fieldChange.type ||
-      event.changes & fieldChange.childRemoved ||
-      event.changes & fieldChange.childCreated ||
-      event.changes & fieldChange.childrenReordered
+      event.changes & change.field.attach ||
+      event.changes & change.field.detach ||
+      event.changes & change.field.type ||
+      event.changes & change.child.detach ||
+      event.changes & change.child.attach
     );
   }
 
   override childUpdate(childChange: FieldChange, key: string): FieldChange {
-    let change = fieldChange.child;
+    let changes = change.field.child;
 
     // Handle when child goes from undefined to defined
-    if (childChange & fieldChange.created) {
+    if (childChange & change.field.attach) {
       const child = this.#undefined.claim(key);
       if (!child)
         throw new Error("Failed to find the child field when updating");
       // @ts-expect-error: [TODO]
       this.#children[Number(key)] = child;
-      change |= fieldChange.childCreated;
+      changes |= change.child.attach;
     }
 
     // Handle when child goes from defined to undefined
-    if (childChange & fieldChange.removed) {
+    if (childChange & change.field.detach) {
       const child = this.#children[Number(key)];
       if (!child)
         throw new Error("Failed to find the child field when updating");
       this.#children.splice(Number(key), 1);
       child.unwatch();
-      change |= fieldChange.childRemoved;
+      changes |= change.child.detach;
     }
 
-    return change;
+    return changes;
   }
 
   unwatch() {
@@ -1785,7 +1782,7 @@ export class UndefinedStateRegistry {
     );
   }
 
-  register(key: string, field: Field<UndefinedValue>) {
+  register(key: string, field: Field<DetachedValue>) {
     const fieldRef = new WeakRef(field);
     // @ts-expect-error: [TODO]
     this.#refsMap.set(key, fieldRef);
@@ -1805,14 +1802,14 @@ export class UndefinedStateRegistry {
     return registered;
   }
 
-  ensure(key: string): Field<UndefinedValue> {
+  ensure(key: string): Field<DetachedValue> {
     // Try to look up registed undefined item
     const registered = this.#refsMap.get(key)?.deref();
     // @ts-expect-error: This is fine
     if (registered) return registered;
 
     // Or create and register a new one
-    const field = new Field(undefinedValue, {
+    const field = new Field(detachedValue, {
       key,
       field: this.#external,
     });
@@ -1823,62 +1820,11 @@ export class UndefinedStateRegistry {
 
 //#endregion
 
-//# FieldChange
+//#region Detached value
 
-export type FieldChange = number;
+export const detachedValue = Symbol();
 
-/**
- * Field changes map. Each bit indicates a certain type of change in the field.
- */
-export const fieldChange = {
-  /** Field inserted into object/array. */
-  created: 2 ** 0,
-  /** Field removed from object/array. */
-  removed: 2 ** 1,
-  /** Field primitive value changed. */
-  value: 2 ** 2,
-  /** Field type changed. */
-  type: 2 ** 3,
-  /** Field value commited as initial */
-  // [TODO] This is not used
-  committed: 2 ** 4,
-  /** Field become invalid. */
-  invalid: 2 ** 5,
-  /** Field become valid. */
-  valid: 2 ** 6,
-  /** Field lost focus. */
-  blurred: 2 ** 7,
-  /** Watched target field is now different. */
-  swapped: 2 ** 8,
-  /** Object/array field property/item changed. */
-  child: 2 ** 9,
-  /** Object/array field property/item created. */
-  childCreated: 2 ** 10,
-  /** Object/array field property/item removed. */
-  childRemoved: 2 ** 11,
-  /** Order of array field items changed. */
-  // [TODO] This is not used
-  childrenReordered: 2 ** 12,
-  /** Child of object/array field lost focus.  */
-  childBlurred: 2 ** 13,
-};
-
-export class FieldChangeEvent extends Event {
-  changes: FieldChange;
-
-  constructor(changes: FieldChange) {
-    super("change");
-    this.changes = changes;
-  }
-}
-
-//#endregion
-
-//#region undefinedValue
-
-export const undefinedValue = Symbol();
-
-export type UndefinedValue = typeof undefinedValue;
+export type DetachedValue = typeof detachedValue;
 
 //#endregion
 

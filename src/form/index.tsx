@@ -1,6 +1,7 @@
 import React, { useEffect, useId, useMemo } from "react";
-import { Field, fieldChange } from "../field/index.tsx";
+import { Field } from "../field/index.tsx";
 import { useRerender } from "../hooks/rerender.ts";
+import { change } from "../event/index.ts";
 
 //#region Form
 
@@ -65,8 +66,8 @@ export class Form<Payload> {
     this.#field.watch((_, event) => {
       if (
         this.#valid ||
-        (!(event.changes & fieldChange.blurred) &&
-          !(event.changes & fieldChange.childBlurred))
+        (!(event.changes & change.field.blur) &&
+          !(event.changes & change.child.blur))
       )
         return;
 
@@ -354,11 +355,10 @@ export namespace Form {
 //# FormChange
 
 export const formChange = {
-  ...fieldChange,
-  formSubmitting: 2 ** 14,
-  formSubmitted: 2 ** 15,
-  formValid: 2 ** 16,
-  formInvalid: 2 ** 17,
+  formSubmitting: BigInt(2 ** 48),
+  formSubmitted: BigInt(2 ** 49),
+  formValid: BigInt(2 ** 50),
+  formInvalid: BigInt(2 ** 51),
 };
 
 //#endregion
