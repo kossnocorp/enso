@@ -45,6 +45,21 @@ export const fieldChange = {
   // With mixed flags, it still possible to resolve, but given that each batched
   // change will have few flags, each of them will have to be merged separately.
 
+  // [TODO] Decide what is the application of subtree changes.
+  //
+  // Initially I though that would allow to distinquish children events and
+  // have granularity to react to the changes. For instance when using as
+  // a collection, arrays/objects need to know when immediate children receive
+  // `attach`/`detach` but not about the subtree changes.
+  //
+  // Subtree changes are useful when handling `blur` in particular. Right now
+  // it is handled by a special case, but with the new bit regions approach it
+  // is easy to define the children/subtree changes by simply shifting the bits
+  // so it feel appropriate to have them.
+  //
+  // Another example could be validation changes, but it's not utilized at
+  // the moment.
+
   /** Field type changed. It indicates that field type(array/object/number/etc.)
    * is now different. */
   type: takeBit(),
@@ -68,8 +83,24 @@ export const fieldChange = {
   // `childChange` bits with better granularity.
   child: takeBit(),
 
+  // [TODO] Decide on how to handle the move event.
+  //
+  // It is helpful to indicate that the field got moved, i.e. the parent array
+  // or object got reordered. It is particularly helpful to parents rather than
+  // children.
+  //
+  // The problem with it is that it is not a structural change and it is
+  // misleading to have it in the structural changes category.
+  //
+  // I feel like it should be in the meta changes category, but for the parent
+  // array/object this change is helpful when determing if the children got
+  // reordered.
+
+  /** Field key changed [TODO] */
+  // [TODO] Utilize this flag to indicate that a field got moved.
+  key: takeBit(),
+
   // Padding
-  ...reserveBit(),
   ...reserveBit(),
   ...reserveBit(),
 
