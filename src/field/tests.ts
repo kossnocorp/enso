@@ -1,5 +1,5 @@
 import { assert, describe, expect, it, vi } from "vitest";
-import { change } from "../event/index.ts";
+import { change } from "../change/index.ts";
 import { Field, detachedValue } from "./index.tsx";
 import { FieldRef } from "./ref/index.ts";
 

@@ -9,7 +9,7 @@ import React, {
   useMemo,
   useRef,
 } from "react";
-import { change, ChangeEvent, FieldChange } from "../event/index.ts";
+import { change, ChangeEvent, FieldChange } from "../change/index.ts";
 import { useRerender } from "../hooks/rerender.ts";
 import { type EnsoUtils } from "../utils.ts";
 import { FieldRef } from "./ref/index.ts";

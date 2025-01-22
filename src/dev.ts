@@ -1,4 +1,4 @@
-import { change } from "./event/index.ts";
+import { change } from "./change/index.ts";
 
 export function debugChangeMaps() {
   ["field" as const, "child" as const, "subtree" as const].forEach((type) => {

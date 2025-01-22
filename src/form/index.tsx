@@ -1,7 +1,7 @@
 import React, { useEffect, useId, useMemo } from "react";
 import { Field } from "../field/index.tsx";
 import { useRerender } from "../hooks/rerender.ts";
-import { change } from "../event/index.ts";
+import { change } from "../change/index.ts";
 
 //#region Form
 
