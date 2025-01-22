@@ -630,7 +630,7 @@ export class Field<Payload> {
     key: Key
   ) {
     // @ts-expect-error: [TODO]
-    if (arguments.length === 0) this.set(detachedValue);
+    if (arguments.length === 0) return this.set(detachedValue);
     // @ts-expect-error: [TODO]
     else return this.at(key).remove();
   } as Field.RemoveFn<Payload>;

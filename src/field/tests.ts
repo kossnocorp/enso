@@ -274,10 +274,37 @@ describe("Field", () => {
           expect(spy).toBeCalled();
         });
 
-        it("returns created event when adding a new field", () => {
-          const field = new Field<{ num?: number; str?: string }>({ num: 42 });
-          const changes = field.at("str").set("hello");
-          expect(changes).toBe(change.field.type | change.field.attach);
+        describe("changes", () => {
+          describe("field", () => {
+            it("returns attach change when adding the field", () => {
+              const field = new Field<{ num?: number; str?: string }>({
+                num: 42,
+              });
+              const changes = field.at("str").set("hello");
+              expect(changes).toBe(change.field.type | change.field.attach);
+            });
+
+            it("returns detach change when removing the field", () => {
+              const field = new Field<{ num?: number; str?: string }>({
+                num: 42,
+                str: "hello",
+              });
+              const changes = field.at("str").set(detachedValue);
+              expect(changes).toBe(change.field.type | change.field.detach);
+            });
+
+            it("returns type change when changing the field type to undefined", () => {
+              const field = new Field<{
+                num?: number;
+                str?: string | undefined;
+              }>({
+                num: 42,
+                str: "hello",
+              });
+              const changes = field.at("str").set(undefined);
+              expect(changes).toBe(change.field.type);
+            });
+          });
         });
       });
 
