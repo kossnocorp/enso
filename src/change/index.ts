@@ -44,6 +44,10 @@ export const fieldChange = {
   //
   // With mixed flags, it still possible to resolve, but given that each batched
   // change will have few flags, each of them will have to be merged separately.
+  //
+  // At the moment, I'm working on applying the structural field changes
+  // exclusively, but I still want to keep this question open in case I find
+  // more arguments for mixed flags.
 
   // [TODO] Decide what is the application of subtree changes.
   //
@@ -83,18 +87,29 @@ export const fieldChange = {
   // `childChange` bits with better granularity.
   child: takeBit(),
 
-  // [TODO] Decide on how to handle the move event.
+  // [TODO] Decide on how to handle the `key` event.
   //
   // It is helpful to indicate that the field got moved, i.e. the parent array
   // or object got reordered. It is particularly helpful to parents rather than
   // children.
   //
-  // The problem with it is that it is not a structural change and it is
-  // misleading to have it in the structural changes category.
+  // The problem with it is that it is not a structural change for the field
+  // itself and it is misleading to have it in the structural changes category.
   //
   // I feel like it should be in the meta changes category, but for the parent
   // array/object this change is helpful when determing if the children got
   // reordered.
+  //
+  // However `key` change on immediate children is a kind of structural change
+  // and having it in the meta changes makes it inconsistent.
+  //
+  // One approach it to keep `child` change but apply it only to the immediate
+  // children movements, either `key`, `attach`, or `detach`.
+  //
+  // This approach however makes it a bit harder to resolve as these changes
+  // will need to be separately handled, so `child` can be properly applied.
+  //
+  // Additionally `childredn` is probably the best name for the event.
 
   /** Field key changed [TODO] */
   // [TODO] Utilize this flag to indicate that a field got moved.
@@ -164,7 +179,9 @@ shiftCategoryBits(subtreeChange);
  * Field changes map. Each bit indicates a certain type of change in the field.
  *
  * The changes are represented as a bit mask, which allows to combine multiple
- * change types into a single value.
+ * change types into a single value. BigInt is used to represent the changes
+ * as bitwise operations on numbers convert their operands to 32-bit integers
+ * and limit the available bits range.
  *
  * All changes are divided into three main categories:
  *
@@ -178,6 +195,26 @@ shiftCategoryBits(subtreeChange);
  *
  * - **Structural changes** that affect the inner value of the field.
  * - **Meta changes** that affect the meta state of the field.
+ *
+ * Here is the visual representation of the changes map:
+ *
+ *   Subtree         Child           Field
+ *   v               v               v
+ * 0b000000000000000000000000000000000000000000000000n
+ *   ^       ^       ^       ^       ^       ^
+ *   Meta    Struct. Meta    Struct. Meta    Struct.
+ *
+ * The structural field changes range is exclusive meaning that only one of
+ * the flags can be set at a time. This allows to simplify the logic and
+ * make it easier to understand. Initially that was not the case and
+ * `detach` and `attach` flags were always set with `type` change, but this
+ * logic warrants always setting `value` flag as well. The possible combinations
+ * made it harder to understand and test the logic, so it was decided to make
+ * the structural changes exclusive.
+ *
+ * The meta field changes as well as any child and subtree changes are not
+ * exclusive and can be combined, as there might be multiple children having
+ * conflicting changes i.e. `detach` and `attach` at the same time.
  */
 export const change = {
   /** Field changes that affect the field itself. */
