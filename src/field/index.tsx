@@ -9,7 +9,7 @@ import React, {
   useMemo,
   useRef,
 } from "react";
-import { change, ChangeEvent, FieldChange } from "../change/index.ts";
+import { change, ChangesEvent, FieldChange } from "../change/index.ts";
 import { useRerender } from "../hooks/rerender.ts";
 import { type EnsoUtils } from "../utils.ts";
 import { FieldRef } from "./ref/index.ts";
@@ -329,7 +329,7 @@ export class Field<Payload> {
       return;
     }
 
-    this.#target.dispatchEvent(new ChangeEvent(changes));
+    this.#target.dispatchEvent(new ChangesEvent(changes));
 
     // If the updates should flow upstream, trigger parents too
     if (notifyParents && this.#parent)
@@ -346,7 +346,7 @@ export class Field<Payload> {
 
     const changes =
       this.#internal.childUpdate(childChanges, key) |
-      change.field.child |
+      change.field.shape |
       blurredChange;
 
     this.trigger(changes, true);
@@ -372,7 +372,7 @@ export class Field<Payload> {
 
   watch(callback: Field.WatchCallback<Payload>): Field.Unwatch {
     const handler = (event: Event) => {
-      callback(this.get(), event as ChangeEvent);
+      callback(this.get(), event as ChangesEvent);
     };
 
     this.#subs.add(handler);
@@ -392,7 +392,7 @@ export class Field<Payload> {
       // If the field id changes, trigger the callback with the swapped change.
       if (idRef.current !== this.id) {
         idRef.current = this.id;
-        callback(this.get(), new ChangeEvent(change.field.id));
+        callback(this.get(), new ChangesEvent(change.field.id));
       }
 
       return this.watch(callback);
@@ -929,7 +929,7 @@ export namespace Field {
 
   export type WatchCallback<Payload> = (
     payload: Payload,
-    event: ChangeEvent
+    event: ChangesEvent
   ) => void;
 
   export type Unwatch = () => void;
@@ -1281,7 +1281,7 @@ export abstract class InternalState<Payload> {
     return type;
   }
 
-  abstract updated(event: ChangeEvent): boolean;
+  abstract updated(event: ChangesEvent): boolean;
 
   abstract dirty(value: Payload): boolean;
 
@@ -1342,7 +1342,7 @@ export class InternalPrimitiveState<Payload> extends InternalState<Payload> {
     return this.external as Field.Try<Payload>;
   }
 
-  updated(event: ChangeEvent): boolean {
+  updated(event: ChangesEvent): boolean {
     return !!(
       event.changes & change.field.attach ||
       event.changes & change.field.detach ||
@@ -1400,7 +1400,7 @@ export class InternalObjectState<
       const child = this.#children.get(key);
       if (child) {
         const childChange = child.set(value, false);
-        if (childChange) changes |= change.field.child;
+        if (childChange) changes |= change.field.shape;
       } else {
         const undefinedState = this.#undefined.claim(key);
         if (undefinedState) undefinedState[createSymbol](value);
@@ -1460,7 +1460,7 @@ export class InternalObjectState<
     return field;
   }
 
-  updated(event: ChangeEvent): boolean {
+  updated(event: ChangesEvent): boolean {
     return !!(
       event.changes & change.field.attach ||
       event.changes & change.field.detach ||
@@ -1471,7 +1471,7 @@ export class InternalObjectState<
   }
 
   override childUpdate(childChange: FieldChange, key: string): FieldChange {
-    let changes = change.field.child;
+    let changes = change.field.shape;
 
     // Handle when child goes from undefined to defined
     if (childChange & change.field.attach) {
@@ -1600,7 +1600,7 @@ export class InternalArrayState<
       const child = this.#children[index];
       if (child) {
         const childChange = child.set(value, false);
-        if (childChange) changes |= change.field.child;
+        if (childChange) changes |= change.field.shape;
         return child;
       } else {
         const undefinedState = this.#undefined.claim(index.toString());
@@ -1660,7 +1660,7 @@ export class InternalArrayState<
     return field;
   }
 
-  updated(event: ChangeEvent): boolean {
+  updated(event: ChangesEvent): boolean {
     return !!(
       event.changes & change.field.attach ||
       event.changes & change.field.detach ||
@@ -1671,7 +1671,7 @@ export class InternalArrayState<
   }
 
   override childUpdate(childChange: FieldChange, key: string): FieldChange {
-    let changes = change.field.child;
+    let changes = change.field.shape;
 
     // Handle when child goes from undefined to defined
     if (childChange & change.field.attach) {

@@ -590,7 +590,7 @@ describe("Field", () => {
         expect(spy).toHaveBeenCalledWith(
           { name: "Alex" },
           expect.objectContaining({
-            changes: change.field.child,
+            changes: change.field.shape,
           })
         );
 
