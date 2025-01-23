@@ -15,10 +15,12 @@ import {
   FieldChange,
   shapeChange,
   shiftChildChanges,
+  structuralChanges,
 } from "../change/index.ts";
 import { useRerender } from "../hooks/rerender.ts";
 import { type EnsoUtils } from "../utils.ts";
 import { FieldRef } from "./ref/index.ts";
+import { devHumanizeChanges, devStringifyChanges } from "../dev.ts";
 
 export { FieldRef };
 
@@ -176,21 +178,8 @@ export class Field<Payload> {
       getValue: () => this.get(),
       watch: ({ valueRef, rerender }) =>
         this.watch((payload, event) => {
-          // Ignore only valid-invalid and focus-blur changes
-          if (
-            !(
-              event.changes &
-              // [TODO] Change to allowlist instead as event might contain
-              // changes from wrappers such as Form.
-              ~(
-                change.field.valid |
-                change.field.invalid |
-                change.field.blur |
-                change.child.blur
-              )
-            )
-          )
-            return;
+          // React only on structural changes
+          if (!structuralChanges(event.changes)) return;
 
           valueRef.current = { id: this.id, enable: true, value: payload };
           rerender();

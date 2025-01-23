@@ -1,5 +1,5 @@
 import { userEvent } from "@vitest/browser/context";
-import "@vitest/browser/matchers.d.ts";
+import "../../tests/browser.d.ts";
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { describe, expect, it, vi } from "vitest";
 import { render } from "vitest-browser-react";
@@ -65,7 +65,7 @@ describe("Field", () => {
       .toHaveTextContent("2");
     await expect
       .element(screen.getByTestId("render-name-0"))
-      .toHaveTextContent("4");
+      .toHaveTextContent("3");
   });
 
   it("allows to control array field", async () => {
@@ -575,22 +575,20 @@ describe("Field", () => {
         await screen.getByText("Set index to 1").click();
 
         expect(spy).toHaveBeenCalledOnce();
-        expect(spy).toHaveBeenCalledWith(
-          { name: "Sasha" },
-          expect.objectContaining({
-            changes: change.field.id,
-          })
-        );
+        {
+          const [[value, event]] = spy.mock.calls;
+          expect(value).toEqual({ name: "Sasha" });
+          expect(event.changes).toMatchChanges(change.field.id);
+        }
 
         await screen.getByText("Rename item 1").click();
 
         expect(spy).toHaveBeenCalledTimes(2);
-        expect(spy).toHaveBeenCalledWith(
-          { name: "Alex" },
-          expect.objectContaining({
-            changes: change.field.shape,
-          })
-        );
+        {
+          const [, [value, event]] = spy.mock.calls;
+          expect(value).toEqual({ name: "Alex" });
+          expect(event.changes).toMatchChanges(change.child.value);
+        }
 
         await expect
           .element(screen.getByTestId("render-watch"))

@@ -70,6 +70,12 @@ export const coreChangesBits = changesBits * 3n;
 export const fieldChangesMask = 2n ** changesBits - 1n;
 
 /**
+ * Structural field changes mask. It allows to isolate the structural field
+ * changes bits.
+ */
+export const structuralFieldChangesMask = 2n ** structuralChangesBits - 1n;
+
+/**
  * Bit index used to generate the next bit in the sequence.
  *
  * @private
@@ -182,6 +188,13 @@ export const childChangesMask =
   (2n ** (changesBits + childChangesShift) - 1n) & ~fieldChangesMask;
 
 /**
+ * Structural child changes mask. It allows to isolate the structural child
+ * changes bits.
+ */
+export const structuralChildChangesMask =
+  structuralFieldChangesMask << childChangesShift;
+
+/**
  * Child changes map.
  *
  * It represents the changes for the immediate children of the field.
@@ -206,6 +219,13 @@ export const subtreeChangesMask =
   ~(fieldChangesMask | childChangesMask);
 
 /**
+ * Structural subtree changes mask. It allows to isolate the structural subtree
+ * changes bits.
+ */
+export const structuralSubtreeChangesMask =
+  structuralFieldChangesMask << subtreeChangesShift;
+
+/**
  * Subtree changes map.
  *
  * It represents the changes for the deeply nested children of the field.
@@ -216,6 +236,14 @@ export const subtreeChange: FieldChangeMap = {
 
 // Shift child field changes to its dedicated category bits range.
 shiftCategoryBits(subtreeChange, subtreeChangesShift);
+
+/**
+ * Structural changes mask. It allows to isolate the structural changes bits.
+ */
+export const structuralChangesMask =
+  structuralFieldChangesMask |
+  structuralChildChangesMask |
+  structuralSubtreeChangesMask;
 
 /**
  * Field changes map. Each bit indicates a certain type of change in the field.
@@ -277,7 +305,7 @@ export const change = {
  *
  * @param changes - Changes to shift.
  */
-export function shiftChildChanges(changes: FieldChange) {
+export function shiftChildChanges(changes: FieldChange): FieldChange {
   const subtreeChanges = isolateSubtreeChanges(changes);
   return ((changes & ~subtreeChanges) << childChangesShift) | subtreeChanges;
 }
@@ -288,7 +316,7 @@ export function shiftChildChanges(changes: FieldChange) {
  * @param changes - Changes to isolate the field changes from.
  * @returns Isolated field changes.
  */
-export function isolateFieldChanges(changes: FieldChange) {
+export function isolateFieldChanges(changes: FieldChange): FieldChange {
   return changes & fieldChangesMask;
 }
 
@@ -298,7 +326,7 @@ export function isolateFieldChanges(changes: FieldChange) {
  * @param changes - Changes to isolate the child changes from.
  * @returns Isolated child changes.
  */
-export function isolateChildChanges(changes: FieldChange) {
+export function isolateChildChanges(changes: FieldChange): FieldChange {
   return changes & childChangesMask;
 }
 
@@ -308,8 +336,18 @@ export function isolateChildChanges(changes: FieldChange) {
  * @param changes - Changes to isolate the subtree changes from.
  * @returns Isolated subtree changes.
  */
-export function isolateSubtreeChanges(changes: FieldChange) {
+export function isolateSubtreeChanges(changes: FieldChange): FieldChange {
   return changes & subtreeChangesMask;
+}
+
+/**
+ * Isolates the structural changes from the changes map.
+ *
+ * @param changes - Changes to isolate the structural changes from.
+ * @returns Isolated structural changes.
+ */
+export function isolateStructuralChanges(changes: FieldChange): FieldChange {
+  return changes & fieldChangesMask;
 }
 
 //#endregion
@@ -329,6 +367,16 @@ export function shapeChange(changes: FieldChange): FieldChange {
       change.child.attach | change.child.detach | change.child.key
     ) && fieldChange.shape
   );
+}
+
+/**
+ * Checks if changes contain any structural changes.
+ *
+ * @param changes - Changes to check.
+ * @returns Detected structural changes if found or `0n` otherwise.
+ */
+export function structuralChanges(changes: FieldChange): FieldChange {
+  return changes & structuralChangesMask;
 }
 
 /**
@@ -370,7 +418,7 @@ function shiftCategoryBits(changes: typeof fieldChange, shift: bigint) {
  *
  * @returns The next bit in the sequence.
  */
-function takeBit() {
+function takeBit(): FieldChange {
   return 2n ** bitIdx++;
 }
 
@@ -386,7 +434,7 @@ function reserveBit() {
   return {
     /** Reserved for future use.
      * @deprecated */
-    [`reserved${bitIdx}`]: takeBit(),
+    [`reserved${bitIdx + 1n}`]: takeBit(),
   };
 }
 

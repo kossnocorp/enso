@@ -1,5 +1,10 @@
 {
-  "include": ["env.d.ts", "tests/**/*.ts", "src/**/*.ts", "src/**/*.tsx"],
+  "include": [
+    "tests/unit.d.ts",
+    "tests/**/*.ts",
+    "src/**/*.ts",
+    "src/**/*.tsx"
+  ],
   "compilerOptions": {
     "outDir": "lib",
     "target": "ESNext",

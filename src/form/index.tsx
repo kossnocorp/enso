@@ -1,7 +1,7 @@
 import React, { useEffect, useId, useMemo } from "react";
 import { Field } from "../field/index.tsx";
 import { useRerender } from "../hooks/rerender.ts";
-import { change } from "../change/index.ts";
+import { change, maskedChanges } from "../change/index.ts";
 
 //#region Form
 
@@ -66,8 +66,10 @@ export class Form<Payload> {
     this.#field.watch((_, event) => {
       if (
         this.#valid ||
-        (!(event.changes & change.field.blur) &&
-          !(event.changes & change.child.blur))
+        !maskedChanges(
+          event.changes,
+          change.field.blur | change.child.blur | change.subtree.blur
+        )
       )
         return;
 
