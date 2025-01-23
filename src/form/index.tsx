@@ -245,7 +245,7 @@ export class Form<Payload> {
   ): Form.Control {
     const { onSubmit, onReset, server } = props || {};
     return {
-      // @ts-expect-error: We're checking the server flag to determine if
+      // @ts-ignore: We're checking the server flag to determine if
       // the callback is a server-side one or not.
       onSubmit: (event) => this.#submit(event, onSubmit || (() => {}), server),
       onReset: (event) => (onReset ? onReset(event) : this.reset()),
@@ -285,7 +285,7 @@ export class Form<Payload> {
     const values = this.#field.get();
     // React Server Actions can't accept Event so should not pass it.
     const result = await (server
-      ? // @ts-expect-error: We're checking the server flag to determine if
+      ? // @ts-ignore: We're checking the server flag to determine if
         // the callback is a server-side one or not.
         callback(values)
       : callback(values, event));

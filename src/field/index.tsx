@@ -9,7 +9,13 @@ import React, {
   useMemo,
   useRef,
 } from "react";
-import { change, ChangesEvent, FieldChange } from "../change/index.ts";
+import {
+  change,
+  ChangesEvent,
+  FieldChange,
+  shapeChange,
+  shiftChildChanges,
+} from "../change/index.ts";
 import { useRerender } from "../hooks/rerender.ts";
 import { type EnsoUtils } from "../utils.ts";
 import { FieldRef } from "./ref/index.ts";
@@ -214,11 +220,13 @@ export class Field<Payload> {
     // The field is of a different type
     this.#internal.unwatch();
 
-    let changes = change.field.type;
-    // The field is being removed
+    let changes = 0n;
+    // Field is being detached
     if (value === detachedValue) changes |= change.field.detach;
-    // The field is being created
-    if (this.#internal.detached()) changes |= change.field.attach;
+    // Field is being attached
+    else if (this.#internal.detached()) changes |= change.field.attach;
+    // Field type is changing
+    else changes |= change.field.type;
 
     // @ts-ignore: This is fine
     this.#internal = new ValueConstructor(this, value);
@@ -337,17 +345,14 @@ export class Field<Payload> {
   }
 
   #childTrigger(childChanges: FieldChange, key: string) {
-    // Always propagate the blurred change to the parents so that form might
-    // detect the event and trigger the validation
-    const blurredChange =
-      childChanges & change.field.blur || childChanges & change.child.blur
-        ? change.child.blur
-        : 0n;
+    let changes =
+      // Shift child's field changes into child/subtree range
+      shiftChildChanges(childChanges) |
+      // Apply field changes
+      this.#internal.childUpdate(childChanges, key);
 
-    const changes =
-      this.#internal.childUpdate(childChanges, key) |
-      change.field.shape |
-      blurredChange;
+    // Apply shape change
+    changes |= shapeChange(changes);
 
     this.trigger(changes, true);
   }
@@ -1315,11 +1320,10 @@ export class InternalPrimitiveState<Payload> extends InternalState<Payload> {
 
   set(value: Payload): FieldChange {
     let changes = 0n;
-
     if (this.#value === detachedValue && value !== detachedValue)
-      changes |= change.field.type | change.field.attach;
+      changes |= change.field.attach;
     else if (this.#value !== detachedValue && value === detachedValue)
-      changes |= change.field.type | change.field.detach;
+      changes |= change.field.detach;
     else if (typeof this.#value !== typeof value) changes |= change.field.type;
     else if (this.#value !== value) changes |= change.field.value;
 
@@ -1400,8 +1404,8 @@ export class InternalObjectState<
     for (const [key, value] of Object.entries(newValue)) {
       const child = this.#children.get(key);
       if (child) {
-        const childChange = child.set(value, false);
-        if (childChange) changes |= change.field.shape;
+        const childChanges = child.set(value, false);
+        changes |= shiftChildChanges(childChanges);
       } else {
         const undefinedState = this.#undefined.claim(key);
         if (undefinedState) undefinedState[createSymbol](value);
@@ -1414,6 +1418,9 @@ export class InternalObjectState<
         changes |= change.child.attach;
       }
     }
+
+    // Apply shape change
+    changes |= shapeChange(changes);
 
     return changes;
   }
@@ -1471,11 +1478,11 @@ export class InternalObjectState<
     );
   }
 
-  override childUpdate(childChange: FieldChange, key: string): FieldChange {
-    let changes = change.field.shape;
+  override childUpdate(childChanges: FieldChange, key: string): FieldChange {
+    let changes = 0n;
 
     // Handle when child goes from undefined to defined
-    if (childChange & change.field.attach) {
+    if (childChanges & change.field.attach) {
       const child = this.#undefined.claim(key);
       if (!child)
         throw new Error("Failed to find the child field when updating");
@@ -1484,7 +1491,7 @@ export class InternalObjectState<
       changes |= change.child.attach;
     }
 
-    if (childChange & change.field.detach) {
+    if (childChanges & change.field.detach) {
       const child = this.#children.get(key);
       if (!child)
         throw new Error("Failed to find the child field when updating");
@@ -1600,8 +1607,8 @@ export class InternalArrayState<
     this.#children = newValue.map((value, index) => {
       const child = this.#children[index];
       if (child) {
-        const childChange = child.set(value, false);
-        if (childChange) changes |= change.field.shape;
+        const childChanges = child.set(value, false);
+        changes |= shiftChildChanges(childChanges);
         return child;
       } else {
         const undefinedState = this.#undefined.claim(index.toString());
@@ -1618,6 +1625,9 @@ export class InternalArrayState<
         return newChild;
       }
     });
+
+    // Apply shape change
+    changes |= shapeChange(changes);
 
     return changes;
   }
@@ -1671,11 +1681,11 @@ export class InternalArrayState<
     );
   }
 
-  override childUpdate(childChange: FieldChange, key: string): FieldChange {
-    let changes = change.field.shape;
+  override childUpdate(childChanges: FieldChange, key: string): FieldChange {
+    let changes = 0n;
 
     // Handle when child goes from undefined to defined
-    if (childChange & change.field.attach) {
+    if (childChanges & change.field.attach) {
       const child = this.#undefined.claim(key);
       if (!child)
         throw new Error("Failed to find the child field when updating");
@@ -1685,7 +1695,7 @@ export class InternalArrayState<
     }
 
     // Handle when child goes from defined to undefined
-    if (childChange & change.field.detach) {
+    if (childChanges & change.field.detach) {
       const child = this.#children[Number(key)];
       if (!child)
         throw new Error("Failed to find the child field when updating");

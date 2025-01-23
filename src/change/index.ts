@@ -5,6 +5,8 @@
  * that help to identify the changes.
  */
 
+//#region Events
+
 /**
  * Changes event class. It extends the native `Event` class and adds
  * the `changes` property to it.
@@ -23,6 +25,12 @@ export class ChangesEvent extends Event {
     this.changes = changes;
   }
 }
+
+//#endregion
+
+//#region Changes
+
+//#region Bitmask
 
 /**
  * Field change type. It aliases the `bigint` type to represent the changes
@@ -55,6 +63,11 @@ export const changesBits = structuralChangesBits + metaChangesBits;
  * changes after the core changes.
  */
 export const coreChangesBits = changesBits * 3n;
+
+/**
+ * Field changes mask. It allows to isolate the field changes bits.
+ */
+export const fieldChangesMask = 2n ** changesBits - 1n;
 
 /**
  * Bit index used to generate the next bit in the sequence.
@@ -163,6 +176,12 @@ export type FieldChangeMap = typeof fieldChange;
 export const childChangesShift = changesBits;
 
 /**
+ * Child changes bits mask. It allows to isolate the child changes bits.
+ */
+export const childChangesMask =
+  (2n ** (changesBits + childChangesShift) - 1n) & ~fieldChangesMask;
+
+/**
  * Child changes map.
  *
  * It represents the changes for the immediate children of the field.
@@ -178,6 +197,13 @@ shiftCategoryBits(childChange, childChangesShift);
  * Subtree changes shift.
  */
 export const subtreeChangesShift = changesBits * 2n;
+
+/**
+ * Subtree changes bits mask. It allows to isolate the subtree changes bits.
+ */
+export const subtreeChangesMask =
+  (2n ** (changesBits + subtreeChangesShift) - 1n) &
+  ~(fieldChangesMask | childChangesMask);
 
 /**
  * Subtree changes map.
@@ -241,6 +267,90 @@ export const change = {
   subtree: subtreeChange,
 };
 
+//#endregion
+
+//#region Manipulations
+
+/**
+ * Shifts field changes to child changes. The subtree changes get merged with
+ * existing subtree changes.
+ *
+ * @param changes - Changes to shift.
+ */
+export function shiftChildChanges(changes: FieldChange) {
+  const subtreeChanges = isolateSubtreeChanges(changes);
+  return ((changes & ~subtreeChanges) << childChangesShift) | subtreeChanges;
+}
+
+/**
+ * Isolates the field changes from the changes map.
+ *
+ * @param changes - Changes to isolate the field changes from.
+ * @returns Isolated field changes.
+ */
+export function isolateFieldChanges(changes: FieldChange) {
+  return changes & fieldChangesMask;
+}
+
+/**
+ * Isolates the child changes from the changes map.
+ *
+ * @param changes - Changes to isolate the child changes from.
+ * @returns Isolated child changes.
+ */
+export function isolateChildChanges(changes: FieldChange) {
+  return changes & childChangesMask;
+}
+
+/**
+ * Isolates the field changes from the changes map.
+ *
+ * @param changes - Changes to isolate the subtree changes from.
+ * @returns Isolated subtree changes.
+ */
+export function isolateSubtreeChanges(changes: FieldChange) {
+  return changes & subtreeChangesMask;
+}
+
+//#endregion
+
+//#region Checks
+
+/**
+ * Checks if child changes affect field shape and returns shape change if so.
+ *
+ * @param changes - Changes to check.
+ * @returns Shape change if child changes affect field shape or `0n` otherwise.
+ */
+export function shapeChange(changes: FieldChange): FieldChange {
+  return (
+    maskedChanges(
+      changes,
+      change.child.attach | change.child.detach | change.child.key
+    ) && fieldChange.shape
+  );
+}
+
+/**
+ * Checks if changes contain any of changes in the given mask.
+ *
+ * @param changes - Changes to check.
+ * @param mask - Changes mask to check against.
+ * @returns Detected changes if found or `0n` otherwise.
+ */
+export function maskedChanges(
+  changes: FieldChange,
+  mask: FieldChange
+): FieldChange {
+  return changes & mask;
+}
+
+//#endregion
+
+//#endregion
+
+//#region Private
+
 /**
  * Shifts the changes map bits to the left by 16 bits, so it placed on
  * the dedicated category bits range.
@@ -279,3 +389,5 @@ function reserveBit() {
     [`reserved${bitIdx}`]: takeBit(),
   };
 }
+
+//#endregion

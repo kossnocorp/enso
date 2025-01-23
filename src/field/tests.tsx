@@ -1,5 +1,5 @@
 import { userEvent } from "@vitest/browser/context";
-import "@vitest/browser/matchers";
+import "@vitest/browser/matchers.d.ts";
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { describe, expect, it, vi } from "vitest";
 import { render } from "vitest-browser-react";
