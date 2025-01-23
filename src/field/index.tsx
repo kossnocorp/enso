@@ -796,6 +796,7 @@ export class Field<Payload> {
     });
   }
 
+  // [TODO] Try to find a better name.
   expunge() {
     this.#cachedInvalids = undefined;
     this.setError(undefined);

@@ -127,6 +127,14 @@ describe("Field", () => {
           const field = new Field<number | string>(42);
           expect(field.set("42")).toBe(change.field.type);
         });
+
+        describe("changes", () => {
+          describe.todo("field");
+
+          describe.todo("child");
+
+          describe.todo("subtree");
+        });
       });
 
       describe("object", () => {
@@ -305,6 +313,10 @@ describe("Field", () => {
               expect(changes).toBe(change.field.type);
             });
           });
+
+          describe.todo("child");
+
+          describe.todo("subtree");
         });
       });
 
@@ -448,6 +460,14 @@ describe("Field", () => {
           const field = new Field<number[]>([1, 2]);
           const changes = field.at(2).set(3);
           expect(changes).toBe(change.field.type | change.field.attach);
+        });
+
+        describe("changes", () => {
+          describe.todo("field");
+
+          describe.todo("child");
+
+          describe.todo("subtree");
         });
       });
     });
@@ -639,6 +659,14 @@ describe("Field", () => {
         expect(field.$.codes.at(1).initial).toBe(5);
         expect(field.$.codes.at(1).dirty).toBe(false);
       });
+
+      describe("changes", () => {
+        describe.todo("field");
+
+        describe.todo("child");
+
+        describe.todo("subtree");
+      });
     });
 
     describe("reset", () => {
@@ -669,6 +697,14 @@ describe("Field", () => {
         expect(field.dirty).toBe(false);
         expect(field.$.name.$.first.dirty).toBe(false);
         expect(field.$.codes.at(1).dirty).toBe(false);
+      });
+
+      describe("changes", () => {
+        describe.todo("field");
+
+        describe.todo("child");
+
+        describe.todo("subtree");
       });
     });
   });
@@ -909,6 +945,10 @@ describe("Field", () => {
           })
         );
       });
+
+      describe.todo("child");
+
+      describe.todo("subtree");
     });
 
     describe("withhold", () => {
@@ -976,33 +1016,37 @@ describe("Field", () => {
 
   describe("watching", () => {
     describe("watch", () => {
-      it("allows to subscribe for field changes", async () =>
-        new Promise<void>((resolve) => {
-          const field = new Field(42);
+      describe("field", () => {
+        it("allows to subscribe for field changes", async () =>
+          new Promise<void>((resolve) => {
+            const field = new Field(42);
 
-          const unsub = field.watch((value) => {
-            expect(value).toBe(43);
-            unsub();
-            // Check if the callback is not called after unsub
-            field.set(44);
-            setTimeout(resolve);
-          });
+            const unsub = field.watch((value) => {
+              expect(value).toBe(43);
+              unsub();
+              // Check if the callback is not called after unsub
+              field.set(44);
+              setTimeout(resolve);
+            });
 
-          field.set(43);
-        }));
+            field.set(43);
+          }));
 
-      it("provides event object with change type as changes", async () =>
-        new Promise<void>((resolve) => {
-          const field = new Field(42);
+        it("provides event object with change type as changes", async () =>
+          new Promise<void>((resolve) => {
+            const field = new Field(42);
 
-          const unsub = field.watch((value, event) => {
-            expect(event.changes).toBe(change.field.value);
-            unsub();
-            resolve();
-          });
+            const unsub = field.watch((value, event) => {
+              expect(event.changes).toBe(change.field.value);
+              unsub();
+              resolve();
+            });
 
-          field.set(43);
-        }));
+            field.set(43);
+          }));
+
+        describe.todo("changes");
+      });
 
       describe("object", () => {
         it("listens to the field changes", async () =>
@@ -1055,6 +1099,14 @@ describe("Field", () => {
 
             field.at(3).set({ n: 3 });
           }));
+
+        describe("changes", () => {
+          describe.todo("field");
+
+          describe.todo("child");
+
+          describe.todo("subtree");
+        });
       });
 
       describe("array", () => {
@@ -1103,6 +1155,14 @@ describe("Field", () => {
 
             field.at(2).set({ n: 3 });
           }));
+
+        describe("changes", () => {
+          describe.todo("field");
+
+          describe.todo("child");
+
+          describe.todo("subtree");
+        });
       });
     });
 
@@ -1248,6 +1308,14 @@ describe("Field", () => {
           const field = new Field<Record<string, number>>({ one: 1 });
           expect(() => field.remove("two")).not.toThrow();
         });
+
+        describe("changes", () => {
+          describe.todo("field");
+
+          describe.todo("child");
+
+          describe.todo("subtree");
+        });
       });
 
       describe("array", () => {
@@ -1260,6 +1328,14 @@ describe("Field", () => {
         it("doesn't throw on removing non-existing item", () => {
           const field = new Field([1, 2, 3]);
           expect(() => field.remove(6)).not.toThrow();
+        });
+
+        describe("changes", () => {
+          describe.todo("field");
+
+          describe.todo("child");
+
+          describe.todo("subtree");
         });
       });
 
@@ -1279,6 +1355,8 @@ describe("Field", () => {
           field.at(1).remove();
           expect(field.get()).toEqual([1, 3]);
         });
+
+        describe.todo("changes");
       });
     });
   });
@@ -1327,6 +1405,14 @@ describe("Field", () => {
       it("returns the new length of the array", () => {
         const field = new Field([1, 2, 3]);
         expect(field.push(4)).toBe(4);
+      });
+
+      describe("changes", () => {
+        describe.todo("field");
+
+        describe.todo("child");
+
+        describe.todo("subtree");
       });
     });
 
@@ -1434,6 +1520,14 @@ describe("Field", () => {
           message: "Something went wrong",
         });
         expect(computed.error).toBe(field.error);
+      });
+
+      describe("changes", () => {
+        describe.todo("field");
+
+        describe.todo("child");
+
+        describe.todo("subtree");
       });
     });
 
@@ -1556,6 +1650,8 @@ describe("Field", () => {
         field.validate(validateNum);
         expect(field.valid).toBe(true);
       });
+
+      describe.todo("changes");
     });
 
     describe("object", () => {
@@ -1637,9 +1733,19 @@ describe("Field", () => {
         expect(field.valid).toBe(false);
         expect(field.at("two").error).toEqual({ message: "Invalid" });
       });
+
+      describe("changes", () => {
+        describe.todo("field");
+
+        describe.todo("child");
+
+        describe.todo("subtree");
+      });
     });
   });
 });
+
+//#region Helpers
 
 interface Name {
   first: string;
@@ -1673,3 +1779,5 @@ function validateName(ref: FieldRef<Name>) {
   validateRequired(ref.$.first);
   validateRequired(ref.$.last);
 }
+
+//#endregion

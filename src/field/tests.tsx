@@ -1,10 +1,8 @@
 import { userEvent } from "@vitest/browser/context";
+import "@vitest/browser/matchers";
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { describe, expect, it, vi } from "vitest";
 import { render } from "vitest-browser-react";
-// [TODO] Figure out a way to get rid of it:
-// https://github.com/vitest-dev/vitest/issues/6965
-import "@vitest/browser/matchers.d.ts";
 import { change } from "../change/index.ts";
 import { Field } from "./index.tsx";
 
@@ -2241,8 +2239,6 @@ describe("Field", () => {
             (newName, prevName) => typeof newName !== typeof prevName
           );
 
-          // [TODO] Figure out if that's a bug or intended behavior and adjust the API
-          // accordingly: https://github.com/microsoft/TypeScript/issues/60685
           return (
             <div>
               <div data-testid="render-decompose">{count}</div>
