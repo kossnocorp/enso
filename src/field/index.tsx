@@ -73,7 +73,7 @@ export class Field<Payload> {
 
   #internal: InternalState<Payload> = new InternalPrimitiveState(
     this,
-    // @ts-expect-error
+    // @ts-ignore
     detachedValue
   );
 
@@ -164,7 +164,7 @@ export class Field<Payload> {
           }
     );
 
-    // @ts-expect-error: [TODO]
+    // @ts-ignore: [TODO]
     return useFieldHook({
       field: this as Field<any>,
       getValue: () => this.get(),
@@ -220,7 +220,7 @@ export class Field<Payload> {
     // The field is being created
     if (this.#internal.detached()) changes |= change.field.attach;
 
-    // @ts-expect-error: This is fine
+    // @ts-ignore: This is fine
     this.#internal = new ValueConstructor(this, value);
     this.#internal.set(value);
     return changes;
@@ -251,7 +251,7 @@ export class Field<Payload> {
   useDirty<Enable extends boolean | undefined = undefined>(
     enable?: Enable
   ): Enable extends true | undefined ? boolean : undefined {
-    // @ts-expect-error: [TODO]
+    // @ts-ignore: [TODO]
     return useFieldHook({
       enable,
       field: this as Field<any>,
@@ -285,13 +285,13 @@ export class Field<Payload> {
 
   at<Key extends keyof Payload | undefined>(
     key: Payload extends object ? Key : never
-    // @ts-expect-error: [TODO]
+    // @ts-ignore: [TODO]
   ): Payload extends object ? Field.At<Payload, Key> : void {
     if (
       this.#internal instanceof InternalObjectState ||
       this.#internal instanceof InternalArrayState
     )
-      // @ts-expect-error: [TODO]
+      // @ts-ignore: [TODO]
       return this.#internal.at(key);
   }
 
@@ -439,7 +439,7 @@ export class Field<Payload> {
     callback: Field.ComputeCallback<Payload, Computed>,
     deps?: DependencyList
   ): Computed {
-    // @ts-expect-error: [TODO]
+    // @ts-ignore: [TODO]
     return useFieldHook({
       field: this as Field<any>,
       getValue: () => callback(this.get()),
@@ -457,7 +457,7 @@ export class Field<Payload> {
   useDecompose(
     callback: Field.DecomposeCallback<Payload>
   ): Field.Decomposed<Payload> {
-    // @ts-expect-error: [TODO]
+    // @ts-ignore: [TODO]
     return useFieldHook({
       field: this as Field<any>,
       getValue: () => this.decompose(),
@@ -468,9 +468,9 @@ export class Field<Payload> {
   discriminate<Discriminator extends keyof Exclude<Payload, undefined>>(
     discriminator: Discriminator
   ): Field.Discriminated<Payload, Discriminator> {
-    // @ts-expect-error: [TODO]
+    // @ts-ignore: [TODO]
     return {
-      // @ts-expect-error: [TODO]
+      // @ts-ignore: [TODO]
       discriminator: this.$?.[discriminator]?.get(),
       field: this,
     };
@@ -479,7 +479,7 @@ export class Field<Payload> {
   useDiscriminate<Discriminator extends Field.DiscriminatorKey<Payload>>(
     discriminator: Discriminator
   ): Field.Discriminated<Payload, Discriminator> {
-    // @ts-expect-error: [TODO]
+    // @ts-ignore: [TODO]
     return useFieldHook({
       field: this as Field<any>,
       getValue: () => this.discriminate(discriminator),
@@ -538,13 +538,13 @@ export class Field<Payload> {
   ): Field<Narrowed> | undefined {
     let matching = false;
     const payload = this.get();
-    // @ts-expect-error: [TODO]
+    // @ts-ignore: [TODO]
     callback(payload, (narrowed) => {
-      // @ts-expect-error: [TODO]
+      // @ts-ignore: [TODO]
       if (payload === narrowed) matching = true;
       return {};
     });
-    // @ts-expect-error: [TODO]
+    // @ts-ignore: [TODO]
     if (matching) return this;
   }
 
@@ -598,7 +598,7 @@ export class Field<Payload> {
       return this.#internal.map(callback);
   }) as Field.MapFn<Payload>;
 
-  // @ts-expect-error: This is fine
+  // @ts-ignore: This is fine
   push: Payload extends Array<infer Item> ? (item: Item) => void : never = (
     item: Payload extends Array<infer Item> ? Item : never
   ) => {
@@ -610,11 +610,11 @@ export class Field<Payload> {
     return length;
   };
 
-  // @ts-expect-error: This is fine
+  // @ts-ignore: This is fine
   find: Field.FindFn<Payload> = (predicate) => {
     if (!(this.#internal instanceof InternalArrayState))
       throw new Error("State is not an array");
-    // @ts-expect-error: This is fine
+    // @ts-ignore: This is fine
     return this.#internal.find(predicate);
   };
 
@@ -622,16 +622,16 @@ export class Field<Payload> {
     if (!(this.#internal instanceof InternalArrayState))
       throw new Error("State is not an array");
 
-    // @ts-expect-error: This is fine
+    // @ts-ignore: This is fine
     return this.#internal.length;
   }
 
   remove: Field.RemoveFn<Payload> = function <Key extends keyof Payload>(
     key: Key
   ) {
-    // @ts-expect-error: [TODO]
+    // @ts-ignore: [TODO]
     if (arguments.length === 0) return this.set(detachedValue);
-    // @ts-expect-error: [TODO]
+    // @ts-ignore: [TODO]
     else return this.at(key).remove();
   } as Field.RemoveFn<Payload>;
 
@@ -749,9 +749,9 @@ export class Field<Payload> {
         this.#internal instanceof InternalArrayState ||
         this.#internal instanceof InternalObjectState
       ) {
-        // @ts-expect-error: [TODO]
+        // @ts-ignore: [TODO]
         this.forEach((item) => {
-          // @ts-expect-error: [TODO]
+          // @ts-ignore: [TODO]
           item.invalids.forEach((error, field) => invalids.set(field, error));
         });
       }
@@ -765,7 +765,7 @@ export class Field<Payload> {
   useInvalids<Enable extends boolean | undefined = undefined>(
     enable?: Enable
   ): Enable extends true | undefined ? Field.Invalids : undefined {
-    // @ts-expect-error: [TODO]
+    // @ts-ignore: [TODO]
     return useFieldHook({
       enable,
       field: this as Field<any>,
@@ -788,7 +788,7 @@ export class Field<Payload> {
   useValid<Enable extends boolean | undefined = undefined>(
     enable?: Enable
   ): Enable extends true | undefined ? boolean : undefined {
-    // @ts-expect-error: [TODO]
+    // @ts-ignore: [TODO]
     return useFieldHook({
       enable,
       field: this as Field<any>,
@@ -823,7 +823,7 @@ export class Field<Payload> {
   ) {
     this.expunge();
     this.withhold();
-    // @ts-expect-error: [TODO]
+    // @ts-ignore: [TODO]
     await validator(FieldRef.get(this), context);
     this.unleash();
   }
@@ -1380,7 +1380,7 @@ export class InternalObjectState<
 
   constructor(external: Field<Payload>, value: Payload) {
     super(external, value);
-    // @ts-expect-error: [TODO]
+    // @ts-ignore: [TODO]
     this.#undefined = new UndefinedStateRegistry(external);
   }
 
@@ -1391,7 +1391,7 @@ export class InternalObjectState<
       if (!(key in newValue)) {
         this.#children.delete(key);
         child[clearSymbol]();
-        // @ts-expect-error: This is fine
+        // @ts-ignore: This is fine
         this.#undefined.register(key, child);
         changes |= change.child.detach;
       }
@@ -1408,7 +1408,7 @@ export class InternalObjectState<
 
         this.#children.set(
           key,
-          // @ts-expect-error: [TODO]
+          // @ts-ignore: [TODO]
           undefinedState || new Field(value, { key, field: this.external })
         );
         changes |= change.child.attach;
@@ -1479,7 +1479,7 @@ export class InternalObjectState<
       const child = this.#undefined.claim(key);
       if (!child)
         throw new Error("Failed to find the child field when updating");
-      // @ts-expect-error: [TODO]
+      // @ts-ignore: [TODO]
       this.#children.set(key, child);
       changes |= change.child.attach;
     }
@@ -1538,7 +1538,7 @@ export class InternalObjectState<
     ) => void
   ) {
     this.#children.forEach((field, key) =>
-      // @ts-expect-error: [TODO]
+      // @ts-ignore: [TODO]
       callback(field, key as keyof Payload)
     );
   }
@@ -1549,13 +1549,13 @@ export class InternalObjectState<
       index: Key
     ) => Return
   ): Return[] {
-    // @ts-expect-error: [TODO]
+    // @ts-ignore: [TODO]
     const result = [];
     this.#children.forEach((field, key) =>
-      // @ts-expect-error: [TODO]
+      // @ts-ignore: [TODO]
       result.push(callback(field, key as keyof Payload))
     );
-    // @ts-expect-error: [TODO]
+    // @ts-ignore: [TODO]
     return result;
   }
 
@@ -1575,7 +1575,7 @@ export class InternalArrayState<
   constructor(external: Field<Payload>, value: Payload) {
     super(external, value);
 
-    // @ts-expect-error: This is fine
+    // @ts-ignore: This is fine
     this.#undefined = new UndefinedStateRegistry(external);
   }
 
@@ -1590,13 +1590,13 @@ export class InternalArrayState<
       if (!(index in newValue)) {
         delete this.#children[index];
         item[clearSymbol]();
-        // @ts-expect-error: This is fine
+        // @ts-ignore: This is fine
         this.#undefined.register(index.toString(), item);
         changes |= change.child.detach;
       }
     });
 
-    // @ts-expect-error: [TODO]
+    // @ts-ignore: [TODO]
     this.#children = newValue.map((value, index) => {
       const child = this.#children[index];
       if (child) {
@@ -1611,7 +1611,7 @@ export class InternalArrayState<
           undefinedState ||
           new Field(value, {
             key: String(index),
-            // @ts-expect-error: This is fine
+            // @ts-ignore: This is fine
             field: this.external,
           });
         changes |= change.child.attach;
@@ -1648,7 +1648,7 @@ export class InternalArrayState<
 
   #try = new Proxy((() => {}) as unknown as Field.Try<Payload>, {
     apply: (_, __, [index]: [number]) => this.#tryItem(index),
-    // @ts-expect-error: [TODO]
+    // @ts-ignore: [TODO]
     get: (_, index: number) => this.#tryItem(index),
   });
 
@@ -1679,7 +1679,7 @@ export class InternalArrayState<
       const child = this.#undefined.claim(key);
       if (!child)
         throw new Error("Failed to find the child field when updating");
-      // @ts-expect-error: [TODO]
+      // @ts-ignore: [TODO]
       this.#children[Number(key)] = child;
       changes |= change.child.attach;
     }
@@ -1748,10 +1748,10 @@ export class InternalArrayState<
 
   push(item: Payload[number]) {
     const length = this.#children.length;
-    // @ts-expect-error: [TODO]
+    // @ts-ignore: [TODO]
     this.#children[length] = new Field(item, {
       key: String(length),
-      // @ts-expect-error: This is fine
+      // @ts-ignore: This is fine
       field: this.external,
     });
     return length + 1;
@@ -1760,7 +1760,7 @@ export class InternalArrayState<
   find(
     predicate: Field.FindPredicate<Payload[number]>
   ): Field<Payload[number]> | undefined {
-    // @ts-expect-error: This is fine
+    // @ts-ignore: This is fine
     return this.#children.find(predicate);
   }
 
@@ -1785,7 +1785,7 @@ export class UndefinedStateRegistry {
 
   register(key: string, field: Field<DetachedValue>) {
     const fieldRef = new WeakRef(field);
-    // @ts-expect-error: [TODO]
+    // @ts-ignore: [TODO]
     this.#refsMap.set(key, fieldRef);
     this.#registry.register(fieldRef, key);
   }
@@ -1799,14 +1799,14 @@ export class UndefinedStateRegistry {
     // Unregisted the field and allow the caller to claim it
     this.#registry.unregister(ref);
     this.#refsMap.delete(key);
-    // @ts-expect-error: This is fine
+    // @ts-ignore: This is fine
     return registered;
   }
 
   ensure(key: string): Field<DetachedValue> {
     // Try to look up registed undefined item
     const registered = this.#refsMap.get(key)?.deref();
-    // @ts-expect-error: This is fine
+    // @ts-ignore: This is fine
     if (registered) return registered;
 
     // Or create and register a new one
@@ -1941,7 +1941,7 @@ function useFieldHook<Value, Result = Value>(
       : initial;
 
   const result = enable ? value : undefined;
-  // @ts-expect-error: [TODO]
+  // @ts-ignore: [TODO]
   return toResult ? toResult(result) : result;
 }
 

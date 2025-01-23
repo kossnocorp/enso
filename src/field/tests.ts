@@ -262,7 +262,7 @@ describe("Field", () => {
           });
           const spy = vi.fn();
           const undefinedField = field.at("three");
-          // @ts-expect-error: This is fine!
+          // @ts-ignore: This is fine!
           undefinedField.map(spy);
           expect(spy).not.toBeCalled();
           expect(undefinedField.get()).toBe(undefined);
@@ -277,7 +277,7 @@ describe("Field", () => {
             two: { n: 2 },
             three: { n: 3 },
           });
-          // @ts-expect-error: This is fine!
+          // @ts-ignore: This is fine!
           undefinedField.map(spy);
           expect(spy).toBeCalled();
         });
@@ -445,13 +445,13 @@ describe("Field", () => {
           const field = new Field<Array<{ n: number }>>([{ n: 1 }, { n: 2 }]);
           const spy = vi.fn();
           const undefinedField = field.at(2);
-          // @ts-expect-error: This is fine!
+          // @ts-ignore: This is fine!
           undefinedField.map(spy);
           expect(undefinedField.get()).toBe(undefined);
           const changes = field.set([{ n: 1 }, { n: 2 }, { n: 3 }]);
           expect(changes).toBe(change.child.attach);
           expect(field.get()).toEqual([{ n: 1 }, { n: 2 }, { n: 3 }]);
-          // @ts-expect-error: This is fine!
+          // @ts-ignore: This is fine!
           undefinedField.map(spy);
           expect(spy).toBeCalled();
         });
@@ -761,7 +761,7 @@ describe("Field", () => {
 
         it("allows to use undefined key", () => {
           const field = new Field<Record<string, number>>({ num: 42 });
-          // @ts-expect-error: But not in $!
+          // @ts-ignore: But not in $!
           field.$[undefined];
           const numB = field.at(undefined);
           numB satisfies Field<undefined>;
@@ -1298,9 +1298,9 @@ describe("Field", () => {
           });
           field.remove("three");
           expect(field.get()).toEqual({ one: 1, two: 2 });
-          // @ts-expect-error
+          // @ts-ignore
           field.remove("one");
-          // @ts-expect-error
+          // @ts-ignore
           field.remove("two");
         });
 
@@ -1544,17 +1544,17 @@ describe("Field", () => {
         field.$.ids.at(1).setError("Is it a valid ID?");
         const { invalids } = field;
         expect(invalids.size).toBe(4);
-        // @ts-expect-error: [TODO]
+        // @ts-ignore: [TODO]
         expect(invalids.get(field)).toEqual({ message: "Something is wrong" });
-        // @ts-expect-error: [TODO]
+        // @ts-ignore: [TODO]
         expect(invalids.get(field.$.age)).toEqual({
           message: "Are you an immortal?",
         });
-        // @ts-expect-error: [TODO]
+        // @ts-ignore: [TODO]
         expect(invalids.get(field.$.name.$.first)).toEqual({
           message: "First name is required",
         });
-        // @ts-expect-error: [TODO]
+        // @ts-ignore: [TODO]
         expect(invalids.get(field.$.ids.at(1))).toEqual({
           message: "Is it a valid ID?",
         });
@@ -1567,11 +1567,11 @@ describe("Field", () => {
         field.$.name.$.last.setError("Last name is required");
         const { invalids } = computed;
         expect(invalids.size).toBe(2);
-        // @ts-expect-error: [TODO]
+        // @ts-ignore: [TODO]
         expect(invalids.get(field.$.name.$.first)).toEqual({
           message: "First name is required",
         });
-        // @ts-expect-error: [TODO]
+        // @ts-ignore: [TODO]
         expect(invalids.get(field.$.name.$.last)).toEqual({
           message: "Last name is required",
         });

@@ -5,12 +5,12 @@ const fieldRefsStore = new WeakMap<Field<any>, FieldRef<any>>();
 
 export class FieldRef<Payload> {
   static get<Payload>(field: Field<Payload>) {
-    // @ts-expect-error: [TODO]
+    // @ts-ignore: [TODO]
     let ref = fieldRefsStore.get(field);
     if (!ref) {
-      // @ts-expect-error: [TODO]
+      // @ts-ignore: [TODO]
       ref = new FieldRef(field);
-      // @ts-expect-error: [TODO]
+      // @ts-ignore: [TODO]
       fieldRefsStore.set(field, ref);
     }
     return ref;
@@ -37,7 +37,7 @@ export class FieldRef<Payload> {
   });
 
   at<Key extends keyof Payload>(key: Key): FieldRef.At<Payload, Key> {
-    // @ts-expect-error: [TODO]
+    // @ts-ignore: [TODO]
     return FieldRef.get(this.#field.at(key));
   }
 
@@ -55,9 +55,9 @@ export class FieldRef<Payload> {
   discriminate<Discriminator extends keyof Exclude<Payload, undefined>>(
     discriminator: Discriminator
   ): FieldRef.Discriminated<Payload, Discriminator> {
-    // @ts-expect-error: [TODO]
+    // @ts-ignore: [TODO]
     return {
-      // @ts-expect-error: [TODO]
+      // @ts-ignore: [TODO]
       discriminator: this.$[discriminator]?.get(),
       field: this,
     };
@@ -76,7 +76,7 @@ export class FieldRef<Payload> {
   //#region Collections
 
   forEach: FieldRef.ForEachFn<Payload> = ((callback: any) => {
-    // @ts-expect-error: [TODO]
+    // @ts-ignore: [TODO]
     this.#field.forEach((field, key) => {
       callback(FieldRef.get(field), key);
     });
