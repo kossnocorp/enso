@@ -104,30 +104,6 @@ export const fieldChange = {
    * got attached, detached or moved. */
   shape: takeBit(),
 
-  // [TODO] Decide on how to handle the `key` event.
-  //
-  // It is helpful to indicate that the field got moved, i.e. the parent array
-  // or object got reordered. It is particularly helpful to parents rather than
-  // children.
-  //
-  // The problem with it is that it is not a structural change for the field
-  // itself and it is misleading to have it in the structural changes category.
-  //
-  // I feel like it should be in the meta changes category, but for the parent
-  // array/object this change is helpful when determing if the children got
-  // reordered.
-  //
-  // However `key` change on immediate children is a kind of structural change
-  // and having it in the meta changes makes it inconsistent.
-  //
-  // One approach it to keep `child` change but apply it only to the immediate
-  // children movements, either `key`, `attach`, or `detach`.
-  //
-  // This approach however makes it a bit harder to resolve as these changes
-  // will need to be separately handled, so `child` can be properly applied.
-  //
-  // Additionally `children` is probably the best name for the event.
-
   //#endregion
 
   // Structural changes padding
@@ -146,12 +122,10 @@ export const fieldChange = {
   // [TODO] Utilize this flag
   key: takeBit(),
   /** Current field value commited as initial. */
-  // [TODO] This is not used, but the commit method is implemented, so we need
-  // either remove it or utilize it.
+  // [TODO] Utilize this flag
   commit: takeBit(),
   /** Field value resetted to initial. */
-  // [TODO] This is not used, but the reset method is implemented, so we need
-  // either remove it or utilize it.
+  // [TODO] Utilize this flag
   reset: takeBit(),
   /** Field become invalid. */
   invalid: takeBit(),
