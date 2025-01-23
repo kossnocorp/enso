@@ -406,7 +406,14 @@ export class Field<Payload> {
     useEffect(
       () =>
         this.watch((_, event) => {
-          if (this.#internal.updated(event)) rerender();
+          if (
+            event.changes &
+            (change.field.type |
+              change.field.detach |
+              change.field.attach |
+              change.field.shape)
+          )
+            rerender();
         }),
       [this.id, rerender]
     );
@@ -1274,9 +1281,6 @@ export abstract class InternalState<Payload> {
   childUpdate(type: FieldChange, _key: string): FieldChange {
     return type;
   }
-
-  abstract updated(event: ChangesEvent): boolean;
-
   abstract dirty(value: Payload): boolean;
 
   protected get external() {
@@ -1333,14 +1337,6 @@ export class InternalPrimitiveState<Payload> extends InternalState<Payload> {
     if (value === undefined || value === null)
       return value as Field.Try<Payload>;
     return this.external as Field.Try<Payload>;
-  }
-
-  updated(event: ChangesEvent): boolean {
-    return !!(
-      event.changes & change.field.attach ||
-      event.changes & change.field.detach ||
-      event.changes & change.field.type
-    );
   }
 
   unwatch() {}
@@ -1454,16 +1450,6 @@ export class InternalObjectState<
       if (value === undefined || value === null) return value;
     }
     return field;
-  }
-
-  updated(event: ChangesEvent): boolean {
-    return !!(
-      event.changes & change.field.attach ||
-      event.changes & change.field.detach ||
-      event.changes & change.field.type ||
-      event.changes & change.child.detach ||
-      event.changes & change.child.attach
-    );
   }
 
   override childUpdate(childChanges: FieldChange, key: string): FieldChange {
@@ -1657,16 +1643,6 @@ export class InternalArrayState<
       if (value === undefined || value === null) return value;
     }
     return field;
-  }
-
-  updated(event: ChangesEvent): boolean {
-    return !!(
-      event.changes & change.field.attach ||
-      event.changes & change.field.detach ||
-      event.changes & change.field.type ||
-      event.changes & change.child.detach ||
-      event.changes & change.child.attach
-    );
   }
 
   override childUpdate(childChanges: FieldChange, key: string): FieldChange {
