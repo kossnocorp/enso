@@ -42,6 +42,16 @@
           "types": "./field/index.d.ts",
           "default": "./field/index.js"
         }
+      },
+      "./change": {
+        "require": {
+          "types": "./change/index.d.cts",
+          "default": "./change/index.cjs"
+        },
+        "import": {
+          "types": "./change/index.d.ts",
+          "default": "./change/index.js"
+        }
       }
     }
   },
