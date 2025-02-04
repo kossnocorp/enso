@@ -3074,6 +3074,25 @@ describe("Field", () => {
           .element(screen.getByTestId("render-ensure"))
           .toHaveTextContent("2");
       });
+
+      it("allows to pass falsy values", async () => {
+        function Component() {
+          const field = Field.useEnsure(false);
+          const value = field.useGet();
+
+          return (
+            <div>
+              <div data-testid="value">{String(value)}</div>
+            </div>
+          );
+        }
+
+        const screen = render(<Component />);
+
+        await expect
+          .element(screen.getByTestId("value"))
+          .toHaveTextContent("undefined");
+      });
     });
   });
 

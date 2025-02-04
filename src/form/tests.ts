@@ -28,7 +28,7 @@ describe("Form", () => {
     it("delegates set", () => {
       const spy = vi.spyOn(Field.prototype, "set").mockReturnValue(8n);
       const form = new Form(nanoid(), 42);
-      expect(form.set(24)).toBe(8);
+      expect(form.set(24)).toBe(8n);
       expect(spy).toHaveBeenCalledWith(24);
     });
 

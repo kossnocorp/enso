@@ -571,7 +571,7 @@ export class Field<Payload> {
    * @returns Fields tuple, first element - ensured field, second - dummy field
    */
   static useEnsure<Payload>(
-    field: Field<Payload> | undefined
+    field: Field<Payload> | EnsoUtils.Falsy
   ): Field<Payload | undefined> {
     const dummy = Field.use(undefined);
     const frozenDummy = useMemo(() => Object.freeze(dummy), [dummy]);
