@@ -360,7 +360,7 @@ export function isolateStructuralChanges(changes: FieldChange): FieldChange {
  * @param changes - Changes to check.
  * @returns Shape change if child changes affect field shape or `0n` otherwise.
  */
-export function shapeChange(changes: FieldChange): FieldChange {
+export function shapeChanges(changes: FieldChange): FieldChange {
   return (
     maskedChanges(
       changes,

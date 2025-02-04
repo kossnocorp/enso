@@ -13,7 +13,7 @@ import {
   change,
   ChangesEvent,
   FieldChange,
-  shapeChange,
+  shapeChanges,
   shiftChildChanges,
   structuralChanges,
 } from "../change/index.ts";
@@ -340,7 +340,7 @@ export class Field<Payload> {
       this.#internal.childUpdate(childChanges, key);
 
     // Apply shape change
-    changes |= shapeChange(changes);
+    changes |= shapeChanges(changes);
 
     this.trigger(changes, true);
   }
@@ -406,14 +406,7 @@ export class Field<Payload> {
     useEffect(
       () =>
         this.watch((_, event) => {
-          if (
-            event.changes &
-            (change.field.type |
-              change.field.detach |
-              change.field.attach |
-              change.field.shape)
-          )
-            rerender();
+          if (shapeChanges(event.changes)) rerender();
         }),
       [this.id, rerender]
     );
@@ -1404,7 +1397,7 @@ export class InternalObjectState<
     }
 
     // Apply shape change
-    changes |= shapeChange(changes);
+    changes |= shapeChanges(changes);
 
     return changes;
   }
@@ -1601,7 +1594,7 @@ export class InternalArrayState<
     });
 
     // Apply shape change
-    changes |= shapeChange(changes);
+    changes |= shapeChanges(changes);
 
     return changes;
   }
