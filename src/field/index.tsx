@@ -563,12 +563,17 @@ export class Field<Payload> {
    * @param field - The field to ensure. Can be undefined.
    * @returns Fields tuple, first element - ensured field, second - dummy field
    */
-  static useEnsure<Payload>(
-    field: Field<Payload> | EnsoUtils.Falsy
-  ): Field<Payload | undefined> {
+  static useEnsure<Payload, Result = undefined>(
+    field: Field<Payload> | EnsoUtils.Falsy,
+    map?: Field.MapField<Payload, Result>
+  ): Result extends undefined
+    ? Field<Payload | undefined>
+    : Field<Result | undefined> {
     const dummy = Field.use(undefined);
     const frozenDummy = useMemo(() => Object.freeze(dummy), [dummy]);
-    return (field || frozenDummy) as Field<Payload | undefined>;
+    const mappedField = (map && field && map(field)) || field;
+    // @ts-ignore: [TODO]
+    return (mappedField || frozenDummy) as Field<Payload | undefined>;
   }
 
   //#endregion
@@ -1033,6 +1038,10 @@ export namespace Field {
     Field<Payload | undefined>,
     Readonly<Field<undefined>>,
   ];
+
+  export type MapField<Payload, Return> = (
+    field: Field<Payload>
+  ) => Field<Return>;
 
   //#endregion
 

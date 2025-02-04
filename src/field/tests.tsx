@@ -3093,6 +3093,101 @@ describe("Field", () => {
           .element(screen.getByTestId("value"))
           .toHaveTextContent("undefined");
       });
+
+      it("allows to map nested field", async () => {
+        function Component() {
+          const count = useRenderCount();
+          const [field, setField] = useState<
+            Field<{ hello: string }> | undefined
+          >();
+          const actualField = Field.use({ hello: "Hello!" });
+          const ensuredField = Field.useEnsure(field, (f) => f.$.hello);
+          const dummyField = useMemo(() => ensuredField, []);
+          const fieldValue = ensuredField.useGet();
+          const dummyValue = dummyField.useGet();
+
+          return (
+            <div>
+              <div data-testid="render-ensure">{count}</div>
+
+              <button onClick={() => setField(actualField)}>Set actual</button>
+
+              <button onClick={() => dummyField.set("Hi!")}>
+                Update dummy
+              </button>
+
+              <div data-testid="ensured-value">{String(fieldValue)}</div>
+              <div data-testid="dummy-value">{String(dummyValue)}</div>
+
+              <div data-testid="actual-id">{actualField.$.hello.id}</div>
+              <div data-testid="ensured-id">{ensuredField.id}</div>
+              <div data-testid="dummy-id">{dummyField.id}</div>
+            </div>
+          );
+        }
+
+        const screen = render(<Component />);
+
+        await expect
+          .element(screen.getByTestId("ensured-value"))
+          .toHaveTextContent("undefined");
+        await expect
+          .element(screen.getByTestId("dummy-value"))
+          .toHaveTextContent("undefined");
+
+        const actualId1 = screen.getByTestId("actual-id").element().textContent;
+        const ensuredId1 = screen
+          .getByTestId("ensured-id")
+          .element().textContent;
+        const dummyId1 = screen.getByTestId("dummy-id").element().textContent;
+
+        expect(ensuredId1).toBe(dummyId1);
+        expect(actualId1).not.toBe(ensuredId1);
+
+        await expect
+          .element(screen.getByTestId("render-ensure"))
+          .toHaveTextContent("1");
+
+        await screen.getByText("Set actual").click();
+
+        await expect
+          .element(screen.getByTestId("ensured-value"))
+          .toHaveTextContent("Hello!");
+        await expect
+          .element(screen.getByTestId("dummy-value"))
+          .toHaveTextContent("undefined");
+
+        const actualId2 = screen.getByTestId("actual-id").element().textContent;
+        const ensuredId2 = screen
+          .getByTestId("ensured-id")
+          .element().textContent;
+        const dummyId2 = screen.getByTestId("dummy-id").element().textContent;
+
+        expect(ensuredId2).toBe(actualId2);
+        expect(actualId2).not.toBe(dummyId2);
+        expect(dummyId2).toBe(dummyId1);
+
+        await expect
+          .element(screen.getByTestId("render-ensure"))
+          .toHaveTextContent("2");
+
+        await screen.getByText("Update dummy").click();
+
+        await expect
+          .element(screen.getByTestId("ensured-value"))
+          .toHaveTextContent("Hello!");
+        await expect
+          .element(screen.getByTestId("dummy-value"))
+          .toHaveTextContent("undefined");
+
+        const dummyId3 = screen.getByTestId("dummy-id").element().textContent;
+
+        expect(dummyId3).toBe(dummyId2);
+
+        await expect
+          .element(screen.getByTestId("render-ensure"))
+          .toHaveTextContent("2");
+      });
     });
   });
 
