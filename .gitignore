@@ -2,3 +2,5 @@ node_modules
 /lib
 /debug.log
 __screenshots__
+.envrc
+.direnv
