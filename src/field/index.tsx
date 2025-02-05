@@ -31,8 +31,15 @@ const clearSymbol = Symbol();
 export const fieldPrivate = Symbol();
 
 export class Field<Payload> {
-  static use<Payload>(value: Payload): Field<Payload> {
-    const field = useMemo(() => new Field(value), []);
+  /**
+   * Creates and memoizes a new field instance from the provided initial value.
+   * Just like `useState`, it will not reacreate the field on the value change.
+   *
+   * @param initialValue - Initial value of the field.
+   * @returns Memoized field instance.
+   */
+  static use<Payload>(initialValue: Payload): Field<Payload> {
+    const field = useMemo(() => new Field(initialValue), []);
     return field;
   }
 
@@ -80,7 +87,6 @@ export class Field<Payload> {
 
   #internal: InternalState<Payload> = new InternalPrimitiveState(
     this,
-    // @ts-ignore
     detachedValue
   );
 
@@ -574,6 +580,23 @@ export class Field<Payload> {
     const mappedField = (map && field && map(field)) || field;
     // @ts-ignore: [TODO]
     return (mappedField || frozenDummy) as Field<Payload | undefined>;
+  }
+
+  /**
+   * Widens the field type, adding the provided type to the payload type. It
+   * returns the same field instance. It is useful when passing as an argument
+   * that expects a wider type.
+   *
+   * Despite TypeScript not allowing passing `Field<A>` as `Field<A | B>`,
+   * it is safe to widen the field type this way.
+   *
+   * @typeparam Wide - The type to widen the field to.
+   *
+   * @returns The same field instance with `Widening` added to the payload type.
+   */
+  // [TODO] Research if it's possible to make TypeScript accept wider paths.
+  widen<Wide>(): Field<Payload | Wide> {
+    return this as Field<Payload | Wide>;
   }
 
   //#endregion
@@ -1305,9 +1328,9 @@ export abstract class InternalState<Payload> {
 //#region InternalPrimitiveState
 
 export class InternalPrimitiveState<Payload> extends InternalState<Payload> {
-  #value: Payload;
+  #value: Payload | DetachedValue;
 
-  constructor(field: Field<Payload>, value: Payload) {
+  constructor(field: Field<Payload>, value: Payload | DetachedValue) {
     super(field, value);
     this.#value = value;
   }

@@ -1485,6 +1485,14 @@ describe("Field", () => {
           computed.set([72, 105, 33]);
         }));
     });
+
+    describe("widen", () => {
+      it("allows to widen the field type", () => {
+        const field = new Field<string>("Hello, world!");
+        const widened = field.widen<undefined>();
+        widened satisfies Field<string | undefined>;
+      });
+    });
   });
 
   describe("collections", () => {
