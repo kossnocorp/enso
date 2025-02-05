@@ -18,9 +18,13 @@ export default defineWorkspace([
       include: ["src/**/tests.tsx"],
       browser: {
         enabled: true,
-        name: "chromium",
         provider: "playwright",
-        headless: true,
+        instances: [
+          {
+            browser: "chromium",
+            headless: true,
+          },
+        ],
       },
     },
   },
