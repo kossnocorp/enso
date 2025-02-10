@@ -12,6 +12,7 @@ import React, {
 import {
   change,
   ChangesEvent,
+  fieldChange,
   FieldChange,
   shapeChanges,
   shiftChildChanges,
@@ -25,10 +26,9 @@ export { FieldRef };
 
 //#region Field
 
-const createSymbol = Symbol();
 const clearSymbol = Symbol();
 
-export const fieldPrivate = Symbol();
+const externalSymbol = Symbol();
 
 export class Field<Payload> {
   /**
@@ -226,16 +226,6 @@ export class Field<Payload> {
     this.#internal = new ValueConstructor(this, value);
     this.#internal.set(value);
     return changes;
-  }
-
-  [createSymbol](value: Payload): FieldChange {
-    const changes = this.#set(value) | change.field.attach;
-    this.trigger(changes, false);
-    return changes;
-  }
-
-  [clearSymbol]() {
-    this.#set(undefined as Payload);
   }
 
   get initial(): Payload {
@@ -647,14 +637,12 @@ export class Field<Payload> {
     return this.#internal.length;
   }
 
-  remove: Field.RemoveFn<Payload> = function <Key extends keyof Payload>(
-    key: Key
-  ) {
+  // @ts-ignore: [TODO]
+  remove: Field.RemoveFn<Payload> = <Key extends keyof Payload>(key: Key) => {
+    if (!key) return this.set(detachedValue);
     // @ts-ignore: [TODO]
-    if (arguments.length === 0) return this.set(detachedValue);
-    // @ts-ignore: [TODO]
-    else return this.at(key).remove();
-  } as Field.RemoveFn<Payload>;
+    else return shiftChildChanges(this.at(key).remove());
+  };
 
   //#endregion
 
@@ -850,6 +838,28 @@ export class Field<Payload> {
   }
 
   //#endregion
+
+  #external = {
+    move: (newKey: string) => {
+      assert(this.#parent);
+      this.#parent.key = newKey;
+      return this.trigger(fieldChange.key);
+    },
+
+    create: (value: Payload): FieldChange => {
+      const changes = this.#set(value) | change.field.attach;
+      this.trigger(changes, false);
+      return changes;
+    },
+
+    clear: () => {
+      this.#set(undefined as Payload);
+    },
+  };
+
+  get [externalSymbol]() {
+    return this.#external;
+  }
 }
 
 export namespace Field {
@@ -1403,7 +1413,7 @@ export class InternalObjectState<
     this.#children.forEach((child, key) => {
       if (!(key in newValue)) {
         this.#children.delete(key);
-        child[clearSymbol]();
+        child[externalSymbol].clear();
         // @ts-ignore: This is fine
         this.#undefined.register(key, child);
         changes |= change.child.detach;
@@ -1417,7 +1427,7 @@ export class InternalObjectState<
         changes |= shiftChildChanges(childChanges);
       } else {
         const undefinedState = this.#undefined.claim(key);
-        if (undefinedState) undefinedState[createSymbol](value);
+        if (undefinedState) undefinedState[externalSymbol].create(value);
 
         this.#children.set(
           key,
@@ -1485,6 +1495,7 @@ export class InternalObjectState<
       const child = this.#undefined.claim(key);
       if (!child)
         throw new Error("Failed to find the child field when updating");
+
       // @ts-ignore: [TODO]
       this.#children.set(key, child);
       changes |= change.child.attach;
@@ -1494,9 +1505,13 @@ export class InternalObjectState<
       const child = this.#children.get(key);
       if (!child)
         throw new Error("Failed to find the child field when updating");
+
       this.#children.delete(key);
       child.unwatch();
       changes |= change.child.detach;
+
+      // @ts-ignore: [TODO]
+      this.#undefined.register(key, child);
     }
 
     return changes;
@@ -1595,7 +1610,7 @@ export class InternalArrayState<
     this.#children.forEach((item, index) => {
       if (!(index in newValue)) {
         delete this.#children[index];
-        item[clearSymbol]();
+        item[externalSymbol].clear();
         // @ts-ignore: This is fine
         this.#undefined.register(index.toString(), item);
         changes |= change.child.detach;
@@ -1611,7 +1626,7 @@ export class InternalArrayState<
         return child;
       } else {
         const undefinedState = this.#undefined.claim(index.toString());
-        if (undefinedState) undefinedState[createSymbol](value);
+        if (undefinedState) undefinedState[externalSymbol].create(value);
 
         const newChild =
           undefinedState ||
@@ -1675,22 +1690,50 @@ export class InternalArrayState<
 
     // Handle when child goes from undefined to defined
     if (childChanges & change.field.attach) {
-      const child = this.#undefined.claim(key);
-      if (!child)
+      const item = this.#undefined.claim(key);
+      if (!item)
         throw new Error("Failed to find the child field when updating");
-      // @ts-ignore: [TODO]
-      this.#children[Number(key)] = child;
+
+      const idx = Number(key);
+      const existingItem = this.#children[idx];
+      // Item already exists at this index, so we need to move it
+      if (existingItem) {
+        // Insert the attaching item
+        // @ts-ignore: [TODO]
+        this.#children.splice(idx, 0, item);
+
+        // Shift children keys
+        this.#children.slice(idx).forEach((item, index) => {
+          item[externalSymbol].move(String(idx + index));
+        });
+      } else {
+        // @ts-ignore: [TODO]
+        this.#children[idx] = item;
+      }
+
+      // [TODO] Update keys for the rest of the children and trigger move change
       changes |= change.child.attach;
     }
 
     // Handle when child goes from defined to undefined
     if (childChanges & change.field.detach) {
-      const child = this.#children[Number(key)];
-      if (!child)
+      const item = this.#children[Number(key)];
+      if (!item)
         throw new Error("Failed to find the child field when updating");
-      this.#children.splice(Number(key), 1);
-      child.unwatch();
+
+      // Remove the child from the array
+      const idx = Number(key);
+      this.#children.splice(idx, 1);
+      item.unwatch();
       changes |= change.child.detach;
+
+      // Shift children keys
+      this.#children.slice(idx).forEach((item, index) => {
+        item[externalSymbol].move(String(idx + index));
+      });
+
+      // @ts-ignore: [TODO]
+      this.#undefined.register(key, item);
     }
 
     return changes;
@@ -1945,3 +1988,7 @@ function useFieldHook<Value, Result = Value>(
 }
 
 //#endregion
+
+function assert(condition: unknown): asserts condition {
+  if (!condition) throw new Error("Assertion failed");
+}

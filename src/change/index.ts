@@ -89,22 +89,8 @@ let bitIdx = 0n;
  */
 export const fieldChange = {
   //#region Structural changes
-  // Changes that affect the inner value of the field.
 
-  // [TODO] Decide what is the application of subtree changes.
-  //
-  // Initially I though that would allow to distinquish children events and
-  // have granularity to react to the changes. For instance when using as
-  // a collection, arrays/objects need to know when immediate children receive
-  // `attach`/`detach` but not about the subtree changes.
-  //
-  // Subtree changes are useful when handling `blur` in particular. Right now
-  // it is handled by a special case, but with the new bit regions approach it
-  // is easy to define the children/subtree changes by simply shifting the bits
-  // so it feel appropriate to have them.
-  //
-  // Another example could be validation changes, but it's not utilized at
-  // the moment.
+  // Changes that affect the inner value of the field.
 
   /** Field type changed. It indicates that field type(array/object/number/etc.)
    * is now different. */
@@ -131,6 +117,7 @@ export const fieldChange = {
   ...reserveBit(),
 
   //#region Meta changes
+
   // Changes that affect the meta state of the field.
 
   /** Field id changed. It happens when the field watched by a hook is replaced
@@ -138,7 +125,6 @@ export const fieldChange = {
   id: takeBit(),
   /** Field key changed. It indicates that the field got moved. It doesn't
    * apply to the field getting detached and attached. */
-  // [TODO] Utilize this flag
   key: takeBit(),
   /** Current field value commited as initial. */
   // [TODO] Utilize this flag

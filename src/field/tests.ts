@@ -197,6 +197,14 @@ describe("Field", () => {
           );
         });
 
+        it("allows to re-attach child fields", () => {
+          const field = new Field<Record<string, number>>({ num: 42 });
+          const childField = field.at("num");
+          childField.remove();
+          childField.set(9);
+          expect(field.get()).toEqual({ num: 9 });
+        });
+
         describe("changes", () => {
           describe("field", () => {
             it("returns 0 if the field is not changed", () => {
@@ -527,6 +535,29 @@ describe("Field", () => {
           const field = new Field<number[]>([1, 2]);
           const changes = field.at(2).set(3);
           expect(changes).toMatchChanges(change.field.attach);
+        });
+
+        it("allows to re-attach item fields", () => {
+          const field = new Field<number[]>([1, 2, 3]);
+          const itemField = field.at(1);
+          itemField.remove();
+          itemField.set(9);
+          expect(field.get()).toEqual([1, 9, 3]);
+        });
+
+        it("shifts children when re-attaching item field", () => {
+          const field = new Field<number[]>([1, 2, 3]);
+          const itemField = field.at(1);
+
+          itemField.remove();
+          expect(field.get()).toEqual([1, 3]);
+          expect(field.at(0).key).toBe("0");
+          expect(field.at(1).key).toBe("1");
+
+          itemField.set(9);
+          expect(field.get()).toEqual([1, 9, 3]);
+          expect(field.at(0).key).toBe("0");
+          expect(field.at(1).key).toBe("1");
         });
 
         describe("changes", () => {
@@ -1528,11 +1559,61 @@ describe("Field", () => {
         });
 
         describe("changes", () => {
-          describe.todo("field");
+          describe("field", () => {
+            it("returns field detach", () => {
+              const field = new Field<Record<string, number>>({
+                one: 1,
+                two: 2,
+                three: 3,
+              });
+              expect(field.at("one").remove()).toMatchChanges(
+                change.field.detach
+              );
+            });
 
-          describe.todo("child");
+            it("triggers updates", () => {
+              const spy = vi.fn();
+              const field = new Field<Record<string, number>>({
+                one: 1,
+                two: 2,
+                three: 3,
+              });
+              field.watch(spy);
+              field.at("one").remove();
+              const [[value, event]]: any = spy.mock.calls;
+              expect(value).toEqual({ two: 2, three: 3 });
+              expect(event.changes).toMatchChanges(
+                change.field.shape | change.child.detach
+              );
+            });
+          });
 
-          describe.todo("subtree");
+          describe("child", () => {
+            it("returns child detach", () => {
+              const field = new Field<Record<string, number>>({
+                one: 1,
+                two: 2,
+                three: 3,
+              });
+              expect(field.remove("one")).toMatchChanges(change.child.detach);
+            });
+
+            it("triggers updates", () => {
+              const spy = vi.fn();
+              const field = new Field<Record<string, number>>({
+                one: 1,
+                two: 2,
+                three: 3,
+              });
+              field.watch(spy);
+              field.remove("one");
+              const [[value, event]]: any = spy.mock.calls;
+              expect(value).toEqual({ two: 2, three: 3 });
+              expect(event.changes).toMatchChanges(
+                change.field.shape | change.child.detach
+              );
+            });
+          });
         });
       });
 
@@ -1548,12 +1629,68 @@ describe("Field", () => {
           expect(() => field.remove(6)).not.toThrow();
         });
 
+        it("updates the children indices", () => {
+          const field = new Field([1, 2, 3, 4]);
+          field.remove(1);
+          expect(field.at(0).key).toBe("0");
+          expect(field.at(1).key).toBe("1");
+          expect(field.at(2).key).toBe("2");
+        });
+
         describe("changes", () => {
-          describe.todo("field");
+          describe("field", () => {
+            it("returns field detach", () => {
+              const field = new Field([1, 2, 3]);
+              expect(field.at(2).remove()).toMatchChanges(change.field.detach);
+            });
 
-          describe.todo("child");
+            it("triggers updates", () => {
+              const spy = vi.fn();
+              const field = new Field([1, 2, 3, 4]);
+              field.watch(spy);
+              field.at(1).remove();
+              const [[value, event]]: any = spy.mock.calls;
+              expect(value).toEqual([1, 3, 4]);
+              expect(event.changes).toMatchChanges(
+                change.field.shape | change.child.detach
+              );
+            });
+          });
 
-          describe.todo("subtree");
+          describe("child", () => {
+            it("returns child detach", () => {
+              const field = new Field([1, 2, 3]);
+              expect(field.remove(2)).toMatchChanges(change.child.detach);
+            });
+
+            it("triggers updates", () => {
+              const spy = vi.fn();
+              const field = new Field<Record<string, number>>({
+                one: 1,
+                two: 2,
+                three: 3,
+              });
+              field.watch(spy);
+              field.remove("one");
+              const [[value, event]]: any = spy.mock.calls;
+              expect(value).toEqual({ two: 2, three: 3 });
+              expect(event.changes).toMatchChanges(
+                change.field.shape | change.child.detach
+              );
+            });
+
+            it("triggers updates", () => {
+              const spy = vi.fn();
+              const field = new Field([1, 2, 3, 4]);
+              field.watch(spy);
+              field.remove(1);
+              const [[value, event]]: any = spy.mock.calls;
+              expect(value).toEqual([1, 3, 4]);
+              expect(event.changes).toMatchChanges(
+                change.field.shape | change.child.detach
+              );
+            });
+          });
         });
       });
 
