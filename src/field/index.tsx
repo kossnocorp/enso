@@ -78,7 +78,7 @@ export class Field<Payload> {
       value,
       onChange: field.set,
       onBlur: () => {
-        field.trigger(change.field.blur, true);
+        ChangesEvent.sync(() => field.trigger(change.field.blur, true));
       },
     };
 
@@ -299,10 +299,11 @@ export class Field<Payload> {
 
   //#region Events
 
-  #target = new EventTarget();
+  #batchTarget = new EventTarget();
+  #syncTarget = new EventTarget();
   #subs = new Set<(event: Event) => void>();
 
-  trigger(changes: FieldChange, notifyParents: boolean = false) {
+  trigger(changes: FieldChange, notifyParents: boolean = false, sync = false) {
     this.#clearCache();
 
     if (this.#withholded) {
@@ -322,10 +323,16 @@ export class Field<Payload> {
 
       if (notifyParents) this.#withholded[1] = true;
 
+      // [TODO] Returning at this point prevents `this.#childTrigger` from being
+      // called which then calls `this.#internal.childUpdate` and updates the
+      // parent and sibling keys. It leads to incomplete update.
+
       return;
     }
 
-    this.#target.dispatchEvent(new ChangesEvent(changes));
+    ChangesEvent.batch(this.#batchTarget, changes);
+    // [TODO] Add tests for this
+    this.#syncTarget.dispatchEvent(new ChangesEvent(changes));
 
     // If the updates should flow upstream, trigger parents too
     if (notifyParents && this.#parent)
@@ -353,27 +360,31 @@ export class Field<Payload> {
   }
 
   unleash() {
-    this.#internal.unleash();
-    const withholded = this.#withholded;
-    this.#withholded = undefined;
-    if (withholded?.[0]) this.trigger(...withholded);
+    ChangesEvent.sync(() => {
+      this.#internal.unleash();
+      const withholded = this.#withholded;
+      this.#withholded = undefined;
+      if (withholded?.[0]) this.trigger(...withholded);
+    });
   }
 
   //#endregion
 
   //#region Watching
 
-  watch(callback: Field.WatchCallback<Payload>): Field.Unwatch {
+  watch(callback: Field.WatchCallback<Payload>, sync = false): Field.Unwatch {
+    // [TODO] Add tests for this
+    const target = sync ? this.#syncTarget : this.#batchTarget;
     const handler = (event: Event) => {
       callback(this.get(), event as ChangesEvent);
     };
 
     this.#subs.add(handler);
-    this.#target.addEventListener("change", handler);
+    target.addEventListener("change", handler);
 
     return () => {
       this.#subs.delete(handler);
-      this.#target.removeEventListener("change", handler);
+      target.removeEventListener("change", handler);
     };
   }
 
@@ -393,9 +404,11 @@ export class Field<Payload> {
   }
 
   unwatch() {
-    this.#subs.forEach((sub) =>
-      this.#target.removeEventListener("change", sub)
-    );
+    // [TODO] Add tests for this
+    this.#subs.forEach((sub) => {
+      this.#batchTarget.removeEventListener("change", sub);
+      this.#syncTarget.removeEventListener("change", sub);
+    });
     this.#subs.clear();
     this.#internal.unwatch();
   }
@@ -486,11 +499,11 @@ export class Field<Payload> {
     const computed = new ComputedField(intoCallback(this.get()), this);
     // [TODO] This creates a leak, so rather than holding on to the computed
     // field, store it as a weak ref and unsubscribe when it's no longer needed.
-    this.watch((payload) => computed.set(intoCallback(payload)));
+    this.watch((payload) => computed.set(intoCallback(payload)), true);
 
     return {
       from: (fromCallback) => {
-        computed.watch((payload) => this.set(fromCallback(payload)));
+        computed.watch((payload) => this.set(fromCallback(payload)), true);
         return computed;
       },
     };
@@ -709,7 +722,7 @@ export class Field<Payload> {
   #customOnBlur: FocusEventHandler<Element> | undefined;
 
   onBlur<Element extends HTMLElement>(event: FocusEvent<Element>) {
-    this.trigger(change.field.blur, true);
+    ChangesEvent.sync(() => this.trigger(change.field.blur, true));
     this.#customOnBlur?.(event);
   }
 

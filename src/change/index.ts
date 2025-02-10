@@ -12,6 +12,71 @@
  * the `changes` property to it.
  */
 export class ChangesEvent extends Event {
+  /** Current batch of changes. It collects all changes that happened during
+   * the batch and allows to dispatch them as a single event for each target.
+   * @internal */
+  static #batch: Batch | undefined;
+
+  /**
+   * Batches changes events and dispatches them as a single event for each
+   * target after callstack is empty.
+   *
+   * @param target - Event target to dispatch the changes to.
+   * @param changes - Changes to dispatch.
+   */
+  static batch(target: EventTarget, changes: FieldChange) {
+    if (this.#sync) {
+      target.dispatchEvent(new ChangesEvent(changes));
+      return;
+    }
+
+    if (!this.#batch) this.#batch = new Map();
+
+    const batchedChanges = this.#batch.get(target) || 0n;
+
+    let newChanges = batchedChanges | changes;
+
+    // Cancel out opposite changes
+
+    // valid/invalid
+    if (changes & fieldChange.valid && batchedChanges & fieldChange.invalid)
+      newChanges &= ~fieldChange.invalid;
+    if (changes & fieldChange.invalid && batchedChanges & fieldChange.valid)
+      newChanges &= ~fieldChange.valid;
+
+    // attach/detach
+    if (changes & fieldChange.attach && batchedChanges & fieldChange.detach)
+      newChanges &= ~fieldChange.detach;
+    if (changes & fieldChange.detach && batchedChanges & fieldChange.attach)
+      newChanges &= ~fieldChange.attach;
+
+    this.#batch.set(target, newChanges);
+
+    queueMicrotask(() => {
+      // Check if the batch was consumed
+      if (!this.#batch) return;
+      // Dispatch the events
+      this.#batch.forEach((changes, target) => {
+        target.dispatchEvent(new ChangesEvent(changes));
+      });
+      this.#batch = undefined;
+    });
+  }
+
+  /** If synchronous events are forced. */
+  static #sync: boolean = false;
+
+  /**
+   * Makes the any batched events to fire immediately.
+   *
+   * @param callback - The callback to execute synchronously.
+   */
+  static sync(callback: Function) {
+    this.#sync = true;
+    callback();
+    this.#sync = false;
+  }
+
   /** Changes bitmask. */
   changes: FieldChange;
 
@@ -25,6 +90,8 @@ export class ChangesEvent extends Event {
     this.changes = changes;
   }
 }
+
+type Batch = Map<EventTarget, FieldChange>;
 
 //#endregion
 

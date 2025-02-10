@@ -161,41 +161,58 @@ describe("Field", () => {
           expect(field.get()).toEqual({});
         });
 
-        it("does not trigger fields updates when detaching", () => {
-          const field = new Field<{ num?: number; str?: string }>({ num: 42 });
-          const spy = vi.fn();
-          field.$.num?.watch(spy);
-          field.set({ num: 43 });
-          expect(spy).toHaveBeenCalledWith(
-            43,
-            expect.objectContaining({ changes: change.field.value })
-          );
-          field.set({ str: "hello" });
-          expect(spy).toHaveBeenCalledOnce();
-        });
+        it("does not trigger fields updates when detaching", () =>
+          new Promise((resolve) => {
+            const field = new Field<{ num?: number; str?: string }>({
+              num: 42,
+            });
+            const spy = vi.fn();
+            field.$.num?.watch(spy);
+            field.set({ num: 43 });
+            setTimeout(() => {
+              expect(spy).toHaveBeenCalledWith(
+                43,
+                expect.objectContaining({ changes: change.field.value })
+              );
+              field.set({ str: "hello" });
+              setTimeout(() => {
+                expect(spy).toHaveBeenCalledOnce();
+                resolve(void 0);
+              });
+            });
+          }));
 
-        it("preserves detached fields", () => {
-          const field = new Field<{ num?: number; str?: string }>({ num: 42 });
-          const spy = vi.fn();
-          const numA = field.$.num;
-          numA?.watch(spy);
-          field.set({ num: 43 });
-          expect(spy).toHaveBeenCalledWith(
-            43,
-            expect.objectContaining({ changes: change.field.value })
-          );
-          field.set({ str: "hello" });
-          field.set({ num: 44, str: "hello" });
-          const numB = field.$.num;
-          expect(numA).toBeInstanceOf(Field);
-          expect(numA).toBe(numB);
-          expect(spy).toHaveBeenCalledWith(
-            44,
-            expect.objectContaining({
-              changes: change.field.type | change.field.attach,
-            })
-          );
-        });
+        it("preserves detached fields", () =>
+          new Promise((resolve) => {
+            const field = new Field<{ num?: number; str?: string }>({
+              num: 42,
+            });
+            const spy = vi.fn();
+            const numA = field.$.num;
+            numA?.watch(spy);
+            field.set({ num: 43 });
+
+            setTimeout(() => {
+              expect(spy).toHaveBeenCalledWith(
+                43,
+                expect.objectContaining({ changes: change.field.value })
+              );
+              field.set({ str: "hello" });
+              field.set({ num: 44, str: "hello" });
+              const numB = field.$.num;
+              expect(numA).toBeInstanceOf(Field);
+              expect(numA).toBe(numB);
+              setTimeout(() => {
+                expect(spy).toHaveBeenCalledWith(
+                  44,
+                  expect.objectContaining({
+                    changes: change.field.type | change.field.attach,
+                  })
+                );
+                resolve(void 0);
+              });
+            });
+          }));
 
         it("allows to re-attach child fields", () => {
           const field = new Field<Record<string, number>>({ num: 42 });
@@ -436,65 +453,88 @@ describe("Field", () => {
           expect(changes & change.child.detach).toBe(change.child.detach);
         });
 
-        it("does not trigger item updates when removing", () => {
-          const field = new Field<number[]>([1, 2, 3, 4]);
-          const spy = vi.fn();
-          field.$[2]?.watch(spy);
-          field.set([1, 2, 33, 4]);
-          expect(spy).toHaveBeenCalledWith(
-            33,
-            expect.objectContaining({
-              changes: change.field.value,
-            })
-          );
-          field.set([1, 2]);
-          expect(spy).toHaveBeenCalledOnce();
-        });
+        it("does not trigger item updates when removing", () =>
+          new Promise((resolve) => {
+            const field = new Field<number[]>([1, 2, 3, 4]);
+            const spy = vi.fn();
+            field.$[2]?.watch(spy);
+            field.set([1, 2, 33, 4]);
+            setTimeout(() => {
+              expect(spy).toHaveBeenCalledWith(
+                33,
+                expect.objectContaining({
+                  changes: change.field.value,
+                })
+              );
+              field.set([1, 2]);
 
-        it("preserves removed items", () => {
-          const field = new Field<number[]>([1, 2, 3, 4]);
-          const spy = vi.fn();
-          const itemA = field.at(2);
-          itemA.watch(spy);
-          field.set([1, 2, 33, 4]);
-          expect(spy).toHaveBeenCalledWith(
-            33,
-            expect.objectContaining({ changes: change.field.value })
-          );
-          field.set([1, 2]);
-          field.set([1, 2, 333]);
-          const itemB = field.at(2);
-          expect(itemA).toBeInstanceOf(Field);
-          expect(itemA).toBe(itemB);
-          expect(spy).toHaveBeenCalledWith(
-            333,
-            expect.objectContaining({
-              changes: change.field.type | change.field.attach,
-            })
-          );
-        });
+              setTimeout(() => {
+                expect(spy).toHaveBeenCalledOnce();
+                resolve(void 0);
+              });
+            });
+          }));
 
-        it("indicates no type change on adding undefined", () => {
-          const field = new Field<Array<number | undefined>>([1, 2, 3, 4]);
-          const spy = vi.fn();
-          const itemA = field.at(2);
-          itemA.watch(spy);
-          field.set([1, 2, 33, 4]);
-          expect(spy).toHaveBeenCalledWith(
-            33,
-            expect.objectContaining({ changes: change.field.value })
-          );
-          field.set([1, 2]);
-          field.set([1, 2, undefined]);
-          expect(spy).toHaveBeenCalledWith(
-            undefined,
-            expect.objectContaining({
-              // This test lacks StateChangeType.Type unlike the above,
-              // indicating that the value is still undefined
-              changes: change.field.attach,
-            })
-          );
-        });
+        it("preserves removed items", () =>
+          new Promise((resolve) => {
+            const field = new Field<number[]>([1, 2, 3, 4]);
+            const spy = vi.fn();
+            const itemA = field.at(2);
+            itemA.watch(spy);
+            field.set([1, 2, 33, 4]);
+
+            setTimeout(() => {
+              field.set([1, 2]);
+              field.set([1, 2, 333]);
+              const itemB = field.at(2);
+              expect(itemA).toBeInstanceOf(Field);
+              expect(itemA).toBe(itemB);
+              setTimeout(() => {
+                expect(spy).toHaveBeenCalledWith(
+                  33,
+                  expect.objectContaining({ changes: change.field.value })
+                );
+
+                expect(spy).toHaveBeenCalledWith(
+                  333,
+                  expect.objectContaining({
+                    changes: change.field.type | change.field.attach,
+                  })
+                );
+                resolve(void 0);
+              });
+            });
+          }));
+
+        it("indicates no type change on adding undefined", () =>
+          new Promise((resolve) => {
+            const field = new Field<Array<number | undefined>>([1, 2, 3, 4]);
+            const spy = vi.fn();
+            const itemA = field.at(2);
+            itemA.watch(spy);
+            field.set([1, 2, 33, 4]);
+            setTimeout(() => {
+              expect(spy).toHaveBeenCalledWith(
+                33,
+                expect.objectContaining({ changes: change.field.value })
+              );
+
+              field.set([1, 2]);
+              field.set([1, 2, undefined]);
+
+              setTimeout(() => {
+                expect(spy).toHaveBeenCalledWith(
+                  undefined,
+                  expect.objectContaining({
+                    // This test lacks StateChangeType.Type unlike the above,
+                    // indicating that the value is still undefined
+                    changes: change.field.attach,
+                  })
+                );
+                resolve(void 0);
+              });
+            });
+          }));
 
         it("does not trigger update when setting undefined value to undefined value", () => {
           const field = new Field<number[]>([1, 2, 3, 4]);
@@ -1131,16 +1171,20 @@ describe("Field", () => {
 
   describe("events", () => {
     describe("trigger", () => {
-      it("triggers the watchers", () => {
-        const field = new Field(42);
-        const spy = vi.fn();
-        field.watch(spy);
-        field.trigger(change.field.value);
-        expect(spy).toHaveBeenCalledWith(
-          42,
-          expect.objectContaining({ changes: change.field.value })
-        );
-      });
+      it("triggers the watchers", () =>
+        new Promise((resolve) => {
+          const field = new Field(42);
+          const spy = vi.fn();
+          field.watch(spy);
+          field.trigger(change.field.value);
+          setTimeout(() => {
+            expect(spy).toHaveBeenCalledWith(
+              42,
+              expect.objectContaining({ changes: change.field.value })
+            );
+            resolve(void 0);
+          });
+        }));
 
       it("doesn't trigger parent fields", () => {
         const field = new Field({ num: 42 });
@@ -1150,35 +1194,65 @@ describe("Field", () => {
         expect(spy).not.toHaveBeenCalled();
       });
 
-      it("allows to notify parent fields", () => {
-        const field = new Field({ num: 42 });
-        const spy = vi.fn();
-        field.watch(spy);
-        field.$.num.trigger(change.field.value, true);
-        const [[value, event]]: any = spy.mock.calls;
-        expect(value).toEqual({ num: 42 });
-        expect(event.changes).toMatchChanges(change.child.value);
-      });
+      it("allows to notify parent fields", () =>
+        new Promise((resolve) => {
+          const field = new Field({ num: 42 });
+          const spy = vi.fn();
+          field.watch(spy);
+          field.$.num.trigger(change.field.value, true);
+          setTimeout(() => {
+            const [[value, event]]: any = spy.mock.calls;
+            expect(value).toEqual({ num: 42 });
+            expect(event.changes).toMatchChanges(change.child.value);
+            resolve(void 0);
+          });
+        }));
 
-      it("notifies parents about child blurring", () => {
-        const field = new Field({ num: 42 });
-        const spy = vi.fn();
-        field.watch(spy);
-        field.$.num.trigger(change.field.blur, true);
-        const [[value, event]]: any = spy.mock.calls;
-        expect(value).toEqual({ num: 42 });
-        expect(event.changes).toMatchChanges(change.child.blur);
-      });
+      it("notifies parents about child blurring", () =>
+        new Promise((resolve) => {
+          const field = new Field({ num: 42 });
+          const spy = vi.fn();
+          field.watch(spy);
+          field.$.num.trigger(change.field.blur, true);
+          setTimeout(() => {
+            const [[value, event]]: any = spy.mock.calls;
+            expect(value).toEqual({ num: 42 });
+            expect(event.changes).toMatchChanges(change.child.blur);
+            resolve(void 0);
+          });
+        }));
 
-      it("notifies parents about nested child blurring", () => {
-        const field = new Field({ user: { name: { first: "Sasha" } } });
-        const spy = vi.fn();
-        field.watch(spy);
-        field.$.user.$.name.$.first.trigger(change.field.blur, true);
-        const [[value, event]]: any = spy.mock.calls;
-        expect(value).toEqual({ user: { name: { first: "Sasha" } } });
-        expect(event.changes).toMatchChanges(change.subtree.blur);
-      });
+      it("notifies parents about nested child blurring", () =>
+        new Promise((resolve) => {
+          const field = new Field({ user: { name: { first: "Sasha" } } });
+          const spy = vi.fn();
+          field.watch(spy);
+          field.$.user.$.name.$.first.trigger(change.field.blur, true);
+          setTimeout(() => {
+            const [[value, event]]: any = spy.mock.calls;
+            expect(value).toEqual({ user: { name: { first: "Sasha" } } });
+            expect(event.changes).toMatchChanges(change.subtree.blur);
+            resolve(void 0);
+          });
+        }));
+
+      it("batches the changes", () =>
+        new Promise((resolve) => {
+          const field = new Field({ user: { name: { first: "Sasha" } } });
+          const spy = vi.fn();
+          field.watch(spy);
+          field.$.user.$.name.$.first.trigger(change.field.blur, true);
+          field.$.user.$.name.$.first.trigger(change.field.shape, true);
+          setTimeout(() => {
+            expect(spy).toHaveBeenCalledOnce();
+            const [[value, event]]: any = spy.mock.calls;
+            expect(value).toEqual({ user: { name: { first: "Sasha" } } });
+            expect(event.changes).toMatchChanges(
+              change.subtree.blur | change.subtree.shape
+            );
+            resolve(void 0);
+          });
+        }));
 
       describe.todo("child");
 
@@ -1186,66 +1260,87 @@ describe("Field", () => {
     });
 
     describe("withhold", () => {
-      it("allows to withhold the events until it's unleashed", () => {
-        const field = new Field({ num: 42 });
-        const spy = vi.fn();
-        field.watch(spy);
-        field.withhold();
-        field.$.num.trigger(change.field.value, true);
-        field.$.num.trigger(change.child.detach, true);
-        field.$.num.trigger(change.child.attach, true);
+      it("allows to withhold the events until it's unleashed", () =>
+        new Promise((resolve) => {
+          const field = new Field({ num: 42 });
+          const spy = vi.fn();
+          field.watch(spy);
+          field.withhold();
+          field.$.num.trigger(change.field.value, true);
+          field.$.num.trigger(change.child.detach, true);
+          field.$.num.trigger(change.child.attach, true);
+          setTimeout(() => {
+            expect(spy).not.toHaveBeenCalled();
 
-        expect(spy).not.toHaveBeenCalled();
+            field.unleash();
 
-        field.unleash();
+            setTimeout(() => {
+              const [[value, event]]: any = spy.mock.calls;
+              expect(value).toEqual({ num: 42 });
+              expect(event.changes).toMatchChanges(
+                change.child.value |
+                  change.subtree.detach |
+                  change.subtree.attach
+              );
+              resolve(void 0);
+            });
+          });
+        }));
 
-        const [[value, event]]: any = spy.mock.calls;
-        expect(value).toEqual({ num: 42 });
-        expect(event.changes).toMatchChanges(
-          change.child.value | change.subtree.detach | change.subtree.attach
-        );
-      });
+      it("combines the changes into a single event", () =>
+        new Promise((resolve) => {
+          const field = new Field(42);
+          const spy = vi.fn();
+          field.watch(spy);
+          field.withhold();
+          field.trigger(change.field.value, true);
+          field.trigger(change.child.detach, true);
+          field.trigger(change.child.attach, true);
 
-      it("combines the changes into a single event", () => {
-        const field = new Field(42);
-        const spy = vi.fn();
-        field.watch(spy);
-        field.withhold();
-        field.trigger(change.field.value, true);
-        field.trigger(change.child.detach, true);
-        field.trigger(change.child.attach, true);
+          setTimeout(() => {
+            expect(spy).not.toHaveBeenCalled();
 
-        expect(spy).not.toHaveBeenCalled();
+            field.unleash();
 
-        field.unleash();
+            setTimeout(() => {
+              expect(spy).toHaveBeenCalledWith(
+                42,
+                expect.objectContaining({
+                  changes:
+                    change.field.value |
+                    change.child.detach |
+                    change.child.attach,
+                })
+              );
+              resolve(void 0);
+            });
+          });
+        }));
 
-        expect(spy).toHaveBeenCalledWith(
-          42,
-          expect.objectContaining({
-            changes:
-              change.field.value | change.child.detach | change.child.attach,
-          })
-        );
-      });
+      it("neutralizes valid/invalid changes", () =>
+        new Promise((resolve) => {
+          const field = new Field(42);
+          const spy = vi.fn();
+          field.watch(spy);
+          field.withhold();
+          field.trigger(change.field.value, true);
+          field.trigger(change.field.invalid, true);
+          field.trigger(change.field.valid, true);
 
-      it("neutralizes valid/invalid changes", () => {
-        const field = new Field(42);
-        const spy = vi.fn();
-        field.watch(spy);
-        field.withhold();
-        field.trigger(change.field.value, true);
-        field.trigger(change.field.invalid, true);
-        field.trigger(change.field.valid, true);
+          setTimeout(() => {
+            expect(spy).not.toHaveBeenCalled();
 
-        expect(spy).not.toHaveBeenCalled();
+            field.unleash();
 
-        field.unleash();
-
-        expect(spy).toHaveBeenCalledWith(
-          42,
-          expect.objectContaining({ changes: change.field.value })
-        );
-      });
+            setTimeout(() => {
+              expect(spy).toHaveBeenCalledWith(
+                42,
+                expect.objectContaining({ changes: change.field.value })
+              );
+              resolve(void 0);
+            });
+          });
+        }));
     });
   });
 
@@ -1571,21 +1666,25 @@ describe("Field", () => {
               );
             });
 
-            it("triggers updates", () => {
-              const spy = vi.fn();
-              const field = new Field<Record<string, number>>({
-                one: 1,
-                two: 2,
-                three: 3,
-              });
-              field.watch(spy);
-              field.at("one").remove();
-              const [[value, event]]: any = spy.mock.calls;
-              expect(value).toEqual({ two: 2, three: 3 });
-              expect(event.changes).toMatchChanges(
-                change.field.shape | change.child.detach
-              );
-            });
+            it("triggers updates", () =>
+              new Promise((resolve) => {
+                const spy = vi.fn();
+                const field = new Field<Record<string, number>>({
+                  one: 1,
+                  two: 2,
+                  three: 3,
+                });
+                field.watch(spy);
+                field.at("one").remove();
+                setTimeout(() => {
+                  const [[value, event]]: any = spy.mock.calls;
+                  expect(value).toEqual({ two: 2, three: 3 });
+                  expect(event.changes).toMatchChanges(
+                    change.field.shape | change.child.detach
+                  );
+                  resolve(void 0);
+                });
+              }));
           });
 
           describe("child", () => {
@@ -1598,21 +1697,25 @@ describe("Field", () => {
               expect(field.remove("one")).toMatchChanges(change.child.detach);
             });
 
-            it("triggers updates", () => {
-              const spy = vi.fn();
-              const field = new Field<Record<string, number>>({
-                one: 1,
-                two: 2,
-                three: 3,
-              });
-              field.watch(spy);
-              field.remove("one");
-              const [[value, event]]: any = spy.mock.calls;
-              expect(value).toEqual({ two: 2, three: 3 });
-              expect(event.changes).toMatchChanges(
-                change.field.shape | change.child.detach
-              );
-            });
+            it("triggers updates", () =>
+              new Promise((resolve) => {
+                const spy = vi.fn();
+                const field = new Field<Record<string, number>>({
+                  one: 1,
+                  two: 2,
+                  three: 3,
+                });
+                field.watch(spy);
+                field.remove("one");
+                setTimeout(() => {
+                  const [[value, event]]: any = spy.mock.calls;
+                  expect(value).toEqual({ two: 2, three: 3 });
+                  expect(event.changes).toMatchChanges(
+                    change.field.shape | change.child.detach
+                  );
+                  resolve(void 0);
+                });
+              }));
           });
         });
       });
@@ -1644,17 +1747,21 @@ describe("Field", () => {
               expect(field.at(2).remove()).toMatchChanges(change.field.detach);
             });
 
-            it("triggers updates", () => {
-              const spy = vi.fn();
-              const field = new Field([1, 2, 3, 4]);
-              field.watch(spy);
-              field.at(1).remove();
-              const [[value, event]]: any = spy.mock.calls;
-              expect(value).toEqual([1, 3, 4]);
-              expect(event.changes).toMatchChanges(
-                change.field.shape | change.child.detach
-              );
-            });
+            it("triggers updates", () =>
+              new Promise((resolve) => {
+                const spy = vi.fn();
+                const field = new Field([1, 2, 3, 4]);
+                field.watch(spy);
+                field.at(1).remove();
+                setTimeout(() => {
+                  const [[value, event]]: any = spy.mock.calls;
+                  expect(value).toEqual([1, 3, 4]);
+                  expect(event.changes).toMatchChanges(
+                    change.field.shape | change.child.detach
+                  );
+                  resolve(void 0);
+                });
+              }));
           });
 
           describe("child", () => {
@@ -1663,33 +1770,41 @@ describe("Field", () => {
               expect(field.remove(2)).toMatchChanges(change.child.detach);
             });
 
-            it("triggers updates", () => {
-              const spy = vi.fn();
-              const field = new Field<Record<string, number>>({
-                one: 1,
-                two: 2,
-                three: 3,
-              });
-              field.watch(spy);
-              field.remove("one");
-              const [[value, event]]: any = spy.mock.calls;
-              expect(value).toEqual({ two: 2, three: 3 });
-              expect(event.changes).toMatchChanges(
-                change.field.shape | change.child.detach
-              );
-            });
+            it("triggers updates", () =>
+              new Promise((resolve) => {
+                const spy = vi.fn();
+                const field = new Field<Record<string, number>>({
+                  one: 1,
+                  two: 2,
+                  three: 3,
+                });
+                field.watch(spy);
+                field.remove("one");
+                setTimeout(() => {
+                  const [[value, event]]: any = spy.mock.calls;
+                  expect(value).toEqual({ two: 2, three: 3 });
+                  expect(event.changes).toMatchChanges(
+                    change.field.shape | change.child.detach
+                  );
+                  resolve(void 0);
+                });
+              }));
 
-            it("triggers updates", () => {
-              const spy = vi.fn();
-              const field = new Field([1, 2, 3, 4]);
-              field.watch(spy);
-              field.remove(1);
-              const [[value, event]]: any = spy.mock.calls;
-              expect(value).toEqual([1, 3, 4]);
-              expect(event.changes).toMatchChanges(
-                change.field.shape | change.child.detach
-              );
-            });
+            it("triggers updates", () =>
+              new Promise((resolve) => {
+                const spy = vi.fn();
+                const field = new Field([1, 2, 3, 4]);
+                field.watch(spy);
+                field.remove(1);
+                setTimeout(() => {
+                  const [[value, event]]: any = spy.mock.calls;
+                  expect(value).toEqual([1, 3, 4]);
+                  expect(event.changes).toMatchChanges(
+                    change.field.shape | change.child.detach
+                  );
+                  resolve(void 0);
+                });
+              }));
           });
         });
       });
@@ -1858,7 +1973,7 @@ describe("Field", () => {
           field.setError("Something went wrong");
           field.setError();
           setTimeout(() => {
-            expect(spy).toHaveBeenCalledTimes(2);
+            expect(spy).toHaveBeenCalledTimes(1);
             expect(spy).toHaveBeenCalledWith(
               42,
               expect.objectContaining({ changes: change.field.valid })

@@ -629,7 +629,18 @@ describe("Form", () => {
       await userEvent.fill(screen.getByTestId("hello-input"), "Sasha");
       (screen.getByTestId("hello-input").element() as HTMLInputElement).blur();
 
-      await expect.element(screen.getByTestId("error")).not.toBeInTheDocument();
+      return new Promise((resolve, reject) => {
+        setTimeout(async () => {
+          try {
+            await expect
+              .element(screen.getByTestId("error"))
+              .not.toBeInTheDocument();
+            resolve(void 0);
+          } catch (err) {
+            reject(err);
+          }
+        });
+      });
     });
   });
 });
