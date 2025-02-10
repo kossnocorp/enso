@@ -38,8 +38,12 @@ export class Field<Payload> {
    * @param initialValue - Initial value of the field.
    * @returns Memoized field instance.
    */
-  static use<Payload>(initialValue: Payload): Field<Payload> {
-    const field = useMemo(() => new Field(initialValue), []);
+  static use<Payload>(
+    initialValue: Payload,
+    // [TODO] Add tests
+    deps?: DependencyList
+  ): Field<Payload> {
+    const field = useMemo(() => new Field(initialValue), deps || []);
     return field;
   }
 
@@ -610,7 +614,8 @@ export class Field<Payload> {
   }) as Field.MapFn<Payload>;
 
   // @ts-ignore: This is fine
-  push: Payload extends Array<infer Item> ? (item: Item) => void : never = (
+  // [TODO] Add tests to new length?
+  push: Payload extends Array<infer Item> ? (item: Item) => number : never = (
     item: Payload extends Array<infer Item> ? Item : never
   ) => {
     if (!(this.#internal instanceof InternalArrayState))
