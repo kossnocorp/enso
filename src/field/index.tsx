@@ -656,10 +656,10 @@ export class Field<Payload> {
   }
 
   // @ts-ignore: [TODO]
-  remove: Field.RemoveFn<Payload> = <Key extends keyof Payload>(key: Key) => {
-    if (!key) return this.set(detachedValue);
+  remove: Field.RemoveFn<Payload> = <Key extends keyof Payload>(...args) => {
+    if (!args.length) return this.set(detachedValue);
     // @ts-ignore: [TODO]
-    else return shiftChildChanges(this.at(key).remove());
+    else return shiftChildChanges(this.at(args[0]).remove());
   };
 
   //#endregion
