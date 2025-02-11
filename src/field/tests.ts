@@ -161,7 +161,7 @@ describe("Field", () => {
           expect(field.get()).toEqual({});
         });
 
-        it("does not trigger fields updates when detaching", () =>
+        it("does not trigger child fields updates when detached", () =>
           new Promise((resolve) => {
             const field = new Field<{ num?: number; str?: string }>({
               num: 42,
@@ -170,6 +170,7 @@ describe("Field", () => {
             field.$.num?.watch(spy);
             field.set({ num: 43 });
             setTimeout(() => {
+              expect(spy).toHaveBeenCalledOnce();
               expect(spy).toHaveBeenCalledWith(
                 43,
                 expect.objectContaining({ changes: change.field.value })

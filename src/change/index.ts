@@ -15,7 +15,7 @@ export class ChangesEvent extends Event {
   /** Current batch of changes. It collects all changes that happened during
    * the batch and allows to dispatch them as a single event for each target.
    * @internal */
-  static #batch: Batch | undefined;
+  static #batch: ChangesEvent.Batch | undefined;
 
   /**
    * Batches changes events and dispatches them as a single event for each
@@ -25,14 +25,22 @@ export class ChangesEvent extends Event {
    * @param changes - Changes to dispatch.
    */
   static batch(target: EventTarget, changes: FieldChange) {
+    const currentContext = {};
+    for (const ctx of this.#context) {
+      Object.assign(currentContext, ctx);
+    }
+
     if (this.#sync) {
-      target.dispatchEvent(new ChangesEvent(changes));
+      target.dispatchEvent(new ChangesEvent(changes, currentContext));
       return;
     }
 
     if (!this.#batch) this.#batch = new Map();
 
-    const batchedChanges = this.#batch.get(target) || 0n;
+    const [batchedChanges, batchedContext] = this.#batch.get(target) || [
+      0n,
+      {},
+    ];
 
     let newChanges = batchedChanges | changes;
 
@@ -50,14 +58,18 @@ export class ChangesEvent extends Event {
     if (changes & fieldChange.detach && batchedChanges & fieldChange.attach)
       newChanges &= ~fieldChange.attach;
 
-    this.#batch.set(target, newChanges);
+    const newContext = structuredClone(
+      Object.assign({}, batchedContext, currentContext)
+    );
+
+    this.#batch.set(target, [newChanges, newContext]);
 
     queueMicrotask(() => {
       // Check if the batch was consumed
       if (!this.#batch) return;
       // Dispatch the events
-      this.#batch.forEach((changes, target) => {
-        target.dispatchEvent(new ChangesEvent(changes));
+      this.#batch.forEach(([changes, context], target) => {
+        target.dispatchEvent(new ChangesEvent(changes, context));
       });
       this.#batch = undefined;
     });
@@ -77,21 +89,49 @@ export class ChangesEvent extends Event {
     this.#sync = false;
   }
 
+  /** Stack of contexts.
+   * @internal */
+  static #context: ChangesEvent.Context[] = [];
+
+  /**
+   * Provides context for the changes events. Nesting contexts will result
+   * in the context being merged.
+   *
+   * @param context - Context to assign.
+   */
+  static context<Result>(
+    context: ChangesEvent.Context,
+    callback: () => Result
+  ): Result {
+    this.#context.push(context);
+    const result = callback();
+    this.#context.pop();
+    return result;
+  }
+
   /** Changes bitmask. */
   changes: FieldChange;
+
+  /** Context record. */
+  context: Record<string, any> = {};
 
   /**
    * Creates a new changes event.
    *
    * @param changes - Changes that happened.
    */
-  constructor(changes: FieldChange) {
+  constructor(changes: FieldChange, context?: ChangesEvent.Context) {
     super("change");
+    Object.assign(this.context, structuredClone(context));
     this.changes = changes;
   }
 }
 
-type Batch = Map<EventTarget, FieldChange>;
+export namespace ChangesEvent {
+  export type Batch = Map<EventTarget, [FieldChange, Context]>;
+
+  export type Context = Record<string, any>;
+}
 
 //#endregion
 

@@ -167,4 +167,134 @@ describe("ChangesEvent", () => {
       expect(spyB).not.toHaveBeenCalled();
     });
   });
+
+  describe("context", () => {
+    it("allows to specify context for the events", () =>
+      new Promise((resolve) => {
+        const targetA = new EventTarget();
+        const spyA = vi.fn();
+        targetA.addEventListener("change", spyA);
+
+        const targetB = new EventTarget();
+        const spyB = vi.fn();
+        targetB.addEventListener("change", spyB);
+
+        ChangesEvent.context({ hello: "world" }, () => {
+          ChangesEvent.batch(targetA, change.field.type);
+          ChangesEvent.batch(targetA, change.field.valid);
+        });
+
+        ChangesEvent.batch(targetB, change.field.key);
+
+        expect(spyA).not.toHaveBeenCalled();
+        expect(spyB).not.toHaveBeenCalled();
+
+        setTimeout(() => {
+          const [[eventA]]: any = spyA.mock.calls;
+          expect(eventA.context).toEqual({ hello: "world" });
+          const [[eventB]]: any = spyB.mock.calls;
+          expect(eventB.context).toEqual({});
+          resolve(void 0);
+        });
+      }));
+
+    it("batches contexts", () =>
+      new Promise((resolve) => {
+        const targetA = new EventTarget();
+        const spyA = vi.fn();
+        targetA.addEventListener("change", spyA);
+
+        const targetB = new EventTarget();
+        const spyB = vi.fn();
+        targetB.addEventListener("change", spyB);
+
+        ChangesEvent.context({ hello: "world" }, () => {
+          ChangesEvent.batch(targetA, change.field.type);
+          ChangesEvent.batch(targetA, change.field.valid);
+        });
+
+        ChangesEvent.context({ foo: "bar" }, () => {
+          ChangesEvent.batch(targetA, change.field.key);
+        });
+
+        ChangesEvent.batch(targetB, change.field.key);
+
+        expect(spyA).not.toHaveBeenCalled();
+        expect(spyB).not.toHaveBeenCalled();
+
+        setTimeout(() => {
+          const [[eventA]]: any = spyA.mock.calls;
+          expect(eventA.context).toEqual({ hello: "world", foo: "bar" });
+          const [[eventB]]: any = spyB.mock.calls;
+          expect(eventB.context).toEqual({});
+          resolve(void 0);
+        });
+      }));
+
+    it("nests contexts", () => () =>
+      new Promise((resolve) => {
+        const targetA = new EventTarget();
+        const spyA = vi.fn();
+        targetA.addEventListener("change", spyA);
+
+        const targetB = new EventTarget();
+        const spyB = vi.fn();
+        targetB.addEventListener("change", spyB);
+
+        ChangesEvent.context({ hello: "world" }, () => {
+          ChangesEvent.context({ foo: "bar" }, () => {
+            ChangesEvent.batch(targetA, change.field.type);
+            ChangesEvent.batch(targetA, change.field.valid);
+          });
+        });
+
+        ChangesEvent.batch(targetB, change.field.key);
+
+        expect(spyA).not.toHaveBeenCalled();
+        expect(spyB).not.toHaveBeenCalled();
+
+        setTimeout(() => {
+          const [[eventA]]: any = spyA.mock.calls;
+          expect(eventA.context).toEqual({ hello: "world", foo: "bar" });
+          const [[eventB]]: any = spyB.mock.calls;
+          expect(eventB.context).toEqual({});
+          resolve(void 0);
+        });
+      }));
+
+    it("sends context with syncronous events", () => {
+      const targetA = new EventTarget();
+      const spyA = vi.fn();
+      targetA.addEventListener("change", spyA);
+
+      const targetB = new EventTarget();
+      const spyB = vi.fn();
+      targetB.addEventListener("change", spyB);
+
+      ChangesEvent.sync(() => {
+        ChangesEvent.context({ hello: "world" }, () => {
+          ChangesEvent.batch(targetA, change.field.type);
+        });
+        ChangesEvent.context({ foo: "bar" }, () => {
+          ChangesEvent.batch(targetA, change.field.valid);
+        });
+        ChangesEvent.batch(targetA, change.field.commit);
+      });
+
+      ChangesEvent.batch(targetB, change.field.key);
+      ChangesEvent.batch(targetB, change.field.shape);
+
+      expect(spyA).toHaveBeenCalledTimes(3);
+      expect(spyA).toHaveBeenCalledWith(
+        expect.objectContaining({ context: { hello: "world" } })
+      );
+      expect(spyA).toHaveBeenCalledWith(
+        expect.objectContaining({ context: { foo: "bar" } })
+      );
+      expect(spyA).toHaveBeenCalledWith(
+        expect.objectContaining({ context: {} })
+      );
+      expect(spyB).not.toHaveBeenCalled();
+    });
+  });
 });
