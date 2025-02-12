@@ -256,6 +256,7 @@ export class Field<Payload> {
   }
 
   commit() {
+    const wasDirty = this.dirty;
     this.#initial = this.get();
     this.#cachedDirty = undefined;
     if (
@@ -264,6 +265,7 @@ export class Field<Payload> {
     ) {
       this.#internal.forEach((field: any) => field.commit());
     }
+    if (wasDirty) this.trigger(change.field.commit, true);
   }
 
   reset() {

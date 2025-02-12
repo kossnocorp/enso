@@ -13,15 +13,25 @@ export function devStringifyChanges(changes: FieldChange): string {
   return `0b${changes.toString(2).padStart(Number(coreChangesBits), "0")}`;
 }
 
-export function devHumanizeChanges(changes: FieldChange): string {
+export function devHumanizeChanges(
+  changes: FieldChange,
+  extraChange?: Record<string, bigint>
+): string {
   if (changes === 0n) return "none";
   const humanized: string[] = [];
   Object.entries(change).forEach(([category, map]) => {
     Object.entries(map).forEach(([key, value]) => {
-      if ((changes & value) === value) {
+      if (changes & value) {
         humanized.push(`change.${category}.${key}`);
       }
     });
   });
+  if (extraChange) {
+    Object.entries(extraChange).forEach(([key, value]) => {
+      if (changes & value) {
+        humanized.push(`extra.${key}`);
+      }
+    });
+  }
   return humanized.join(" | ");
 }

@@ -20,12 +20,12 @@ export class Form<Payload> {
           // Only react to form-specific changes, as everything else is
           // handled by the field's useBind hook below.
           if (
-            event.changes &
-            ~(
+            !maskedChanges(
+              event.changes,
               formChange.formSubmitting |
-              formChange.formSubmitted |
-              formChange.formValid |
-              formChange.formInvalid
+                formChange.formSubmitted |
+                formChange.formValid |
+                formChange.formInvalid
             )
           )
             return;

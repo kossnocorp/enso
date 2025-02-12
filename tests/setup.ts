@@ -11,10 +11,14 @@ expect.extend({
 });
 
 function toMatchChangesMessage(received: any, expected: any) {
-  received = BigInt(received);
+  const receivedN = BigInt(received || 0);
   expected = BigInt(expected);
+  const receivedStr =
+    received === undefined
+      ? "undefined"
+      : `0b${devStringifyChanges(receivedN)} (${devHumanizeChanges(receivedN)})`;
   return `Expected the change to be:
   0b${devStringifyChanges(expected)} (${devHumanizeChanges(expected)})
 ...but got:
-  0b${devStringifyChanges(received)} (${devHumanizeChanges(received)})`;
+  ${receivedStr}`;
 }

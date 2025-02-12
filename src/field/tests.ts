@@ -943,11 +943,176 @@ describe("Field", () => {
       });
 
       describe("changes", () => {
-        describe.todo("field");
+        describe("field", () => {
+          it("triggers commit change", () =>
+            new Promise((resolve, reject) => {
+              const field = new Field("");
+              field.set("spam@example.com");
+              expect(field.dirty).toBe(true);
 
-        describe.todo("child");
+              const spy = vi.fn();
+              const unsub = field.watch(spy);
+              field.commit();
 
-        describe.todo("subtree");
+              setTimeout(() => {
+                unsub();
+                try {
+                  expect(field.dirty).toBe(false);
+                  expect(spy).toHaveBeenCalledOnce();
+                  const [[_, event]]: any = spy.mock.calls;
+                  expect(event.changes).toMatchChanges(
+                    change.field.value | change.field.commit
+                  );
+                  resolve(void 0);
+                } catch (err) {
+                  reject(err);
+                }
+              });
+            }));
+
+          it("does't trigger commit change if it wasn't dirty", () =>
+            new Promise((resolve, reject) => {
+              const field = new Field("");
+              field.set("");
+              expect(field.dirty).toBe(false);
+
+              const spy = vi.fn();
+              const unsub = field.watch(spy);
+              field.commit();
+
+              setTimeout(() => {
+                unsub();
+                try {
+                  expect(field.dirty).toBe(false);
+                  expect(spy).not.toHaveBeenCalled();
+                  resolve(void 0);
+                } catch (err) {
+                  reject(err);
+                }
+              });
+            }));
+        });
+
+        describe("child", () => {
+          it("triggers commit change", () =>
+            new Promise((resolve, reject) => {
+              const field = new Field({
+                name: { first: "Alexander" },
+                email: "",
+              });
+              field.$.email.set("spam@example.com");
+              expect(field.dirty).toBe(true);
+
+              const spy = vi.fn();
+              const unsub = field.watch(spy);
+              field.commit();
+
+              setTimeout(() => {
+                unsub();
+                try {
+                  expect(field.dirty).toBe(false);
+                  expect(spy).toHaveBeenCalledOnce();
+                  const [[_, event]]: any = spy.mock.calls;
+                  expect(event.changes).toMatchChanges(
+                    change.field.commit |
+                      change.child.value |
+                      change.child.commit
+                  );
+                  resolve(void 0);
+                } catch (err) {
+                  reject(err);
+                }
+              });
+            }));
+
+          it("does't trigger commit change if it wasn't dirty", () =>
+            new Promise((resolve, reject) => {
+              const field = new Field({
+                name: { first: "Alexander" },
+                email: "",
+              });
+              field.$.email.set("");
+              expect(field.dirty).toBe(false);
+
+              const spy = vi.fn();
+              const unsub = field.watch(spy);
+              field.commit();
+
+              setTimeout(() => {
+                unsub();
+                try {
+                  expect(field.dirty).toBe(false);
+                  expect(spy).not.toHaveBeenCalled();
+                  resolve(void 0);
+                } catch (err) {
+                  reject(err);
+                }
+              });
+            }));
+        });
+
+        describe("subtree", () => {
+          it("triggers commit change", () =>
+            new Promise((resolve, reject) => {
+              const field = new Field({
+                user: {
+                  name: { first: "Alexander" },
+                  email: "",
+                },
+              });
+              field.$.user.$.email.set("spam@example.com");
+              expect(field.dirty).toBe(true);
+
+              const spy = vi.fn();
+              const unsub = field.watch(spy);
+              field.commit();
+
+              setTimeout(() => {
+                unsub();
+                try {
+                  expect(field.dirty).toBe(false);
+                  expect(spy).toHaveBeenCalledOnce();
+                  const [[_, event]]: any = spy.mock.calls;
+                  expect(event.changes).toMatchChanges(
+                    change.field.commit |
+                      change.child.commit |
+                      change.subtree.value |
+                      change.subtree.commit
+                  );
+                  resolve(void 0);
+                } catch (err) {
+                  reject(err);
+                }
+              });
+            }));
+
+          it("does't trigger commit change if it wasn't dirty", () =>
+            new Promise((resolve, reject) => {
+              const field = new Field({
+                user: {
+                  name: { first: "Alexander" },
+                  email: "",
+                },
+              });
+              field.$.user.$.email.set("");
+              expect(field.dirty).toBe(false);
+
+              const spy = vi.fn();
+              const unsub = field.watch(spy);
+              field.commit();
+
+              setTimeout(() => {
+                unsub();
+                try {
+                  expect(field.dirty).toBe(false);
+                  expect(spy).not.toHaveBeenCalled();
+                  resolve(void 0);
+                } catch (err) {
+                  reject(err);
+                }
+              });
+            }));
+        });
       });
     });
 

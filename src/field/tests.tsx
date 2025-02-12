@@ -1010,6 +1010,106 @@ describe("Field", () => {
           .element(screen.getByTestId("render-dirty"))
           .toHaveTextContent("3");
       });
+
+      it("updates on reset", async () => {
+        function Component() {
+          const count = useRenderCount();
+          const field = Field.use({ name: { first: "Alexander" } });
+          const dirty = field.useDirty();
+
+          return (
+            <div>
+              <div data-testid="render-dirty">{count}</div>
+
+              <input
+                data-testid="name-first-input"
+                {...field.$.name.$.first.control()}
+              />
+
+              <button onClick={() => field.reset()}>Reset</button>
+
+              <div data-testid="dirty">{String(dirty)}</div>
+            </div>
+          );
+        }
+
+        const screen = render(<Component />);
+
+        await expect
+          .element(screen.getByTestId("dirty"))
+          .toHaveTextContent("false");
+
+        await userEvent.fill(screen.getByTestId("name-first-input"), "Sa");
+        await userEvent.fill(screen.getByTestId("name-first-input"), "Sasha");
+
+        await expect
+          .element(screen.getByTestId("dirty"))
+          .toHaveTextContent("true");
+
+        await expect
+          .element(screen.getByTestId("render-dirty"))
+          .toHaveTextContent("2");
+
+        await screen.getByText("Reset").click();
+
+        await expect
+          .element(screen.getByTestId("dirty"))
+          .toHaveTextContent("false");
+
+        await expect
+          .element(screen.getByTestId("render-dirty"))
+          .toHaveTextContent("3");
+      });
+
+      it("updates on commit", async () => {
+        function Component() {
+          const count = useRenderCount();
+          const field = Field.use({ name: { first: "Alexander" } });
+          const dirty = field.useDirty();
+
+          return (
+            <div>
+              <div data-testid="render-dirty">{count}</div>
+
+              <input
+                data-testid="name-first-input"
+                {...field.$.name.$.first.control()}
+              />
+
+              <button onClick={() => field.commit()}>Commit</button>
+
+              <div data-testid="dirty">{String(dirty)}</div>
+            </div>
+          );
+        }
+
+        const screen = render(<Component />);
+
+        await expect
+          .element(screen.getByTestId("dirty"))
+          .toHaveTextContent("false");
+
+        await userEvent.fill(screen.getByTestId("name-first-input"), "Sa");
+        await userEvent.fill(screen.getByTestId("name-first-input"), "Sasha");
+
+        await expect
+          .element(screen.getByTestId("dirty"))
+          .toHaveTextContent("true");
+
+        await expect
+          .element(screen.getByTestId("render-dirty"))
+          .toHaveTextContent("2");
+
+        await screen.getByText("Commit").click();
+
+        await expect
+          .element(screen.getByTestId("dirty"))
+          .toHaveTextContent("false");
+
+        await expect
+          .element(screen.getByTestId("render-dirty"))
+          .toHaveTextContent("3");
+      });
     });
 
     describe("useError", () => {
