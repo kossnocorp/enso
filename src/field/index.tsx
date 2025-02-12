@@ -258,7 +258,7 @@ export class Field<Payload> {
   commit() {
     const wasDirty = this.dirty;
     this.#initial = this.get();
-    this.#cachedDirty = undefined;
+
     if (
       this.#internal instanceof InternalObjectState ||
       this.#internal instanceof InternalArrayState
@@ -270,7 +270,6 @@ export class Field<Payload> {
 
   reset() {
     this.set(this.#initial);
-    this.#clearCache();
   }
 
   //#endregion
