@@ -256,20 +256,56 @@ export class Field<Payload> {
   }
 
   commit() {
-    const wasDirty = this.dirty;
-    this.#initial = this.get();
+    this.#commit(this.get());
 
+    // const wasDirty = this.dirty;
+    // this.#initial = this.get();
+
+    // [TODO] Add tests for the new approach, before it was:
+    //
+    //   if (
+    //     this.#internal instanceof InternalObjectState ||
+    //     this.#internal instanceof InternalArrayState
+    //   ) {
+    //     this.#internal.forEach((field: any) => field.commit());
+    //   }
+    //   if (wasDirty) this.trigger(change.field.commit, true);
+    //
+    // The problem was is that initial is set to `this.get()` and get
+    // a new reference on field level. So a root initial internals have
+    // different references than the children's `this.#initial` and produce
+    // incorrect `this.dirty` value. The new approach fixes this issue.
+    // I found it trying to make the `reset` method work correctly. I couln't
+    // reproduce it fully in tests, so it still needs to be done.
+  }
+
+  // [TODO] Add tests
+  reset() {
+    const newInitial = this.#initial;
+    this.set(newInitial);
+    this.#commit(newInitial, false);
+
+    // [TODO] Add tests for the new approach, before it was (see `commit`):
+    //   this.set(this.#initial);
+  }
+
+  // [TODO] Add tests for this new approach
+  #commit(newInitial: Payload, notify = true) {
+    const wasDirty = notify && this.dirty;
+
+    this.#initial = newInitial;
     if (
       this.#internal instanceof InternalObjectState ||
       this.#internal instanceof InternalArrayState
     ) {
-      this.#internal.forEach((field: any) => field.commit());
+      this.#internal.forEach((field: any, key: any) =>
+        // @ts-ignore: [TODO]
+        field.#commit(newInitial[key], notify)
+      );
     }
-    if (wasDirty) this.trigger(change.field.commit, true);
-  }
+    this.#clearCache();
 
-  reset() {
-    this.set(this.#initial);
+    if (notify && wasDirty) this.trigger(change.field.commit, true);
   }
 
   //#endregion
@@ -327,13 +363,11 @@ export class Field<Payload> {
       // [TODO] Returning at this point prevents `this.#childTrigger` from being
       // called which then calls `this.#internal.childUpdate` and updates the
       // parent and sibling keys. It leads to incomplete update.
-
-      return;
+    } else {
+      ChangesEvent.batch(this.#batchTarget, changes);
+      // [TODO] Add tests for this
+      this.#syncTarget.dispatchEvent(new ChangesEvent(changes));
     }
-
-    ChangesEvent.batch(this.#batchTarget, changes);
-    // [TODO] Add tests for this
-    this.#syncTarget.dispatchEvent(new ChangesEvent(changes));
 
     // If the updates should flow upstream, trigger parents too
     if (notifyParents && this.#parent)
