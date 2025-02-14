@@ -1926,11 +1926,11 @@ export type DetachedValue = typeof detachedValue;
 
 //#region PoC
 
-export function useUndefinedStringField(
-  field: Field<string | undefined>
-): Field<string> {
+export function useUndefinedStringField<Type extends string>(
+  field: Field<Type | undefined>
+): Field<Type> {
   return field
-    .useInto((value) => value ?? "")
+    .useInto((value) => value ?? ("" as Type))
     .from((value) => value || undefined);
 }
 
