@@ -102,10 +102,21 @@ export class ChangesEvent extends Event {
   static context<Result>(
     context: ChangesEvent.Context,
     callback: () => Result
-  ): Result {
+  ): Result extends Promise<infer PromisedResult>
+    ? Promise<PromisedResult>
+    : Result {
     this.#context.push(context);
     const result = callback();
+    // [TODO] Add tests
+    if (result instanceof Promise) {
+      // @ts-ignore [TODO]
+      return result.finally(() => {
+        this.#context.pop();
+      });
+    }
+
     this.#context.pop();
+    // @ts-ignore [TODO]
     return result;
   }
 
