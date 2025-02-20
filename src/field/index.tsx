@@ -682,6 +682,14 @@ export class Field<Payload> {
     return this.#internal.find(predicate);
   };
 
+  // @ts-ignore: This is fine
+  filter: Field.FilterFn<Payload> = (predicate) => {
+    if (!(this.#internal instanceof InternalArrayState))
+      throw new Error("State is not an array");
+    // @ts-ignore: This is fine
+    return this.#internal.filter(predicate);
+  };
+
   get length(): Payload extends Array<any> ? number : never {
     if (!(this.#internal instanceof InternalArrayState))
       throw new Error("State is not an array");
@@ -1180,12 +1188,17 @@ export namespace Field {
 
   export type FindFn<Payload> =
     Payload extends Array<infer Item>
-      ? (predicate: FindPredicate<Item>) => Field<Item> | undefined
+      ? (predicate: TestPredicate<Item>) => Field<Item> | undefined
       : never;
 
-  export type FindPredicate<Item> = ArrayPredicate<
+  export type FilterFn<Payload> =
+    Payload extends Array<infer Item>
+      ? (predicate: TestPredicate<Item>) => Field<Item>[]
+      : never;
+
+  export type TestPredicate<Item> = ArrayPredicate<
     Item,
-    boolean | false | 0 | "" | null | undefined
+    Item | boolean | false | 0 | "" | null | undefined
   >;
 
   export interface ObjectRemoveFn<Payload extends object> {
@@ -1853,10 +1866,17 @@ export class InternalArrayState<
   }
 
   find(
-    predicate: Field.FindPredicate<Payload[number]>
+    predicate: Field.TestPredicate<Payload[number]>
   ): Field<Payload[number]> | undefined {
     // @ts-ignore: This is fine
     return this.#children.find(predicate);
+  }
+
+  filter(
+    predicate: Field.TestPredicate<Payload[number]>
+  ): Field<Payload[number]>[] {
+    // @ts-ignore: This is fine
+    return this.#children.filter(predicate);
   }
 
   //#endregion
