@@ -1423,7 +1423,8 @@ export class InternalValueState<Payload> extends InternalState<Payload> {
       changes |= change.field.detach;
     else if (
       typeof this.#value !== typeof value ||
-      (typeof this.#value === "object" &&
+      (this.#value &&
+        typeof this.#value === "object" &&
         Object.getPrototypeOf(this.#value) !== Object.getPrototypeOf(value))
     )
       changes |= change.field.type;

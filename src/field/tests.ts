@@ -786,6 +786,13 @@ describe("Field", () => {
           }
         });
 
+        it("does not confuse null with instances", () => {
+          const field = new Field(null);
+          expect(field.get()).toBe(null);
+          field.set(null);
+          expect(field.get()).toBe(null);
+        });
+
         describe("changes", () => {
           it("returns 0 if the field is not changed", () => {
             const map = new Map();
