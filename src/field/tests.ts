@@ -752,6 +752,79 @@ describe("Field", () => {
           });
         });
       });
+
+      describe("instance", () => {
+        it("sets instance field", () => {
+          const map = new Map<string, number>();
+          map.set("num", 42);
+          const field = new Field(map);
+          expect(Object.fromEntries(field.get())).toEqual({
+            num: 42,
+          });
+          {
+            const newMap = new Map<string, number>();
+            newMap.set("num", 43);
+            field.set(newMap);
+            expect(Object.fromEntries(field.get())).toEqual({
+              num: 43,
+            });
+          }
+          {
+            const newMap = new Map<string, number>();
+            newMap.set("num", 44);
+            newMap.set("qwe", 123);
+            field.set(newMap);
+            expect(Object.fromEntries(field.get())).toEqual({
+              num: 44,
+              qwe: 123,
+            });
+          }
+          {
+            const newMap = new Map<string, number>();
+            field.set(newMap);
+            expect(Object.fromEntries(field.get())).toEqual({});
+          }
+        });
+
+        describe("changes", () => {
+          it("returns 0 if the field is not changed", () => {
+            const map = new Map();
+            const field = new Field(map);
+            expect(field.set(map)).toMatchChanges(0n);
+          });
+
+          it("returns type change when type changes", () => {
+            const field = new Field<Map<string, string> | Set<string>>(
+              new Map()
+            );
+            expect(field.set(new Set())).toMatchChanges(change.field.type);
+          });
+
+          it("returns value change when value changes", () => {
+            const field = new Field(new Map());
+            expect(field.set(new Map())).toMatchChanges(change.field.value);
+          });
+
+          it("returns detach change when setting to detached value", () => {
+            const field = new Field(new Map());
+            expect(field.set(detachedValue)).toMatchChanges(
+              change.field.detach
+            );
+          });
+
+          it("returns attach change when setting from detached value", () => {
+            const field = new Field<Map<string, string> | DetachedValue>(
+              detachedValue
+            );
+            expect(field.set(new Map())).toMatchChanges(change.field.attach);
+          });
+
+          it("returns type change when setting undefined", () => {
+            const field = new Field<Map<string, string> | undefined>(new Map());
+            expect(field.set(undefined)).toMatchChanges(change.field.type);
+          });
+        });
+      });
     });
 
     describe("initial", () => {
@@ -880,6 +953,23 @@ describe("Field", () => {
           expect(field.dirty).toBe(true);
           expect(field.at(0).dirty).toBe(true);
           expect(field.at(1).dirty).toBe(false);
+        });
+      });
+
+      describe("instance", () => {
+        it("returns true if the field has changed", () => {
+          const field = new Field(new Map());
+          expect(field.dirty).toBe(false);
+          field.set(new Map());
+          expect(field.dirty).toBe(true);
+        });
+
+        it("returns false after restoring to the initial value", () => {
+          const field = new Field(42);
+          expect(field.dirty).toBe(false);
+          field.set(43);
+          field.set(42);
+          expect(field.dirty).toBe(false);
         });
       });
 
@@ -1163,6 +1253,11 @@ describe("Field", () => {
         expect(field.$).toBe(undefined);
       });
 
+      it("returns undefined for instance", () => {
+        const field = new Field(new Map());
+        expect(field.$).toBe(undefined);
+      });
+
       describe("object", () => {
         it("allows to access fields", () => {
           const field = new Field({ num: 42 });
@@ -1330,6 +1425,38 @@ describe("Field", () => {
           field.try(0) satisfies Field<number> | undefined | null;
           expect(field.try(1)).toBe(undefined);
           expect(field.try(2)).toBe(null);
+        });
+      });
+
+      describe("instance", () => {
+        it("returns the field if it's defined", () => {
+          const map = new Map();
+          map.set("num", 42);
+          const field = new Field<
+            Map<string, string> | Set<string> | undefined
+          >(map);
+          const num = field.try;
+          num satisfies Field<Map<string, string> | Set<string>> | undefined;
+          expect(num).toBe(field);
+          expect(num).toBeInstanceOf(Field);
+          // @ts-expect-error: This is fine!
+          expect(Object.fromEntries(num?.get())).toEqual({ num: 42 });
+        });
+
+        it("returns undefined if field doesn't exist", () => {
+          const field = new Field<string | number | undefined>(
+            detachedValue as any
+          );
+          const num = field.try;
+          expect(num).toBe(undefined);
+        });
+
+        it("returns undefined/null if field is undefined/null", () => {
+          const undefinedState = new Field<string | undefined>(undefined);
+          expect(undefinedState.try).toBe(undefined);
+          const nullState = new Field<string | null>(null);
+          nullState.try satisfies Field<string> | null;
+          expect(nullState.try).toBe(null);
         });
       });
     });
@@ -1512,7 +1639,7 @@ describe("Field", () => {
 
   describe("watching", () => {
     describe("watch", () => {
-      describe("field", () => {
+      describe("primitive", () => {
         it("allows to subscribe for field changes", async () =>
           new Promise<void>((resolve) => {
             const field = new Field(42);
@@ -1665,6 +1792,42 @@ describe("Field", () => {
 
           describe.todo("subtree");
         });
+      });
+
+      describe("instance", () => {
+        it("allows to subscribe for field changes", async () =>
+          new Promise<void>((resolve) => {
+            const map = new Map();
+            map.set("num", 42);
+            const field = new Field(map);
+
+            const unsub = field.watch((value) => {
+              expect(Object.fromEntries(value)).toEqual({ num: 43 });
+              unsub();
+              // Check if the callback is not called after unsub
+              field.set(new Map());
+              setTimeout(resolve);
+            });
+
+            const newMap = new Map();
+            newMap.set("num", 43);
+            field.set(newMap);
+          }));
+
+        it("provides event object with change type as changes", async () =>
+          new Promise<void>((resolve) => {
+            const field = new Field(42);
+
+            const unsub = field.watch((value, event) => {
+              expect(event.changes).toBe(change.field.value);
+              unsub();
+              resolve();
+            });
+
+            field.set(43);
+          }));
+
+        describe.todo("changes");
       });
     });
 
@@ -2379,6 +2542,42 @@ describe("Field", () => {
 
         describe.todo("subtree");
       });
+    });
+
+    describe.todo("array");
+
+    describe("instance", () => {
+      it("allows to validate the state", () => {
+        const map = new Map();
+        map.set("num", 42);
+        const field = new Field(map);
+        field.validate((ref) => {
+          if (ref.get().get("num") !== 43) {
+            ref.setError("Invalid");
+          }
+        });
+        expect(field.valid).toBe(false);
+        expect(field.error).toEqual({ message: "Invalid" });
+      });
+
+      it("clears previous errors on validation", () => {
+        function validateMap(ref: FieldRef<Map<string, number>>) {
+          if (ref.get().get("num") !== 43) {
+            ref.setError("Invalid");
+          }
+        }
+        const map = new Map();
+        map.set("num", 42);
+        const field = new Field(map);
+        field.validate(validateMap);
+
+        const newMap = new Map();
+        map.set("num", 43);
+        field.validate(validateMap);
+        expect(field.valid).toBe(true);
+      });
+
+      describe.todo("changes");
     });
   });
 });

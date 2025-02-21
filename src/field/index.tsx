@@ -89,7 +89,7 @@ export class Field<Payload> {
   #parent?: Field.Parent<any> | undefined;
   #onInput;
 
-  #internal: InternalState<Payload> = new InternalPrimitiveState(
+  #internal: InternalState<Payload> = new InternalValueState(
     this,
     detachedValue
   );
@@ -1352,15 +1352,19 @@ export abstract class InternalState<Payload> {
   ):
     | typeof InternalArrayState
     | typeof InternalObjectState
-    | typeof InternalPrimitiveState {
+    | typeof InternalValueState {
     if (
       value !== detachedValue &&
       value !== null &&
       typeof value === "object" &&
       value !== detachedValue
     )
-      return Array.isArray(value) ? InternalArrayState : InternalObjectState;
-    return InternalPrimitiveState;
+      return Array.isArray(value)
+        ? InternalArrayState
+        : Object.getPrototypeOf(value) === Object.prototype
+          ? InternalObjectState
+          : InternalValueState;
+    return InternalValueState;
   }
 
   #external: Field<Payload>;
@@ -1401,9 +1405,9 @@ export abstract class InternalState<Payload> {
 
 //#endregion
 
-//#region InternalPrimitiveState
+//#region InternalValueState
 
-export class InternalPrimitiveState<Payload> extends InternalState<Payload> {
+export class InternalValueState<Payload> extends InternalState<Payload> {
   #value: Payload | DetachedValue;
 
   constructor(field: Field<Payload>, value: Payload | DetachedValue) {
@@ -1417,7 +1421,12 @@ export class InternalPrimitiveState<Payload> extends InternalState<Payload> {
       changes |= change.field.attach;
     else if (this.#value !== detachedValue && value === detachedValue)
       changes |= change.field.detach;
-    else if (typeof this.#value !== typeof value) changes |= change.field.type;
+    else if (
+      typeof this.#value !== typeof value ||
+      (typeof this.#value === "object" &&
+        Object.getPrototypeOf(this.#value) !== Object.getPrototypeOf(value))
+    )
+      changes |= change.field.type;
     else if (this.#value !== value) changes |= change.field.value;
 
     if (this.#value !== value) this.#value = value;
