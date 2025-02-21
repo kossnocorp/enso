@@ -5,9 +5,9 @@ import { render } from "vitest-browser-react";
 // https://github.com/vitest-dev/vitest/issues/6965
 import { userEvent } from "@vitest/browser/context";
 import "@vitest/browser/matchers.d.ts";
+import { Field } from "../field/index.tsx";
 import { FieldRef } from "../field/ref/index.ts";
 import { Form } from "./index.tsx";
-import { Field } from "../field/index.tsx";
 
 describe("Form", () => {
   describe("control", () => {

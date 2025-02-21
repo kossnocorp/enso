@@ -1,8 +1,8 @@
 import { userEvent } from "@vitest/browser/context";
-import "../../tests/browser.d.ts";
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { describe, expect, it, vi } from "vitest";
 import { render } from "vitest-browser-react";
+import "../../tests/browser.d.ts";
 import { change } from "../change/index.ts";
 import { Field } from "./index.tsx";
 

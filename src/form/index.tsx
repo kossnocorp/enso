@@ -1,7 +1,7 @@
 import React, { useEffect, useId, useMemo } from "react";
+import { change, maskedChanges } from "../change/index.ts";
 import { Field } from "../field/index.tsx";
 import { useRerender } from "../hooks/rerender.ts";
-import { change, maskedChanges } from "../change/index.ts";
 
 //#region Form
 

@@ -1,6 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
 import { change, ChangesEvent } from "./index.ts";
-import { C } from "vitest/dist/chunks/reporters.Y8BYiXBN.js";
 
 describe("ChangesEvent", () => {
   describe("batch", () => {
