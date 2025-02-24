@@ -2109,39 +2109,22 @@ describe("Field", () => {
             it("triggers updates", () =>
               new Promise((resolve) => {
                 const spy = vi.fn();
-                const field = new Field<Record<string, number>>({
-                  one: 1,
-                  two: 2,
-                  three: 3,
-                });
+                const field = new Field([[1, 2, 3, 4]]);
                 field.watch(spy);
-                field.remove("one");
+                // @ts-expect-error: This is fine!
+                field.at(0).remove(1);
                 setTimeout(() => {
                   const [[value, event]]: any = spy.mock.calls;
-                  expect(value).toEqual({ two: 2, three: 3 });
+                  expect(value).toEqual([[1, 3, 4]]);
                   expect(event.changes).toMatchChanges(
-                    change.field.shape | change.child.detach
-                  );
-                  resolve(void 0);
-                });
-              }));
-
-            it("triggers updates", () =>
-              new Promise((resolve) => {
-                const spy = vi.fn();
-                const field = new Field([1, 2, 3, 4]);
-                field.watch(spy);
-                field.remove(1);
-                setTimeout(() => {
-                  const [[value, event]]: any = spy.mock.calls;
-                  expect(value).toEqual([1, 3, 4]);
-                  expect(event.changes).toMatchChanges(
-                    change.field.shape | change.child.detach
+                    change.child.shape | change.subtree.detach
                   );
                   resolve(void 0);
                 });
               }));
           });
+
+          describe.todo("subtree");
         });
       });
 
@@ -2214,11 +2197,156 @@ describe("Field", () => {
       });
 
       describe("changes", () => {
-        describe.todo("field");
+        describe("field", () => {
+          it("triggers updates", () =>
+            new Promise((resolve, reject) => {
+              const field = new Field([1, 2, 3]);
+              const spy = vi.fn();
+              field.watch(spy);
+              field.push(4);
+              setTimeout(() => {
+                const [[value, event]]: any = spy.mock.calls;
+                try {
+                  expect(value).toEqual([1, 2, 3, 4]);
+                  expect(event.changes).toMatchChanges(
+                    change.field.shape | change.child.attach
+                  );
+                  resolve(void 0);
+                } catch (err) {
+                  reject(err);
+                }
+              });
+            }));
+        });
 
-        describe.todo("child");
+        describe("child", () => {
+          it("triggers updates", () =>
+            new Promise((resolve, reject) => {
+              const field = new Field([[1, 2, 3]]);
+              const spy = vi.fn();
+              field.watch(spy);
+              field.at(0).push(4);
+              setTimeout(() => {
+                const [[value, event]]: any = spy.mock.calls;
+                try {
+                  expect(value).toEqual([[1, 2, 3, 4]]);
+                  expect(event.changes).toMatchChanges(
+                    change.child.shape | change.subtree.attach
+                  );
+                  resolve(void 0);
+                } catch (err) {
+                  reject(err);
+                }
+              });
+            }));
+        });
 
-        describe.todo("subtree");
+        describe("subtree", () => {
+          it("triggers updates", () =>
+            new Promise((resolve, reject) => {
+              const field = new Field([[[1, 2, 3]]]);
+              const spy = vi.fn();
+              field.watch(spy);
+              // @ts-expect-error: This is fine!
+              field.at(0).at(0).push(4);
+              setTimeout(() => {
+                const [[value, event]]: any = spy.mock.calls;
+                try {
+                  expect(value).toEqual([[[1, 2, 3, 4]]]);
+                  expect(event.changes).toMatchChanges(
+                    change.subtree.shape | change.subtree.attach
+                  );
+                  resolve(void 0);
+                } catch (err) {
+                  reject(err);
+                }
+              });
+            }));
+        });
+      });
+    });
+
+    describe("insert", () => {
+      it("inserts an item at given index", () => {
+        const field = new Field([1, 2, 3]);
+        field.insert(0, 4);
+        expect(field.get()).toEqual([4, 1, 2, 3]);
+        field.insert(2, 5);
+        expect(field.get()).toEqual([4, 1, 5, 2, 3]);
+      });
+
+      it("returns the new length of the array", () => {
+        const field = new Field([1, 2, 3]);
+        expect(field.insert(0, 8)).toBe(4);
+      });
+
+      describe("changes", () => {
+        describe("field", () => {
+          it("triggers updates", () =>
+            new Promise((resolve, reject) => {
+              const field = new Field([1, 2, 3]);
+              const spy = vi.fn();
+              field.watch(spy);
+              field.insert(0, 4);
+              setTimeout(() => {
+                const [[value, event]]: any = spy.mock.calls;
+                try {
+                  expect(value).toEqual([4, 1, 2, 3]);
+                  expect(event.changes).toMatchChanges(
+                    change.field.shape | change.child.attach
+                  );
+                  resolve(void 0);
+                } catch (err) {
+                  reject(err);
+                }
+              });
+            }));
+        });
+
+        describe("child", () => {
+          it("triggers updates", () =>
+            new Promise((resolve, reject) => {
+              const field = new Field([[1, 2, 3]]);
+              const spy = vi.fn();
+              field.watch(spy);
+              field.at(0).insert(0, 4);
+              setTimeout(() => {
+                const [[value, event]]: any = spy.mock.calls;
+                try {
+                  expect(value).toEqual([[4, 1, 2, 3]]);
+                  expect(event.changes).toMatchChanges(
+                    change.child.shape | change.subtree.attach
+                  );
+                  resolve(void 0);
+                } catch (err) {
+                  reject(err);
+                }
+              });
+            }));
+        });
+
+        describe("subtree", () => {
+          it("triggers updates", () =>
+            new Promise((resolve, reject) => {
+              const field = new Field([[[1, 2, 3]]]);
+              const spy = vi.fn();
+              field.watch(spy);
+              // @ts-expect-error: This is fine!
+              field.at(0).at(0).insert(0, 4);
+              setTimeout(() => {
+                const [[value, event]]: any = spy.mock.calls;
+                try {
+                  expect(value).toEqual([[[4, 1, 2, 3]]]);
+                  expect(event.changes).toMatchChanges(
+                    change.subtree.shape | change.subtree.attach
+                  );
+                  resolve(void 0);
+                } catch (err) {
+                  reject(err);
+                }
+              });
+            }));
+        });
       });
     });
 

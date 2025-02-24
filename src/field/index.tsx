@@ -662,7 +662,6 @@ export class Field<Payload> {
   }) as Field.MapFn<Payload>;
 
   // @ts-ignore: This is fine
-  // [TODO] Add tests to new length?
   push: Payload extends Array<infer Item> ? (item: Item) => number : never = (
     item: Payload extends Array<infer Item> ? Item : never
   ) => {
@@ -670,7 +669,22 @@ export class Field<Payload> {
       throw new Error("State is not an array");
 
     const length = this.#internal.push(item);
-    this.trigger(change.child.attach, true);
+    this.trigger(change.field.shape | change.child.attach, true);
+    return length;
+  };
+
+  // @ts-ignore: This is fine
+  insert: Payload extends Array<infer Item>
+    ? (index: number, item: Item) => number
+    : never = (
+    index: number,
+    item: Payload extends Array<infer Item> ? Item : never
+  ) => {
+    if (!(this.#internal instanceof InternalArrayState))
+      throw new Error("State is not an array");
+
+    const length = this.#internal.insert(index, item);
+    this.trigger(change.field.shape | change.child.attach, true);
     return length;
   };
 
@@ -1873,6 +1887,21 @@ export class InternalArrayState<
       field: this.external,
     });
     return length + 1;
+  }
+
+  insert(index: number, item: Payload[number]) {
+    this.#children.splice(
+      index,
+      0,
+      // @ts-ignore: This is fine
+      new Field(item, { key: String(index), field: this.external })
+    );
+
+    this.#children.slice(index).forEach((item, index) => {
+      item[externalSymbol].move(String(index));
+    });
+
+    return this.#children.length;
   }
 
   find(
