@@ -1,3 +1,5 @@
+"use client";
+
 import React, { useEffect, useId, useMemo } from "react";
 import { change, maskedChanges } from "../change/index.ts";
 import { Field } from "../field/index.tsx";
