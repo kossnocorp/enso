@@ -1933,6 +1933,20 @@ describe("Field", () => {
         expect(field.get()).toEqual({ message: "Hi!" });
       });
 
+      it("passes the current value as 2nd argument", () => {
+        const field = new Field({ message: "Hello, world!" });
+        const intoSpy = vi.fn().mockReturnValue("Hey!");
+        const fromSpy = vi.fn().mockReturnValue("Yo!");
+        const computed = field.$.message.into(intoSpy).from(fromSpy);
+        computed.set("Hi!");
+        // into
+        expect(intoSpy).toHaveBeenCalledOnce();
+        expect(intoSpy).toBeCalledWith("Hello, world!", undefined);
+        // from
+        expect(fromSpy).toHaveBeenCalledOnce();
+        expect(fromSpy).toBeCalledWith("Hi!", "Hello, world!");
+      });
+
       it("triggers field update", async () =>
         new Promise<void>((resolve) => {
           const field = new Field({ message: "Hello, world!" });

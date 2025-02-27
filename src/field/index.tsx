@@ -40,11 +40,11 @@ export class Field<Payload> {
    * @param initialValue - Initial value of the field.
    * @returns Memoized field instance.
    */
-  static use<Payload>(
-    initialValue: Payload,
+  static use<Value>(
+    initialValue: Value,
     // [TODO] Add tests
     deps?: DependencyList
-  ): Field<Payload> {
+  ): Field<Value> {
     const field = useMemo(() => new Field(initialValue), deps || []);
     return field;
   }
@@ -530,44 +530,97 @@ export class Field<Payload> {
     });
   }
 
-  into<Computed>(
-    intoCallback: Field.IntoCallback<Payload, Computed>
-  ): Field.Into<Payload, Computed> {
-    const computed = new ComputedField(intoCallback(this.get()), this);
+  /**
+   * Initiates a computed field builder. It accepts mapper function that
+   * transforms the current field value into another.
+   *
+   * The returned builder {@link Into} with `from` method allows to define how
+   * the computed value is transformed back into the original and returns
+   * the computed field.
+   *
+   * @param mapper - Mapper function computing new value from field value
+   *
+   * @returns Builder object with `from` method
+   */
+  into<ComputedValue>(
+    mapper: Field.IntoMapper<Payload, ComputedValue>
+  ): Field.Into<Payload, ComputedValue> {
+    const computed = new ComputedField(mapper(this.get(), undefined), this);
     // [TODO] This creates a leak, so rather than holding on to the computed
     // field, store it as a weak ref and unsubscribe when it's no longer needed.
-    this.watch((payload) => computed.set(intoCallback(payload)), true);
+    // [TODO] Process only structural changes?
+
+    const contextBrand = `computed-${computed.id}`;
+
+    this.watch((value, event) => {
+      // Check if the change was triggered by the computed value and ignore it
+      // to prevent double calls.
+      if (event.context[contextBrand]) return;
+      computed.set(mapper(value, computed.get()));
+    }, true);
 
     return {
-      from: (fromCallback) => {
-        computed.watch((payload) => this.set(fromCallback(payload)), true);
+      from: (fromMapper) => {
+        // [TODO] Process only structural changes?
+        computed.watch(
+          (computedValue) =>
+            // Set context so we can know if the field change was triggered by
+            // the computed value and ignore it to prevent double calls.
+            ChangesEvent.context({ [contextBrand]: true }, () => {
+              this.set(fromMapper(computedValue, this.get()));
+            }),
+          true
+        );
         return computed;
       },
     };
   }
 
+  // [TODO] Add tests
   useInto<Computed>(
-    intoCallback: Field.IntoCallback<Payload, Computed>
+    mapper: Field.IntoMapper<Payload, Computed>
   ): Field.Into<Payload, Computed> {
     const computed = useMemo(
-      () => new ComputedField(intoCallback(this.get()), this),
+      () => new ComputedField(mapper(this.get(), undefined), this),
       [this.id]
     );
+
+    const contextBrand = `computed-${computed.id}`;
+    const initialIntoRef = useRef(true);
 
     useEffect(() => {
       // It's ok to trigger set here because the setting the same value won't
       // trigger any events, however for the better performance, it is better
       // if the into and from callbacks are memoized.
-      computed.set(intoCallback(this.get()));
-      return this.watch((payload) => computed.set(intoCallback(payload)));
-    }, [this.id, intoCallback]);
 
-    return useMemo(
+      // Prevent extra mapper call
+      if (initialIntoRef.current) initialIntoRef.current = false;
+      else computed.set(mapper(this.get(), computed.get()));
+
+      // [TODO] Process only structural changes?
+      return this.watch((payload, event) => {
+        // Check if the change was triggered by the computed value and ignore it
+        // to prevent double calls.
+        if (event.context[contextBrand]) return;
+
+        computed.set(mapper(payload, computed.get()));
+      });
+    }, [this.id, initialIntoRef, mapper]);
+
+    return useMemo<Field.Into<Payload, Computed>>(
       () => ({
-        from: (fromCallback) => {
+        from: (fromMapper) => {
           useEffect(
-            () => computed.watch((payload) => this.set(fromCallback(payload))),
-            [this.id, computed, fromCallback]
+            () =>
+              // [TODO] Process only structural changes?
+              computed.watch((computedValue) =>
+                // Set context so we can know if the field change was triggered by
+                // the computed value and ignore it to prevent double calls.
+                ChangesEvent.context({ [contextBrand]: true }, () =>
+                  this.set(fromMapper(computedValue, this.get()))
+                )
+              ),
+            [this.id, computed, fromMapper]
           );
           return computed;
         },
@@ -1117,17 +1170,29 @@ export namespace Field {
 
   export type DiscriminatorKey<Payload> = keyof Exclude<Payload, undefined>;
 
-  export interface Into<Payload, Computed> {
+  export interface Into<Value, ComputedValue> {
+    /**
+     * Creates a computed field. It accepts mapper function that transforms
+     * the computed value into original value.
+     *
+     * @param mapper - Mapper function computing original value from computed
+     *
+     * @returns Computed field
+     */
     from(
-      callback: FromCallback<Payload, Computed>
-    ): ComputedField<Payload, Computed>;
+      mapper: FromMapper<Value, ComputedValue>
+    ): ComputedField<Value, ComputedValue>;
   }
 
-  export type IntoCallback<Payload, Computed> = (payload: Payload) => Computed;
+  export type IntoMapper<Value, ComputedValue> = (
+    value: Value,
+    computedValue: ComputedValue | undefined
+  ) => ComputedValue;
 
-  export type FromCallback<Payload, ComputedPayload> = (
-    payload: ComputedPayload
-  ) => Payload;
+  export type FromMapper<Value, ComputedValue> = (
+    computedValue: ComputedValue,
+    value: Value
+  ) => Value;
 
   export type NarrowCallback<Payload, Narrowed> = (
     payload: Payload,
@@ -1351,6 +1416,10 @@ export class ComputedField<Payload, Computed> extends Field<Computed> {
 
   override get parent(): Field<any> | undefined {
     return this.#source.parent;
+  }
+
+  override get dirty(): boolean {
+    return this.#source.dirty;
   }
 
   override setError(error?: string | Field.Error | undefined): void {

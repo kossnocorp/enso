@@ -166,13 +166,13 @@ export class Form<Payload> {
   }
 
   into<Computed>(
-    intoCallback: Field.IntoCallback<Payload, Computed>
+    intoCallback: Field.IntoMapper<Payload, Computed>
   ): Field.Into<Payload, Computed> {
     return this.#field.into(intoCallback);
   }
 
   useInto<Computed>(
-    intoCallback: Field.IntoCallback<Payload, Computed>
+    intoCallback: Field.IntoMapper<Payload, Computed>
   ): Field.Into<Payload, Computed> {
     return this.#field.useInto(intoCallback);
   }

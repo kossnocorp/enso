@@ -3027,6 +3027,42 @@ describe("Field", () => {
           .toHaveTextContent("2");
       });
 
+      it("passes the current value as 2nd argument", async () => {
+        const intoSpy = vi.fn().mockReturnValue("Hey!");
+        const fromSpy = vi.fn().mockReturnValue("Yo!");
+
+        function Component() {
+          const field = Field.use({ message: "Hello, world!" });
+          const computed = field.$.message.useInto(intoSpy).from(fromSpy);
+
+          return (
+            <div>
+              <button onClick={() => computed.set("Hi!")}>Say hi</button>
+            </div>
+          );
+        }
+
+        const screen = render(<Component />);
+
+        await screen.getByText("Say hi").click();
+
+        return new Promise((resolve, reject) => {
+          setTimeout(async () => {
+            try {
+              // into
+              expect(intoSpy).toHaveBeenCalledOnce();
+              expect(intoSpy).toBeCalledWith("Hello, world!", undefined);
+              // from
+              expect(fromSpy).toHaveBeenCalledOnce();
+              expect(fromSpy).toBeCalledWith("Hi!", "Hello, world!");
+              resolve(void 0);
+            } catch (err) {
+              reject(err);
+            }
+          });
+        });
+      });
+
       it("updates the watcher on field id change", async () => {
         function Component() {
           const count = useRenderCount();

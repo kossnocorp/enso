@@ -124,7 +124,7 @@ export class ChangesEvent extends Event {
   changes: FieldChange;
 
   /** Context record. */
-  context: Record<string, any> = {};
+  context: ChangesEvent.Context = {};
 
   /**
    * Creates a new changes event.
@@ -133,6 +133,17 @@ export class ChangesEvent extends Event {
    */
   constructor(changes: FieldChange, context?: ChangesEvent.Context) {
     super("change");
+
+    // [TODO] Join context building with the batched context so it's computed
+    // in the same place.
+    // [TODO] Add tests
+    if (!context) {
+      context = {};
+      for (const ctx of ChangesEvent.#context) {
+        Object.assign(context, ctx);
+      }
+    }
+
     Object.assign(this.context, structuredClone(context));
     this.changes = changes;
   }
