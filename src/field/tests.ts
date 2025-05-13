@@ -87,7 +87,7 @@ describe("Field", () => {
       it("returns tha field name", () => {
         const field = new Field({ address: { name: { first: "Sasha" } } });
         expect(field.$.address.$.name.$.first.name).toEqual(
-          "address.name.first"
+          "address.name.first",
         );
       });
 
@@ -132,7 +132,7 @@ describe("Field", () => {
           it("returns detach change when setting to detached value", () => {
             const field = new Field(42);
             expect(field.set(detachedValue)).toMatchChanges(
-              change.field.detach
+              change.field.detach,
             );
           });
 
@@ -173,7 +173,7 @@ describe("Field", () => {
               expect(spy).toHaveBeenCalledOnce();
               expect(spy).toHaveBeenCalledWith(
                 43,
-                expect.objectContaining({ changes: change.field.value })
+                expect.objectContaining({ changes: change.field.value }),
               );
               field.set({ str: "hello" });
               setTimeout(() => {
@@ -196,7 +196,7 @@ describe("Field", () => {
             setTimeout(() => {
               expect(spy).toHaveBeenCalledWith(
                 43,
-                expect.objectContaining({ changes: change.field.value })
+                expect.objectContaining({ changes: change.field.value }),
               );
               field.set({ str: "hello" });
               field.set({ num: 44, str: "hello" });
@@ -208,7 +208,7 @@ describe("Field", () => {
                   44,
                   expect.objectContaining({
                     changes: change.field.type | change.field.attach,
-                  })
+                  }),
                 );
                 resolve(void 0);
               });
@@ -238,7 +238,7 @@ describe("Field", () => {
             it("returns attach change when attaching", () => {
               const field = new Field<{ name?: object }>({});
               expect(field.$.name.set({ first: "Sasha" })).toMatchChanges(
-                change.field.attach
+                change.field.attach,
               );
             });
 
@@ -247,7 +247,7 @@ describe("Field", () => {
                 name: { first: "Sasha" },
               });
               expect(field.$.name.set(detachedValue)).toMatchChanges(
-                change.field.detach
+                change.field.detach,
               );
             });
 
@@ -260,14 +260,14 @@ describe("Field", () => {
               it("returns change when child attaches", () => {
                 const field = new Field<object>({ num: 42 });
                 expect(field.set({ num: 42, str: "hello" })).toMatchChanges(
-                  change.field.shape | change.child.attach
+                  change.field.shape | change.child.attach,
                 );
               });
 
               it("returns change when child detaches", () => {
                 const field = new Field<object>({ num: 42, str: "hello" });
                 expect(field.set({ num: 42 })).toMatchChanges(
-                  change.field.shape | change.child.detach
+                  change.field.shape | change.child.detach,
                 );
               });
             });
@@ -277,14 +277,14 @@ describe("Field", () => {
             it("returns type change when type changes", () => {
               const field = new Field<object>({ num: 42 });
               expect(field.set({ num: "42" })).toMatchChanges(
-                change.child.type
+                change.child.type,
               );
             });
 
             it("returns attach change when attaching", () => {
               const field = new Field<object>({});
               expect(field.set({ name: { first: "Sasha" } })).toMatchChanges(
-                change.field.shape | change.child.attach
+                change.field.shape | change.child.attach,
               );
             });
 
@@ -293,7 +293,7 @@ describe("Field", () => {
                 name: { first: "Sasha" },
               });
               expect(field.set({})).toMatchChanges(
-                change.field.shape | change.child.detach
+                change.field.shape | change.child.detach,
               );
             });
 
@@ -302,7 +302,7 @@ describe("Field", () => {
                 name: { first: "Sasha" },
               });
               expect(field.set({ name: undefined })).toMatchChanges(
-                change.child.type
+                change.child.type,
               );
             });
 
@@ -312,7 +312,7 @@ describe("Field", () => {
                 change.field.shape |
                   change.child.value |
                   change.child.attach |
-                  change.child.detach
+                  change.child.detach,
               );
             });
 
@@ -320,7 +320,7 @@ describe("Field", () => {
               it("returns change when child attaches", () => {
                 const field = new Field<object>({ obj: { num: 42 } });
                 expect(
-                  field.set({ obj: { num: 42, str: "hello" } })
+                  field.set({ obj: { num: 42, str: "hello" } }),
                 ).toMatchChanges(change.child.shape | change.subtree.attach);
               });
 
@@ -329,7 +329,7 @@ describe("Field", () => {
                   obj: { num: 42, str: "hello" },
                 });
                 expect(field.set({ obj: { num: 42 } })).toMatchChanges(
-                  change.child.shape | change.subtree.detach
+                  change.child.shape | change.subtree.detach,
                 );
               });
             });
@@ -339,14 +339,14 @@ describe("Field", () => {
             it("returns type change when type changes", () => {
               const field = new Field<{ obj: object }>({ obj: { num: 42 } });
               expect(field.set({ obj: { num: "42" } })).toMatchChanges(
-                change.subtree.type
+                change.subtree.type,
               );
             });
 
             it("returns attach change when attaching", () => {
               const field = new Field<{ obj: object }>({ obj: {} });
               expect(
-                field.set({ obj: { name: { first: "Sasha" } } })
+                field.set({ obj: { name: { first: "Sasha" } } }),
               ).toMatchChanges(change.child.shape | change.subtree.attach);
             });
 
@@ -355,7 +355,7 @@ describe("Field", () => {
                 obj: { name: { first: "Sasha" } },
               });
               expect(field.set({ obj: {} })).toMatchChanges(
-                change.child.shape | change.subtree.detach
+                change.child.shape | change.subtree.detach,
               );
             });
 
@@ -364,7 +364,7 @@ describe("Field", () => {
                 obj: { name: { first: "Sasha" } },
               });
               expect(field.set({ obj: { name: undefined } })).toMatchChanges(
-                change.subtree.type
+                change.subtree.type,
               );
             });
 
@@ -373,12 +373,12 @@ describe("Field", () => {
                 obj: { num: 42, str: "hello" },
               });
               expect(
-                field.set({ obj: { num: 43, bool: true } })
+                field.set({ obj: { num: 43, bool: true } }),
               ).toMatchChanges(
                 change.child.shape |
                   change.subtree.value |
                   change.subtree.attach |
-                  change.subtree.detach
+                  change.subtree.detach,
               );
             });
 
@@ -386,7 +386,7 @@ describe("Field", () => {
               it("returns change when child attaches", () => {
                 const field = new Field<object>({ obj: { obj: { num: 42 } } });
                 expect(
-                  field.set({ obj: { obj: { num: 42, str: "hello" } } })
+                  field.set({ obj: { obj: { num: 42, str: "hello" } } }),
                 ).toMatchChanges(change.subtree.shape | change.subtree.attach);
               });
 
@@ -397,7 +397,7 @@ describe("Field", () => {
                   },
                 });
                 expect(field.set({ obj: { obj: { num: 42 } } })).toMatchChanges(
-                  change.subtree.shape | change.subtree.detach
+                  change.subtree.shape | change.subtree.detach,
                 );
               });
             });
@@ -433,14 +433,14 @@ describe("Field", () => {
         it("returns added change type if a child has been added", () => {
           const field = new Field([1, 2, 3]);
           expect(field.set([1, 2, 3, 4])).toMatchChanges(
-            change.field.shape | change.child.attach
+            change.field.shape | change.child.attach,
           );
         });
 
         it("returns child removed change type if a child has been removed", () => {
           const field = new Field([1, 2, 3]);
           expect(field.set([1, 2])).toMatchChanges(
-            change.field.shape | change.child.detach
+            change.field.shape | change.child.detach,
           );
         });
 
@@ -465,7 +465,7 @@ describe("Field", () => {
                 33,
                 expect.objectContaining({
                   changes: change.field.value,
-                })
+                }),
               );
               field.set([1, 2]);
 
@@ -493,14 +493,14 @@ describe("Field", () => {
               setTimeout(() => {
                 expect(spy).toHaveBeenCalledWith(
                   33,
-                  expect.objectContaining({ changes: change.field.value })
+                  expect.objectContaining({ changes: change.field.value }),
                 );
 
                 expect(spy).toHaveBeenCalledWith(
                   333,
                   expect.objectContaining({
                     changes: change.field.type | change.field.attach,
-                  })
+                  }),
                 );
                 resolve(void 0);
               });
@@ -517,7 +517,7 @@ describe("Field", () => {
             setTimeout(() => {
               expect(spy).toHaveBeenCalledWith(
                 33,
-                expect.objectContaining({ changes: change.field.value })
+                expect.objectContaining({ changes: change.field.value }),
               );
 
               field.set([1, 2]);
@@ -530,7 +530,7 @@ describe("Field", () => {
                     // This test lacks StateChangeType.Type unlike the above,
                     // indicating that the value is still undefined
                     changes: change.field.attach,
-                  })
+                  }),
                 );
                 resolve(void 0);
               });
@@ -550,7 +550,7 @@ describe("Field", () => {
           ]);
           const changes = field.set([{ n: 1 }, { n: 2 }]);
           expect(changes).toMatchChanges(
-            change.field.shape | change.child.detach
+            change.field.shape | change.child.detach,
           );
           expect(field.get()).toEqual([{ n: 1 }, { n: 2 }]);
         });
@@ -564,7 +564,7 @@ describe("Field", () => {
           expect(undefinedField.get()).toBe(undefined);
           const changes = field.set([{ n: 1 }, { n: 2 }, { n: 3 }]);
           expect(changes).toMatchChanges(
-            change.field.shape | change.child.attach
+            change.field.shape | change.child.attach,
           );
           expect(field.get()).toEqual([{ n: 1 }, { n: 2 }, { n: 3 }]);
           // @ts-ignore: This is fine!
@@ -621,7 +621,7 @@ describe("Field", () => {
             it("returns detach change when detaching", () => {
               const field = new Field<number[]>([1, 2, 3]);
               expect(field.at(2).set(detachedValue)).toMatchChanges(
-                change.field.detach
+                change.field.detach,
               );
             });
 
@@ -634,14 +634,14 @@ describe("Field", () => {
               it("returns change when child attaches", () => {
                 const field = new Field<number[]>([1, 2]);
                 expect(field.set([1, 2, 3])).toMatchChanges(
-                  change.field.shape | change.child.attach
+                  change.field.shape | change.child.attach,
                 );
               });
 
               it("returns change when child detaches", () => {
                 const field = new Field<number[]>([1, 2, 3]);
                 expect(field.set([1, 2])).toMatchChanges(
-                  change.field.shape | change.child.detach
+                  change.field.shape | change.child.detach,
                 );
               });
             });
@@ -656,28 +656,28 @@ describe("Field", () => {
             it("returns attach change when attaching", () => {
               const field = new Field<any[]>([1, 2]);
               expect(field.set([1, 2, 3])).toMatchChanges(
-                change.field.shape | change.child.attach
+                change.field.shape | change.child.attach,
               );
             });
 
             it("returns detach change when detaching", () => {
               const field = new Field<any[]>([1, 2, 3]);
               expect(field.set([1, 2])).toMatchChanges(
-                change.field.shape | change.child.detach
+                change.field.shape | change.child.detach,
               );
             });
 
             it("returns type change when setting undefined", () => {
               const field = new Field<any[]>([1, 2, 3]);
               expect(field.set([1, 2, undefined])).toMatchChanges(
-                change.child.type
+                change.child.type,
               );
             });
 
             it("returns combined changes", () => {
               const field = new Field<any[]>([1, 2]);
               expect(field.set([1, "2", 3])).toMatchChanges(
-                change.field.shape | change.child.type | change.child.attach
+                change.field.shape | change.child.type | change.child.attach,
               );
             });
 
@@ -685,14 +685,14 @@ describe("Field", () => {
               it("returns change when child attaches", () => {
                 const field = new Field<any[][]>([[1, 2]]);
                 expect(field.set([[1, 2, 3]])).toMatchChanges(
-                  change.child.shape | change.subtree.attach
+                  change.child.shape | change.subtree.attach,
                 );
               });
 
               it("returns change when child detaches", () => {
                 const field = new Field<any[][]>([[1, 2, 3]]);
                 expect(field.set([[1, 2]])).toMatchChanges(
-                  change.child.shape | change.subtree.detach
+                  change.child.shape | change.subtree.detach,
                 );
               });
             });
@@ -702,35 +702,37 @@ describe("Field", () => {
             it("returns type change when type changes", () => {
               const field = new Field<any[][]>([[1, 2, 3]]);
               expect(field.set([[1, 2, "3"]])).toMatchChanges(
-                change.subtree.type
+                change.subtree.type,
               );
             });
 
             it("returns attach change when attaching", () => {
               const field = new Field<any[][]>([[1, 2]]);
               expect(field.set([[1, 2, 3]])).toMatchChanges(
-                change.child.shape | change.subtree.attach
+                change.child.shape | change.subtree.attach,
               );
             });
 
             it("returns detach change when detaching", () => {
               const field = new Field<any[][]>([[1, 2, 3]]);
               expect(field.set([[1, 2]])).toMatchChanges(
-                change.child.shape | change.subtree.detach
+                change.child.shape | change.subtree.detach,
               );
             });
 
             it("returns type change when setting undefined", () => {
               const field = new Field<any[][]>([[1, 2, 3]]);
               expect(field.set([[1, 2, undefined]])).toMatchChanges(
-                change.subtree.type
+                change.subtree.type,
               );
             });
 
             it("returns combined changes", () => {
               const field = new Field<any[][]>([[1, 2]]);
               expect(field.set([[1, "2", 3]])).toMatchChanges(
-                change.child.shape | change.subtree.type | change.subtree.attach
+                change.child.shape |
+                  change.subtree.type |
+                  change.subtree.attach,
               );
             });
 
@@ -738,14 +740,14 @@ describe("Field", () => {
               it("returns change when child attaches", () => {
                 const field = new Field<any[][]>([[[1, 2]]]);
                 expect(field.set([[[1, 2, 3]]])).toMatchChanges(
-                  change.subtree.shape | change.subtree.attach
+                  change.subtree.shape | change.subtree.attach,
                 );
               });
 
               it("returns change when child detaches", () => {
                 const field = new Field<any[][]>([[[1, 2, 3]]]);
                 expect(field.set([[[1, 2]]])).toMatchChanges(
-                  change.subtree.shape | change.subtree.detach
+                  change.subtree.shape | change.subtree.detach,
                 );
               });
             });
@@ -802,7 +804,7 @@ describe("Field", () => {
 
           it("returns type change when type changes", () => {
             const field = new Field<Map<string, string> | Set<string>>(
-              new Map()
+              new Map(),
             );
             expect(field.set(new Set())).toMatchChanges(change.field.type);
           });
@@ -815,13 +817,13 @@ describe("Field", () => {
           it("returns detach change when setting to detached value", () => {
             const field = new Field(new Map());
             expect(field.set(detachedValue)).toMatchChanges(
-              change.field.detach
+              change.field.detach,
             );
           });
 
           it("returns attach change when setting from detached value", () => {
             const field = new Field<Map<string, string> | DetachedValue>(
-              detachedValue
+              detachedValue,
             );
             expect(field.set(new Map())).toMatchChanges(change.field.attach);
           });
@@ -1058,7 +1060,7 @@ describe("Field", () => {
                   expect(spy).toHaveBeenCalledOnce();
                   const [[_, event]]: any = spy.mock.calls;
                   expect(event.changes).toMatchChanges(
-                    change.field.value | change.field.commit
+                    change.field.value | change.field.commit,
                   );
                   resolve(void 0);
                 } catch (err) {
@@ -1113,7 +1115,7 @@ describe("Field", () => {
                   expect(event.changes).toMatchChanges(
                     change.field.commit |
                       change.child.value |
-                      change.child.commit
+                      change.child.commit,
                   );
                   resolve(void 0);
                 } catch (err) {
@@ -1174,7 +1176,7 @@ describe("Field", () => {
                     change.field.commit |
                       change.child.commit |
                       change.subtree.value |
-                      change.subtree.commit
+                      change.subtree.commit,
                   );
                   resolve(void 0);
                 } catch (err) {
@@ -1366,7 +1368,7 @@ describe("Field", () => {
 
         it("returns undefined if field doesn't exist", () => {
           const field = new Field<string | number | undefined>(
-            detachedValue as any
+            detachedValue as any,
           );
           const num = field.try;
           expect(num).toBe(undefined);
@@ -1452,7 +1454,7 @@ describe("Field", () => {
 
         it("returns undefined if field doesn't exist", () => {
           const field = new Field<string | number | undefined>(
-            detachedValue as any
+            detachedValue as any,
           );
           const num = field.try;
           expect(num).toBe(undefined);
@@ -1480,7 +1482,7 @@ describe("Field", () => {
           setTimeout(() => {
             expect(spy).toHaveBeenCalledWith(
               42,
-              expect.objectContaining({ changes: change.field.value })
+              expect.objectContaining({ changes: change.field.value }),
             );
             resolve(void 0);
           });
@@ -1548,7 +1550,7 @@ describe("Field", () => {
             const [[value, event]]: any = spy.mock.calls;
             expect(value).toEqual({ user: { name: { first: "Sasha" } } });
             expect(event.changes).toMatchChanges(
-              change.subtree.blur | change.subtree.shape
+              change.subtree.blur | change.subtree.shape,
             );
             resolve(void 0);
           });
@@ -1580,7 +1582,7 @@ describe("Field", () => {
               expect(event.changes).toMatchChanges(
                 change.child.value |
                   change.subtree.detach |
-                  change.subtree.attach
+                  change.subtree.attach,
               );
               resolve(void 0);
             });
@@ -1610,7 +1612,7 @@ describe("Field", () => {
                     change.field.value |
                     change.child.detach |
                     change.child.attach,
-                })
+                }),
               );
               resolve(void 0);
             });
@@ -1635,7 +1637,7 @@ describe("Field", () => {
             setTimeout(() => {
               expect(spy).toHaveBeenCalledWith(
                 42,
-                expect.objectContaining({ changes: change.field.value })
+                expect.objectContaining({ changes: change.field.value }),
               );
               resolve(void 0);
             });
@@ -1704,7 +1706,7 @@ describe("Field", () => {
 
             const unsub = field.watch((value, event) => {
               expect(event.changes).toBe(
-                change.child.attach | change.field.shape
+                change.child.attach | change.field.shape,
               );
               expect(value.str).toBe("Hello!");
               unsub();
@@ -1723,7 +1725,7 @@ describe("Field", () => {
 
             const unsub = field.watch((value, event) => {
               expect(event.changes).toBe(
-                change.child.attach | change.field.shape
+                change.child.attach | change.field.shape,
               );
               expect(value[3]).toEqual({ n: 3 });
               unsub();
@@ -1766,7 +1768,7 @@ describe("Field", () => {
 
             const unsub = field.watch((value, event) => {
               expect(event.changes).toBe(
-                change.child.attach | change.field.shape
+                change.child.attach | change.field.shape,
               );
               expect(value[5]).toBe(43);
               unsub();
@@ -1782,7 +1784,7 @@ describe("Field", () => {
 
             const unsub = field.watch((value, event) => {
               expect(event.changes).toBe(
-                change.child.attach | change.field.shape
+                change.child.attach | change.field.shape,
               );
               expect(value[2]).toEqual({ n: 3 });
               unsub();
@@ -1895,7 +1897,7 @@ describe("Field", () => {
     describe("decompose", () => {
       it("allows to decompose the field type", () => {
         const field = new Field<string | number | Record<string, number>>(
-          "Hello, world!"
+          "Hello, world!",
         );
         const decomposed = field.decompose();
         if (typeof decomposed.value === "string") {
@@ -1910,7 +1912,7 @@ describe("Field", () => {
       it("allows to narrow the field type", () => {
         const field = new Field<string | number>("Hello, world!");
         const narrowed = field.narrow(
-          (value, ok) => typeof value === "string" && ok(value)
+          (value, ok) => typeof value === "string" && ok(value),
         );
         narrowed satisfies Field<string> | undefined;
         expect(narrowed?.get()).toBe("Hello, world!");
@@ -2012,7 +2014,7 @@ describe("Field", () => {
                 three: 3,
               });
               expect(field.at("one").remove()).toMatchChanges(
-                change.field.detach
+                change.field.detach,
               );
             });
 
@@ -2030,7 +2032,7 @@ describe("Field", () => {
                   const [[value, event]]: any = spy.mock.calls;
                   expect(value).toEqual({ two: 2, three: 3 });
                   expect(event.changes).toMatchChanges(
-                    change.field.shape | change.child.detach
+                    change.field.shape | change.child.detach,
                   );
                   resolve(void 0);
                 });
@@ -2061,7 +2063,7 @@ describe("Field", () => {
                   const [[value, event]]: any = spy.mock.calls;
                   expect(value).toEqual({ two: 2, three: 3 });
                   expect(event.changes).toMatchChanges(
-                    change.field.shape | change.child.detach
+                    change.field.shape | change.child.detach,
                   );
                   resolve(void 0);
                 });
@@ -2107,7 +2109,7 @@ describe("Field", () => {
                   const [[value, event]]: any = spy.mock.calls;
                   expect(value).toEqual([1, 3, 4]);
                   expect(event.changes).toMatchChanges(
-                    change.field.shape | change.child.detach
+                    change.field.shape | change.child.detach,
                   );
                   resolve(void 0);
                 });
@@ -2131,7 +2133,7 @@ describe("Field", () => {
                   const [[value, event]]: any = spy.mock.calls;
                   expect(value).toEqual([[1, 3, 4]]);
                   expect(event.changes).toMatchChanges(
-                    change.child.shape | change.subtree.detach
+                    change.child.shape | change.subtree.detach,
                   );
                   resolve(void 0);
                 });
@@ -2223,7 +2225,7 @@ describe("Field", () => {
                 try {
                   expect(value).toEqual([1, 2, 3, 4]);
                   expect(event.changes).toMatchChanges(
-                    change.field.shape | change.child.attach
+                    change.field.shape | change.child.attach,
                   );
                   resolve(void 0);
                 } catch (err) {
@@ -2245,7 +2247,7 @@ describe("Field", () => {
                 try {
                   expect(value).toEqual([[1, 2, 3, 4]]);
                   expect(event.changes).toMatchChanges(
-                    change.child.shape | change.subtree.attach
+                    change.child.shape | change.subtree.attach,
                   );
                   resolve(void 0);
                 } catch (err) {
@@ -2268,7 +2270,7 @@ describe("Field", () => {
                 try {
                   expect(value).toEqual([[[1, 2, 3, 4]]]);
                   expect(event.changes).toMatchChanges(
-                    change.subtree.shape | change.subtree.attach
+                    change.subtree.shape | change.subtree.attach,
                   );
                   resolve(void 0);
                 } catch (err) {
@@ -2307,7 +2309,7 @@ describe("Field", () => {
                 try {
                   expect(value).toEqual([4, 1, 2, 3]);
                   expect(event.changes).toMatchChanges(
-                    change.field.shape | change.child.attach
+                    change.field.shape | change.child.attach,
                   );
                   resolve(void 0);
                 } catch (err) {
@@ -2329,7 +2331,7 @@ describe("Field", () => {
                 try {
                   expect(value).toEqual([[4, 1, 2, 3]]);
                   expect(event.changes).toMatchChanges(
-                    change.child.shape | change.subtree.attach
+                    change.child.shape | change.subtree.attach,
                   );
                   resolve(void 0);
                 } catch (err) {
@@ -2352,7 +2354,7 @@ describe("Field", () => {
                 try {
                   expect(value).toEqual([[[4, 1, 2, 3]]]);
                   expect(event.changes).toMatchChanges(
-                    change.subtree.shape | change.subtree.attach
+                    change.subtree.shape | change.subtree.attach,
                   );
                   resolve(void 0);
                 } catch (err) {
@@ -2380,7 +2382,7 @@ describe("Field", () => {
       it("passes index to the predicate", () => {
         const field = new Field([1, 2, 3]);
         const item = field.find(
-          (item, index) => item.get() === 2 && index === 1
+          (item, index) => item.get() === 2 && index === 1,
         );
         expect(item?.get()).toBe(2);
       });
@@ -2437,7 +2439,7 @@ describe("Field", () => {
           setTimeout(() => {
             expect(spy).toHaveBeenCalledWith(
               42,
-              expect.objectContaining({ changes: change.field.invalid })
+              expect.objectContaining({ changes: change.field.invalid }),
             );
             resolve();
           });
@@ -2454,7 +2456,7 @@ describe("Field", () => {
             expect(spy).toHaveBeenCalledTimes(1);
             expect(spy).toHaveBeenCalledWith(
               42,
-              expect.objectContaining({ changes: change.field.valid })
+              expect.objectContaining({ changes: change.field.valid }),
             );
             resolve();
           });

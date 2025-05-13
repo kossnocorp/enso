@@ -26,7 +26,7 @@ describe("Field", () => {
     }
 
     const screen = render(
-      <Component profile={{ user: { name: { first: "Alexander" } } }} />
+      <Component profile={{ user: { name: { first: "Alexander" } } }} />,
     );
 
     await userEvent.fill(screen.getByTestId("name-first-0-input"), "Sasha");
@@ -201,7 +201,7 @@ describe("Field", () => {
               <button
                 onClick={() =>
                   field.$.name.$.last.setError(
-                    field.$.name.$.last.error?.message
+                    field.$.name.$.last.error?.message,
                   )
                 }
               >
@@ -634,7 +634,7 @@ describe("Field", () => {
           { name: "Sasha" },
           expect.objectContaining({
             changes: change.field.id,
-          })
+          }),
         );
 
         await screen.getByText("Rename item 0").click();
@@ -831,7 +831,7 @@ describe("Field", () => {
 
         await userEvent.fill(
           screen.getByTestId("name-first-input"),
-          "Alexander"
+          "Alexander",
         );
 
         await expect
@@ -1392,7 +1392,7 @@ describe("Field", () => {
               <button
                 onClick={() =>
                   field.$.name.$.last.setError(
-                    field.$.name.$.last.error?.message
+                    field.$.name.$.last.error?.message,
                   )
                 }
               >
@@ -1915,7 +1915,7 @@ describe("Field", () => {
               <button
                 onClick={() =>
                   field.$.name.$.last.setError(
-                    field.$.name.$.last.error?.message
+                    field.$.name.$.last.error?.message,
                   )
                 }
               >
@@ -2280,7 +2280,7 @@ describe("Field", () => {
           const [lastName, setLastName] = useState("Koss");
           const fullName = field.useCompute(
             (name) => `${name} ${lastName}`,
-            [lastName]
+            [lastName],
           );
 
           return (
@@ -2334,7 +2334,7 @@ describe("Field", () => {
           const count = useRenderCount();
           const address = Field.use<Address>({ name: { first: "Alexander" } });
           const name = address.$.name.useDecompose(
-            (newName, prevName) => typeof newName !== typeof prevName
+            (newName, prevName) => typeof newName !== typeof prevName,
           );
 
           return (
@@ -2523,10 +2523,10 @@ describe("Field", () => {
           const count = useRenderCount();
           const address = Field.use<Address>({ name: { first: "Alexander" } });
           const nameStr = address.$.name.useNarrow(
-            (name, ok) => typeof name === "string" && ok(name)
+            (name, ok) => typeof name === "string" && ok(name),
           );
           const nameObj = address.$.name.useNarrow(
-            (name, ok) => typeof name !== "string" && ok(name)
+            (name, ok) => typeof name !== "string" && ok(name),
           );
 
           return (
@@ -3473,7 +3473,7 @@ describe("Field", () => {
         expect(refSpy).toHaveBeenCalledWith(
           expect.objectContaining({
             name: "name.first",
-          })
+          }),
         );
 
         expect(onBlurSpy).not.toHaveBeenCalled();
@@ -3508,7 +3508,7 @@ describe("Field", () => {
           .toHaveTextContent("1");
 
         expect(onBlurSpy).toBeCalledWith(
-          expect.objectContaining({ type: "blur" })
+          expect.objectContaining({ type: "blur" }),
         );
       });
     });
@@ -3612,7 +3612,7 @@ describe("Field", () => {
                       <button
                         onClick={() =>
                           field.$.name.$.last.setError(
-                            field.$.name.$.last.error?.message
+                            field.$.name.$.last.error?.message,
                           )
                         }
                       >

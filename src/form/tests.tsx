@@ -65,7 +65,7 @@ describe("Form", () => {
 
         expect(spy).toBeCalledWith(
           { hello: "Sasha" },
-          expect.objectContaining({ target: expect.any(Object) })
+          expect.objectContaining({ target: expect.any(Object) }),
         );
 
         await expect
@@ -379,7 +379,7 @@ describe("Form", () => {
         await screen.getByText("Reset").click();
 
         expect(spy).toBeCalledWith(
-          expect.objectContaining({ target: expect.any(Object) })
+          expect.objectContaining({ target: expect.any(Object) }),
         );
 
         await expect
@@ -565,7 +565,7 @@ describe("Form", () => {
 
       expect(spy).toBeCalledWith(
         { hello: "Sasha" },
-        expect.objectContaining({ target: expect.any(Object) })
+        expect.objectContaining({ target: expect.any(Object) }),
       );
 
       await expect

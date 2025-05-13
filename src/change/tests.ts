@@ -27,12 +27,12 @@ describe("ChangesEvent", () => {
           expect(spyA).toHaveBeenCalledTimes(1);
           const [[eventA]]: any = spyA.mock.calls;
           expect(eventA.changes).toMatchChanges(
-            change.field.type | change.field.valid | change.field.commit
+            change.field.type | change.field.valid | change.field.commit,
           );
           expect(spyB).toHaveBeenCalledTimes(1);
           const [[eventB]]: any = spyB.mock.calls;
           expect(eventB.changes).toMatchChanges(
-            change.field.key | change.field.shape
+            change.field.key | change.field.shape,
           );
           resolve(void 0);
         });
@@ -72,7 +72,7 @@ describe("ChangesEvent", () => {
                 change.child.valid |
                 change.child.invalid |
                 change.subtree.valid |
-                change.subtree.invalid
+                change.subtree.invalid,
             );
             expect(spyB).toHaveBeenCalledTimes(1);
             const [[eventB]]: any = spyB.mock.calls;
@@ -81,7 +81,7 @@ describe("ChangesEvent", () => {
                 change.child.valid |
                 change.child.invalid |
                 change.subtree.valid |
-                change.subtree.invalid
+                change.subtree.invalid,
             );
             resolve(void 0);
           } catch (err) {
@@ -124,7 +124,7 @@ describe("ChangesEvent", () => {
                 change.child.attach |
                 change.child.detach |
                 change.subtree.attach |
-                change.subtree.detach
+                change.subtree.detach,
             );
             expect(spyB).toHaveBeenCalledTimes(1);
             const [[eventB]]: any = spyB.mock.calls;
@@ -133,7 +133,7 @@ describe("ChangesEvent", () => {
                 change.child.attach |
                 change.child.detach |
                 change.subtree.attach |
-                change.subtree.detach
+                change.subtree.detach,
             );
             resolve(void 0);
           } catch (err) {
@@ -285,13 +285,13 @@ describe("ChangesEvent", () => {
 
       expect(spyA).toHaveBeenCalledTimes(3);
       expect(spyA).toHaveBeenCalledWith(
-        expect.objectContaining({ context: { hello: "world" } })
+        expect.objectContaining({ context: { hello: "world" } }),
       );
       expect(spyA).toHaveBeenCalledWith(
-        expect.objectContaining({ context: { foo: "bar" } })
+        expect.objectContaining({ context: { foo: "bar" } }),
       );
       expect(spyA).toHaveBeenCalledWith(
-        expect.objectContaining({ context: {} })
+        expect.objectContaining({ context: {} }),
       );
       expect(spyB).not.toHaveBeenCalled();
     });

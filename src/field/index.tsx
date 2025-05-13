@@ -43,7 +43,7 @@ export class Field<Payload> {
   static use<Value>(
     initialValue: Value,
     // [TODO] Add tests
-    deps?: DependencyList
+    deps?: DependencyList,
   ): Field<Value> {
     const field = useMemo(() => new Field(initialValue), deps || []);
     return field;
@@ -64,7 +64,7 @@ export class Field<Payload> {
       ErrorEnable,
       ValidEnable,
       InvalidsEnable
-    >
+    >,
   ): React.ReactNode {
     const { field } = props;
     const value = field.useGet();
@@ -93,7 +93,7 @@ export class Field<Payload> {
 
   #internal: InternalState<Payload> = new InternalValueState(
     this,
-    detachedValue
+    detachedValue,
   );
 
   #initial: Payload;
@@ -167,7 +167,7 @@ export class Field<Payload> {
   }
 
   useGet<Props extends Field.UseGetProps | undefined = undefined>(
-    props?: Props
+    props?: Props,
   ): Field.UseGet<Payload, Props> {
     const watchAllMeta = !!props?.meta;
     const watchMeta =
@@ -180,7 +180,7 @@ export class Field<Payload> {
             error: !!props?.error,
             valid: !!props?.valid,
             invalids: !!props?.invalids,
-          }
+          },
     );
 
     // @ts-ignore: [TODO]
@@ -247,7 +247,7 @@ export class Field<Payload> {
   }
 
   useDirty<Enable extends boolean | undefined = undefined>(
-    enable?: Enable
+    enable?: Enable,
   ): Enable extends true | undefined ? boolean : undefined {
     // @ts-ignore: [TODO]
     return useFieldHook({
@@ -302,7 +302,7 @@ export class Field<Payload> {
     ) {
       this.#internal.forEach((field: any, key: any) =>
         // @ts-ignore: [TODO]
-        field.#commit(newInitial[key], notify)
+        field.#commit(newInitial[key], notify),
       );
     }
     this.#clearCache();
@@ -319,7 +319,7 @@ export class Field<Payload> {
   }
 
   at<Key extends keyof Payload | undefined>(
-    key: Payload extends object ? Key : never
+    key: Payload extends object ? Key : never,
     // @ts-ignore: [TODO]
   ): Payload extends object ? Field.At<Payload, Key> : void {
     if (
@@ -458,14 +458,14 @@ export class Field<Payload> {
         this.watch((_, event) => {
           if (shapeChanges(event.changes)) rerender();
         }),
-      [this.id, rerender]
+      [this.id, rerender],
     );
 
     return this as unknown as BoundField<Payload>;
   }
 
   useMeta<Props extends Field.UseMetaProps | undefined = undefined>(
-    props?: Props
+    props?: Props,
   ): Field.Meta<Props> {
     const invalids = this.useInvalids(!props || !!props.invalids);
     const valid = this.useValid(!props || !!props.valid);
@@ -480,7 +480,7 @@ export class Field<Payload> {
 
   useCompute<Computed>(
     callback: Field.ComputeCallback<Payload, Computed>,
-    deps?: DependencyList
+    deps?: DependencyList,
   ): Computed {
     // @ts-ignore: [TODO]
     return useFieldHook({
@@ -498,7 +498,7 @@ export class Field<Payload> {
   }
 
   useDecompose(
-    callback: Field.DecomposeCallback<Payload>
+    callback: Field.DecomposeCallback<Payload>,
   ): Field.Decomposed<Payload> {
     // @ts-ignore: [TODO]
     return useFieldHook({
@@ -509,7 +509,7 @@ export class Field<Payload> {
   }
 
   discriminate<Discriminator extends keyof Exclude<Payload, undefined>>(
-    discriminator: Discriminator
+    discriminator: Discriminator,
   ): Field.Discriminated<Payload, Discriminator> {
     // @ts-ignore: [TODO]
     return {
@@ -520,7 +520,7 @@ export class Field<Payload> {
   }
 
   useDiscriminate<Discriminator extends Field.DiscriminatorKey<Payload>>(
-    discriminator: Discriminator
+    discriminator: Discriminator,
   ): Field.Discriminated<Payload, Discriminator> {
     // @ts-ignore: [TODO]
     return useFieldHook({
@@ -543,7 +543,7 @@ export class Field<Payload> {
    * @returns Builder object with `from` method
    */
   into<ComputedValue>(
-    mapper: Field.IntoMapper<Payload, ComputedValue>
+    mapper: Field.IntoMapper<Payload, ComputedValue>,
   ): Field.Into<Payload, ComputedValue> {
     const computed = new ComputedField(mapper(this.get(), undefined), this);
     // [TODO] This creates a leak, so rather than holding on to the computed
@@ -569,7 +569,7 @@ export class Field<Payload> {
             ChangesEvent.context({ [contextBrand]: true }, () => {
               this.set(fromMapper(computedValue, this.get()));
             }),
-          true
+          true,
         );
         return computed;
       },
@@ -578,11 +578,11 @@ export class Field<Payload> {
 
   // [TODO] Add tests
   useInto<Computed>(
-    mapper: Field.IntoMapper<Payload, Computed>
+    mapper: Field.IntoMapper<Payload, Computed>,
   ): Field.Into<Payload, Computed> {
     const computed = useMemo(
       () => new ComputedField(mapper(this.get(), undefined), this),
-      [this.id]
+      [this.id],
     );
 
     const contextBrand = `computed-${computed.id}`;
@@ -617,20 +617,20 @@ export class Field<Payload> {
                 // Set context so we can know if the field change was triggered by
                 // the computed value and ignore it to prevent double calls.
                 ChangesEvent.context({ [contextBrand]: true }, () =>
-                  this.set(fromMapper(computedValue, this.get()))
-                )
+                  this.set(fromMapper(computedValue, this.get())),
+                ),
               ),
-            [this.id, computed, fromMapper]
+            [this.id, computed, fromMapper],
           );
           return computed;
         },
       }),
-      [this.id, computed]
+      [this.id, computed],
     );
   }
 
   narrow<Narrowed extends Payload>(
-    callback: Field.NarrowCallback<Payload, Narrowed>
+    callback: Field.NarrowCallback<Payload, Narrowed>,
   ): Field<Narrowed> | undefined {
     let matching = false;
     const payload = this.get();
@@ -645,7 +645,7 @@ export class Field<Payload> {
   }
 
   useNarrow<Narrowed extends Payload>(
-    callback: Field.NarrowCallback<Payload, Narrowed>
+    callback: Field.NarrowCallback<Payload, Narrowed>,
   ): Field<Narrowed> | undefined {
     return useFieldHook({
       field: this as Field<any>,
@@ -668,7 +668,7 @@ export class Field<Payload> {
    */
   static useEnsure<Payload, Result = undefined>(
     field: Field<Payload> | EnsoUtils.Falsy,
-    map?: Field.MapField<Payload, Result>
+    map?: Field.MapField<Payload, Result>,
   ): Result extends undefined
     ? Field<Payload | undefined>
     : Field<Result | undefined> {
@@ -718,7 +718,7 @@ export class Field<Payload> {
 
   // @ts-ignore: This is fine
   push: Payload extends Array<infer Item> ? (item: Item) => number : never = (
-    item: Payload extends Array<infer Item> ? Item : never
+    item: Payload extends Array<infer Item> ? Item : never,
   ) => {
     if (!(this.#internal instanceof InternalArrayState))
       throw new Error("State is not an array");
@@ -733,7 +733,7 @@ export class Field<Payload> {
     ? (index: number, item: Item) => number
     : never = (
     index: number,
-    item: Payload extends Array<infer Item> ? Item : never
+    item: Payload extends Array<infer Item> ? Item : never,
   ) => {
     if (!(this.#internal instanceof InternalArrayState))
       throw new Error("State is not an array");
@@ -779,7 +779,7 @@ export class Field<Payload> {
   //#region Control
 
   control<Element extends HTMLElement>(
-    props?: Field.InputProps<Element>
+    props?: Field.InputProps<Element>,
   ): Field.Registration<Element> {
     this.#customRef = props?.ref;
     this.#customOnBlur = props?.onBlur;
@@ -849,7 +849,7 @@ export class Field<Payload> {
   }
 
   useError<Enable extends boolean | undefined = undefined>(
-    enable?: Enable
+    enable?: Enable,
   ): Enable extends true | undefined ? Field.Error | undefined : undefined {
     return useFieldHook({
       enable,
@@ -902,7 +902,7 @@ export class Field<Payload> {
   }
 
   useInvalids<Enable extends boolean | undefined = undefined>(
-    enable?: Enable
+    enable?: Enable,
   ): Enable extends true | undefined ? Field.Invalids : undefined {
     // @ts-ignore: [TODO]
     return useFieldHook({
@@ -914,7 +914,7 @@ export class Field<Payload> {
           next === prev ||
           (next.size === prev?.size &&
             Array.from(next).every(
-              ([field, error]) => prev?.get(field) === error
+              ([field, error]) => prev?.get(field) === error,
             ))
         ),
     });
@@ -925,7 +925,7 @@ export class Field<Payload> {
   }
 
   useValid<Enable extends boolean | undefined = undefined>(
-    enable?: Enable
+    enable?: Enable,
   ): Enable extends true | undefined ? boolean : undefined {
     // @ts-ignore: [TODO]
     return useFieldHook({
@@ -948,17 +948,17 @@ export class Field<Payload> {
 
   validate<Context>(
     validator: Field.Validator<Payload, Context>,
-    context: Context
+    context: Context,
   ): Promise<void>;
 
   validate(
     validator: Field.Validator<Payload, undefined>,
-    context?: undefined
+    context?: undefined,
   ): Promise<void>;
 
   async validate<Context>(
     validator: Field.Validator<Payload, undefined>,
-    context?: Context | undefined
+    context?: Context | undefined,
   ) {
     this.expunge();
     this.withhold();
@@ -1070,7 +1070,7 @@ export namespace Field {
   };
 
   export type TryFn<Payload> = <Key extends keyof Payload>(
-    key: Key
+    key: Key,
   ) => TryState<
     EnsoUtils.IsStaticKey<Payload, Key> extends true
       ? Payload[Key]
@@ -1091,7 +1091,7 @@ export namespace Field {
 
   export type WatchCallback<Payload> = (
     payload: Payload,
-    event: ChangesEvent
+    event: ChangesEvent,
   ) => void;
 
   export type Unwatch = () => void;
@@ -1133,7 +1133,7 @@ export namespace Field {
   //#region Mapping
 
   export type ComputeCallback<Payload, Computed> = (
-    payload: Payload
+    payload: Payload,
   ) => Computed;
 
   export type Decomposed<Payload> = Payload extends Payload
@@ -1145,7 +1145,7 @@ export namespace Field {
 
   export type DecomposeCallback<Payload> = (
     newPayload: Payload,
-    prevPayload: Payload
+    prevPayload: Payload,
   ) => boolean;
 
   export type Discriminated<
@@ -1180,27 +1180,27 @@ export namespace Field {
      * @returns Computed field
      */
     from(
-      mapper: FromMapper<Value, ComputedValue>
+      mapper: FromMapper<Value, ComputedValue>,
     ): ComputedField<Value, ComputedValue>;
   }
 
   export type IntoMapper<Value, ComputedValue> = (
     value: Value,
-    computedValue: ComputedValue | undefined
+    computedValue: ComputedValue | undefined,
   ) => ComputedValue;
 
   export type FromMapper<Value, ComputedValue> = (
     computedValue: ComputedValue,
-    value: Value
+    value: Value,
   ) => Value;
 
   export type NarrowCallback<Payload, Narrowed> = (
     payload: Payload,
-    wrap: NarrowWrap
+    wrap: NarrowWrap,
   ) => NarrowWrapper<Narrowed> | EnsoUtils.Falsy;
 
   export type NarrowWrap = <Payload>(
-    payload: Payload
+    payload: Payload,
   ) => NarrowWrapper<Payload>;
 
   export type NarrowWrapper<Payload> = {
@@ -1215,7 +1215,7 @@ export namespace Field {
   ];
 
   export type MapField<Payload, Return> = (
-    field: Field<Payload>
+    field: Field<Payload>,
   ) => Field<Return>;
 
   //#endregion
@@ -1232,12 +1232,12 @@ export namespace Field {
   export type ObjectForEach<Payload extends object> = (
     callback: <Key extends keyof Payload>(
       item: Field<Payload[Key]>,
-      key: Key
-    ) => void
+      key: Key,
+    ) => void,
   ) => void;
 
   export type ArrayForEach<Payload extends Array<any>> = (
-    callback: (item: Field<Payload[number]>, index: number) => void
+    callback: (item: Field<Payload[number]>, index: number) => void,
   ) => void;
 
   export type MapFn<Payload> =
@@ -1250,12 +1250,12 @@ export namespace Field {
   export type ObjectMap<Payload extends object> = <Return>(
     callback: <Key extends keyof Payload>(
       item: Field<Payload[Key]>,
-      key: Key
-    ) => Return
+      key: Key,
+    ) => Return,
   ) => Return[];
 
   export type ArrayMap<Payload extends Array<any>> = <Return>(
-    callback: (item: Field<Payload[number]>, index: number) => Return
+    callback: (item: Field<Payload[number]>, index: number) => Return,
   ) => Return[];
 
   export type RemoveFn<Payload> = Payload extends object
@@ -1264,7 +1264,7 @@ export namespace Field {
 
   export type ArrayPredicate<Item, Return> = (
     item: Field<Item>,
-    index: number
+    index: number,
   ) => Return;
 
   export type FindFn<Payload> =
@@ -1433,7 +1433,7 @@ export class ComputedField<Payload, Computed> extends Field<Computed> {
 
 export abstract class InternalState<Payload> {
   static detect(
-    value: any
+    value: any,
   ):
     | typeof InternalArrayState
     | typeof InternalObjectState
@@ -1593,7 +1593,7 @@ export class InternalObjectState<
         this.#children.set(
           key,
           // @ts-ignore: [TODO]
-          undefinedState || new Field(value, { key, field: this.external })
+          undefinedState || new Field(value, { key, field: this.external }),
         );
         changes |= change.child.attach;
       }
@@ -1607,7 +1607,7 @@ export class InternalObjectState<
 
   get(): Payload {
     return Object.fromEntries(
-      Array.from(this.#children.entries()).map(([k, v]) => [k, v.get()])
+      Array.from(this.#children.entries()).map(([k, v]) => [k, v.get()]),
     ) as Payload;
   }
 
@@ -1716,26 +1716,26 @@ export class InternalObjectState<
   forEach(
     callback: <Key extends keyof Payload>(
       item: Field<Payload[Key]>,
-      index: Key
-    ) => void
+      index: Key,
+    ) => void,
   ) {
     this.#children.forEach((field, key) =>
       // @ts-ignore: [TODO]
-      callback(field, key as keyof Payload)
+      callback(field, key as keyof Payload),
     );
   }
 
   map<Return>(
     callback: <Key extends keyof Payload>(
       item: Field<Payload[Key]>,
-      index: Key
-    ) => Return
+      index: Key,
+    ) => Return,
   ): Return[] {
     // @ts-ignore: [TODO]
     const result = [];
     this.#children.forEach((field, key) =>
       // @ts-ignore: [TODO]
-      result.push(callback(field, key as keyof Payload))
+      result.push(callback(field, key as keyof Payload)),
     );
     // @ts-ignore: [TODO]
     return result;
@@ -1944,7 +1944,7 @@ export class InternalArrayState<
   }
 
   map<Return>(
-    callback: (item: Payload[number], index: number) => Return
+    callback: (item: Payload[number], index: number) => Return,
   ): Return[] {
     return this.#children.map(callback);
   }
@@ -1965,7 +1965,7 @@ export class InternalArrayState<
       index,
       0,
       // @ts-ignore: This is fine
-      new Field(item, { key: String(index), field: this.external })
+      new Field(item, { key: String(index), field: this.external }),
     );
 
     this.#children.slice(index).forEach((item, index) => {
@@ -1976,14 +1976,14 @@ export class InternalArrayState<
   }
 
   find(
-    predicate: Field.TestPredicate<Payload[number]>
+    predicate: Field.TestPredicate<Payload[number]>,
   ): Field<Payload[number]> | undefined {
     // @ts-ignore: This is fine
     return this.#children.find(predicate);
   }
 
   filter(
-    predicate: Field.TestPredicate<Payload[number]>
+    predicate: Field.TestPredicate<Payload[number]>,
   ): Field<Payload[number]>[] {
     // @ts-ignore: This is fine
     return this.#children.filter(predicate);
@@ -2004,7 +2004,7 @@ export class UndefinedStateRegistry {
   constructor(external: Field<any>) {
     this.#external = external;
     this.#registry = new FinalizationRegistry<string>((key) =>
-      this.#refsMap.delete(key)
+      this.#refsMap.delete(key),
     );
   }
 
@@ -2057,7 +2057,7 @@ export type DetachedValue = typeof detachedValue;
 //#region PoC
 
 export function useUndefinedStringField<Type extends string>(
-  field: Field<Type | undefined>
+  field: Field<Type | undefined>,
 ): Field<Type> {
   return field
     .useInto((value) => value ?? ("" as Type))
@@ -2091,13 +2091,13 @@ interface UseFieldHookProps<Value, Result = Value> {
 
 function defaultShouldRender<Value>(
   prev: Value | undefined,
-  next: Value
+  next: Value,
 ): boolean {
   return prev !== next;
 }
 
 function useFieldHook<Value, Result = Value>(
-  props: UseFieldHookProps<Value, Result>
+  props: UseFieldHookProps<Value, Result>,
 ): Result | undefined {
   // Defaults to true
   // [TODO] Can I use the default value instead of setting it to undefined?
@@ -2114,7 +2114,7 @@ function useFieldHook<Value, Result = Value>(
 
   const initial = useMemo(
     () => (enable ? getValue() : undefined),
-    [field.id, enable]
+    [field.id, enable],
   );
   const valueRef = useRef({ id: field.id, value: initial, enable });
 

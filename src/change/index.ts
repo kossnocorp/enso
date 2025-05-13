@@ -59,7 +59,7 @@ export class ChangesEvent extends Event {
       newChanges &= ~fieldChange.attach;
 
     const newContext = structuredClone(
-      Object.assign({}, batchedContext, currentContext)
+      Object.assign({}, batchedContext, currentContext),
     );
 
     this.#batch.set(target, [newChanges, newContext]);
@@ -101,7 +101,7 @@ export class ChangesEvent extends Event {
    */
   static context<Result>(
     context: ChangesEvent.Context,
-    callback: () => Result
+    callback: () => Result,
   ): Result extends Promise<infer PromisedResult>
     ? Promise<PromisedResult>
     : Result {
@@ -279,7 +279,7 @@ if (process.env.NODE_ENV !== "production") {
   const bits = BigInt(Object.keys(fieldChange).length);
   if (bits > changesBits)
     throw new Error(
-      `Field changes bits overflow. Maximum changes bits is ${changesBits} but got ${bits}.`
+      `Field changes bits overflow. Maximum changes bits is ${changesBits} but got ${bits}.`,
     );
 }
 
@@ -479,7 +479,7 @@ export function shapeChanges(changes: FieldChange): FieldChange {
   return (
     maskedChanges(
       changes,
-      change.child.attach | change.child.detach | change.child.key
+      change.child.attach | change.child.detach | change.child.key,
     ) && fieldChange.shape
   );
 }
@@ -503,7 +503,7 @@ export function structuralChanges(changes: FieldChange): FieldChange {
  */
 export function maskedChanges(
   changes: FieldChange,
-  mask: FieldChange
+  mask: FieldChange,
 ): FieldChange {
   return changes & mask;
 }

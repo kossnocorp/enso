@@ -53,7 +53,7 @@ export class FieldRef<Payload> {
   }
 
   discriminate<Discriminator extends keyof Exclude<Payload, undefined>>(
-    discriminator: Discriminator
+    discriminator: Discriminator,
   ): FieldRef.Discriminated<Payload, Discriminator> {
     // @ts-ignore: [TODO]
     return {
@@ -147,12 +147,12 @@ export namespace FieldRef {
   export type ObjectForEach<Payload extends object> = (
     callback: <Key extends keyof Payload>(
       item: FieldRef<Payload[Key]>,
-      key: Key
-    ) => void
+      key: Key,
+    ) => void,
   ) => void;
 
   export type ArrayForEach<Payload extends Array<any>> = (
-    callback: (item: FieldRef<Payload[number]>, index: number) => void
+    callback: (item: FieldRef<Payload[number]>, index: number) => void,
   ) => void;
 
   //#endregion

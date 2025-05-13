@@ -10,7 +10,7 @@ import { useRerender } from "../hooks/rerender.ts";
 export class Form<Payload> {
   static use<Payload>(
     value: Payload,
-    options?: Form.Options<Payload>
+    options?: Form.Options<Payload>,
   ): Form<Payload> {
     const id = useId();
     const form = useMemo(() => new Form(id, value, options), [id]);
@@ -27,14 +27,14 @@ export class Form<Payload> {
               formChange.formSubmitting |
                 formChange.formSubmitted |
                 formChange.formValid |
-                formChange.formInvalid
+                formChange.formInvalid,
             )
           )
             return;
 
           rerender();
         }),
-      [form, rerender]
+      [form, rerender],
     );
 
     form.#field.useBind();
@@ -43,7 +43,7 @@ export class Form<Payload> {
   }
 
   static Component<Payload, IsServer extends boolean | undefined = undefined>(
-    props: Form.ComponentProps<Payload, IsServer>
+    props: Form.ComponentProps<Payload, IsServer>,
   ): React.ReactElement<HTMLFormElement> {
     const { form, onSubmit, onReset, server, children, ...restProps } = props;
     return (
@@ -70,7 +70,7 @@ export class Form<Payload> {
         this.#valid ||
         !maskedChanges(
           event.changes,
-          change.field.blur | change.child.blur | change.subtree.blur
+          change.field.blur | change.child.blur | change.subtree.blur,
         )
       )
         return;
@@ -138,7 +138,7 @@ export class Form<Payload> {
   //#region Mapping
 
   useCompute<Computed>(
-    callback: Field.ComputeCallback<Payload, Computed>
+    callback: Field.ComputeCallback<Payload, Computed>,
   ): Computed {
     return this.#field.useCompute(callback);
   }
@@ -148,43 +148,43 @@ export class Form<Payload> {
   }
 
   useDecompose(
-    callback: Field.DecomposeCallback<Payload>
+    callback: Field.DecomposeCallback<Payload>,
   ): Field.Decomposed<Payload> {
     return this.#field.useDecompose(callback);
   }
 
   discriminate<Discriminator extends keyof Exclude<Payload, undefined>>(
-    discriminator: Discriminator
+    discriminator: Discriminator,
   ): Field.Discriminated<Payload, Discriminator> {
     return this.#field.discriminate(discriminator);
   }
 
   useDiscriminate<Discriminator extends keyof Exclude<Payload, undefined>>(
-    discriminator: Discriminator
+    discriminator: Discriminator,
   ) {
     return this.#field.useDiscriminate(discriminator);
   }
 
   into<Computed>(
-    intoCallback: Field.IntoMapper<Payload, Computed>
+    intoCallback: Field.IntoMapper<Payload, Computed>,
   ): Field.Into<Payload, Computed> {
     return this.#field.into(intoCallback);
   }
 
   useInto<Computed>(
-    intoCallback: Field.IntoMapper<Payload, Computed>
+    intoCallback: Field.IntoMapper<Payload, Computed>,
   ): Field.Into<Payload, Computed> {
     return this.#field.useInto(intoCallback);
   }
 
   narrow<Narrowed extends Payload>(
-    callback: Field.NarrowCallback<Payload, Narrowed>
+    callback: Field.NarrowCallback<Payload, Narrowed>,
   ): Field<Narrowed> | undefined {
     return this.#field.narrow(callback);
   }
 
   useNarrow<Narrowed extends Payload>(
-    callback: Field.NarrowCallback<Payload, Narrowed>
+    callback: Field.NarrowCallback<Payload, Narrowed>,
   ): Field<Narrowed> | undefined {
     return this.#field.useNarrow(callback);
   }
@@ -235,7 +235,7 @@ export class Form<Payload> {
       this.#valid = valid;
       this.#field.trigger(
         valid ? formChange.formValid : formChange.formInvalid,
-        false
+        false,
       );
     }
 
@@ -245,7 +245,7 @@ export class Form<Payload> {
   //#endregion
 
   control<IsServer extends boolean | undefined = undefined>(
-    props?: Form.ControlProps<Payload, IsServer> | undefined
+    props?: Form.ControlProps<Payload, IsServer> | undefined,
   ): Form.Control {
     const { onSubmit, onReset, server } = props || {};
     return {
@@ -265,7 +265,7 @@ export class Form<Payload> {
   async #submit<IsServer extends boolean | undefined = undefined>(
     event: React.FormEvent<HTMLFormElement>,
     callback: Form.ControlOnSubmit<Payload, IsServer>,
-    server: IsServer
+    server: IsServer,
   ) {
     event.preventDefault();
     event.stopPropagation();
@@ -306,7 +306,7 @@ export class Form<Payload> {
   }
 
   at<Key extends keyof Payload>(
-    key: Payload extends object ? Key : never
+    key: Payload extends object ? Key : never,
   ): Payload extends object ? Field.At<Payload, Key> : void {
     return this.#field.at(key);
   }
@@ -330,11 +330,11 @@ export namespace Form {
     ? (payload: Payload) => unknown | Promise<unknown>
     : (
         payload: Payload,
-        event: React.FormEvent<HTMLFormElement>
+        event: React.FormEvent<HTMLFormElement>,
       ) => unknown | Promise<unknown>;
 
   export type ControlOnReset = (
-    event: React.FormEvent<HTMLFormElement>
+    event: React.FormEvent<HTMLFormElement>,
   ) => unknown | Promise<unknown>;
 
   export interface ComponentProps<Payload, IsServer extends boolean | undefined>
@@ -345,7 +345,7 @@ export namespace Form {
   }
 
   export type ControlCallback = (
-    submit: (event: React.FormEvent<HTMLFormElement>) => void
+    submit: (event: React.FormEvent<HTMLFormElement>) => void,
   ) => any;
 
   export interface Control {

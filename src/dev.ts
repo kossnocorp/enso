@@ -15,7 +15,7 @@ export function devStringifyChanges(changes: FieldChange): string {
 
 export function devHumanizeChanges(
   changes: FieldChange,
-  extraChange?: Record<string, bigint>
+  extraChange?: Record<string, bigint>,
 ): string {
   if (changes === 0n) return "none";
   const humanized: string[] = [];
