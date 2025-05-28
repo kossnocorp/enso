@@ -1,5 +1,6 @@
 "use client";
 
+import { nanoid } from "nanoid";
 import React, { useEffect, useId, useMemo } from "react";
 import { change, maskedChanges } from "../change/index.ts";
 import { Field } from "../field/index.tsx";
@@ -77,6 +78,14 @@ export class Form<Payload> {
 
       this.validate();
     });
+  }
+
+  static create<Payload>(
+    initial: Payload,
+    options?: Form.Options<Payload>,
+  ): Form<Payload> {
+    const id = nanoid();
+    return new Form(id, initial, options);
   }
 
   //#region Attributes
