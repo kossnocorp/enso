@@ -310,6 +310,25 @@ export class Field<Payload> {
     if (notify && wasDirty) this.trigger(change.field.commit, true);
   }
 
+  /**
+   * Paves the field with the provided fallback value if the field is undefined
+   * or null. It ensures that the field has a value, which is useful when
+   * working with deeply nested optional objects, i.e., settings. It allows
+   * creating the necessary fields to assign validation errors to them, even if
+   * the parents and the field itself are not set.
+   *
+   * @param fallback - Fallback value to set if the field is undefined or null.
+   *
+   * @returns Field without null or undefined value in the type.
+   */
+  pave(
+    fallback: Exclude<Payload, null | undefined>,
+  ): Field<Exclude<Payload, null | undefined>> {
+    const value = this.get();
+    if (value === undefined || value === null) this.set(fallback);
+    return this as Field<Exclude<Payload, null | undefined>>;
+  }
+
   //#endregion
 
   //#region Tree

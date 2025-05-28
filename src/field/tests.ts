@@ -1253,6 +1253,31 @@ describe("Field", () => {
         describe.todo("subtree");
       });
     });
+
+    describe("pave", () => {
+      it("returns field set to the given value if it's null or undefined", () => {
+        const field = new Field<string | undefined>(undefined);
+        const pavedField = field.pave("Hello");
+        expect(pavedField.get()).toBe("Hello");
+        expect(pavedField).toBe(field);
+      });
+
+      it("returns same field if it's already set", () => {
+        const field = new Field<string | undefined>("Hi");
+        const pavedField = field.pave("Hello");
+        expect(pavedField.get()).toBe("Hi");
+      });
+
+      it("allows to pave through nested fields", () => {
+        const field = new Field<
+          { name?: { first?: string; last?: string } } | undefined
+        >({});
+        field.pave({}).$.name.pave({}).$.first.pave("Alexander");
+        expect(field.get()).toEqual({
+          name: { first: "Alexander" },
+        });
+      });
+    });
   });
 
   describe("tree", () => {
