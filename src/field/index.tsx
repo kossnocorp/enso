@@ -410,6 +410,15 @@ export class Field<Payload> {
 
   #withholded: [FieldChange, boolean] | undefined;
 
+  /**
+   * Withholds the field changes until `unleash` is called. It allows to batch
+   * changes when submittiing a form and send the submitting even to the field
+   * along with the submitting state.
+   *
+   * [TODO] I added automatic batching of changes, so all the changes are send
+   * after the current stack is cleared. Check if this functionality is still
+   * needed.
+   */
   withhold() {
     this.#withholded = [0n, false];
     this.#internal.withhold();
@@ -975,12 +984,21 @@ export class Field<Payload> {
     context?: undefined,
   ): Promise<void>;
 
+  /**
+   * Validates the field using the provided validator function.
+   * It clears all the previous errors and withholds any changes until
+   * the validation is resolved.
+   */
   async validate<Context>(
     validator: Field.Validator<Payload, undefined>,
     context?: Context | undefined,
   ) {
     this.expunge();
     this.withhold();
+    // [TODO] Figure out what is the point of the sending reference here instead
+    // of the field itself. It makes paving during validation impossible and
+    // prevent an advanced validation use-case possible. If it is solely for
+    // "safety" then it is not worth it.
     // @ts-ignore: [TODO]
     await validator(FieldRef.get(this), context);
     this.unleash();
