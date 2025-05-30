@@ -28,14 +28,12 @@ export { FieldRef };
 
 //#region Field
 
-const clearSymbol = Symbol();
-
 const externalSymbol = Symbol();
 
 export class Field<Payload> {
   /**
    * Creates and memoizes a new field instance from the provided initial value.
-   * Just like `useState`, it will not reacreate the field on the value change.
+   * Just like `useState`, it will not recreate the field on the value change.
    *
    * @param initialValue - Initial value of the field.
    * @returns Memoized field instance.
