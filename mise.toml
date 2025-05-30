@@ -1,0 +1,9 @@
+[tools]
+# Stack
+node = { version = "latest", postinstall = 'corepack enable' }
+# Tools
+cargo-binstall = "latest"
+"cargo:just" = "latest"
+
+[settings]
+experimental = true
