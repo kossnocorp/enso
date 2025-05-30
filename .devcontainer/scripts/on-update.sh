@@ -13,3 +13,6 @@ mise install
 # Node.js
 corepack install
 pnpm install
+
+# Playwright
+pnpm exec playwright install --with-deps
