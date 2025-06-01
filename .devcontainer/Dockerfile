@@ -25,7 +25,7 @@ RUN curl -sS https://starship.rs/install.sh | sh -s -- --yes \
 
 # mise-en-place
 RUN curl https://mise.run | sh \
-        && echo "mise activate fish | source" >> ~/.config/fish/config.fish \
+        && echo "if status is-interactive\n  mise activate fish | source\nelse\n  mise activate fish --shims | source\nend\n" >> ~/.config/fish/config.fish \
         && PATH="$HOME/.local/bin:$PATH" \
         && mise use -g usage \
         && mise completion fish > ~/.config/fish/completions/mise.fish
