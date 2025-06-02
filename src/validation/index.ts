@@ -4,10 +4,6 @@ export class ValidationTree {
   #errors: Field.Error[] = [];
   #tree: ValidationTree.Node = ValidationTree.node();
 
-  tree(): ValidationTree.Node {
-    return this.#tree;
-  }
-
   at(path: readonly string[]): Field.Error[] {
     let node = this.#tree;
     for (const key of path) {
@@ -18,7 +14,7 @@ export class ValidationTree {
     return Array.from(
       node.errors
         .entries()
-        .filter(([index, direct]) => direct)
+        .filter(([_, direct]) => direct)
         .map(([index]) => this.#errors[index]!),
     );
   }
@@ -71,29 +67,6 @@ export class ValidationTree {
     return index;
   }
 
-  set(path: readonly string[], error: Field.Error): ValidationTree.Index {
-    const index = (this.#errors.push(error) - 1) as ValidationTree.Index;
-
-    let node = this.#tree;
-    const pathErrors = [];
-    for (const key of path) {
-      node.errors.set(index, false);
-      pathErrors.push(node.errors);
-      node = node.children[key] ??= ValidationTree.node();
-    }
-
-    const existingErrors = node.errors;
-    node.errors = new Map([[index, true]]);
-
-    pathErrors.forEach((errors) => {
-      existingErrors
-        .keys()
-        .forEach((existingIndex) => errors.delete(existingIndex));
-    });
-
-    return index;
-  }
-
   clear(path: string[]): void {
     let node = this.#tree;
     const pathErrors: Map<ValidationTree.Index, boolean>[] = [];
@@ -112,11 +85,6 @@ export class ValidationTree {
 
     node.errors.clear();
     node.children = {};
-  }
-
-  reset(): void {
-    this.#errors = new Array(this.#errors.length);
-    this.#tree = ValidationTree.node();
   }
 
   static node(): ValidationTree.Node {

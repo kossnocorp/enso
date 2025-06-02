@@ -14,7 +14,7 @@ describe(ValidationTree, () => {
       const error2 = { message: "Error 2" };
       const error3 = { message: "Error 3" };
       tree.add(["a", "b"], error1);
-      tree.set(["a", "b", "c"], error2);
+      tree.add(["a", "b", "c"], error2);
       tree.add(["a", "b", "c"], error3);
       expect(tree.at(["a", "b"])).toEqual([error1]);
       expect(tree.at(["a", "b", "c"])).toEqual([error2, error3]);
@@ -92,38 +92,6 @@ describe(ValidationTree, () => {
     });
   });
 
-  describe(ValidationTree.prototype.set, () => {
-    it("sets error at given path", () => {
-      const tree = new ValidationTree();
-      const error = { message: "Error message" };
-      tree.set(["a", "b", "c"], error);
-      expect(tree.nested(["a", "b", "c"])[0]![1]).toBe(error);
-    });
-
-    it("overwrites existing errors at path", () => {
-      const tree = new ValidationTree();
-      tree.add(["a", "b", "c"], { message: "Old error" });
-      const newError = { message: "New error" };
-      tree.set(["a", "b", "c"], newError);
-      const errors = tree.nested(["a", "b", "c"]);
-      expect(errors[0]![1]).toBe(newError);
-      expect(errors).toHaveLength(1);
-    });
-
-    it("overwrites existing errors along the path", () => {
-      const tree = new ValidationTree();
-      tree.add(["a", "b", "c"], { message: "Old error" });
-      const newError = { message: "New error" };
-      tree.set(["a", "b", "c"], newError);
-      expect(tree.nested(["a"])).toEqual([
-        [["b", "c"], { message: "New error" }],
-      ]);
-      expect(tree.nested(["a", "b"])).toEqual([
-        [["c"], { message: "New error" }],
-      ]);
-    });
-  });
-
   describe(ValidationTree.prototype.clear, () => {
     it("clears errors at the given path", () => {
       const tree = new ValidationTree();
@@ -141,25 +109,6 @@ describe(ValidationTree, () => {
       tree.add(["e"], { message: "Error 3" });
       tree.clear([]);
       expect(tree.nested([])).toHaveLength(0);
-    });
-  });
-
-  describe(ValidationTree.prototype.reset, () => {
-    it("resets the tree", () => {
-      const tree = new ValidationTree();
-      tree.add(["a", "b"], { message: "Error" });
-      expect(tree.nested(["a", "b"])).toHaveLength(1);
-      tree.reset();
-      expect(tree.nested(["a", "b"])).toHaveLength(0);
-    });
-
-    it("preserves the index after reset", () => {
-      const tree = new ValidationTree();
-      let index = tree.add(["a", "b"], { message: "Error" });
-      expect(index).toBe(0);
-      tree.reset();
-      index = tree.add(["a", "b"], { message: "Error" });
-      expect(index).toBe(1);
     });
   });
 });
