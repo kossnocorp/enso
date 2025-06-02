@@ -64,7 +64,7 @@ export class Form<Payload> {
   constructor(id: string, initial: Payload, options?: Form.Options<Payload>) {
     this.#id = id;
     this.#field = new Field(initial);
-    this.#validate = options?.validate;
+    this.#validator = options?.validate;
 
     this.#field.watch((_, event) => {
       if (
@@ -162,13 +162,13 @@ export class Form<Payload> {
     return this.#field.useDecompose(callback);
   }
 
-  discriminate<Discriminator extends keyof Exclude<Payload, undefined>>(
+  discriminate<Discriminator extends keyof NonUndefined<Payload>>(
     discriminator: Discriminator,
   ): Field.Discriminated<Payload, Discriminator> {
     return this.#field.discriminate(discriminator);
   }
 
-  useDiscriminate<Discriminator extends keyof Exclude<Payload, undefined>>(
+  useDiscriminate<Discriminator extends keyof NonUndefined<Payload>>(
     discriminator: Discriminator,
   ) {
     return this.#field.useDiscriminate(discriminator);
@@ -202,10 +202,6 @@ export class Form<Payload> {
 
   //#region Errors
 
-  get invalids() {
-    return this.#field.invalids;
-  }
-
   get valid() {
     return this.#field.valid;
   }
@@ -219,7 +215,7 @@ export class Form<Payload> {
    * The validation function provided to the form. It gets called when the form
    * is submitted. If the validation fails, the form does not submit.
    */
-  #validate: Field.Validator<Payload, undefined> | undefined;
+  #validator: Field.Validator<Payload, undefined> | undefined;
 
   /**
    * @private
@@ -231,9 +227,9 @@ export class Form<Payload> {
   #valid = true;
 
   async validate() {
-    // Even if the validate function is not provided, we still want to expunge
+    // Even if the validate function is not provided, we still want to clear
     // the errors, so we call the validate method with an empty function.
-    await this.#field.validate(this.#validate || (() => {}));
+    await this.#field.validate(this.#validator || (() => {}));
 
     // If we're currently submitting the form, we want to send the submitting
     // event to the field along with the submitting state.
@@ -279,7 +275,7 @@ export class Form<Payload> {
     event.preventDefault();
     event.stopPropagation();
 
-    // We set it before the validation to make it withold sending the changes
+    // We set it before the validation to make it withhold sending the changes
     this.#submitting = true;
 
     if (!(await this.validate())) {
@@ -303,7 +299,7 @@ export class Form<Payload> {
         callback(values)
       : callback(values, event));
 
-    // Commit unless the callback explicetly returned false
+    // Commit unless the callback explicitly returned false
     if (result !== false) this.commit();
 
     this.#submitting = false;

@@ -507,8 +507,8 @@ describe("Form", () => {
             <Form.Component form={form} onSubmit={spy}>
               <Field.Component
                 field={form.$.hello}
-                error
-                render={(control, { error }) => {
+                errors
+                render={(control, { errors }) => {
                   return (
                     <div>
                       <input
@@ -519,7 +519,7 @@ describe("Form", () => {
                         data-testid="hello-input"
                       />
 
-                      {error && <div data-testid="error">{error.message}</div>}
+                      <div data-testid="errors">{joinErrors(errors)}</div>
                     </div>
                   );
                 }}
@@ -533,7 +533,7 @@ describe("Form", () => {
 
       const screen = render(<Component />);
 
-      await expect.element(screen.getByTestId("error")).not.toBeInTheDocument();
+      await expect.element(screen.getByTestId("errors")).toBeEmptyDOMElement();
 
       await userEvent.fill(screen.getByTestId("hello-input"), "");
 
@@ -546,7 +546,7 @@ describe("Form", () => {
       expect(spy).not.toBeCalled();
 
       await expect
-        .element(screen.getByTestId("error"))
+        .element(screen.getByTestId("errors"))
         .toHaveTextContent("Hello is required");
 
       await expect
@@ -561,7 +561,7 @@ describe("Form", () => {
 
       await screen.getByText("Submit").click();
 
-      await expect.element(screen.getByTestId("error")).not.toBeInTheDocument();
+      await expect.element(screen.getByTestId("errors")).toBeEmptyDOMElement();
 
       expect(spy).toBeCalledWith(
         { hello: "Sasha" },
@@ -587,19 +587,17 @@ describe("Form", () => {
             <Form.Component form={form} onSubmit={spy}>
               <Field.Component
                 field={form.$.hello}
-                error
-                render={(control, { error }) => {
+                errors
+                render={(control, { errors }) => {
                   return (
                     <div>
                       <input
                         {...control}
-                        onChange={(e) => {
-                          control.onChange(e.target.value);
-                        }}
+                        onChange={(e) => control.onChange(e.target.value)}
                         data-testid="hello-input"
                       />
 
-                      {error && <div data-testid="error">{error.message}</div>}
+                      <div data-testid="errors">{joinErrors(errors)}</div>
                     </div>
                   );
                 }}
@@ -613,7 +611,7 @@ describe("Form", () => {
 
       const screen = render(<Component />);
 
-      await expect.element(screen.getByTestId("error")).not.toBeInTheDocument();
+      await expect.element(screen.getByTestId("errors")).toBeEmptyDOMElement();
 
       await userEvent.fill(screen.getByTestId("hello-input"), "");
       (screen.getByTestId("hello-input").element() as HTMLInputElement).blur();
@@ -623,24 +621,13 @@ describe("Form", () => {
       expect(spy).not.toBeCalled();
 
       await expect
-        .element(screen.getByTestId("error"))
+        .element(screen.getByTestId("errors"))
         .toHaveTextContent("Hello is required");
 
       await userEvent.fill(screen.getByTestId("hello-input"), "Sasha");
       (screen.getByTestId("hello-input").element() as HTMLInputElement).blur();
 
-      return new Promise((resolve, reject) => {
-        setTimeout(async () => {
-          try {
-            await expect
-              .element(screen.getByTestId("error"))
-              .not.toBeInTheDocument();
-            resolve(void 0);
-          } catch (err) {
-            reject(err);
-          }
-        });
-      });
+      await expect.element(screen.getByTestId("errors")).toBeEmptyDOMElement();
     });
   });
 });
@@ -656,5 +643,14 @@ interface Hello {
 }
 
 function validateHello(ref: FieldRef<Hello>) {
-  if (!ref.$.hello.get().trim()) ref.$.hello.setError("Hello is required");
+  if (!ref.$.hello.get().trim()) ref.$.hello.addError("Hello is required");
+}
+
+function joinErrors(errors: Field.Error[] | undefined) {
+  if (!errors) return "";
+  return errors.map((error) => error.message).join(", ");
+}
+
+function postpone() {
+  return new Promise<void>((resolve) => setTimeout(resolve));
 }

@@ -208,16 +208,6 @@ describe("Form", () => {
   });
 
   describe("errors", () => {
-    it("delegates invalids", () => {
-      const invalids = [] as any;
-      const spy = vi
-        .spyOn(Field.prototype, "invalids", "get")
-        .mockReturnValue(invalids);
-      const form = new Form(nanoid(), 42);
-      expect(form.invalids).toBe(invalids);
-      expect(spy).toHaveBeenCalled();
-    });
-
     it("delegates valid", () => {
       const spy = vi
         .spyOn(Field.prototype, "valid", "get")
@@ -243,11 +233,11 @@ describe("Form", () => {
       expect(validSpy).toHaveBeenCalled();
     });
 
-    it("expunges errors even if the validate function is not provided", async () => {
+    it("clears errors even if the validate function is not provided", async () => {
       const form = new Form(nanoid(), 42);
-      form.field.setError("Nope");
+      form.field.addError("Nope");
       expect(await form.validate()).toBe(true);
-      expect(form.field.error).toBe(undefined);
+      expect(form.field.errors).toHaveLength(0);
     });
   });
 });

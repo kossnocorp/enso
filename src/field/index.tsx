@@ -23,6 +23,7 @@ import {
 import { useRerender } from "../hooks/rerender.ts";
 import { type EnsoUtils } from "../utils.ts";
 import { FieldRef } from "./ref/index.ts";
+import { ValidationTree } from "../validation/index.ts";
 
 export { FieldRef };
 
@@ -51,26 +52,23 @@ export class Field<Payload> {
     Payload,
     MetaEnable extends boolean | undefined = undefined,
     DirtyEnable extends boolean = false,
-    ErrorEnable extends boolean = false,
+    ErrorsEnable extends boolean = false,
     ValidEnable extends boolean = false,
-    InvalidsEnable extends boolean = false,
   >(
     props: Field.ComponentProps<
       Payload,
       MetaEnable,
       DirtyEnable,
-      ErrorEnable,
-      ValidEnable,
-      InvalidsEnable
+      ErrorsEnable,
+      ValidEnable
     >,
   ): React.ReactNode {
     const { field } = props;
     const value = field.useGet();
     const meta = field.useMeta({
       dirty: props.meta || !!props.dirty,
-      error: props.meta || !!props.error,
+      errors: props.meta || !!props.errors,
       valid: props.meta || !!props.valid,
-      invalids: props.meta || !!props.invalids,
     });
 
     const control = {
@@ -124,9 +122,9 @@ export class Field<Payload> {
   }
 
   #clearCache() {
+    this.#cachedErrors = undefined;
     this.#cachedGet = detachedValue;
     this.#cachedDirty = undefined;
-    this.#cachedInvalids = undefined;
   }
 
   //#region Attributes
@@ -168,16 +166,14 @@ export class Field<Payload> {
     props?: Props,
   ): Field.UseGet<Payload, Props> {
     const watchAllMeta = !!props?.meta;
-    const watchMeta =
-      watchAllMeta || props?.invalids || props?.valid || props?.dirty;
+    const watchMeta = watchAllMeta || props?.valid || props?.dirty;
     const meta = this.useMeta(
       watchAllMeta
         ? undefined
         : {
             dirty: !!props?.dirty,
-            error: !!props?.error,
+            errors: !!props?.errors,
             valid: !!props?.valid,
-            invalids: !!props?.invalids,
           },
     );
 
@@ -319,12 +315,10 @@ export class Field<Payload> {
    *
    * @returns Field without null or undefined value in the type.
    */
-  pave(
-    fallback: Exclude<Payload, null | undefined>,
-  ): Field<Exclude<Payload, null | undefined>> {
+  pave(fallback: NonNullish<Payload>): Field<NonNullish<Payload>> {
     const value = this.get();
     if (value === undefined || value === null) this.set(fallback);
-    return this as Field<Exclude<Payload, null | undefined>>;
+    return this as Field<NonNullish<Payload>>;
   }
 
   //#endregion
@@ -349,6 +343,10 @@ export class Field<Payload> {
 
   get try(): Field.Try<Payload> {
     return this.#internal.try();
+  }
+
+  lookup(path: Field.LookupPath): Field<unknown> | undefined {
+    return this.#internal.lookup(path);
   }
 
   //#endregion
@@ -493,11 +491,10 @@ export class Field<Payload> {
   useMeta<Props extends Field.UseMetaProps | undefined = undefined>(
     props?: Props,
   ): Field.Meta<Props> {
-    const invalids = this.useInvalids(!props || !!props.invalids);
     const valid = this.useValid(!props || !!props.valid);
-    const error = this.useError(!props || !!props.error);
+    const errors = this.useErrors(!props || !!props.errors);
     const dirty = this.useDirty(!props || !!props.dirty);
-    return { invalids, valid, error, dirty } as Field.Meta<Props>;
+    return { valid, errors, dirty } as Field.Meta<Props>;
   }
 
   //#endregion
@@ -534,7 +531,7 @@ export class Field<Payload> {
     });
   }
 
-  discriminate<Discriminator extends keyof Exclude<Payload, undefined>>(
+  discriminate<Discriminator extends keyof NonUndefined<Payload>>(
     discriminator: Discriminator,
   ): Field.Discriminated<Payload, Discriminator> {
     // @ts-ignore: [TODO]
@@ -693,7 +690,7 @@ export class Field<Payload> {
    * @returns Fields tuple, first element - ensured field, second - dummy field
    */
   static useEnsure<Payload, Result = undefined>(
-    field: Field<Payload> | EnsoUtils.Falsy,
+    field: Field<Payload> | Falsy,
     map?: Field.MapField<Payload, Result>,
   ): Result extends undefined
     ? Field<Payload | undefined>
@@ -868,86 +865,80 @@ export class Field<Payload> {
 
   //#region Errors
 
-  #error: Field.Error | undefined;
+  #cachedErrors: Field.Error[] | undefined = undefined;
 
-  get error(): Field.Error | undefined {
-    return this.#error;
+  get errors(): Field.Error[] {
+    // if (this.#cachedErrors)return this.#cachedErrors;
+    // return (this.#cachedErrors = this.validation.at(this.path));
+    return this.validation.at(this.path);
   }
 
-  useError<Enable extends boolean | undefined = undefined>(
+  useErrors<Enable extends boolean | undefined = undefined>(
     enable?: Enable,
-  ): Enable extends true | undefined ? Field.Error | undefined : undefined {
+  ): Enable extends true | undefined ? Field.Error[] | undefined : undefined {
     return useFieldHook({
       enable,
       field: this as Field<any>,
-      getValue: () => this.error,
-    });
-  }
-
-  setError(error?: string | Field.Error | undefined) {
-    const prevError = this.#error;
-    error = typeof error === "string" ? { message: error } : error;
-
-    if (
-      error &&
-      (!prevError ||
-        prevError.type !== error.type ||
-        prevError.message !== error.message)
-    ) {
-      this.#error = error;
-      this.trigger(change.field.invalid, true);
-    } else if (!error && prevError) {
-      this.#error = error;
-      this.trigger(change.field.valid, true);
-    }
-  }
-
-  #cachedInvalids: Map<Field<any>, Field.Error> | undefined;
-
-  get invalids(): Field.Invalids {
-    if (!this.#cachedInvalids) {
-      const invalids = new Map();
-
-      if (this.error) invalids.set(this, this.error);
-
-      if (
-        this.#internal instanceof InternalArrayState ||
-        this.#internal instanceof InternalObjectState
-      ) {
-        // @ts-ignore: [TODO]
-        this.forEach((item) => {
-          // @ts-ignore: [TODO]
-          item.invalids.forEach((error, field) => invalids.set(field, error));
-        });
-      }
-
-      this.#cachedInvalids = invalids;
-    }
-
-    return this.#cachedInvalids;
-  }
-
-  useInvalids<Enable extends boolean | undefined = undefined>(
-    enable?: Enable,
-  ): Enable extends true | undefined ? Field.Invalids : undefined {
-    // @ts-ignore: [TODO]
-    return useFieldHook({
-      enable,
-      field: this as Field<any>,
-      getValue: () => this.invalids,
+      getValue: () => this.errors,
       shouldRender: (prev, next) =>
         !(
           next === prev ||
-          (next.size === prev?.size &&
-            Array.from(next).every(
-              ([field, error]) => prev?.get(field) === error,
-            ))
+          (next.length === prev?.length &&
+            next.every((error, index) => prev?.[index] === error))
         ),
     });
   }
 
+  addError(error: string | Field.Error) {
+    const prevValid = this.valid;
+    error = typeof error === "string" ? { message: error } : error;
+
+    this.validation.add(this.path, error);
+
+    let changes = change.field.errors;
+    if (prevValid) changes |= change.field.invalid;
+    this.trigger(changes, true);
+  }
+
+  clearErrors() {
+    if (this.valid) return;
+    const paths = new Set<readonly string[]>();
+    this.validation.nested(this.path).forEach(([path]) => paths.add(path));
+
+    // First, we clear all errors
+    this.validation.clear(this.path);
+
+    // Now we trigger changes for each path with direct errors
+    paths.forEach((path) => {
+      const field = this.lookup(path);
+      let changes = change.field.errors | change.field.valid;
+      if (field) {
+        field.trigger(changes, true);
+      } else {
+        // This is a shadow field error, we need to find the first defined parent and notify it. Also, shift the changes to match
+        // the correct level.
+        const restPath = [...path];
+        while (restPath.length) {
+          restPath.pop();
+          changes = shiftChildChanges(changes);
+          const parentField = this.lookup(restPath);
+          if (parentField) {
+            parentField.trigger(changes, true);
+            return;
+          }
+        }
+        // If we reach here, the current field is the closest parent.
+        this.trigger(changes, true);
+      }
+    });
+  }
+
+  /**
+   * True if the field and its children have no validation errors.
+   */
   get valid(): boolean {
-    return !this.invalids.size;
+    // [TODO] Figure out if caching is needed here
+    return !this.validation.nested(this.path).length;
   }
 
   useValid<Enable extends boolean | undefined = undefined>(
@@ -961,16 +952,16 @@ export class Field<Payload> {
     });
   }
 
-  // [TODO] Try to find a better name.
-  expunge() {
-    this.#cachedInvalids = undefined;
-    this.setError(undefined);
-    this.#internal.expunge();
-  }
-
   //#endregion
 
   //#region Validation
+
+  #validation: ValidationTree | undefined = undefined;
+
+  get validation(): ValidationTree {
+    if (this.#parent) return this.#parent.field.validation;
+    return (this.#validation ??= new ValidationTree());
+  }
 
   validate<Context>(
     validator: Field.Validator<Payload, Context>,
@@ -991,7 +982,7 @@ export class Field<Payload> {
     validator: Field.Validator<Payload, undefined>,
     context?: Context | undefined,
   ) {
-    this.expunge();
+    this.clearErrors();
     this.withhold();
     // [TODO] Figure out what is the point of the sending reference here instead
     // of the field itself. It makes paving during validation impossible and
@@ -1047,13 +1038,11 @@ export namespace Field {
           ? true
           : Props["meta"] extends false
             ? false
-            : Props["invalids"] extends true
+            : Props["valid"] extends true
               ? true
-              : Props["valid"] extends true
+              : Props["dirty"] extends true
                 ? true
-                : Props["dirty"] extends true
-                  ? true
-                  : false
+                : false
         : false;
 
   //#endregion
@@ -1118,7 +1107,9 @@ export namespace Field {
     // Add undefined to the union
     | (undefined extends Payload ? undefined : never)
     // Resolve field without null or undefined
-    | Field<Exclude<Payload, null | undefined>>;
+    | Field<NonNullish<Payload>>;
+
+  export type LookupPath = readonly (string | number)[];
 
   //#endregion
 
@@ -1132,24 +1123,21 @@ export namespace Field {
   export type Unwatch = () => void;
 
   export interface UseMetaProps {
-    invalids?: boolean | undefined;
     valid?: boolean | undefined;
-    error?: boolean | undefined;
+    errors?: boolean | undefined;
     dirty?: boolean | undefined;
   }
 
   export type Meta<Props extends UseMetaProps | undefined> =
     Props extends UseMetaProps
       ? {
-          invalids: MetaEnable<Props["invalids"], Invalids>;
           valid: MetaEnable<Props["valid"], boolean>;
-          error: MetaEnable<Props["error"], Error | undefined>;
+          errors: MetaEnable<Props["errors"], Error[]>;
           dirty: MetaEnable<Props["dirty"], boolean>;
         }
       : {
-          invalids: Invalids;
           valid: boolean;
-          error: Error | undefined;
+          errors: Error[];
           dirty: boolean;
         };
 
@@ -1185,7 +1173,7 @@ export namespace Field {
 
   export type Discriminated<
     Payload,
-    Discriminator extends keyof Exclude<Payload, undefined>,
+    Discriminator extends keyof NonUndefined<Payload>,
   > = Payload extends Payload
     ? Discriminator extends keyof Payload
       ? Payload[Discriminator] extends infer DiscriminatorValue
@@ -1203,7 +1191,7 @@ export namespace Field {
         }
     : never;
 
-  export type DiscriminatorKey<Payload> = keyof Exclude<Payload, undefined>;
+  export type DiscriminatorKey<Payload> = keyof NonUndefined<Payload>;
 
   export interface Into<Value, ComputedValue> {
     /**
@@ -1232,7 +1220,7 @@ export namespace Field {
   export type NarrowCallback<Payload, Narrowed> = (
     payload: Payload,
     wrap: NarrowWrap,
-  ) => NarrowWrapper<Narrowed> | EnsoUtils.Falsy;
+  ) => NarrowWrapper<Narrowed> | Falsy;
 
   export type NarrowWrap = <Payload>(
     payload: Payload,
@@ -1333,9 +1321,8 @@ export namespace Field {
     Payload,
     MetaEnable extends boolean | undefined = undefined,
     DirtyEnable extends boolean = false,
-    ErrorEnable extends boolean = false,
+    ErrorsEnable extends boolean = false,
     ValidEnable extends boolean = false,
-    InvalidsEnable extends boolean = false,
   > = {
     field: Field<Payload>;
     render: InputRender<
@@ -1344,23 +1331,20 @@ export namespace Field {
         ? undefined
         : MetaEnable extends false
           ? {
-              invalids: false;
               valid: false;
-              error: false;
+              errors: false;
               dirty: false;
             }
           : {
-              invalids: InvalidsEnable;
               valid: ValidEnable;
-              error: ErrorEnable;
+              errors: ErrorsEnable;
               dirty: DirtyEnable;
             }
     >;
     meta?: MetaEnable;
     dirty?: DirtyEnable;
-    error?: ErrorEnable;
+    errors?: ErrorsEnable;
     valid?: ValidEnable;
-    invalids?: InvalidsEnable;
   };
 
   export type InputRender<
@@ -1397,8 +1381,6 @@ export namespace Field {
     message: string;
   }
 
-  export type Invalids = Map<Field<any>, Field.Error>;
-
   //#endregion
 
   //#region Validation
@@ -1412,16 +1394,6 @@ export namespace Field {
 
   //#endregion
 }
-
-//#endregion
-
-//#region BoundField
-
-export interface BoundField<Payload> extends Field<Payload> {
-  [boundBrand]: true;
-}
-
-declare const boundBrand: unique symbol;
 
 //#endregion
 
@@ -1445,10 +1417,6 @@ export class ComputedField<Payload, Computed> extends Field<Computed> {
     return this.#source.path;
   }
 
-  override get invalids(): Field.Invalids {
-    return this.#source.invalids;
-  }
-
   override get parent(): Field<any> | undefined {
     return this.#source.parent;
   }
@@ -1457,10 +1425,28 @@ export class ComputedField<Payload, Computed> extends Field<Computed> {
     return this.#source.dirty;
   }
 
-  override setError(error?: string | Field.Error | undefined): void {
-    this.#source.setError(error);
+  override addError(error: string | Field.Error): void {
+    this.#source.addError(error);
+  }
+
+  override clearErrors(): void {
+    this.#source.clearErrors();
+  }
+
+  override get validation(): ValidationTree {
+    return this.#source.validation;
   }
 }
+
+//#endregion
+
+//#region BoundField
+
+export interface BoundField<Payload> extends Field<Payload> {
+  [boundBrand]: true;
+}
+
+declare const boundBrand: unique symbol;
 
 //#endregion
 
@@ -1499,9 +1485,15 @@ export abstract class InternalState<Payload> {
 
   abstract get(): Payload;
 
+  //#region Tree
+
   abstract $(): Field.$<Payload>;
 
   abstract try(): Field.Try<Payload>;
+
+  abstract lookup(path: Field.LookupPath): Field<unknown> | undefined;
+
+  //#endregion
 
   childUpdate(type: FieldChange, _key: string): FieldChange {
     return type;
@@ -1511,8 +1503,6 @@ export abstract class InternalState<Payload> {
   protected get external() {
     return this.#external;
   }
-
-  abstract expunge(): void;
 
   abstract withhold(): void;
 
@@ -1559,6 +1549,8 @@ export class InternalValueState<Payload> extends InternalState<Payload> {
     return this.#value === detachedValue ? (undefined as Payload) : this.#value;
   }
 
+  //#region Tree
+
   $(): Field.$<Payload> {
     return undefined as Field.$<Payload>;
   }
@@ -1570,13 +1562,18 @@ export class InternalValueState<Payload> extends InternalState<Payload> {
     return this.external as Field.Try<Payload>;
   }
 
+  lookup(path: Field.LookupPath): Field<unknown> | undefined {
+    if (path.length === 0) return this.external as any;
+    return undefined;
+  }
+
+  //#endregion
+
   unwatch() {}
 
   dirty(initial: Payload): boolean {
     return initial !== this.#value;
   }
-
-  override expunge(): void {}
 
   override withhold(): void {}
 
@@ -1646,6 +1643,8 @@ export class InternalObjectState<
     ) as Payload;
   }
 
+  //#region Tree
+
   $(): Field.$<Payload> {
     return this.#$;
   }
@@ -1657,6 +1656,14 @@ export class InternalObjectState<
   at<Key extends keyof Payload>(key: Key): Field.At<Payload, Key> {
     return this.#$field(String(key)) as Field.At<Payload, Key>;
   }
+
+  lookup(path: Field.LookupPath): Field<unknown> | undefined {
+    if (path.length === 0) return this.external as any;
+    const [key, ...restPath] = path;
+    return this.#children.get(String(key))?.lookup(restPath);
+  }
+
+  //#endregion
 
   #$field(key: string) {
     const field = this.#children.get(key);
@@ -1732,10 +1739,6 @@ export class InternalObjectState<
     }
 
     return false;
-  }
-
-  override expunge(): void {
-    this.#children.forEach((field) => field.expunge());
   }
 
   override withhold(): void {
@@ -1842,6 +1845,8 @@ export class InternalArrayState<
     return changes;
   }
 
+  //#region Tree
+
   $(): Field.$<Payload> {
     return this.#$;
   }
@@ -1880,6 +1885,14 @@ export class InternalArrayState<
     }
     return field;
   }
+
+  lookup(path: Field.LookupPath): Field<unknown> | undefined {
+    if (path.length === 0) return this.external as any;
+    const [index, ...restPath] = path;
+    return this.#item(Number(index))?.lookup(restPath);
+  }
+
+  //#endregion
 
   override childUpdate(childChanges: FieldChange, key: string): FieldChange {
     let changes = 0n;
@@ -1954,10 +1967,6 @@ export class InternalArrayState<
     }
 
     return false;
-  }
-
-  override expunge(): void {
-    this.#children.forEach((field) => field.expunge());
   }
 
   override withhold(): void {
@@ -2056,7 +2065,7 @@ export class UndefinedStateRegistry {
     const registered = ref?.deref();
     if (!ref || !registered) return;
 
-    // Unregisted the field and allow the caller to claim it
+    // Unregister the field and allow the caller to claim it
     this.#registry.unregister(ref);
     this.#refsMap.delete(key);
     // @ts-ignore: This is fine
@@ -2064,7 +2073,7 @@ export class UndefinedStateRegistry {
   }
 
   ensure(key: string): Field<DetachedValue> {
-    // Try to look up registed undefined item
+    // Try to look up registered undefined item
     const registered = this.#refsMap.get(key)?.deref();
     // @ts-ignore: This is fine
     if (registered) return registered;

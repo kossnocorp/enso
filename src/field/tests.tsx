@@ -134,7 +134,7 @@ describe("Field", () => {
                 Rename
               </button>
 
-              <button onClick={() => field.$.name.setError("Nope")}>
+              <button onClick={() => field.$.name.addError("Nope")}>
                 Add error
               </button>
 
@@ -174,7 +174,7 @@ describe("Field", () => {
         function Component() {
           const count = useRenderCount();
           const field = Field.use({ name: { first: "Alexander", last: "" } });
-          const [value, { dirty, error, valid, invalids }] = field.useGet({
+          const [value, { dirty, errors, valid }] = field.useGet({
             meta: true,
           });
 
@@ -184,7 +184,7 @@ describe("Field", () => {
 
               <button
                 onClick={() =>
-                  field.$.name.$.first.setError(`Nope ${Math.random()}`)
+                  field.$.name.$.first.addError(`Nope ${Math.random()}`)
                 }
               >
                 Set first name error
@@ -192,30 +192,20 @@ describe("Field", () => {
 
               <button
                 onClick={() =>
-                  field.$.name.$.last.setError(`Nah ${Math.random()}`)
+                  field.$.name.$.last.addError(`Nah ${Math.random()}`)
                 }
               >
                 Set last name error
               </button>
 
-              <button
-                onClick={() =>
-                  field.$.name.$.last.setError(
-                    field.$.name.$.last.error?.message,
-                  )
-                }
-              >
-                Set same last name error
-              </button>
-
-              <button onClick={() => field.setError("Nope")}>
+              <button onClick={() => field.addError("Nope")}>
                 Set field error
               </button>
 
               <button
                 onClick={() => {
-                  field.$.name.$.first.setError();
-                  field.$.name.$.last.setError();
+                  field.$.name.$.first.clearErrors();
+                  field.$.name.$.last.clearErrors();
                 }}
               >
                 Clear errors
@@ -234,9 +224,8 @@ describe("Field", () => {
               </div>
 
               <div data-testid="dirty">{String(dirty)}</div>
-              <div data-testid="error">{error?.message}</div>
+              <div data-testid="errors">{joinErrors(errors)}</div>
               <div data-testid="valid">{String(valid)}</div>
-              <div data-testid="errors">{invalids.size}</div>
             </div>
           );
         }
@@ -255,7 +244,7 @@ describe("Field", () => {
           .toHaveTextContent("true");
         await expect
           .element(screen.getByTestId("errors"))
-          .toHaveTextContent("0");
+          .toHaveTextContent("");
 
         await screen.getByText("Set first name error").click();
 
@@ -267,35 +256,28 @@ describe("Field", () => {
           .toHaveTextContent("false");
         await expect
           .element(screen.getByTestId("errors"))
-          .toHaveTextContent("1");
+          .toHaveTextContent("");
 
         await screen.getByText("Set last name error").click();
 
         await expect
           .element(screen.getByTestId("errors"))
-          .toHaveTextContent("2");
+          .toHaveTextContent("");
 
         await expect
           .element(screen.getByTestId("render-meta"))
-          .toHaveTextContent("3");
+          .toHaveTextContent("2");
 
         await screen.getByText("Set first name error").click();
         await screen.getByText("Set last name error").click();
 
         await expect
           .element(screen.getByTestId("render-meta"))
-          .toHaveTextContent("5");
-
-        await screen.getByText("Set same last name error").click();
-        await screen.getByText("Set same last name error").click();
-
-        await expect
-          .element(screen.getByTestId("errors"))
           .toHaveTextContent("2");
 
         await expect
-          .element(screen.getByTestId("render-meta"))
-          .toHaveTextContent("5");
+          .element(screen.getByTestId("errors"))
+          .toHaveTextContent("");
 
         await expect.element(screen.getByTestId("render-meta"));
 
@@ -313,7 +295,7 @@ describe("Field", () => {
           .toHaveTextContent("false");
         await expect
           .element(screen.getByTestId("render-meta"))
-          .toHaveTextContent("6");
+          .toHaveTextContent("3");
 
         await screen.getByText("Clear errors").click();
 
@@ -325,24 +307,21 @@ describe("Field", () => {
           .toHaveTextContent("true");
         await expect
           .element(screen.getByTestId("errors"))
-          .toHaveTextContent("0");
+          .toHaveTextContent("");
 
         await expect
           .element(screen.getByTestId("render-meta"))
-          .toHaveTextContent("7");
+          .toHaveTextContent("4");
 
         await screen.getByText("Set field error").click();
 
         await expect
-          .element(screen.getByTestId("error"))
-          .toHaveTextContent("Nope");
-        await expect
           .element(screen.getByTestId("errors"))
-          .toHaveTextContent("1");
+          .toHaveTextContent("Nope");
 
         await expect
           .element(screen.getByTestId("render-meta"))
-          .toHaveTextContent("8");
+          .toHaveTextContent("5");
       });
 
       it("depends on the field id", async () => {
@@ -508,7 +487,7 @@ describe("Field", () => {
                 Rename
               </button>
 
-              <button onClick={() => field.$.name.setError("Nope")}>
+              <button onClick={() => field.$.name.addError("Nope")}>
                 Add error
               </button>
 
@@ -1117,27 +1096,27 @@ describe("Field", () => {
         function Component() {
           const count = useRenderCount();
           const field = Field.use({ name: { first: "Alexander", last: "" } });
-          const error = field.$.name.useError();
+          const errors = field.$.name.useErrors();
 
           return (
             <div>
               <div data-testid="render-error">{count}</div>
 
-              <button onClick={() => field.$.name.setError("Nope 1")}>
+              <button onClick={() => field.$.name.addError("Nope 1")}>
                 Set error 1
               </button>
 
-              <button onClick={() => field.$.name.setError("Nope 2")}>
+              <button onClick={() => field.$.name.addError("Nope 2")}>
                 Set error 2
               </button>
 
-              <button onClick={() => field.$.name.$.first.setError("Nah")}>
+              <button onClick={() => field.$.name.$.first.addError("Nah")}>
                 Set first name error
               </button>
 
               <button
                 onClick={() => {
-                  field.$.name.setError();
+                  field.$.name.clearErrors();
                 }}
               >
                 Clear error
@@ -1147,14 +1126,16 @@ describe("Field", () => {
                 Trigger field update
               </button>
 
-              <div data-testid="error">{error?.message}</div>
+              <div data-testid="errors">{joinErrors(errors)}</div>
             </div>
           );
         }
 
         const screen = render(<Component />);
 
-        await expect.element(screen.getByTestId("error")).toHaveTextContent("");
+        await expect
+          .element(screen.getByTestId("errors"))
+          .toHaveTextContent("");
 
         await expect
           .element(screen.getByTestId("render-error"))
@@ -1163,7 +1144,7 @@ describe("Field", () => {
         await screen.getByText("Set error 1").click();
 
         await expect
-          .element(screen.getByTestId("error"))
+          .element(screen.getByTestId("errors"))
           .toHaveTextContent("Nope 1");
 
         await expect
@@ -1174,37 +1155,39 @@ describe("Field", () => {
 
         await expect
           .element(screen.getByTestId("render-error"))
-          .toHaveTextContent("2");
+          .toHaveTextContent("3");
 
         await screen.getByText("Set error 2").click();
 
         await expect
-          .element(screen.getByTestId("error"))
+          .element(screen.getByTestId("errors"))
           .toHaveTextContent("Nope 2");
 
         await expect
           .element(screen.getByTestId("render-error"))
-          .toHaveTextContent("3");
+          .toHaveTextContent("4");
 
         await screen.getByText("Trigger field update").click();
 
         await expect
           .element(screen.getByTestId("render-error"))
-          .toHaveTextContent("3");
+          .toHaveTextContent("4");
 
         await screen.getByText("Set first name error").click();
 
         await expect
           .element(screen.getByTestId("render-error"))
-          .toHaveTextContent("3");
+          .toHaveTextContent("4");
 
         await screen.getByText("Clear error").click();
 
-        await expect.element(screen.getByTestId("error")).toHaveTextContent("");
+        await expect
+          .element(screen.getByTestId("errors"))
+          .toHaveTextContent("");
 
         await expect
           .element(screen.getByTestId("render-error"))
-          .toHaveTextContent("4");
+          .toHaveTextContent("5");
       });
 
       it("depends on the field id", async () => {
@@ -1212,7 +1195,7 @@ describe("Field", () => {
           const count = useRenderCount();
           const field = Field.use([{ name: "Alexander" }, { name: "Sasha" }]);
           const [index, setIndex] = useState(0);
-          const error = field.at(index).useError();
+          const errors = field.at(index).useErrors();
 
           return (
             <div>
@@ -1220,18 +1203,20 @@ describe("Field", () => {
 
               <button onClick={() => setIndex(1)}>Set index to 1</button>
 
-              <button onClick={() => field.at(1).setError("Nope")}>
+              <button onClick={() => field.at(1).addError("Nope")}>
                 Set item 1 error
               </button>
 
-              <div data-testid="error">{error?.message}</div>
+              <div data-testid="errors">{joinErrors(errors)}</div>
             </div>
           );
         }
 
         const screen = render(<Component />);
 
-        await expect.element(screen.getByTestId("error")).toHaveTextContent("");
+        await expect
+          .element(screen.getByTestId("errors"))
+          .toHaveTextContent("");
 
         await expect
           .element(screen.getByTestId("render-error"))
@@ -1246,7 +1231,7 @@ describe("Field", () => {
         await screen.getByText("Set index to 1").click();
 
         await expect
-          .element(screen.getByTestId("error"))
+          .element(screen.getByTestId("errors"))
           .toHaveTextContent("Nope");
 
         await expect
@@ -1259,7 +1244,7 @@ describe("Field", () => {
           const count = useRenderCount();
           const field = Field.use([{ name: "Alexander" }, { name: "Sasha" }]);
           const [index, setIndex] = useState(0);
-          const error = field.at(index).useError();
+          const errors = field.at(index).useErrors();
 
           return (
             <div>
@@ -1267,18 +1252,20 @@ describe("Field", () => {
 
               <button onClick={() => setIndex(1)}>Set index to 1</button>
 
-              <button onClick={() => field.at(0).setError("Nope")}>
+              <button onClick={() => field.at(0).addError("Nope")}>
                 Set item 0 error
               </button>
 
-              <div data-testid="error">{error?.message}</div>
+              <div data-testid="errors">{joinErrors(errors)}</div>
             </div>
           );
         }
 
         const screen = render(<Component />);
 
-        await expect.element(screen.getByTestId("error")).toHaveTextContent("");
+        await expect
+          .element(screen.getByTestId("errors"))
+          .toHaveTextContent("");
 
         await expect
           .element(screen.getByTestId("render-error"))
@@ -1286,7 +1273,9 @@ describe("Field", () => {
 
         await screen.getByText("Set index to 1").click();
 
-        await expect.element(screen.getByTestId("error")).toHaveTextContent("");
+        await expect
+          .element(screen.getByTestId("errors"))
+          .toHaveTextContent("");
 
         await expect
           .element(screen.getByTestId("render-error"))
@@ -1294,7 +1283,9 @@ describe("Field", () => {
 
         await screen.getByText("Set item 0 error").click();
 
-        await expect.element(screen.getByTestId("error")).toHaveTextContent("");
+        await expect
+          .element(screen.getByTestId("errors"))
+          .toHaveTextContent("");
 
         await expect
           .element(screen.getByTestId("render-error"))
@@ -1307,7 +1298,7 @@ describe("Field", () => {
           const field = Field.use([{ name: "Alexander" }, { name: "Sasha" }]);
           const [index, setIndex] = useState(0);
           const [enabled, setEnabled] = useState(false);
-          const error = field.at(index).useError(enabled);
+          const errors = field.at(index).useErrors(enabled);
 
           return (
             <div>
@@ -1315,20 +1306,22 @@ describe("Field", () => {
 
               <button onClick={() => setIndex(1)}>Set index to 1</button>
 
-              <button onClick={() => field.at(1).setError("Nope")}>
+              <button onClick={() => field.at(1).addError("Nope")}>
                 Set item 1 error
               </button>
 
               <button onClick={() => setEnabled(true)}>Enable error</button>
 
-              <div data-testid="error">{error?.message}</div>
+              <div data-testid="errors">{joinErrors(errors)}</div>
             </div>
           );
         }
 
         const screen = render(<Component />);
 
-        await expect.element(screen.getByTestId("error")).toHaveTextContent("");
+        await expect
+          .element(screen.getByTestId("errors"))
+          .toHaveTextContent("");
 
         await expect
           .element(screen.getByTestId("render-error"))
@@ -1336,7 +1329,9 @@ describe("Field", () => {
 
         await screen.getByText("Set index to 1").click();
 
-        await expect.element(screen.getByTestId("error")).toHaveTextContent("");
+        await expect
+          .element(screen.getByTestId("errors"))
+          .toHaveTextContent("");
 
         await expect
           .element(screen.getByTestId("render-error"))
@@ -1344,7 +1339,9 @@ describe("Field", () => {
 
         await screen.getByText("Set item 1 error").click();
 
-        await expect.element(screen.getByTestId("error")).toHaveTextContent("");
+        await expect
+          .element(screen.getByTestId("errors"))
+          .toHaveTextContent("");
 
         await expect
           .element(screen.getByTestId("render-error"))
@@ -1353,289 +1350,8 @@ describe("Field", () => {
         await screen.getByText("Enable error").click();
 
         await expect
-          .element(screen.getByTestId("error"))
+          .element(screen.getByTestId("errors"))
           .toHaveTextContent("Nope");
-
-        await expect
-          .element(screen.getByTestId("render-error"))
-          .toHaveTextContent("3");
-      });
-    });
-
-    describe("useInvalids", () => {
-      it("allows to listen to field invalids", async () => {
-        function Component() {
-          const count = useRenderCount();
-          const field = Field.use({ name: { first: "Alexander", last: "" } });
-          const errors = field.useInvalids();
-
-          return (
-            <div>
-              <div data-testid="render-errors">{count}</div>
-
-              <button
-                onClick={() =>
-                  field.$.name.$.first.setError(`Nope ${Math.random()}`)
-                }
-              >
-                Set first name error
-              </button>
-
-              <button
-                onClick={() =>
-                  field.$.name.$.last.setError(`Nah ${Math.random()}`)
-                }
-              >
-                Set last name error
-              </button>
-
-              <button
-                onClick={() =>
-                  field.$.name.$.last.setError(
-                    field.$.name.$.last.error?.message,
-                  )
-                }
-              >
-                Set same last name error
-              </button>
-
-              <button
-                onClick={() => {
-                  field.$.name.$.first.setError();
-                  field.$.name.$.last.setError();
-                }}
-              >
-                Clear errors
-              </button>
-
-              <button onClick={() => field.$.name.$.last.set("Koss")}>
-                Trigger field update
-              </button>
-
-              <div data-testid="errors">{errors.size}</div>
-            </div>
-          );
-        }
-
-        const screen = render(<Component />);
-
-        await expect
-          .element(screen.getByTestId("errors"))
-          .toHaveTextContent("0");
-
-        await screen.getByText("Set first name error").click();
-
-        await expect
-          .element(screen.getByTestId("errors"))
-          .toHaveTextContent("1");
-
-        await screen.getByText("Set last name error").click();
-
-        await expect
-          .element(screen.getByTestId("errors"))
-          .toHaveTextContent("2");
-
-        await expect
-          .element(screen.getByTestId("render-errors"))
-          .toHaveTextContent("3");
-
-        await screen.getByText("Set first name error").click();
-        await screen.getByText("Set last name error").click();
-
-        await expect
-          .element(screen.getByTestId("render-errors"))
-          .toHaveTextContent("5");
-
-        await screen.getByText("Set same last name error").click();
-        await screen.getByText("Set same last name error").click();
-
-        await expect
-          .element(screen.getByTestId("errors"))
-          .toHaveTextContent("2");
-
-        await expect
-          .element(screen.getByTestId("render-errors"))
-          .toHaveTextContent("5");
-
-        await screen.getByText("Trigger field update").click();
-
-        await expect
-          .element(screen.getByTestId("render-errors"))
-          .toHaveTextContent("5");
-
-        await screen.getByText("Clear errors").click();
-
-        await expect
-          .element(screen.getByTestId("errors"))
-          .toHaveTextContent("0");
-
-        await expect
-          .element(screen.getByTestId("render-errors"))
-          .toHaveTextContent("6");
-      });
-
-      it("depends on the field id", async () => {
-        function Component() {
-          const count = useRenderCount();
-          const field = Field.use([{ name: "Alexander" }, { name: "Sasha" }]);
-          const [index, setIndex] = useState(0);
-          const invalids = field.at(index).useInvalids();
-
-          return (
-            <div>
-              <div data-testid="render-error">{count}</div>
-
-              <button onClick={() => setIndex(1)}>Set index to 1</button>
-
-              <button onClick={() => field.at(1).setError("Nope")}>
-                Set item 1 error
-              </button>
-
-              <div data-testid="invalids">{invalids?.size}</div>
-            </div>
-          );
-        }
-
-        const screen = render(<Component />);
-
-        await expect
-          .element(screen.getByTestId("invalids"))
-          .toHaveTextContent("0");
-
-        await expect
-          .element(screen.getByTestId("render-error"))
-          .toHaveTextContent("1");
-
-        await screen.getByText("Set item 1 error").click();
-
-        await expect
-          .element(screen.getByTestId("render-error"))
-          .toHaveTextContent("1");
-
-        await screen.getByText("Set index to 1").click();
-
-        await expect
-          .element(screen.getByTestId("invalids"))
-          .toHaveTextContent("1");
-
-        await expect
-          .element(screen.getByTestId("render-error"))
-          .toHaveTextContent("2");
-      });
-
-      it("updates the watcher on field id change", async () => {
-        function Component() {
-          const count = useRenderCount();
-          const field = Field.use([{ name: "Alexander" }, { name: "Sasha" }]);
-          const [index, setIndex] = useState(0);
-          const invalids = field.at(index).useInvalids();
-
-          return (
-            <div>
-              <div data-testid="render-error">{count}</div>
-
-              <button onClick={() => setIndex(1)}>Set index to 1</button>
-
-              <button onClick={() => field.at(0).setError("Nope")}>
-                Set item 0 error
-              </button>
-
-              <div data-testid="invalids">{invalids?.size}</div>
-            </div>
-          );
-        }
-
-        const screen = render(<Component />);
-
-        await expect
-          .element(screen.getByTestId("invalids"))
-          .toHaveTextContent("0");
-
-        await expect
-          .element(screen.getByTestId("render-error"))
-          .toHaveTextContent("1");
-
-        await screen.getByText("Set index to 1").click();
-
-        await expect
-          .element(screen.getByTestId("invalids"))
-          .toHaveTextContent("0");
-
-        await expect
-          .element(screen.getByTestId("render-error"))
-          .toHaveTextContent("2");
-
-        await screen.getByText("Set item 0 error").click();
-
-        await expect
-          .element(screen.getByTestId("invalids"))
-          .toHaveTextContent("0");
-
-        await expect
-          .element(screen.getByTestId("render-error"))
-          .toHaveTextContent("2");
-      });
-
-      it("allows to enable/disable the invalids listener", async () => {
-        function Component() {
-          const count = useRenderCount();
-          const field = Field.use([{ name: "Alexander" }, { name: "Sasha" }]);
-          const [index, setIndex] = useState(0);
-          const [enabled, setEnabled] = useState(false);
-          const invalids = field.at(index).useInvalids(enabled);
-
-          return (
-            <div>
-              <div data-testid="render-error">{count}</div>
-
-              <button onClick={() => setIndex(1)}>Set index to 1</button>
-
-              <button onClick={() => field.at(1).setError("Nope")}>
-                Set item 1 error
-              </button>
-
-              <button onClick={() => setEnabled(true)}>Enable error</button>
-
-              <div data-testid="invalids">{invalids?.size}</div>
-            </div>
-          );
-        }
-
-        const screen = render(<Component />);
-
-        await expect
-          .element(screen.getByTestId("invalids"))
-          .toHaveTextContent("");
-
-        await expect
-          .element(screen.getByTestId("render-error"))
-          .toHaveTextContent("1");
-
-        await screen.getByText("Set index to 1").click();
-
-        await expect
-          .element(screen.getByTestId("invalids"))
-          .toHaveTextContent("");
-
-        await expect
-          .element(screen.getByTestId("render-error"))
-          .toHaveTextContent("2");
-
-        await screen.getByText("Set item 1 error").click();
-
-        await expect
-          .element(screen.getByTestId("invalids"))
-          .toHaveTextContent("");
-
-        await expect
-          .element(screen.getByTestId("render-error"))
-          .toHaveTextContent("2");
-
-        await screen.getByText("Enable error").click();
-
-        await expect
-          .element(screen.getByTestId("invalids"))
-          .toHaveTextContent("1");
 
         await expect
           .element(screen.getByTestId("render-error"))
@@ -1656,13 +1372,13 @@ describe("Field", () => {
 
               <button
                 onClick={() =>
-                  field.$.name.$.first.setError(`Nope ${Math.random()}`)
+                  field.$.name.$.first.addError(`Nope ${Math.random()}`)
                 }
               >
                 Set error
               </button>
 
-              <button onClick={() => field.$.name.$.first.setError()}>
+              <button onClick={() => field.$.name.$.first.clearErrors()}>
                 Clear error
               </button>
 
@@ -1729,7 +1445,7 @@ describe("Field", () => {
 
               <button onClick={() => setIndex(1)}>Set index to 1</button>
 
-              <button onClick={() => field.at(1).setError("Nope")}>
+              <button onClick={() => field.at(1).addError("Nope")}>
                 Set item 1 error
               </button>
 
@@ -1778,7 +1494,7 @@ describe("Field", () => {
 
               <button onClick={() => setIndex(1)}>Set index to 1</button>
 
-              <button onClick={() => field.at(0).setError("Nope")}>
+              <button onClick={() => field.at(0).addError("Nope")}>
                 Set item 0 error
               </button>
 
@@ -1832,7 +1548,7 @@ describe("Field", () => {
 
               <button onClick={() => setIndex(1)}>Set index to 1</button>
 
-              <button onClick={() => field.at(1).setError("Nope")}>
+              <button onClick={() => field.at(1).addError("Nope")}>
                 Set item 1 error
               </button>
 
@@ -1890,7 +1606,7 @@ describe("Field", () => {
         function Component() {
           const count = useRenderCount();
           const field = Field.use({ name: { first: "Alexander", last: "" } });
-          const { dirty, error, valid, invalids: errors } = field.useMeta();
+          const { dirty, errors: errors, valid } = field.useMeta();
 
           return (
             <div>
@@ -1898,7 +1614,7 @@ describe("Field", () => {
 
               <button
                 onClick={() =>
-                  field.$.name.$.first.setError(`Nope ${Math.random()}`)
+                  field.$.name.$.first.addError(`Nope ${Math.random()}`)
                 }
               >
                 Set first name error
@@ -1906,30 +1622,20 @@ describe("Field", () => {
 
               <button
                 onClick={() =>
-                  field.$.name.$.last.setError(`Nah ${Math.random()}`)
+                  field.$.name.$.last.addError(`Nah ${Math.random()}`)
                 }
               >
                 Set last name error
               </button>
 
-              <button
-                onClick={() =>
-                  field.$.name.$.last.setError(
-                    field.$.name.$.last.error?.message,
-                  )
-                }
-              >
-                Set same last name error
-              </button>
-
-              <button onClick={() => field.setError("Nope")}>
+              <button onClick={() => field.addError("Nope")}>
                 Set field error
               </button>
 
               <button
                 onClick={() => {
-                  field.$.name.$.first.setError();
-                  field.$.name.$.last.setError();
+                  field.$.name.$.first.clearErrors();
+                  field.$.name.$.last.clearErrors();
                 }}
               >
                 Clear errors
@@ -1940,9 +1646,8 @@ describe("Field", () => {
               </button>
 
               <div data-testid="dirty">{String(dirty)}</div>
-              <div data-testid="error">{error?.message}</div>
+              <div data-testid="errors">{joinErrors(errors)}</div>
               <div data-testid="valid">{String(valid)}</div>
-              <div data-testid="errors">{errors.size}</div>
             </div>
           );
         }
@@ -1957,7 +1662,7 @@ describe("Field", () => {
           .toHaveTextContent("true");
         await expect
           .element(screen.getByTestId("errors"))
-          .toHaveTextContent("0");
+          .toHaveTextContent("");
 
         await screen.getByText("Set first name error").click();
 
@@ -1969,35 +1674,24 @@ describe("Field", () => {
           .toHaveTextContent("false");
         await expect
           .element(screen.getByTestId("errors"))
-          .toHaveTextContent("1");
+          .toHaveTextContent("");
 
         await screen.getByText("Set last name error").click();
 
         await expect
           .element(screen.getByTestId("errors"))
-          .toHaveTextContent("2");
+          .toHaveTextContent("");
 
         await expect
           .element(screen.getByTestId("render-meta"))
-          .toHaveTextContent("3");
+          .toHaveTextContent("2");
 
         await screen.getByText("Set first name error").click();
         await screen.getByText("Set last name error").click();
 
         await expect
           .element(screen.getByTestId("render-meta"))
-          .toHaveTextContent("5");
-
-        await screen.getByText("Set same last name error").click();
-        await screen.getByText("Set same last name error").click();
-
-        await expect
-          .element(screen.getByTestId("errors"))
           .toHaveTextContent("2");
-
-        await expect
-          .element(screen.getByTestId("render-meta"))
-          .toHaveTextContent("5");
 
         await expect.element(screen.getByTestId("render-meta"));
 
@@ -2011,7 +1705,7 @@ describe("Field", () => {
           .toHaveTextContent("false");
         await expect
           .element(screen.getByTestId("render-meta"))
-          .toHaveTextContent("6");
+          .toHaveTextContent("3");
 
         await screen.getByText("Clear errors").click();
 
@@ -2023,24 +1717,24 @@ describe("Field", () => {
           .toHaveTextContent("true");
         await expect
           .element(screen.getByTestId("errors"))
-          .toHaveTextContent("0");
+          .toHaveTextContent("");
 
         await expect
           .element(screen.getByTestId("render-meta"))
-          .toHaveTextContent("7");
+          .toHaveTextContent("4");
 
         await screen.getByText("Set field error").click();
 
         await expect
-          .element(screen.getByTestId("error"))
+          .element(screen.getByTestId("errors"))
           .toHaveTextContent("Nope");
         await expect
           .element(screen.getByTestId("errors"))
-          .toHaveTextContent("1");
+          .toHaveTextContent("Nope");
 
         await expect
           .element(screen.getByTestId("render-meta"))
-          .toHaveTextContent("8");
+          .toHaveTextContent("5");
       });
     });
   });
@@ -2065,7 +1759,7 @@ describe("Field", () => {
                 Rename first
               </button>
 
-              <button onClick={() => field.$.name.setError("Nope")}>
+              <button onClick={() => field.$.name.addError("Nope")}>
                 Add error
               </button>
 
@@ -3587,7 +3281,7 @@ describe("Field", () => {
               <Field.Component
                 field={field}
                 meta
-                render={({ value }, { invalids, valid, error, dirty }) => {
+                render={({ value }, { valid, errors, dirty }) => {
                   const count = useRenderCount();
                   return (
                     <>
@@ -3595,7 +3289,7 @@ describe("Field", () => {
 
                       <button
                         onClick={() =>
-                          field.$.name.$.first.setError(`Nope ${Math.random()}`)
+                          field.$.name.$.first.addError(`Nope ${Math.random()}`)
                         }
                       >
                         Set first name error
@@ -3603,30 +3297,20 @@ describe("Field", () => {
 
                       <button
                         onClick={() =>
-                          field.$.name.$.last.setError(`Nah ${Math.random()}`)
+                          field.$.name.$.last.addError(`Nah ${Math.random()}`)
                         }
                       >
                         Set last name error
                       </button>
 
-                      <button
-                        onClick={() =>
-                          field.$.name.$.last.setError(
-                            field.$.name.$.last.error?.message,
-                          )
-                        }
-                      >
-                        Set same last name error
-                      </button>
-
-                      <button onClick={() => field.setError("Nope")}>
+                      <button onClick={() => field.addError("Nope")}>
                         Set field error
                       </button>
 
                       <button
                         onClick={() => {
-                          field.$.name.$.first.setError();
-                          field.$.name.$.last.setError();
+                          field.$.name.$.first.clearErrors();
+                          field.$.name.$.last.clearErrors();
                         }}
                       >
                         Clear errors
@@ -3645,9 +3329,8 @@ describe("Field", () => {
                       </div>
 
                       <div data-testid="dirty">{String(dirty)}</div>
-                      <div data-testid="error">{error?.message}</div>
+                      <div data-testid="errors">{joinErrors(errors)}</div>
                       <div data-testid="valid">{String(valid)}</div>
-                      <div data-testid="errors">{invalids.size}</div>
                     </>
                   );
                 }}
@@ -3670,7 +3353,7 @@ describe("Field", () => {
           .toHaveTextContent("true");
         await expect
           .element(screen.getByTestId("errors"))
-          .toHaveTextContent("0");
+          .toHaveTextContent("");
 
         await screen.getByText("Set first name error").click();
 
@@ -3682,35 +3365,24 @@ describe("Field", () => {
           .toHaveTextContent("false");
         await expect
           .element(screen.getByTestId("errors"))
-          .toHaveTextContent("1");
+          .toHaveTextContent("");
 
         await screen.getByText("Set last name error").click();
 
         await expect
           .element(screen.getByTestId("errors"))
-          .toHaveTextContent("2");
+          .toHaveTextContent("");
 
         await expect
           .element(screen.getByTestId("render-meta"))
-          .toHaveTextContent("3");
+          .toHaveTextContent("2");
 
         await screen.getByText("Set first name error").click();
         await screen.getByText("Set last name error").click();
 
         await expect
           .element(screen.getByTestId("render-meta"))
-          .toHaveTextContent("5");
-
-        await screen.getByText("Set same last name error").click();
-        await screen.getByText("Set same last name error").click();
-
-        await expect
-          .element(screen.getByTestId("errors"))
           .toHaveTextContent("2");
-
-        await expect
-          .element(screen.getByTestId("render-meta"))
-          .toHaveTextContent("5");
 
         await expect.element(screen.getByTestId("render-meta"));
 
@@ -3728,7 +3400,7 @@ describe("Field", () => {
           .toHaveTextContent("false");
         await expect
           .element(screen.getByTestId("render-meta"))
-          .toHaveTextContent("6");
+          .toHaveTextContent("3");
 
         await screen.getByText("Clear errors").click();
 
@@ -3740,24 +3412,21 @@ describe("Field", () => {
           .toHaveTextContent("true");
         await expect
           .element(screen.getByTestId("errors"))
-          .toHaveTextContent("0");
+          .toHaveTextContent("");
 
         await expect
           .element(screen.getByTestId("render-meta"))
-          .toHaveTextContent("7");
+          .toHaveTextContent("4");
 
         await screen.getByText("Set field error").click();
 
         await expect
-          .element(screen.getByTestId("error"))
-          .toHaveTextContent("Nope");
-        await expect
           .element(screen.getByTestId("errors"))
-          .toHaveTextContent("1");
+          .toHaveTextContent("Nope");
 
         await expect
           .element(screen.getByTestId("render-meta"))
-          .toHaveTextContent("8");
+          .toHaveTextContent("5");
 
         await expect
           .element(screen.getByTestId("render-meta-outside"))
@@ -4050,4 +3719,9 @@ function useRenderCount() {
   const counterRef = useRef(0);
   counterRef.current += 1;
   return counterRef.current;
+}
+
+function joinErrors(errors: Field.Error[] | undefined) {
+  if (!errors) return "";
+  return errors.map((error) => error.message).join(", ");
 }

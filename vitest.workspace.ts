@@ -16,6 +16,7 @@ export default defineWorkspace([
       name: "browser",
       setupFiles: ["./tests/setup.ts"],
       include: ["src/**/tests.tsx"],
+      testTimeout: 500,
       browser: {
         enabled: true,
         provider: "playwright",

@@ -6,6 +6,7 @@
     "esbenp.prettier-vscode",
     "hverlin.mise-vscode",
     "vitest.explorer",
-    "tekumara.typos-vscode"
+    "tekumara.typos-vscode",
+    "davidlday.languagetool-linter"
   ]
 }

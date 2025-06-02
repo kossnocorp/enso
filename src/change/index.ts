@@ -265,9 +265,8 @@ export const fieldChange = {
   invalid: takeBit(),
   /** Field become valid. */
   valid: takeBit(),
-  // Reserved for focus change
-  // [TODO] Decide if I want to implement focus change and remove this if not.
-  ...reserveBit(),
+  /** Errors change. A new error was inserted or removed. */
+  errors: takeBit(),
   /** Field lost focus. */
   blur: takeBit(),
 

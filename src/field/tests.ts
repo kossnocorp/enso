@@ -1,7 +1,13 @@
 import { assert, describe, expect, it, vi } from "vitest";
 import { change } from "../change/index.ts";
-import { DetachedValue, Field, detachedValue } from "./index.tsx";
+import {
+  DetachedValue,
+  Field,
+  ComputedField,
+  detachedValue,
+} from "./index.tsx";
 import { FieldRef } from "./ref/index.ts";
+import { ValidationTree } from "../validation/index.ts";
 
 describe("Field", () => {
   it("creates a field instance", () => {
@@ -1494,6 +1500,62 @@ describe("Field", () => {
         });
       });
     });
+
+    describe(Field.prototype.lookup, () => {
+      describe("primitive", () => {
+        it("returns itself for empty path", () => {
+          const field = new Field(42);
+          const lookup = field.lookup([]);
+          expect(lookup).toBe(field);
+        });
+
+        it("returns undefined for non-empty path", () => {
+          const field = new Field(42);
+          const lookup = field.lookup(["length"]);
+          expect(lookup).toBe(undefined);
+        });
+      });
+
+      describe("object", () => {
+        it("returns itself for empty path", () => {
+          const field = new Field({ num: 42 });
+          const lookup = field.lookup([]);
+          expect(lookup).toBe(field);
+        });
+
+        it("returns the field for valid path", () => {
+          const field = new Field({ num: 42 });
+          const lookup = field.lookup(["num"]);
+          expect(lookup).toBe(field.$.num);
+        });
+
+        it("returns undefined for invalid path", () => {
+          const field = new Field({ num: 42 });
+          const lookup = field.lookup(["bum"]);
+          expect(lookup).toBe(undefined);
+        });
+      });
+
+      describe("array", () => {
+        it("returns itself for empty path", () => {
+          const field = new Field([1, 2, 3]);
+          const lookup = field.lookup([]);
+          expect(lookup).toBe(field);
+        });
+
+        it("returns the item for valid path", () => {
+          const field = new Field([1, 2, 3]);
+          const lookup = field.lookup([1]);
+          expect(lookup).toBe(field.$[1]);
+        });
+
+        it("returns undefined for invalid path", () => {
+          const field = new Field([1, 2, 3]);
+          const lookup = field.lookup([5, 2]);
+          expect(lookup).toBe(undefined);
+        });
+      });
+    });
   });
 
   describe("events", () => {
@@ -2432,123 +2494,175 @@ describe("Field", () => {
   });
 
   describe("errors", () => {
-    describe("setError", () => {
-      it("assigns an error to the field", () => {
+    describe("errors", () => {
+      it("returns direct errors of the field", () => {
         const field = new Field(42);
-        field.setError("Something went wrong");
-        expect(field.error).toEqual({ message: "Something went wrong" });
+        field.addError("Something went wrong");
+        field.addError("Something went wrong again");
+        expect(field.errors).toEqual([
+          { message: "Something went wrong" },
+          { message: "Something went wrong again" },
+        ]);
       });
 
-      it("allows to pass error object", () => {
-        const field = new Field(42);
-        field.setError({ type: "internal", message: "Something went wrong" });
-        expect(field.error).toEqual({
-          type: "internal",
-          message: "Something went wrong",
-        });
-      });
-
-      it("allows to clear the error", () => {
-        const field = new Field(42);
-        field.setError("Something went wrong");
-        field.setError();
-        expect(field.error).toBe(undefined);
-      });
-
-      it("triggers the invalid update", () =>
-        new Promise<void>((resolve) => {
-          const field = new Field(42);
-          const spy = vi.fn();
-          field.watch(spy);
-          field.setError("Something went wrong");
-          setTimeout(() => {
-            expect(spy).toHaveBeenCalledWith(
-              42,
-              expect.objectContaining({ changes: change.field.invalid }),
-            );
-            resolve();
-          });
-        }));
-
-      it("clearing triggers the valid update", () =>
-        new Promise<void>((resolve) => {
-          const field = new Field(42);
-          const spy = vi.fn();
-          field.watch(spy);
-          field.setError("Something went wrong");
-          field.setError();
-          setTimeout(() => {
-            expect(spy).toHaveBeenCalledTimes(1);
-            expect(spy).toHaveBeenCalledWith(
-              42,
-              expect.objectContaining({ changes: change.field.valid }),
-            );
-            resolve();
-          });
-        }));
-
-      it("sets the error to the source field for computed fields", () => {
+      it("excludes tree errors", () => {
         const field = new Field({ name: { first: "Sasha" } });
-        const computed = field.$.name.$.first.into(toCodes).from(fromCodes);
-        computed.setError("Something went wrong");
-        expect(field.$.name.$.first.error).toEqual({
-          message: "Something went wrong",
-        });
-        expect(computed.error).toBe(field.error);
-      });
-
-      describe("changes", () => {
-        describe.todo("field");
-
-        describe.todo("child");
-
-        describe.todo("subtree");
+        field.$.name.addError("Something went wrong");
+        field.$.name.$.first.addError("Something went wrong again");
+        expect(field.errors).toEqual([]);
       });
     });
 
-    describe("invalids", () => {
-      it("collects map all children errors", () => {
-        const field = new Field({
-          name: { first: "" },
-          age: 370,
-          ids: [123, 456],
+    describe(Field.prototype.addError, () => {
+      it("adds error to field", () => {
+        const field = new Field(42);
+        field.addError({ type: "internal", message: "Something went wrong" });
+        expect(field.errors).toEqual([
+          { type: "internal", message: "Something went wrong" },
+        ]);
+      });
+
+      it("convert string to error", () => {
+        const field = new Field(42);
+        field.addError("Something went wrong");
+        expect(field.errors).toEqual([{ message: "Something went wrong" }]);
+      });
+
+      describe("changes", () => {
+        describe("field", () => {
+          it("triggers updates", async () => {
+            const field = new Field(42);
+            const spy = vi.fn();
+            field.watch(spy);
+            field.addError("Something went wrong");
+            await postpone();
+            expect(spy).toReceiveChanges(
+              change.field.invalid | change.field.errors,
+            );
+          });
+
+          it("does not trigger invalid changes if the field is already invalid", async () => {
+            const field = new Field(42);
+            field.addError("Something went wrong");
+            await postpone();
+            const spy = vi.fn();
+            field.watch(spy);
+            field.addError("Something went wrong again");
+            await postpone();
+            expect(spy).toReceiveChanges(change.field.errors);
+          });
         });
-        field.setError("Something is wrong");
-        field.$.age.setError("Are you an immortal?");
-        field.$.name.$.first.setError("First name is required");
-        field.$.ids.at(1).setError("Is it a valid ID?");
-        const { invalids } = field;
-        expect(invalids.size).toBe(4);
-        // @ts-ignore: [TODO]
-        expect(invalids.get(field)).toEqual({ message: "Something is wrong" });
-        // @ts-ignore: [TODO]
-        expect(invalids.get(field.$.age)).toEqual({
-          message: "Are you an immortal?",
+
+        describe("child", () => {
+          it("triggers updates", async () => {
+            const field = new Field({ name: { first: "Sasha" } });
+            const spy = vi.fn();
+            field.$.name.watch(spy);
+            field.$.name.$.first.addError("Something went wrong");
+            await postpone();
+            expect(spy).toReceiveChanges(
+              change.child.invalid | change.child.errors,
+            );
+          });
         });
-        // @ts-ignore: [TODO]
-        expect(invalids.get(field.$.name.$.first)).toEqual({
-          message: "First name is required",
-        });
-        // @ts-ignore: [TODO]
-        expect(invalids.get(field.$.ids.at(1))).toEqual({
-          message: "Is it a valid ID?",
+
+        describe("subtree", () => {
+          it("triggers updates", async () => {
+            const field = new Field({ name: { first: "Sasha" } });
+            const spy = vi.fn();
+            field.watch(spy);
+            field.$.name.$.first.addError("Something went wrong");
+            await postpone();
+            expect(spy).toReceiveChanges(
+              change.subtree.invalid | change.subtree.errors,
+            );
+          });
         });
       });
 
-      it("returns the source field errors for computed fields", () => {
-        const field = new Field({ name: { first: "", last: "" } });
-        const computed = field.$.name.into(toFullName).from(fromFullName);
-        field.$.name.$.first.setError("First name is required");
-        field.$.name.$.last.setError("Last name is required");
-        const { invalids } = computed;
-        expect(invalids.size).toBe(2);
-        // @ts-ignore: [TODO]
-        expect(invalids.get(field.$.name.$.first)).toEqual({
-          message: "First name is required",
+      describe("computed", () => {
+        it("sets the error to the source field", () => {
+          const field = new Field({ name: { first: "Sasha" } });
+          const computed = field.$.name.$.first.into(toCodes).from(fromCodes);
+          computed.addError("Something went wrong");
+          expect(field.$.name.$.first.errors).toEqual([
+            { message: "Something went wrong" },
+          ]);
         });
-        // @ts-ignore: [TODO]
-        expect(invalids.get(field.$.name.$.last)).toEqual({
-          message: "Last name is required",
+      });
+    });
+
+    describe(Field.prototype.clearErrors, () => {
+      it("clears the errors", () => {
+        const field = new Field(42);
+        field.addError("Something went wrong");
+        field.clearErrors();
+        expect(field.errors).toHaveLength(0);
+        expect(field.valid).toBe(true);
+      });
+
+      describe("changes", () => {
+        describe("field", () => {
+          it("triggers updates", async () => {
+            const field = new Field(42);
+            const spy = vi.fn();
+            field.watch(spy);
+            field.addError("Something went wrong");
+            field.clearErrors();
+            await postpone();
+            expect(spy).toReceiveChanges(
+              change.field.valid | change.field.errors,
+            );
+          });
+
+          it("ignores updates if the field has no errors", async () => {
+            const field = new Field(42);
+            const spy = vi.fn();
+            field.watch(spy);
+            field.clearErrors();
+            await postpone();
+            expect(spy).toHaveBeenCalledTimes(0);
+          });
+        });
+
+        describe("child", () => {
+          it("triggers updates", async () => {
+            const field = new Field({ name: { first: "Sasha" } });
+            field.$.name.$.first.addError("Something went wrong");
+            await postpone();
+            const spy = vi.fn();
+            field.$.name.watch(spy);
+            field.$.name.$.first.clearErrors();
+            await postpone();
+            expect(spy).toReceiveChanges(
+              change.child.valid | change.child.errors,
+            );
+          });
+        });
+
+        describe("subtree", () => {
+          it("triggers updates", async () => {
+            const field = new Field({ name: { first: "Sasha" } });
+            field.$.name.$.first.addError("Something went wrong");
+            await postpone();
+            const spy = vi.fn();
+            field.watch(spy);
+            field.$.name.$.first.clearErrors();
+            await postpone();
+            expect(spy).toReceiveChanges(
+              change.subtree.valid | change.subtree.errors,
+            );
+          });
+        });
+      });
+
+      describe("computed", () => {
+        it("clears errors of the source field", () => {
+          const field = new Field({ name: { first: "Sasha" } });
+          const computed = field.$.name.$.first.into(toCodes).from(fromCodes);
+          computed.addError("Something went wrong");
+          computed.clearErrors();
+          expect(field.$.name.$.first.errors).toHaveLength(0);
         });
       });
     });
@@ -2562,10 +2676,10 @@ describe("Field", () => {
         });
         expect(field.valid).toBe(true);
         expect(field.$.name.valid).toBe(true);
-        field.$.name.$.first.setError("First name is required");
+        field.$.name.$.first.addError("First name is required");
         expect(field.valid).toBe(false);
         expect(field.$.name.valid).toBe(false);
-        field.$.name.$.first.setError();
+        field.$.name.$.first.clearErrors();
         expect(field.valid).toBe(true);
         expect(field.$.name.valid).toBe(true);
       });
@@ -2574,186 +2688,193 @@ describe("Field", () => {
         const field = new Field({ name: { first: "", last: "" } });
         const computed = field.$.name.into(toFullName).from(fromFullName);
         expect(computed.valid).toBe(true);
-        field.$.name.$.first.setError("First name is required");
-        field.$.name.$.last.setError("Last name is required");
+        field.$.name.$.first.addError("First name is required");
+        field.$.name.$.last.addError("Last name is required");
         expect(computed.valid).toBe(false);
-      });
-    });
-
-    describe("expunge", () => {
-      it("clears all errors", () => {
-        const field = new Field({
-          name: { first: "" },
-          age: 370,
-          ids: [123, 456],
-        });
-        field.setError("Something is wrong");
-        field.$.age.setError("Are you an immortal?");
-        field.$.name.$.first.setError("First name is required");
-        field.$.ids.at(1).setError("Is it a valid ID?");
-        expect(field.valid).toBe(false);
-        expect(field.invalids.size).toBe(4);
-        field.expunge();
-        expect(field.invalids.size).toBe(0);
-        expect(field.valid).toBe(true);
       });
     });
   });
 
   describe("validation", () => {
-    describe("primitive", () => {
-      it("allows to validate the state", () => {
+    describe("validation", () => {
+      it("is a validation tree instance", () => {
         const field = new Field(42);
-        field.validate((ref) => {
-          if (ref.get() !== 43) {
-            ref.setError("Invalid");
-          }
-        });
-        expect(field.valid).toBe(false);
-        expect(field.error).toEqual({ message: "Invalid" });
+        expect(field.validation).toBeInstanceOf(ValidationTree);
       });
 
-      it("clears previous errors on validation", () => {
-        function validateNum(ref: FieldRef<number>) {
-          if (ref.get() !== 43) {
-            ref.setError("Invalid");
-          }
-        }
-        const field = new Field(42);
-        field.validate(validateNum);
-        field.set(43);
-        field.validate(validateNum);
-        expect(field.valid).toBe(true);
+      it("points to the root parent validation tree", () => {
+        const field = new Field({ a: { b: { c: 42 } } });
+        expect(field.$.a.$.b.validation).toBe(field.validation);
+        expect(field.$.a.$.b.$.c.validation).toBe(field.validation);
       });
-
-      describe.todo("changes");
     });
 
-    describe("object", () => {
-      it("allows to validate the state", () => {
-        const field = new Field<Name>({ first: "" });
-
-        field.validate(validateName);
-
-        expect(field.valid).toBe(false);
-        expect(field.$.first.error).toEqual({ message: "Required" });
-        expect(field.$.last.error).toEqual({ message: "Required" });
-      });
-
-      it("clears previous errors on validation", () => {
-        const field = new Field<Name>({ first: "" });
-
-        field.validate(validateName);
-
-        expect(field.valid).toBe(false);
-        expect(field.$.first.error).toEqual({ message: "Required" });
-        expect(field.$.last.error).toEqual({ message: "Required" });
-
-        field.set({ first: "Sasha", last: "Koss" });
-        field.validate(validateName);
-
-        expect(field.valid).toBe(true);
-        expect(field.$.first.error).toBe(undefined);
-        expect(field.$.last.error).toBe(undefined);
-      });
-
-      it("sends a single watch event on validation", async () => {
-        const field = new Field<Name>({ first: "" });
-
-        const fieldSpy = vi.fn();
-        const nameSpy = vi.fn();
-        field.watch(fieldSpy);
-        field.$.first.watch(nameSpy);
-
-        await field.validate(validateName);
-
-        expect(fieldSpy).toHaveBeenCalledOnce();
-        {
-          const [[value, event]]: any = fieldSpy.mock.calls;
-          expect(value).toEqual({ first: "" });
-          expect(event.changes).toMatchChanges(change.child.invalid);
-        }
-
-        expect(nameSpy).toHaveBeenCalledOnce();
-        {
-          const [[value, event]]: any = nameSpy.mock.calls;
-          expect(value).toEqual("");
-          expect(event.changes).toMatchChanges(change.field.invalid);
-        }
-      });
-
-      it("allows to iterate the fields", () => {
-        const field = new Field<{ first: string; last?: string | undefined }>({
-          first: "",
-          last: undefined,
-        });
-        field.validate((ref) => {
-          ref.forEach((valueRef, key) => {
-            if (!valueRef.get()?.trim()) {
-              valueRef.setError("Required");
+    describe(Field.prototype.validate, () => {
+      describe("primitive", () => {
+        it("allows to validate the state", () => {
+          const field = new Field(42);
+          field.validate((ref) => {
+            if (ref.get() !== 43) {
+              ref.addError("Invalid");
             }
           });
+          expect(field.valid).toBe(false);
+          expect(field.errors).toEqual([{ message: "Invalid" }]);
         });
-        expect(field.valid).toBe(false);
-        expect(field.$.first.error).toEqual({ message: "Required" });
-        expect(field.$.last.error).toEqual({ message: "Required" });
+
+        it("clears previous errors on validation", () => {
+          function validateNum(ref: FieldRef<number>) {
+            if (ref.get() !== 43) {
+              ref.addError("Invalid");
+            }
+          }
+          const field = new Field(42);
+          field.validate(validateNum);
+          field.set(43);
+          field.validate(validateNum);
+          expect(field.valid).toBe(true);
+        });
+
+        describe.todo("changes");
       });
 
-      it("allows to validate records", () => {
-        const field = new Field<Record<string, number>>({
-          one: 1,
-          two: 2,
+      describe("object", () => {
+        it("allows to validate the state", () => {
+          const field = new Field<Name>({ first: "" });
+
+          field.validate(validateName);
+
+          expect(field.valid).toBe(false);
+          expect(field.$.first.errors).toEqual([{ message: "Required" }]);
+          expect(field.$.last.errors).toEqual([{ message: "Required" }]);
         });
-        field.validate((ref) => {
-          ref.at("two").setError("Invalid");
+
+        it("clears previous errors on validation", () => {
+          const field = new Field<Name>({ first: "" });
+
+          field.validate(validateName);
+
+          expect(field.valid).toBe(false);
+          expect(field.$.first.errors).toEqual([{ message: "Required" }]);
+          expect(field.$.last.errors).toEqual([{ message: "Required" }]);
+
+          field.set({ first: "Sasha", last: "Koss" });
+          field.validate(validateName);
+
+          expect(field.valid).toBe(true);
+          expect(field.$.first.errors).toHaveLength(0);
+          expect(field.$.last.errors).toHaveLength(0);
         });
-        expect(field.valid).toBe(false);
-        expect(field.at("two").error).toEqual({ message: "Invalid" });
+
+        it("sends a single watch event on validation", async () => {
+          const field = new Field<Name>({ first: "" });
+
+          const fieldSpy = vi.fn();
+          const nameSpy = vi.fn();
+          field.watch(fieldSpy);
+          field.$.first.watch(nameSpy);
+
+          await field.validate(validateName);
+
+          expect(fieldSpy).toHaveBeenCalledOnce();
+          expect(fieldSpy).toReceiveChanges(
+            change.child.invalid | change.child.errors,
+          );
+
+          expect(nameSpy).toHaveBeenCalledOnce();
+          expect(nameSpy).toReceiveChanges(
+            change.field.invalid | change.field.errors,
+          );
+        });
+
+        it("allows to iterate the fields", () => {
+          const field = new Field<{ first: string; last?: string | undefined }>(
+            {
+              first: "",
+              last: undefined,
+            },
+          );
+          field.validate((ref) => {
+            ref.forEach((valueRef, key) => {
+              if (!valueRef.get()?.trim()) {
+                valueRef.addError("Required");
+              }
+            });
+          });
+          expect(field.valid).toBe(false);
+          expect(field.$.first.errors).toEqual([{ message: "Required" }]);
+          expect(field.$.last.errors).toEqual([{ message: "Required" }]);
+        });
+
+        it("allows to validate records", () => {
+          const field = new Field<Record<string, number>>({
+            one: 1,
+            two: 2,
+          });
+          field.validate((ref) => {
+            ref.at("two").addError("Invalid");
+          });
+          expect(field.valid).toBe(false);
+          expect(field.at("two").errors).toEqual([{ message: "Invalid" }]);
+        });
+
+        describe("changes", () => {
+          describe.todo("field");
+
+          describe.todo("child");
+
+          describe.todo("subtree");
+        });
       });
 
-      describe("changes", () => {
-        describe.todo("field");
+      describe.todo("array");
 
-        describe.todo("child");
+      describe("instance", () => {
+        it("allows to validate the state", () => {
+          const map = new Map();
+          map.set("num", 42);
+          const field = new Field(map);
+          field.validate((ref) => {
+            if (ref.get().get("num") !== 43) {
+              ref.addError("Invalid");
+            }
+          });
+          expect(field.valid).toBe(false);
+          expect(field.errors).toEqual([{ message: "Invalid" }]);
+        });
 
-        describe.todo("subtree");
+        it("clears previous errors on validation", () => {
+          function validateMap(ref: FieldRef<Map<string, number>>) {
+            if (ref.get().get("num") !== 43) {
+              ref.addError("Invalid");
+            }
+          }
+          const map = new Map();
+          map.set("num", 42);
+          const field = new Field(map);
+          field.validate(validateMap);
+
+          const newMap = new Map();
+          map.set("num", 43);
+          field.validate(validateMap);
+          expect(field.valid).toBe(true);
+        });
+
+        describe.todo("changes");
       });
     });
+  });
+});
 
-    describe.todo("array");
-
-    describe("instance", () => {
-      it("allows to validate the state", () => {
-        const map = new Map();
-        map.set("num", 42);
-        const field = new Field(map);
-        field.validate((ref) => {
-          if (ref.get().get("num") !== 43) {
-            ref.setError("Invalid");
-          }
-        });
-        expect(field.valid).toBe(false);
-        expect(field.error).toEqual({ message: "Invalid" });
-      });
-
-      it("clears previous errors on validation", () => {
-        function validateMap(ref: FieldRef<Map<string, number>>) {
-          if (ref.get().get("num") !== 43) {
-            ref.setError("Invalid");
-          }
-        }
-        const map = new Map();
-        map.set("num", 42);
-        const field = new Field(map);
-        field.validate(validateMap);
-
-        const newMap = new Map();
-        map.set("num", 43);
-        field.validate(validateMap);
-        expect(field.valid).toBe(true);
-      });
-
-      describe.todo("changes");
+describe(ComputedField, () => {
+  describe("validation", () => {
+    it("points to the source field validation", () => {
+      const source = new Field<string>("hello");
+      const computed = new ComputedField<string, string>(
+        "Hello, world!",
+        source,
+      );
+      expect(computed.validation).toBe(source.validation);
     });
   });
 });
@@ -2782,15 +2903,17 @@ function fromCodes(codes: number[]) {
   return codes.map((c) => String.fromCharCode(c)).join("");
 }
 
-const field = new Field<Name>({ first: "" });
-
 function validateRequired(ref: FieldRef.Variable<string | undefined>) {
-  if (!ref.get()?.trim()) ref.setError("Required");
+  if (!ref.get()?.trim()) ref.addError("Required");
 }
 
 function validateName(ref: FieldRef<Name>) {
   validateRequired(ref.$.first);
   validateRequired(ref.$.last);
+}
+
+function postpone() {
+  return new Promise<void>((resolve) => setTimeout(resolve));
 }
 
 //#endregion

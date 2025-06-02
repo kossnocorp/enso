@@ -68,6 +68,4 @@ export namespace EnsoUtils {
   };
 
   export type OptionalKeys<Payload> = keyof PickOptional<Payload>;
-
-  export type Falsy = false | 0 | "" | null | undefined;
 }
