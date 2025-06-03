@@ -16,6 +16,7 @@ import {
   ChangesEvent,
   fieldChange,
   FieldChange,
+  isolateMetaChanges,
   shapeChanges,
   shiftChildChanges,
   structuralChanges,
@@ -387,8 +388,12 @@ export class Field<Payload> {
     }
 
     // If the updates should flow upstream, trigger parents too
-    if (notifyParents && this.#parent)
-      this.#parent.field.#childTrigger(changes, this.#parent.key);
+    if (notifyParents) this.propagate(changes);
+  }
+
+  propagate(changes: FieldChange) {
+    if (!this.#parent) return;
+    this.#parent.field.#childTrigger(changes, this.#parent.key);
   }
 
   #childTrigger(childChanges: FieldChange, key: string) {
@@ -1423,6 +1428,13 @@ export class ComputedField<Payload, Computed> extends Field<Computed> {
 
   override get dirty(): boolean {
     return this.#source.dirty;
+  }
+
+  override propagate(changes: FieldChange) {
+    // Only propagate meta changes
+    const metaChanges = isolateMetaChanges(changes);
+    if (!metaChanges) return;
+    this.#source.trigger(shiftChildChanges(metaChanges), true);
   }
 
   override addError(error: string | Field.Error): void {

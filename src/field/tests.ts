@@ -2867,6 +2867,22 @@ describe("Field", () => {
 });
 
 describe(ComputedField, () => {
+  describe("events", () => {
+    it("delegates events to the source field", async () => {
+      const source = new Field<string>("Hello, world!");
+      const computed = new ComputedField<string, string>(
+        "Hello, world!",
+        source,
+      );
+      const spy = vi.fn();
+      source.watch(spy);
+      computed.trigger(change.field.blur, true);
+      await postpone();
+      expect(spy).toHaveBeenCalledOnce();
+      expect(spy).toReceiveChanges(change.child.blur);
+    });
+  });
+
   describe("validation", () => {
     it("points to the source field validation", () => {
       const source = new Field<string>("hello");

@@ -464,6 +464,20 @@ export function isolateStructuralChanges(changes: FieldChange): FieldChange {
   return changes & fieldChangesMask;
 }
 
+/**
+ * Isolates the meta changes from the changes map.
+ *
+ * @param changes - Changes to isolate the meta changes from.
+ * @returns Isolated meta changes.
+ */
+export function isolateMetaChanges(changes: FieldChange): FieldChange {
+  return (
+    changes &
+    fieldChangesMask &
+    ~(structuralFieldChangesMask | childChangesMask)
+  );
+}
+
 //#endregion
 
 //#region Checks
