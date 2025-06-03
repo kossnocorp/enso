@@ -1,6 +1,7 @@
-import { describe, expect, it } from "vitest";
-import { FieldRef, MaybeFieldRef } from "./index.ts";
+import { describe, expect, it, vi } from "vitest";
+import { change } from "../../change/index.ts";
 import { Field } from "../index.tsx";
+import { FieldRef, MaybeFieldRef } from "./index.ts";
 
 describe(FieldRef, () => {
   describe("tree", () => {
@@ -201,5 +202,39 @@ describe(MaybeFieldRef, () => {
       field.clearErrors();
       expect(pavedField.errors).toEqual([]);
     });
+
+    describe("changes", () => {
+      it("causes target field trigger", async () => {
+        const field = new Field<string | number | undefined>("hello");
+        const fieldRef = new FieldRef(field);
+        const maybeFieldRef = fieldRef.maybe();
+        const spy = vi.fn();
+        field.watch(spy);
+        maybeFieldRef.addError("Something went wrong");
+        await postpone();
+        expect(spy).toHaveBeenCalledTimes(1);
+        expect(spy).toReceiveChanges(
+          change.field.errors | change.field.invalid,
+        );
+      });
+
+      it("trigger event on the closest target", async () => {
+        const field = new Field<{ name?: { first?: string } }>({});
+        const fieldRef = new FieldRef(field);
+        const maybeFieldRef = fieldRef.maybe().at("name").at("first");
+        const spy = vi.fn();
+        field.$.name.watch(spy);
+        maybeFieldRef.addError("Something went wrong");
+        await postpone();
+        expect(spy).toHaveBeenCalledTimes(1);
+        expect(spy).toReceiveChanges(
+          change.subtree.errors | change.subtree.invalid,
+        );
+      });
+    });
   });
 });
+
+function postpone() {
+  return new Promise<void>((resolve) => setTimeout(resolve));
+}

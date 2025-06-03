@@ -41,13 +41,14 @@ function toReceiveChangesMessage(
   const receivedStr = received
     .map(
       (change, index) =>
-        `  Call #${index + 1}: ${receivedChangesMessage(change)}`,
+        `  Call #${index + 1}:
+  ${receivedChangesMessage(change)}`,
     )
     .join("\n");
 
   return `${expectedChangesMessage("to receive changes", expected)}
 ...but received:
-  ${receivedStr || "no changes received"}`;
+${receivedStr || "  no changes received"}`;
 }
 
 function expectedChangesMessage(expectation: string, expected: FieldChange) {

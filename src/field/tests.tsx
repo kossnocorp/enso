@@ -3023,7 +3023,7 @@ describe("Field", () => {
 
   describe("input", () => {
     describe("input", () => {
-      it("syncronizes input with the state", async () => {
+      it("synchronizes input with the state", async () => {
         function Component() {
           const count = useRenderCount();
           const field = Field.use<User>({ name: { first: "Alexander" } });
@@ -3078,7 +3078,7 @@ describe("Field", () => {
           .toHaveTextContent("1");
       });
 
-      it("syncronizes textarea with the state", async () => {
+      it("synchronizes textarea with the state", async () => {
         function Component() {
           const count = useRenderCount();
           const field = Field.use<User>({ name: { first: "Alexander" } });

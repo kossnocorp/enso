@@ -1,13 +1,13 @@
 import { assert, describe, expect, it, vi } from "vitest";
 import { change } from "../change/index.ts";
+import { ValidationTree } from "../validation/index.ts";
 import {
-  DetachedValue,
-  Field,
   ComputedField,
+  DetachedValue,
   detachedValue,
+  Field,
 } from "./index.tsx";
 import { FieldRef } from "./ref/index.ts";
-import { ValidationTree } from "../validation/index.ts";
 
 describe("Field", () => {
   it("creates a field instance", () => {
@@ -50,7 +50,7 @@ describe("Field", () => {
     });
 
     describe("path", () => {
-      it("returns tha path to the field", () => {
+      it("returns the path to the field", () => {
         const field = new Field({ address: { name: { first: "Sasha" } } });
         expect(field.$.address.$.name.$.first.path).toEqual([
           "address",
@@ -90,7 +90,7 @@ describe("Field", () => {
     });
 
     describe("name", () => {
-      it("returns tha field name", () => {
+      it("returns the field name", () => {
         const field = new Field({ address: { name: { first: "Sasha" } } });
         expect(field.$.address.$.name.$.first.name).toEqual(
           "address.name.first",

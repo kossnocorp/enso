@@ -1,3 +1,4 @@
+import { change, shiftChildChanges } from "../../change/index.ts";
 import { EnsoUtils } from "../../utils.ts";
 import { Field } from "../index.tsx";
 
@@ -265,9 +266,19 @@ export class MaybeFieldRef<Payload> {
     if (this.#target.type === "direct") {
       this.#target.field.addError(error);
     } else {
+      const prevValid = this.#target.closest.valid;
+
       const path = [...this.#target.closest.path, ...this.#target.path];
       error = typeof error === "string" ? { message: error } : error;
       this.#target.closest.validation.add(path, error);
+
+      let changes = change.field.errors;
+      if (prevValid) changes |= change.field.invalid;
+      for (const _ of path) {
+        changes = shiftChildChanges(changes);
+      }
+
+      this.#target.closest.trigger(changes, true);
     }
   }
 
