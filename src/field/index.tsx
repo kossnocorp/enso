@@ -576,7 +576,6 @@ export class Field<Payload> {
     const computed = new ComputedField(mapper(this.get(), undefined), this);
     // [TODO] This creates a leak, so rather than holding on to the computed
     // field, store it as a weak ref and unsubscribe when it's no longer needed.
-    // [TODO] Process only structural changes?
 
     const contextBrand = `computed-${computed.id}`;
 
