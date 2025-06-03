@@ -2881,6 +2881,25 @@ describe(ComputedField, () => {
       expect(spy).toHaveBeenCalledOnce();
       expect(spy).toReceiveChanges(change.child.blur);
     });
+
+    it("delegates events through a detached field", async () => {
+      const source = new Field<{ name?: { first?: string; last?: string } }>(
+        {},
+      );
+      const computed = source.$.name
+        .into((name) => [name?.first, name?.last].join(" "))
+        .from(fromFullName);
+      const rootSpy = vi.fn();
+      source.watch(rootSpy);
+      const detachedSpy = vi.fn();
+      source.$.name.watch(detachedSpy);
+      computed.trigger(change.field.blur, true);
+      await postpone();
+      expect(rootSpy).toHaveBeenCalledOnce();
+      expect(rootSpy).toReceiveChanges(change.subtree.blur);
+      expect(detachedSpy).toHaveBeenCalledOnce();
+      expect(detachedSpy).toReceiveChanges(change.child.blur);
+    });
   });
 
   describe("validation", () => {

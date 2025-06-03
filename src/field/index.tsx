@@ -581,6 +581,7 @@ export class Field<Payload> {
     const contextBrand = `computed-${computed.id}`;
 
     this.watch((value, event) => {
+      if (!structuralChanges(event.changes)) return;
       // Check if the change was triggered by the computed value and ignore it
       // to prevent double calls.
       if (event.context[contextBrand]) return;
@@ -589,12 +590,13 @@ export class Field<Payload> {
 
     return {
       from: (fromMapper) => {
-        // [TODO] Process only structural changes?
         computed.watch(
-          (computedValue) =>
+          (computedValue, event) =>
             // Set context so we can know if the field change was triggered by
             // the computed value and ignore it to prevent double calls.
             ChangesEvent.context({ [contextBrand]: true }, () => {
+              // Ignore everything but structural changes
+              if (!structuralChanges(event.changes)) return;
               this.set(fromMapper(computedValue, this.get()));
             }),
           true,
