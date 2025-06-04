@@ -30,11 +30,14 @@ export class ChangesEvent extends Event {
       Object.assign(currentContext, ctx);
     }
 
+    // [TODO] Consider completely removing the `sync` mode as it creates a lot
+    // of complexity and so far I couldn't find a strong case for it.
     if (this.#sync) {
       target.dispatchEvent(new ChangesEvent(changes, currentContext));
       return;
     }
 
+    // Create a new batch if it doesn't exist.
     if (!this.#batch) this.#batch = new Map();
 
     const [batchedChanges, batchedContext] = this.#batch.get(target) || [
@@ -67,11 +70,16 @@ export class ChangesEvent extends Event {
     queueMicrotask(() => {
       // Check if the batch was consumed
       if (!this.#batch) return;
-      // Dispatch the events
-      this.#batch.forEach(([changes, context], target) => {
-        target.dispatchEvent(new ChangesEvent(changes, context));
-      });
+
+      // Clear the batch so when new events are chain-batched, they will
+      // postpone until the next microtask.
+      const batch = this.#batch;
       this.#batch = undefined;
+
+      // Dispatch currently batched events
+      batch.forEach(([changes, context], target) =>
+        target.dispatchEvent(new ChangesEvent(changes, context)),
+      );
     });
   }
 
@@ -255,10 +263,10 @@ export const fieldChange = {
   /** Field key changed. It indicates that the field got moved. It doesn't
    * apply to the field getting detached and attached. */
   key: takeBit(),
-  /** Current field value commited as initial. */
+  /** Current field value committed as initial. */
   // [TODO] Utilize this flag
   commit: takeBit(),
-  /** Field value resetted to initial. */
+  /** Field value reset to initial. */
   // [TODO] Utilize this flag
   reset: takeBit(),
   /** Field become invalid. */

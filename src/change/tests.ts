@@ -128,6 +128,52 @@ describe(ChangesEvent, () => {
           change.subtree.detach,
       );
     });
+
+    it("preserves events batched during callbacks", async () => {
+      let state = 0;
+      const targetA = new EventTarget();
+      const spyA = vi.fn(() => {
+        switch (state) {
+          case 0: {
+            ChangesEvent.batch(targetA, change.field.valid);
+            ChangesEvent.batch(targetA, change.field.commit);
+            break;
+          }
+
+          case 1: {
+            ChangesEvent.batch(targetB, change.field.key);
+            ChangesEvent.batch(targetB, change.field.shape);
+            break;
+          }
+        }
+        state++;
+      });
+      targetA.addEventListener("change", spyA);
+
+      const targetB = new EventTarget();
+      const spyB = vi.fn();
+      targetB.addEventListener("change", spyB);
+
+      ChangesEvent.batch(targetA, change.field.type);
+
+      expect(spyA).not.toHaveBeenCalled();
+      expect(spyB).not.toHaveBeenCalled();
+
+      await postpone();
+
+      expect(spyA).toHaveBeenCalledTimes(2);
+      const [[eventA1], [eventA2]]: any = spyA.mock.calls;
+      expect(eventA1.changes).toMatchChanges(change.field.type);
+      expect(eventA2.changes).toMatchChanges(
+        change.field.valid | change.field.commit,
+      );
+
+      expect(spyB).toHaveBeenCalledTimes(1);
+      const [[eventB]]: any = spyB.mock.calls;
+      expect(eventB.changes).toMatchChanges(
+        change.field.key | change.field.shape,
+      );
+    });
   });
 
   describe(ChangesEvent.sync, () => {
