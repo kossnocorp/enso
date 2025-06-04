@@ -10,7 +10,7 @@ import {
 import { FieldRef } from "./ref/index.ts";
 import { postpone } from "../../tests/utils.ts";
 
-describe("Field", () => {
+describe(Field, () => {
   it("creates a field instance", () => {
     const field = new Field(42);
     expect(field.get()).toBe(42);
@@ -2880,7 +2880,7 @@ describe(ComputedField, () => {
       computed.trigger(change.field.blur, true);
       await postpone();
       expect(spy).toHaveBeenCalledOnce();
-      expect(spy).toReceiveChanges(change.child.blur);
+      expect(spy).toReceiveChanges(change.field.blur);
     });
 
     it("delegates events through a detached field", async () => {
@@ -2897,9 +2897,9 @@ describe(ComputedField, () => {
       computed.trigger(change.field.blur, true);
       await postpone();
       expect(rootSpy).toHaveBeenCalledOnce();
-      expect(rootSpy).toReceiveChanges(change.subtree.blur);
+      expect(rootSpy).toReceiveChanges(change.child.blur);
       expect(detachedSpy).toHaveBeenCalledOnce();
-      expect(detachedSpy).toReceiveChanges(change.child.blur);
+      expect(detachedSpy).toReceiveChanges(change.field.blur);
     });
   });
 
