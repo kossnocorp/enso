@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from "vitest";
 import { change } from "../../change/index.ts";
 import { Field } from "../index.tsx";
 import { FieldRef, MaybeFieldRef } from "./index.ts";
+import { postpone } from "../../../tests/utils.ts";
 
 describe(FieldRef, () => {
   describe("tree", () => {
@@ -234,7 +235,3 @@ describe(MaybeFieldRef, () => {
     });
   });
 });
-
-function postpone() {
-  return new Promise<void>((resolve) => setTimeout(resolve));
-}

@@ -8,6 +8,7 @@ import {
   Field,
 } from "./index.tsx";
 import { FieldRef } from "./ref/index.ts";
+import { postpone } from "../../tests/utils.ts";
 
 describe("Field", () => {
   it("creates a field instance", () => {
@@ -2945,10 +2946,6 @@ function validateRequired(ref: FieldRef.Variable<string | undefined>) {
 function validateName(ref: FieldRef<Name>) {
   validateRequired(ref.$.first);
   validateRequired(ref.$.last);
-}
-
-function postpone() {
-  return new Promise<void>((resolve) => setTimeout(resolve));
 }
 
 //#endregion

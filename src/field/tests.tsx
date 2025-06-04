@@ -5,6 +5,7 @@ import { render } from "vitest-browser-react";
 import "../../tests/browser.d.ts";
 import { change } from "../change/index.ts";
 import { Field } from "./index.tsx";
+import { postpone } from "../../tests/utils.ts";
 
 describe("Field", () => {
   it("allows to control object field", async () => {
@@ -2740,21 +2741,14 @@ describe("Field", () => {
 
         await screen.getByText("Say hi").click();
 
-        return new Promise((resolve, reject) => {
-          setTimeout(async () => {
-            try {
-              // into
-              expect(intoSpy).toHaveBeenCalledOnce();
-              expect(intoSpy).toBeCalledWith("Hello, world!", undefined);
-              // from
-              expect(fromSpy).toHaveBeenCalledOnce();
-              expect(fromSpy).toBeCalledWith("Hi!", "Hello, world!");
-              resolve(void 0);
-            } catch (err) {
-              reject(err);
-            }
-          });
-        });
+        await postpone();
+
+        // into
+        expect(intoSpy).toHaveBeenCalledOnce();
+        expect(intoSpy).toBeCalledWith("Hello, world!", undefined);
+        // from
+        expect(fromSpy).toHaveBeenCalledOnce();
+        expect(fromSpy).toBeCalledWith("Hi!", "Hello, world!");
       });
 
       it("updates the watcher on field id change", async () => {
