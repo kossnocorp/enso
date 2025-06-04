@@ -30,13 +30,6 @@ export class ChangesEvent extends Event {
       Object.assign(currentContext, ctx);
     }
 
-    // [TODO] Consider completely removing the `sync` mode as it creates a lot
-    // of complexity and so far I couldn't find a strong case for it.
-    if (this.#sync) {
-      target.dispatchEvent(new ChangesEvent(changes, currentContext));
-      return;
-    }
-
     // Create a new batch if it doesn't exist.
     if (!this.#batch) this.#batch = new Map();
 
@@ -81,20 +74,6 @@ export class ChangesEvent extends Event {
         target.dispatchEvent(new ChangesEvent(changes, context)),
       );
     });
-  }
-
-  /** If synchronous events are forced. */
-  static #sync: boolean = false;
-
-  /**
-   * Makes the any batched events to fire immediately.
-   *
-   * @param callback - The callback to execute synchronously.
-   */
-  static sync(callback: Function) {
-    this.#sync = true;
-    callback();
-    this.#sync = false;
   }
 
   /** Stack of contexts.

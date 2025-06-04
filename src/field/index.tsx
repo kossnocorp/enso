@@ -356,7 +356,7 @@ export class Field<Payload> {
   #syncTarget = new EventTarget();
   #subs = new Set<(event: Event) => void>();
 
-  trigger(changes: FieldChange, notifyParents: boolean = false, sync = false) {
+  trigger(changes: FieldChange, notifyParents: boolean = false) {
     this.#clearCache();
 
     if (this.#withholded) {

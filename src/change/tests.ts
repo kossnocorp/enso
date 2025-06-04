@@ -176,30 +176,6 @@ describe(ChangesEvent, () => {
     });
   });
 
-  describe(ChangesEvent.sync, () => {
-    it("forces batched events to fire immediately", () => {
-      const targetA = new EventTarget();
-      const spyA = vi.fn();
-      targetA.addEventListener("change", spyA);
-
-      const targetB = new EventTarget();
-      const spyB = vi.fn();
-      targetB.addEventListener("change", spyB);
-
-      ChangesEvent.sync(() => {
-        ChangesEvent.batch(targetA, change.field.type);
-        ChangesEvent.batch(targetA, change.field.valid);
-        ChangesEvent.batch(targetA, change.field.commit);
-      });
-
-      ChangesEvent.batch(targetB, change.field.key);
-      ChangesEvent.batch(targetB, change.field.shape);
-
-      expect(spyA).toHaveBeenCalledTimes(3);
-      expect(spyB).not.toHaveBeenCalled();
-    });
-  });
-
   describe(ChangesEvent.context, () => {
     it("allows to specify context for the events", async () => {
       const targetA = new EventTarget();
@@ -286,41 +262,6 @@ describe(ChangesEvent, () => {
       expect(eventA.context).toEqual({ hello: "world", foo: "bar" });
       const [[eventB]]: any = spyB.mock.calls;
       expect(eventB.context).toEqual({});
-    });
-
-    it("sends context with synchronous events", () => {
-      const targetA = new EventTarget();
-      const spyA = vi.fn();
-      targetA.addEventListener("change", spyA);
-
-      const targetB = new EventTarget();
-      const spyB = vi.fn();
-      targetB.addEventListener("change", spyB);
-
-      ChangesEvent.sync(() => {
-        ChangesEvent.context({ hello: "world" }, () => {
-          ChangesEvent.batch(targetA, change.field.type);
-        });
-        ChangesEvent.context({ foo: "bar" }, () => {
-          ChangesEvent.batch(targetA, change.field.valid);
-        });
-        ChangesEvent.batch(targetA, change.field.commit);
-      });
-
-      ChangesEvent.batch(targetB, change.field.key);
-      ChangesEvent.batch(targetB, change.field.shape);
-
-      expect(spyA).toHaveBeenCalledTimes(3);
-      expect(spyA).toHaveBeenCalledWith(
-        expect.objectContaining({ context: { hello: "world" } }),
-      );
-      expect(spyA).toHaveBeenCalledWith(
-        expect.objectContaining({ context: { foo: "bar" } }),
-      );
-      expect(spyA).toHaveBeenCalledWith(
-        expect.objectContaining({ context: {} }),
-      );
-      expect(spyB).not.toHaveBeenCalled();
     });
   });
 });
