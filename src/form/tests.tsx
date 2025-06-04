@@ -588,19 +588,17 @@ describe("Form", () => {
               <Field.Component
                 field={form.$.hello}
                 errors
-                render={(control, { errors }) => {
-                  return (
-                    <div>
-                      <input
-                        {...control}
-                        onChange={(e) => control.onChange(e.target.value)}
-                        data-testid="hello-input"
-                      />
+                render={(control, { errors }) => (
+                  <div>
+                    <input
+                      {...control}
+                      onChange={(e) => control.onChange(e.target.value)}
+                      data-testid="hello-input"
+                    />
 
-                      <div data-testid="errors">{joinErrors(errors)}</div>
-                    </div>
-                  );
-                }}
+                    <div data-testid="errors">{joinErrors(errors)}</div>
+                  </div>
+                )}
               />
 
               <button type="submit">Submit</button>
@@ -649,8 +647,4 @@ function validateHello(ref: FieldRef<Hello>) {
 function joinErrors(errors: Field.Error[] | undefined) {
   if (!errors) return "";
   return errors.map((error) => error.message).join(", ");
-}
-
-function postpone() {
-  return new Promise<void>((resolve) => setTimeout(resolve));
 }

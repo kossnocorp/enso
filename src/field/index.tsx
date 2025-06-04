@@ -76,9 +76,7 @@ export class Field<Payload> {
       name: field.name,
       value,
       onChange: field.set,
-      onBlur: () => {
-        ChangesEvent.sync(() => field.trigger(change.field.blur, true));
-      },
+      onBlur: () => field.trigger(change.field.blur, true),
     };
 
     return props.render(control, meta as any);
@@ -426,12 +424,10 @@ export class Field<Payload> {
   }
 
   unleash() {
-    ChangesEvent.sync(() => {
-      this.#internal.unleash();
-      const withholded = this.#withholded;
-      this.#withholded = undefined;
-      if (withholded?.[0]) this.trigger(...withholded);
-    });
+    this.#internal.unleash();
+    const withholded = this.#withholded;
+    this.#withholded = undefined;
+    if (withholded?.[0]) this.trigger(...withholded);
   }
 
   //#endregion
@@ -863,7 +859,7 @@ export class Field<Payload> {
   #customOnBlur: FocusEventHandler<Element> | undefined;
 
   onBlur<Element extends HTMLElement>(event: FocusEvent<Element>) {
-    ChangesEvent.sync(() => this.trigger(change.field.blur, true));
+    this.trigger(change.field.blur, true);
     this.#customOnBlur?.(event);
   }
 
