@@ -572,6 +572,8 @@ export class Field<Payload> {
     const contextBrand = `computed-${computed.id}`;
 
     this.watch((value, event) => {
+      // Ignore everything but structural changes
+      // [TODO] Tests
       if (!structuralChanges(event.changes)) return;
       // Check if the change was triggered by the computed value and ignore it
       // to prevent double calls.
@@ -587,6 +589,7 @@ export class Field<Payload> {
             // the computed value and ignore it to prevent double calls.
             ChangesEvent.context({ [contextBrand]: true }, () => {
               // Ignore everything but structural changes
+              // [TODO] Tests
               if (!structuralChanges(event.changes)) return;
               this.set(fromMapper(computedValue, this.get()));
             }),
@@ -620,6 +623,9 @@ export class Field<Payload> {
 
       // [TODO] Process only structural changes?
       return this.watch((payload, event) => {
+        // Ignore everything but structural changes
+        // [TODO] Tests
+        if (!structuralChanges(event.changes)) return;
         // Check if the change was triggered by the computed value and ignore it
         // to prevent double calls.
         if (event.context[contextBrand]) return;
@@ -633,13 +639,15 @@ export class Field<Payload> {
         from: (fromMapper) => {
           useEffect(
             () =>
-              // [TODO] Process only structural changes?
-              computed.watch((computedValue) =>
+              computed.watch((computedValue, event) =>
                 // Set context so we can know if the field change was triggered by
                 // the computed value and ignore it to prevent double calls.
-                ChangesEvent.context({ [contextBrand]: true }, () =>
-                  this.set(fromMapper(computedValue, this.get())),
-                ),
+                ChangesEvent.context({ [contextBrand]: true }, () => {
+                  // Ignore everything but structural changes
+                  // [TODO] Tests
+                  if (!structuralChanges(event.changes)) return;
+                  this.set(fromMapper(computedValue, this.get()));
+                }),
               ),
             [this.id, computed, fromMapper],
           );
