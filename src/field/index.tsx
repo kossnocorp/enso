@@ -571,6 +571,8 @@ export class Field<Payload> {
 
     const contextBrand = `computed-${computed.id}`;
 
+    // Watch for the field (source) and update the computed value
+    // on structural changes.
     this.watch((value, event) => {
       // Ignore everything but structural changes
       // [TODO] Tests
@@ -583,6 +585,8 @@ export class Field<Payload> {
 
     return {
       from: (fromMapper) => {
+        // Listen for the computed field changes and update the field
+        // (source) value.
         computed.watch(
           (computedValue, event) =>
             // Set context so we can know if the field change was triggered by
@@ -621,16 +625,16 @@ export class Field<Payload> {
       if (initialIntoRef.current) initialIntoRef.current = false;
       else computed.set(mapper(this.get(), computed.get()));
 
-      // [TODO] Process only structural changes?
-      return this.watch((payload, event) => {
+      // Watch for the field (source) and update the computed value
+      // on structural changes.
+      return this.watch((value, event) => {
         // Ignore everything but structural changes
         // [TODO] Tests
         if (!structuralChanges(event.changes)) return;
         // Check if the change was triggered by the computed value and ignore it
-        // to prevent double calls.
+        // to prevent chained updates.
         if (event.context[contextBrand]) return;
-
-        computed.set(mapper(payload, computed.get()));
+        computed.set(mapper(value, computed.get()));
       });
     }, [this.id, initialIntoRef, mapper]);
 
@@ -639,6 +643,8 @@ export class Field<Payload> {
         from: (fromMapper) => {
           useEffect(
             () =>
+              // Listen for the computed field changes and update the field
+              // (source) value.
               computed.watch((computedValue, event) =>
                 // Set context so we can know if the field change was triggered by
                 // the computed value and ignore it to prevent double calls.
