@@ -627,15 +627,23 @@ export class Field<Payload> {
 
       // Watch for the field (source) and update the computed value
       // on structural changes.
-      return this.watch((value, event) => {
-        // Ignore everything but structural changes
-        // [TODO] Tests
-        if (!structuralChanges(event.changes)) return;
-        // Check if the change was triggered by the computed value and ignore it
-        // to prevent chained updates.
-        if (event.context[contextBrand]) return;
-        computed.set(mapper(value, computed.get()));
-      });
+      return this.watch(
+        (value, event) => {
+          // Ignore everything but structural changes
+          // [TODO] Tests
+          if (!structuralChanges(event.changes)) return;
+          // Check if the change was triggered by the computed value and ignore it
+          // to prevent chained updates.
+          if (event.context[contextBrand]) return;
+          computed.set(mapper(value, computed.get()));
+        },
+        // [TODO] Add tests and rationale for this. Without it, though, when
+        // rendering collection settings in Mind Control and disabling a package
+        // that triggers rerender and makes the computed field set to initial
+        // value. The culprit is "Prevent extra mapper call" code above that
+        // resets parent computed field value before it gets a chance to update.
+        true,
+      );
     }, [this.id, initialIntoRef, mapper]);
 
     return useMemo<Field.Into<Payload, Computed>>(
@@ -645,15 +653,18 @@ export class Field<Payload> {
             () =>
               // Listen for the computed field changes and update the field
               // (source) value.
-              computed.watch((computedValue, event) =>
-                // Set context so we can know if the field change was triggered by
-                // the computed value and ignore it to prevent double calls.
-                ChangesEvent.context({ [contextBrand]: true }, () => {
-                  // Ignore everything but structural changes
-                  // [TODO] Tests
-                  if (!structuralChanges(event.changes)) return;
-                  this.set(fromMapper(computedValue, this.get()));
-                }),
+              computed.watch(
+                (computedValue, event) =>
+                  // Set context so we can know if the field change was triggered by
+                  // the computed value and ignore it to prevent double calls.
+                  ChangesEvent.context({ [contextBrand]: true }, () => {
+                    // Ignore everything but structural changes
+                    // [TODO] Tests
+                    if (!structuralChanges(event.changes)) return;
+                    this.set(fromMapper(computedValue, this.get()));
+                  }),
+                // [TODO] Add tests and rationale for this (see a todo above).
+                true,
               ),
             [this.id, computed, fromMapper],
           );
