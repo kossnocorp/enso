@@ -2868,6 +2868,31 @@ describe(Field, () => {
 });
 
 describe(ComputedField, () => {
+  describe("value", () => {
+    it("allows chaining multiple computed fields", () => {
+      const source = new Field<{ name?: { first?: string; last?: string } }>(
+        {},
+      );
+      const name = source.$.name
+        .into((name) => name || {})
+        .from((name) => name);
+      const first = name.$.first
+        .into((first) => first || "")
+        .from((first) => first);
+      const last = name.$.last.into((last) => last || "").from((last) => last);
+      first.set("Sasha");
+      expect(first.get()).toBe("Sasha");
+      expect(name.get()).toEqual({ first: "Sasha" });
+      expect(source.get()).toEqual({ name: { first: "Sasha" } });
+      last.set("Koss");
+      expect(last.get()).toBe("Koss");
+      expect(name.get()).toEqual({ first: "Sasha", last: "Koss" });
+      expect(source.get()).toEqual({
+        name: { first: "Sasha", last: "Koss" },
+      });
+    });
+  });
+
   describe("events", () => {
     it("delegates events to the source field", async () => {
       const source = new Field<string>("Hello, world!");
@@ -2887,19 +2912,41 @@ describe(ComputedField, () => {
       const source = new Field<{ name?: { first?: string; last?: string } }>(
         {},
       );
+      const sourceSpy = vi.fn();
+      source.watch(sourceSpy);
+      const detachedSpy = vi.fn();
+      source.$.name.watch(detachedSpy);
       const computed = source.$.name
         .into((name) => [name?.first, name?.last].join(" "))
         .from(fromFullName);
-      const rootSpy = vi.fn();
-      source.watch(rootSpy);
-      const detachedSpy = vi.fn();
-      source.$.name.watch(detachedSpy);
       computed.trigger(change.field.blur, true);
       await postpone();
-      expect(rootSpy).toHaveBeenCalledOnce();
-      expect(rootSpy).toReceiveChanges(change.child.blur);
+      expect(sourceSpy).toHaveBeenCalledOnce();
+      expect(sourceSpy).toReceiveChanges(change.child.blur);
       expect(detachedSpy).toHaveBeenCalledOnce();
       expect(detachedSpy).toReceiveChanges(change.field.blur);
+    });
+
+    it("delegates events through computed field chains", async () => {
+      const source = new Field<{ name?: { first?: string; last?: string } }>(
+        {},
+      );
+      const sourceSpy = vi.fn();
+      source.watch(sourceSpy);
+      const name = source.$.name
+        .into((name) => name || {})
+        .from((name) => name);
+      const nameSpy = vi.fn();
+      name.watch(nameSpy);
+      const first = name.$.first
+        .into((first) => first || "")
+        .from((first) => first);
+      first.trigger(change.field.blur, true);
+      await postpone();
+      expect(sourceSpy).toHaveBeenCalledOnce();
+      expect(sourceSpy).toReceiveChanges(change.subtree.blur);
+      expect(nameSpy).toHaveBeenCalledOnce();
+      expect(nameSpy).toReceiveChanges(change.child.blur);
     });
   });
 
