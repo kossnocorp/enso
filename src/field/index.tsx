@@ -989,11 +989,13 @@ export class Field<Payload> {
     context?: Context | undefined,
   ) {
     this.clearErrors();
+    // Withhold all the changes until the validation is resolved, so that
+    // there're no chain reactions.
+    // [TODO] There's a problem with this approach, if the validation is async,
+    // and hits external APIs, form interactions might not react as expected and
+    // even lead to impossible state. Either block the form or make withhold
+    // optional.
     this.withhold();
-    // [TODO] Figure out what is the point of the sending reference here instead
-    // of the field itself. It makes paving during validation impossible and
-    // prevent an advanced validation use-case possible. If it is solely for
-    // "safety" then it is not worth it.
     // @ts-ignore: [TODO]
     await validator(FieldRef.get(this), context);
     this.unleash();
