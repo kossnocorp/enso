@@ -192,6 +192,12 @@ export const fieldChangesMask = 2n ** changesBits - 1n;
 export const structuralFieldChangesMask = 2n ** structuralChangesBits - 1n;
 
 /**
+ * Meta field changes mask. It allows to isolate the meta field changes bits.
+ */
+export const metaFieldChangesMask =
+  (2n ** metaChangesBits - 1n) << structuralChangesBits;
+
+/**
  * Bit index used to generate the next bit in the sequence.
  *
  * @private
@@ -296,6 +302,11 @@ export const structuralChildChangesMask =
   structuralFieldChangesMask << childChangesShift;
 
 /**
+ * Meta child changes mask. It allows to isolate the meta child changes bits.
+ */
+export const metaChildChangesMask = metaFieldChangesMask << childChangesShift;
+
+/**
  * Child changes map.
  *
  * It represents the changes for the immediate children of the field.
@@ -327,6 +338,13 @@ export const structuralSubtreeChangesMask =
   structuralFieldChangesMask << subtreeChangesShift;
 
 /**
+ * Meta subtree changes mask. It allows to isolate the meta subtree changes
+ * bits.
+ */
+export const metaSubtreeChangesMask =
+  metaFieldChangesMask << subtreeChangesShift;
+
+/**
  * Subtree changes map.
  *
  * It represents the changes for the deeply nested children of the field.
@@ -339,12 +357,19 @@ export const subtreeChange: FieldChangeMap = {
 shiftCategoryBits(subtreeChange, subtreeChangesShift);
 
 /**
- * Structural changes mask. It allows to isolate the structural changes bits.
+ * Structural changes mask. It allows to isolate the structural changes bits on
+ * all levels.
  */
 export const structuralChangesMask =
   structuralFieldChangesMask |
   structuralChildChangesMask |
   structuralSubtreeChangesMask;
+
+/**
+ * Meta changes mask. It allows to isolate the meta changes bits on all levels.
+ */
+export const metaChangesMask =
+  metaFieldChangesMask | metaChildChangesMask | metaSubtreeChangesMask;
 
 /**
  * Field changes map. Each bit indicates a certain type of change in the field.
@@ -441,30 +466,6 @@ export function isolateSubtreeChanges(changes: FieldChange): FieldChange {
   return changes & subtreeChangesMask;
 }
 
-/**
- * Isolates the structural changes from the changes map.
- *
- * @param changes - Changes to isolate the structural changes from.
- * @returns Isolated structural changes.
- */
-export function isolateStructuralChanges(changes: FieldChange): FieldChange {
-  return changes & fieldChangesMask;
-}
-
-/**
- * Isolates the meta changes from the changes map.
- *
- * @param changes - Changes to isolate the meta changes from.
- * @returns Isolated meta changes.
- */
-export function isolateMetaChanges(changes: FieldChange): FieldChange {
-  return (
-    changes &
-    fieldChangesMask &
-    ~(structuralFieldChangesMask | childChangesMask)
-  );
-}
-
 //#endregion
 
 //#region Checks
@@ -485,13 +486,23 @@ export function shapeChanges(changes: FieldChange): FieldChange {
 }
 
 /**
- * Checks if changes contain any structural changes.
+ * Isolates structural changes.
  *
  * @param changes - Changes to check.
- * @returns Detected structural changes if found or `0n` otherwise.
+ * @returns Isolates structural changes if found or `0n` otherwise.
  */
 export function structuralChanges(changes: FieldChange): FieldChange {
   return changes & structuralChangesMask;
+}
+
+/**
+ * Isolates meta changes.
+ *
+ * @param changes - Changes to check
+ * @returns Isolated meta changes if found or `0n` otherwise.
+ */
+export function metaChanges(changes: FieldChange): FieldChange {
+  return changes & metaChangesMask;
 }
 
 /**

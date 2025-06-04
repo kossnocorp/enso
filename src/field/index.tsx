@@ -16,7 +16,7 @@ import {
   ChangesEvent,
   fieldChange,
   FieldChange,
-  isolateMetaChanges,
+  metaChanges,
   shapeChanges,
   shiftChildChanges,
   structuralChanges,
@@ -1423,9 +1423,9 @@ export class ComputedField<Payload, Computed> extends Field<Computed> {
     this.watch((_, event) => {
       // Only delegate meta changes, as the value changes are handled by the
       // source field's `from` method.
-      const metaChanges = isolateMetaChanges(event.changes);
-      if (!metaChanges) return;
-      this.#source.trigger(metaChanges, true);
+      const changes = metaChanges(event.changes);
+      if (!changes) return;
+      this.#source.trigger(changes, true);
     });
 
     this.#source = source;

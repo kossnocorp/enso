@@ -1,5 +1,10 @@
 import { describe, expect, it, vi } from "vitest";
-import { change, ChangesEvent } from "./index.ts";
+import {
+  change,
+  ChangesEvent,
+  metaChanges,
+  structuralChanges,
+} from "./index.ts";
 import { postpone } from "../../tests/utils.ts";
 
 describe(ChangesEvent, () => {
@@ -263,5 +268,39 @@ describe(ChangesEvent, () => {
       const [[eventB]]: any = spyB.mock.calls;
       expect(eventB.context).toEqual({});
     });
+  });
+});
+
+describe(structuralChanges, () => {
+  it("isolates structural changes", () => {
+    expect(
+      structuralChanges(
+        change.field.attach |
+          change.field.commit |
+          change.child.value |
+          change.child.errors |
+          change.subtree.attach |
+          change.subtree.valid,
+      ),
+    ).toMatchChanges(
+      change.field.attach | change.child.value | change.subtree.attach,
+    );
+  });
+});
+
+describe(metaChanges, () => {
+  it("isolates meta changes", () => {
+    expect(
+      metaChanges(
+        change.field.attach |
+          change.field.commit |
+          change.child.value |
+          change.child.errors |
+          change.subtree.attach |
+          change.subtree.valid,
+      ),
+    ).toMatchChanges(
+      change.field.commit | change.child.errors | change.subtree.valid,
+    );
   });
 });
