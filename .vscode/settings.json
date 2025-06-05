@@ -2,5 +2,11 @@
   "typescript.tsdk": "node_modules/typescript/lib",
   "debug.javascript.defaultRuntimeExecutable": {
     "pwa-node": "/home/vscode/.local/share/mise/shims/node"
+  },
+
+  // Rules for Inline Bookmarks following the special comments provided by
+  // [the PragmataPro font](https://fsd.it/shop/fonts/pragmatapro/).
+  "inline-bookmarks.expert.custom.words.mapping": {
+    "purple": ["\\[MARK\\]", "\\[TRACE\\]", "\\[DEBUG\\]"]
   }
 }
