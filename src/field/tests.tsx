@@ -676,7 +676,7 @@ describe("Field", () => {
             { first: "Sasha" },
           ]);
           const [index, setIndex] = useState(0);
-          const _ = field.at(index).useBind();
+          field.at(index).useBind();
 
           return (
             <div>

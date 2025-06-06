@@ -121,7 +121,6 @@ export class Field<Payload> {
   }
 
   #clearCache() {
-    this.#cachedErrors = undefined;
     this.#cachedGet = detachedValue;
     this.#cachedDirty = undefined;
   }
@@ -814,7 +813,7 @@ export class Field<Payload> {
   }
 
   // @ts-ignore: [TODO]
-  remove: Field.RemoveFn<Payload> = <Key extends keyof Payload>(...args) => {
+  remove: Field.RemoveFn<Payload> = (...args) => {
     if (!args.length) return this.set(detachedValue);
     // @ts-ignore: [TODO]
     else return shiftChildChanges(this.at(args[0]).remove());
@@ -888,7 +887,8 @@ export class Field<Payload> {
 
   //#region Errors
 
-  #cachedErrors: Field.Error[] | undefined = undefined;
+  // [TODO] Consider caching errors.
+  // #cachedErrors: Field.Error[] | undefined = undefined;
 
   get errors(): Field.Error[] {
     // if (this.#cachedErrors)return this.#cachedErrors;

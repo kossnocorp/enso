@@ -1,6 +1,5 @@
 import "vitest";
 import type { FieldChange } from "../src/change/index.ts";
-import { Mock } from "vitest";
 
 export interface CustomMatchers<R = unknown> {
   toMatchChanges: (expected: FieldChange) => R;

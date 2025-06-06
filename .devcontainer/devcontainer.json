@@ -27,7 +27,8 @@
         "vitest.explorer",
         "tekumara.typos-vscode",
         "davidlday.languagetool-linter",
-        "tintinweb.vscode-inline-bookmarks"
+        "tintinweb.vscode-inline-bookmarks",
+        "dbaeumer.vscode-eslint"
       ],
       "settings": {
         "terminal.integrated.defaultProfile.linux": "fish",

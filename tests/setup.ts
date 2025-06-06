@@ -1,6 +1,6 @@
-import { expect, Mock } from "vitest";
+import { expect } from "vitest";
 import { devHumanizeChanges, devStringifyChanges } from "../src/dev.ts";
-import { Field, FieldChange } from "../src/index.ts";
+import { FieldChange } from "../src/index.ts";
 
 expect.extend({
   toMatchChanges(received: FieldChange, expected: FieldChange) {

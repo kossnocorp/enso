@@ -2796,7 +2796,7 @@ describe(Field, () => {
             },
           );
           field.validate((ref) => {
-            ref.forEach((valueRef, key) => {
+            ref.forEach((valueRef) => {
               if (!valueRef.get()?.trim()) {
                 valueRef.addError("Required");
               }
@@ -2855,7 +2855,6 @@ describe(Field, () => {
           const field = new Field(map);
           field.validate(validateMap);
 
-          const newMap = new Map();
           map.set("num", 43);
           field.validate(validateMap);
           expect(field.valid).toBe(true);

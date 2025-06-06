@@ -13,7 +13,7 @@ describe(FieldRef, () => {
         const maybeFieldRef = fieldRef.maybe();
         maybeFieldRef satisfies MaybeFieldRef<string | number | undefined>;
         // @ts-expect-error: It should not be any
-        maybeFieldRef satisfies MaybeFieldRef<BigInt>;
+        maybeFieldRef satisfies MaybeFieldRef<bigint>;
         expect(maybeFieldRef instanceof MaybeFieldRef).toBe(true);
         expect(maybeFieldRef.get()).toBeUndefined();
       });
@@ -31,7 +31,7 @@ describe(MaybeFieldRef, () => {
           const maybeFieldRef = fieldRef.maybe();
           maybeFieldRef satisfies MaybeFieldRef<string | number | undefined>;
           // @ts-expect-error: It should not be any
-          maybeFieldRef satisfies MaybeFieldRef<BigInt>;
+          maybeFieldRef satisfies MaybeFieldRef<bigint>;
           expect(maybeFieldRef instanceof MaybeFieldRef).toBe(true);
           expect(maybeFieldRef.get()).toBeUndefined();
         });
@@ -44,7 +44,7 @@ describe(MaybeFieldRef, () => {
           const maybeFieldRef = fieldRef.maybe();
           maybeFieldRef satisfies MaybeFieldRef<{ a: string } | undefined>;
           // @ts-expect-error: It should not be any
-          maybeFieldRef satisfies MaybeFieldRef<BigInt>;
+          maybeFieldRef satisfies MaybeFieldRef<bigint>;
           expect(maybeFieldRef instanceof MaybeFieldRef).toBe(true);
           expect(maybeFieldRef.get()).toBeUndefined();
         });
@@ -55,7 +55,7 @@ describe(MaybeFieldRef, () => {
           const maybeFieldRef = fieldRef.maybe().at("a");
           maybeFieldRef satisfies MaybeFieldRef<string | undefined>;
           // @ts-expect-error: It should not be any
-          maybeFieldRef satisfies MaybeFieldRef<BigInt>;
+          maybeFieldRef satisfies MaybeFieldRef<bigint>;
           expect(maybeFieldRef instanceof MaybeFieldRef).toBe(true);
           expect(maybeFieldRef.get()).toBeUndefined();
         });
@@ -68,7 +68,7 @@ describe(MaybeFieldRef, () => {
           const maybeFieldRef = fieldRef.maybe().at("a").at("b").at("c");
           maybeFieldRef satisfies MaybeFieldRef<number | string | undefined>;
           // @ts-expect-error: It should not be any
-          maybeFieldRef satisfies MaybeFieldRef<BigInt>;
+          maybeFieldRef satisfies MaybeFieldRef<bigint>;
           expect(maybeFieldRef instanceof MaybeFieldRef).toBe(true);
           expect(maybeFieldRef.get()).toBeUndefined();
         });
@@ -81,7 +81,7 @@ describe(MaybeFieldRef, () => {
           const maybeFieldRef = fieldRef.maybe().at("a").at("b").at("c");
           maybeFieldRef satisfies MaybeFieldRef<number | string | undefined>;
           // @ts-expect-error: It should not be any
-          maybeFieldRef satisfies MaybeFieldRef<BigInt>;
+          maybeFieldRef satisfies MaybeFieldRef<bigint>;
           expect(maybeFieldRef instanceof MaybeFieldRef).toBe(true);
           expect(maybeFieldRef.get()).toBe(123);
         });
@@ -94,7 +94,7 @@ describe(MaybeFieldRef, () => {
           const maybeFieldRef = fieldRef.maybe();
           maybeFieldRef satisfies MaybeFieldRef<string[] | undefined>;
           // @ts-expect-error: It should not be any
-          maybeFieldRef satisfies MaybeFieldRef<BigInt>;
+          maybeFieldRef satisfies MaybeFieldRef<bigint>;
           expect(maybeFieldRef instanceof MaybeFieldRef).toBe(true);
           expect(maybeFieldRef.get()).toBeUndefined();
         });
@@ -105,7 +105,7 @@ describe(MaybeFieldRef, () => {
           const maybeFieldRef = fieldRef.maybe().at(0);
           maybeFieldRef satisfies MaybeFieldRef<string | undefined>;
           // @ts-expect-error: It should not be any
-          maybeFieldRef satisfies MaybeFieldRef<BigInt>;
+          maybeFieldRef satisfies MaybeFieldRef<bigint>;
           expect(maybeFieldRef instanceof MaybeFieldRef).toBe(true);
           expect(maybeFieldRef.get()).toBeUndefined();
         });
@@ -116,7 +116,7 @@ describe(MaybeFieldRef, () => {
           const maybeFieldRef = fieldRef.maybe().at(0).at(0).at(0);
           maybeFieldRef satisfies MaybeFieldRef<string | undefined>;
           // @ts-expect-error: It should not be any
-          maybeFieldRef satisfies MaybeFieldRef<BigInt>;
+          maybeFieldRef satisfies MaybeFieldRef<bigint>;
           expect(maybeFieldRef instanceof MaybeFieldRef).toBe(true);
           expect(maybeFieldRef.get()).toBeUndefined();
         });
@@ -127,7 +127,7 @@ describe(MaybeFieldRef, () => {
           const maybeFieldRef = fieldRef.maybe().at(0).at(0).at(0);
           maybeFieldRef satisfies MaybeFieldRef<string | undefined>;
           // @ts-expect-error: It should not be any
-          maybeFieldRef satisfies MaybeFieldRef<BigInt>;
+          maybeFieldRef satisfies MaybeFieldRef<bigint>;
           expect(maybeFieldRef instanceof MaybeFieldRef).toBe(true);
           expect(maybeFieldRef.get()).toBe("a");
         });
@@ -140,14 +140,14 @@ describe(MaybeFieldRef, () => {
           const maybeFieldRef = fieldRef.maybe();
           maybeFieldRef satisfies MaybeFieldRef<Set<string> | undefined>;
           // @ts-expect-error: It should not be any
-          maybeFieldRef satisfies MaybeFieldRef<BigInt>;
+          maybeFieldRef satisfies MaybeFieldRef<bigint>;
           expect(maybeFieldRef instanceof MaybeFieldRef).toBe(true);
           expect(maybeFieldRef.get()).toBeUndefined();
         });
 
         it.todo("does not allow to access items by key", () => {
           const field = new Field<Set<string> | undefined>(undefined);
-          const fieldRef = new FieldRef(field);
+          const _fieldRef = new FieldRef(field);
           // [TODO]
           // const maybeFieldRef = fieldRef
           //   .maybe(new Set<string>())
