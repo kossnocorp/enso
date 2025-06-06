@@ -38,6 +38,7 @@ export default defineConfig([
       "@typescript-eslint/ban-ts-comment": "off",
       "@typescript-eslint/no-namespace": "off",
       "@typescript-eslint/no-unused-expressions": "off",
+      "@typescript-eslint/no-unsafe-function-type": "off",
       // [NOTE] It spams with "...cannot be called in a class component" that
       // doesn't apply.
       "react-hooks/rules-of-hooks": "off",

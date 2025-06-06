@@ -1,9 +1,9 @@
 "use client";
 
 import { nanoid } from "nanoid";
-import React, { useEffect, useId, useMemo } from "react";
+import React, { DependencyList, useEffect, useId, useMemo } from "react";
 import { change, maskedChanges } from "../change/index.ts";
-import { Field } from "../field/index.tsx";
+import { ComputedField, Field } from "../field/index.tsx";
 import { useRerender } from "../hooks/rerender.ts";
 
 //#region Form
@@ -148,8 +148,9 @@ export class Form<Payload> {
 
   useCompute<Computed>(
     callback: Field.ComputeCallback<Payload, Computed>,
+    deps: DependencyList,
   ): Computed {
-    return this.#field.useCompute(callback);
+    return this.#field.useCompute(callback, deps);
   }
 
   decompose(): Field.Decomposed<Payload> {
@@ -158,8 +159,9 @@ export class Form<Payload> {
 
   useDecompose(
     callback: Field.DecomposeCallback<Payload>,
+    deps: DependencyList,
   ): Field.Decomposed<Payload> {
-    return this.#field.useDecompose(callback);
+    return this.#field.useDecompose(callback, deps);
   }
 
   discriminate<Discriminator extends keyof NonUndefined<Payload>>(
@@ -175,13 +177,13 @@ export class Form<Payload> {
   }
 
   into<Computed>(
-    intoCallback: Field.IntoMapper<Payload, Computed>,
+    intoCallback: ComputedField.Into<Payload, Computed>,
   ): Field.Into<Payload, Computed> {
     return this.#field.into(intoCallback);
   }
 
   useInto<Computed>(
-    intoCallback: Field.IntoMapper<Payload, Computed>,
+    intoCallback: ComputedField.Into<Payload, Computed>,
   ): Field.Into<Payload, Computed> {
     return this.#field.useInto(intoCallback);
   }
@@ -194,8 +196,9 @@ export class Form<Payload> {
 
   useNarrow<Narrowed extends Payload>(
     callback: Field.NarrowCallback<Payload, Narrowed>,
+    deps: DependencyList,
   ): Field<Narrowed> | undefined {
-    return this.#field.useNarrow(callback);
+    return this.#field.useNarrow(callback, deps);
   }
 
   //#endregion

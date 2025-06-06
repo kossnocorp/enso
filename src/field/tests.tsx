@@ -1746,7 +1746,10 @@ describe("Field", () => {
         function Component() {
           const count = useRenderCount();
           const field = Field.use<User>({ name: { first: "Alexander" } });
-          const hasLastName = field.$.name.useCompute((name) => !!name.last);
+          const hasLastName = field.$.name.useCompute(
+            (name) => !!name.last,
+            [],
+          );
 
           return (
             <div>
@@ -1836,7 +1839,7 @@ describe("Field", () => {
           const [index, setIndex] = useState(0);
           const hasLastName = field
             .at(index)
-            .useCompute((name) => !!name?.last);
+            .useCompute((name) => !!name?.last, []);
 
           return (
             <div>
@@ -1880,7 +1883,7 @@ describe("Field", () => {
           const [index, setIndex] = useState(0);
           const hasLastName = field
             .at(index)
-            .useCompute((name) => !!name?.last);
+            .useCompute((name) => !!name?.last, []);
 
           return (
             <div>
@@ -1932,7 +1935,7 @@ describe("Field", () => {
         function Component() {
           const count = useRenderCount();
           const field = Field.use<UserName>({ first: "Alexander" });
-          const hasLastName = field.useCompute((name) => !!name?.last);
+          const hasLastName = field.useCompute((name) => !!name?.last, []);
 
           return (
             <div>
@@ -2219,9 +2222,11 @@ describe("Field", () => {
           const address = Field.use<Address>({ name: { first: "Alexander" } });
           const nameStr = address.$.name.useNarrow(
             (name, ok) => typeof name === "string" && ok(name),
+            [],
           );
           const nameObj = address.$.name.useNarrow(
             (name, ok) => typeof name !== "string" && ok(name),
+            [],
           );
 
           return (
@@ -2301,7 +2306,7 @@ describe("Field", () => {
           const [index, setIndex] = useState(0);
           const nameObj = field
             .at(index)
-            .useNarrow((name, ok) => typeof name === "object" && ok(name));
+            .useNarrow((name, ok) => typeof name === "object" && ok(name), []);
 
           return (
             <div>
@@ -2345,7 +2350,7 @@ describe("Field", () => {
           const [index, setIndex] = useState(0);
           const nameObj = field
             .at(index)
-            .useNarrow((name, ok) => typeof name === "object" && ok(name));
+            .useNarrow((name, ok) => typeof name === "object" && ok(name), []);
 
           return (
             <div>

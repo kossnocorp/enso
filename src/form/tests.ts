@@ -117,8 +117,8 @@ describe("Form", () => {
         .mockReturnValue(compute as any);
       const form = new Form(nanoid(), 42);
       const computeCb = () => {};
-      expect(form.useCompute(computeCb as any)).toBe(compute);
-      expect(spy).toHaveBeenCalledWith(computeCb);
+      expect(form.useCompute(computeCb as any, [1, 2, 3])).toBe(compute);
+      expect(spy).toHaveBeenCalledWith(computeCb, [1, 2, 3]);
     });
 
     it("delegates decompose", () => {
@@ -138,8 +138,8 @@ describe("Form", () => {
         .mockReturnValue(decomposed as any);
       const form = new Form(nanoid(), { type: "hello", value: 42 });
       const decomposeCb = () => {};
-      expect(form.useDecompose(decomposeCb as any)).toBe(decomposed);
-      expect(spy).toHaveBeenCalledWith(decomposeCb);
+      expect(form.useDecompose(decomposeCb as any, [1, 2, 3])).toBe(decomposed);
+      expect(spy).toHaveBeenCalledWith(decomposeCb, [1, 2, 3]);
     });
 
     it("delegates discriminate", () => {
@@ -202,8 +202,8 @@ describe("Form", () => {
         .mockReturnValue(narrow as any);
       const form = new Form(nanoid(), { type: "hello", value: 42 });
       const narrowCb = () => {};
-      expect(form.useNarrow(narrowCb as any)).toBe(narrow);
-      expect(spy).toHaveBeenCalledWith(narrowCb);
+      expect(form.useNarrow(narrowCb as any, [1, 2, 3])).toBe(narrow);
+      expect(spy).toHaveBeenCalledWith(narrowCb, [1, 2, 3]);
     });
   });
 

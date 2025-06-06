@@ -1,4 +1,5 @@
-import { useRef } from "react";
+// eslint-disable-next-line @typescript-eslint/no-unused-vars -- Someone is tripping here about unused React and I'm not sure who
+import React, { useRef } from "react";
 import { describe, expect, it, vi } from "vitest";
 import { render } from "vitest-browser-react";
 // [TODO] Figure out a way to get rid of it:

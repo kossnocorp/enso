@@ -8,7 +8,8 @@ import React, {
   MutableRefObject,
   RefCallback,
   useEffect,
-  useMemo,
+  useMemo as reactUseMemo,
+  useCallback as reactUseCallback,
   useRef,
 } from "react";
 import {
@@ -175,11 +176,16 @@ export class Field<Payload> {
           },
     );
 
-    // @ts-ignore: [TODO]
-    return useFieldHook({
-      field: this as Field<any>,
-      getValue: () => this.get(),
-      watch: ({ valueRef, rerender }) =>
+    const getValue = useCallback(
+      () => this.get(),
+      [
+        // eslint-disable-next-line react-hooks/exhaustive-deps -- It can't handle this
+        this,
+      ],
+    );
+
+    const watch = useCallback<UseFieldHookWatch<Payload>>(
+      ({ valueRef, rerender }) =>
         this.watch((payload, event) => {
           // React only on structural changes
           if (!structuralChanges(event.changes)) return;
@@ -187,8 +193,26 @@ export class Field<Payload> {
           valueRef.current = { id: this.id, enable: true, value: payload };
           rerender();
         }),
-      toResult: (result) => (watchMeta ? [result, meta] : result),
-    });
+      [
+        // eslint-disable-next-line react-hooks/exhaustive-deps -- It can't handle this
+        this,
+      ],
+    );
+
+    const toResult = useCallback<
+      UseFieldHookToResult<Payload, Field.UseGet<Payload, Props>>
+    >(
+      (result) =>
+        (watchMeta ? [result, meta] : result) as Field.UseGet<Payload, Props>,
+      [meta, watchMeta],
+    );
+
+    return useFieldHook({
+      field: this as Field<any>,
+      getValue,
+      watch,
+      toResult,
+    }) as Field.UseGet<Payload, Props>;
   }
 
   // [TODO] Exposing the notify parents flag might be dangerous
@@ -240,12 +264,19 @@ export class Field<Payload> {
 
   useDirty<Enable extends boolean | undefined = undefined>(
     enable?: Enable,
-  ): Enable extends true | undefined ? boolean : undefined {
-    // @ts-ignore: [TODO]
+  ): Field.ToggleableResult<Enable, boolean> {
+    const getValue = useCallback(
+      () => this.dirty,
+      [
+        // eslint-disable-next-line react-hooks/exhaustive-deps -- It can't handle this
+        this,
+      ],
+    );
+
     return useFieldHook({
       enable,
       field: this as Field<any>,
-      getValue: () => this.dirty,
+      getValue,
     });
   }
 
@@ -499,14 +530,18 @@ export class Field<Payload> {
 
   useCompute<Computed>(
     callback: Field.ComputeCallback<Payload, Computed>,
-    deps?: DependencyList,
+    deps: DependencyList,
   ): Computed {
-    // @ts-ignore: [TODO]
+    const getValue = useCallback(
+      () => callback(this.get()),
+      // eslint-disable-next-line react-hooks/exhaustive-deps -- It can't handle this
+      [this, ...deps],
+    );
+
     return useFieldHook({
       field: this as Field<any>,
-      getValue: () => callback(this.get()),
-      deps,
-    });
+      getValue,
+    }) as Computed;
   }
 
   decompose(): Field.Decomposed<Payload> {
@@ -518,35 +553,62 @@ export class Field<Payload> {
 
   useDecompose(
     callback: Field.DecomposeCallback<Payload>,
+    deps: DependencyList,
   ): Field.Decomposed<Payload> {
-    // @ts-ignore: [TODO]
+    const getValue = useCallback(
+      () => this.decompose(),
+      [
+        // eslint-disable-next-line react-hooks/exhaustive-deps -- It can't handle this
+        this,
+      ],
+    );
+
+    const shouldRender = useCallback<
+      UseFieldHookShouldRender<Field.Decomposed<Payload>>
+    >(
+      (prev, next) => !!prev && callback(next.value, prev.value),
+      // eslint-disable-next-line react-hooks/exhaustive-deps -- It can't handle this
+      deps,
+    );
+
     return useFieldHook({
       field: this as Field<any>,
-      getValue: () => this.decompose(),
-      shouldRender: (prev, next) => !!prev && callback(next.value, prev.value),
-    });
+      getValue,
+      shouldRender,
+    }) as Field.Decomposed<Payload>;
   }
 
   discriminate<Discriminator extends keyof NonUndefined<Payload>>(
     discriminator: Discriminator,
   ): Field.Discriminated<Payload, Discriminator> {
-    // @ts-ignore: [TODO]
     return {
       // @ts-ignore: [TODO]
       discriminator: this.$?.[discriminator]?.get(),
       field: this,
-    };
+    } as unknown as Field.Discriminated<Payload, Discriminator>;
   }
 
   useDiscriminate<Discriminator extends Field.DiscriminatorKey<Payload>>(
     discriminator: Discriminator,
   ): Field.Discriminated<Payload, Discriminator> {
-    // @ts-ignore: [TODO]
+    const getValue = useCallback(
+      () => this.discriminate(discriminator),
+      [
+        // eslint-disable-next-line react-hooks/exhaustive-deps -- It can't handle this
+        this,
+        discriminator,
+      ],
+    );
+
+    const shouldRender = useCallback<
+      UseFieldHookShouldRender<Field.Discriminated<Payload, Discriminator>>
+    >((prev, next) => prev?.discriminator !== next.discriminator, []);
+
     return useFieldHook({
       field: this as Field<any>,
-      getValue: () => this.discriminate(discriminator),
-      shouldRender: (prev, next) => prev?.discriminator !== next.discriminator,
-    });
+      getValue,
+      shouldRender,
+    }) as Field.Discriminated<Payload, Discriminator>;
   }
 
   /**
@@ -691,10 +753,18 @@ export class Field<Payload> {
 
   useNarrow<Narrowed extends Payload>(
     callback: Field.NarrowCallback<Payload, Narrowed>,
+    // [TODO] Add tests
+    deps: DependencyList,
   ): Field<Narrowed> | undefined {
+    const getValue = useCallback(
+      () => this.narrow(callback),
+      // eslint-disable-next-line react-hooks/exhaustive-deps -- It can't handle this
+      [this, ...deps],
+    );
+
     return useFieldHook({
       field: this as Field<any>,
-      getValue: () => this.narrow(callback),
+      getValue,
     });
   }
 
@@ -899,16 +969,29 @@ export class Field<Payload> {
   useErrors<Enable extends boolean | undefined = undefined>(
     enable?: Enable,
   ): Enable extends true | undefined ? Field.Error[] | undefined : undefined {
-    return useFieldHook({
-      enable,
-      field: this as Field<any>,
-      getValue: () => this.errors,
-      shouldRender: (prev, next) =>
+    const getValue = useCallback(
+      () => this.errors,
+      [
+        // eslint-disable-next-line react-hooks/exhaustive-deps -- It can't handle this
+        this,
+      ],
+    );
+
+    const shouldRender = useCallback<UseFieldHookShouldRender<Field.Error[]>>(
+      (prev, next) =>
         !(
           next === prev ||
           (next.length === prev?.length &&
             next.every((error, index) => prev?.[index] === error))
         ),
+      [],
+    );
+
+    return useFieldHook({
+      enable,
+      field: this as Field<any>,
+      getValue,
+      shouldRender,
     });
   }
 
@@ -966,12 +1049,19 @@ export class Field<Payload> {
 
   useValid<Enable extends boolean | undefined = undefined>(
     enable?: Enable,
-  ): Enable extends true | undefined ? boolean : undefined {
-    // @ts-ignore: [TODO]
+  ): Field.ToggleableResult<Enable, undefined> {
+    const getValue = useCallback(
+      () => this.valid,
+      [
+        // eslint-disable-next-line react-hooks/exhaustive-deps -- It can't handle this
+        this,
+      ],
+    );
+
     return useFieldHook({
       enable,
       field: this as Field<any>,
-      getValue: () => this.valid,
+      getValue,
     });
   }
 
@@ -1179,6 +1269,11 @@ export namespace Field {
   //#endregion
 
   //#region Mapping
+
+  export type ToggleableResult<
+    Enable extends boolean | undefined,
+    Type,
+  > = Enable extends true | undefined ? Type | undefined : undefined;
 
   export type ComputeCallback<Payload, Computed> = (
     payload: Payload,
@@ -2158,14 +2253,26 @@ interface UseFieldHookWatchProps<Value> {
   rerender: () => void;
 }
 
+type UseFieldHookShouldRender<Value> = (
+  prevValue: Value | undefined,
+  nextValue: Value,
+) => boolean;
+
+type UseFieldHookWatch<Value> = (
+  props: UseFieldHookWatchProps<Value>,
+) => Field.Unwatch;
+
+type UseFieldHookToResult<Value, Result> = (
+  value: Value | undefined,
+) => Result | undefined;
+
 interface UseFieldHookProps<Value, Result = Value> {
   enable?: boolean | undefined;
   field: Field<any>;
-  getValue(): Value;
-  shouldRender?(prevValue: Value | undefined, nextValue: Value): boolean;
-  watch?(props: UseFieldHookWatchProps<Value>): Field.Unwatch;
-  toResult?(value: Value | undefined): Result;
-  deps?: DependencyList;
+  getValue: Memoized<() => Value>;
+  shouldRender?: Memoized<UseFieldHookShouldRender<Value>>;
+  watch?: Memoized<UseFieldHookWatch<Value>>;
+  toResult?: Memoized<UseFieldHookToResult<Value, Result>>;
 }
 
 function defaultShouldRender<Value>(
@@ -2178,26 +2285,24 @@ function defaultShouldRender<Value>(
 function useFieldHook<Value, Result = Value>(
   props: UseFieldHookProps<Value, Result>,
 ): Result | undefined {
-  // Defaults to true
-  // [TODO] Can I use the default value instead of setting it to undefined?
   const enable = props.enable ?? true;
-
   const {
     field,
     getValue,
-    shouldRender = defaultShouldRender,
+    shouldRender = defaultShouldRender as Memoized<
+      UseFieldHookShouldRender<Value>
+    >,
     watch,
     toResult,
-    deps,
   } = props;
 
-  const initial = useMemo(
+  const initial: Value = useMemo(
     () => (enable ? getValue() : undefined),
-    [field.id, enable],
+    [enable, getValue],
   );
   const valueRef = useRef({ id: field.id, value: initial, enable });
 
-  // When the id changes, we update the value
+  // When the field changes, we update the value
   useEffect(() => {
     if (valueRef.current.id === field.id && valueRef.current.enable === enable)
       return;
@@ -2209,23 +2314,24 @@ function useFieldHook<Value, Result = Value>(
     };
     // We don't need to rerender as the value will resolve to initial and we
     // don't want to trigger another render.
-  }, [field.id, enable]);
+  }, [field, enable, getValue]);
 
-  function onUpdate() {
+  const rerender = useRerender();
+
+  const onUpdate = useCallback(() => {
     const prevValue = valueRef.current.value;
 
     const nextValue = getValue();
     valueRef.current = { id: field.id, value: nextValue, enable };
 
     if (shouldRender(prevValue, nextValue)) rerender();
-  }
+  }, [field, enable, getValue, valueRef, rerender, shouldRender]);
 
-  const rerender = useRerender();
   useEffect(() => {
     if (enable === false) return;
 
     return watch?.({ valueRef, rerender }) || field.watch(onUpdate);
-  }, [field.id, rerender, enable, ...(deps || [])]);
+  }, [field, enable, valueRef, watch, rerender, onUpdate]);
 
   // Handle dependencies. When they change, we trigger update.
   const depsInitialized = useRef(false);
@@ -2235,7 +2341,7 @@ function useFieldHook<Value, Result = Value>(
     // Prevent unnecessary update on first render
     if (depsInitialized.current) onUpdate();
     else depsInitialized.current = true;
-  }, [rerender, enable, ...(deps || [])]);
+  }, [field, enable, rerender, depsInitialized, onUpdate]);
 
   // If the ref value id doesn't match the current id, use initial value.
   // Otherwise, use the value from the ref.
@@ -2245,12 +2351,30 @@ function useFieldHook<Value, Result = Value>(
       : initial;
 
   const result = enable ? value : undefined;
-  // @ts-ignore: [TODO]
-  return toResult ? toResult(result) : result;
+  return toResult ? toResult(result) : (result as Result);
 }
 
 //#endregion
 
 function assert(condition: unknown): asserts condition {
   if (!condition) throw new Error("Assertion failed");
+}
+
+type Memoized<Type> = Type & { [memoBrand]: true };
+
+declare const memoBrand: unique symbol;
+
+// [NOTE] It has to be named `useMemo` to make ESLint rules activate.
+function useMemo<Type>(
+  factory: () => Type,
+  deps: DependencyList,
+): Memoized<Type> {
+  return reactUseMemo(factory, deps) as Memoized<Type>;
+}
+
+function useCallback<Type extends Function>(
+  callback: Type,
+  deps: DependencyList,
+): Memoized<Type> {
+  return reactUseCallback(callback, deps) as Memoized<Type>;
 }
