@@ -180,8 +180,8 @@ describe("Form", () => {
         .mockReturnValue(into as any);
       const form = new Form(nanoid(), { type: "hello", value: 42 });
       const intoCb = () => {};
-      expect(form.useInto(intoCb)).toBe(into);
-      expect(spy).toHaveBeenCalledWith(intoCb);
+      expect(form.useInto(intoCb, [1, 2, 3])).toBe(into);
+      expect(spy).toHaveBeenCalledWith(intoCb, [1, 2, 3]);
     });
 
     it("delegates narrow", () => {

@@ -2256,12 +2256,15 @@ export type DetachedValue = typeof detachedValue;
 
 //#region PoC
 
+// [TODO] Move into some kind of helpers module
+// [TODO] Add tests
+
 export function useUndefinedStringField<Type extends string>(
   field: Field<Type | undefined>,
 ): Field<Type> {
   return field
-    .useInto((value) => value ?? ("" as Type))
-    .from((value) => value || undefined);
+    .useInto((value) => value ?? ("" as Type), [])
+    .from((value) => value || undefined, []);
 }
 
 //#endregion
@@ -2326,7 +2329,11 @@ function useFieldHook<Value, Result = Value>(
     () => (enable ? getValue() : undefined),
     [enable, getValue],
   );
-  const valueRef = useRef({ id: field.id, value: initial, enable });
+  const valueRef = useRef<{
+    id: string;
+    value: Value | undefined;
+    enable: boolean;
+  }>({ id: field.id, value: initial, enable });
 
   // When the field changes, we update the value
   useEffect(() => {

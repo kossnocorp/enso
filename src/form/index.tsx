@@ -184,8 +184,9 @@ export class Form<Payload> {
 
   useInto<Computed>(
     intoCallback: ComputedField.Into<Payload, Computed>,
-  ): Field.Into<Payload, Computed> {
-    return this.#field.useInto(intoCallback);
+    deps: DependencyList,
+  ): Field.IntoHook<Payload, Computed> {
+    return this.#field.useInto(intoCallback, deps);
   }
 
   narrow<Narrowed extends Payload>(
