@@ -994,7 +994,7 @@ describe(Field, () => {
           const field = new Field<string | undefined>("Hello");
           const computed = field.into(toString).from(fromString);
           expect(computed.dirty).toBe(false);
-          field.set("Hi");
+          computed.set("Hi");
           expect(computed.dirty).toBe(true);
         });
 
@@ -1002,7 +1002,7 @@ describe(Field, () => {
           const field = new Field<string | undefined>(undefined);
           const computed = field.into(toString).from(fromString);
           expect(computed.dirty).toBe(false);
-          field.set(" ");
+          computed.set(" ");
           expect(computed.dirty).toBe(false);
         });
 
@@ -2868,26 +2868,30 @@ describe(Field, () => {
 
 describe(ComputedField, () => {
   describe("value", () => {
-    it("allows chaining multiple computed fields", () => {
-      const source = new Field<{ name?: { first?: string; last?: string } }>(
-        {},
-      );
-      const name = source.$.name
-        .into((name) => name || {})
-        .from((name) => name);
-      const first = name.$.first
-        .into((first) => first || "")
-        .from((first) => first);
-      const last = name.$.last.into((last) => last || "").from((last) => last);
-      first.set("Sasha");
-      expect(first.get()).toBe("Sasha");
-      expect(name.get()).toEqual({ first: "Sasha" });
-      expect(source.get()).toEqual({ name: { first: "Sasha" } });
-      last.set("Koss");
-      expect(last.get()).toBe("Koss");
-      expect(name.get()).toEqual({ first: "Sasha", last: "Koss" });
-      expect(source.get()).toEqual({
-        name: { first: "Sasha", last: "Koss" },
+    describe(ComputedField.prototype.set, () => {
+      it("allows chaining multiple computed fields", () => {
+        const source = new Field<{ name?: { first?: string; last?: string } }>(
+          {},
+        );
+        const name = source.$.name
+          .into((name) => name || {})
+          .from((name) => name);
+        const first = name.$.first
+          .into((first) => first || "")
+          .from((first) => first);
+        const last = name.$.last
+          .into((last) => last || "")
+          .from((last) => last);
+        first.set("Sasha");
+        expect(first.get()).toBe("Sasha");
+        expect(name.get()).toEqual({ first: "Sasha" });
+        expect(source.get()).toEqual({ name: { first: "Sasha" } });
+        last.set("Koss");
+        expect(last.get()).toBe("Koss");
+        expect(name.get()).toEqual({ first: "Sasha", last: "Koss" });
+        expect(source.get()).toEqual({
+          name: { first: "Sasha", last: "Koss" },
+        });
       });
     });
   });
@@ -2896,8 +2900,9 @@ describe(ComputedField, () => {
     it("delegates events to the source field", async () => {
       const source = new Field<string>("Hello, world!");
       const computed = new ComputedField<string, string>(
-        "Hello, world!",
         source,
+        () => "Hi!",
+        (value) => value,
       );
       const spy = vi.fn();
       source.watch(spy);
@@ -2947,14 +2952,34 @@ describe(ComputedField, () => {
       expect(nameSpy).toHaveBeenCalledOnce();
       expect(nameSpy).toReceiveChanges(change.child.blur);
     });
+
+    it("receives all validation events", async () => {
+      const source = new Field<string | undefined>(undefined);
+      const computed = source.into((val) => val || "").from((str) => str);
+      const spy = vi.fn();
+      computed.watch(spy);
+      computed.addError("Something went wrong");
+      await postpone();
+      expect(spy).toHaveBeenCalledOnce();
+      expect(spy).toReceiveChanges(change.field.errors | change.field.invalid);
+      expect(computed.errors).toEqual([{ message: "Something went wrong" }]);
+      expect(computed.valid).toBe(false);
+      computed.clearErrors();
+      await postpone();
+      expect(spy).toHaveBeenCalledTimes(2);
+      expect(spy).toReceiveChanges(change.field.valid | change.field.errors);
+      expect(computed.errors).toHaveLength(0);
+      expect(computed.valid).toBe(true);
+    });
   });
 
   describe("validation", () => {
     it("points to the source field validation", () => {
-      const source = new Field<string>("hello");
+      const source = new Field<string>("Hello!");
       const computed = new ComputedField<string, string>(
-        "Hello, world!",
         source,
+        () => "Hi!",
+        (value) => value,
       );
       expect(computed.validation).toBe(source.validation);
     });

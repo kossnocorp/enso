@@ -10,7 +10,7 @@
 
   Here we refer to regular fields as "normal" whereas everywhere else simply say "field".
 
-  - **Computed field**: A field that is derived from a normal field. It defines rules for computing its value based on the normal field value and other data, and how it is converted back when the computed value is changed.
+  - **Computed field**: A field that is derived from a normal field (**source field** in this context). It defines rules for computing its value based on the normal field value and other data, and how it is converted back when the computed value is changed.
 
   - **Detached field**: A field that doesn't represent data, but still **accessible** through the tree API, e.g., `arr[42]` in `arr = ["a", "b", "c"]`. It allows to listen to its changes, alas won't receive any until it is attached to a normal field, e.g. when it is set `arr[42] = "x"`.
 
@@ -20,9 +20,11 @@
 
   - **Maybe field reference**: Similar to normal **reference**, but it can point to a **shadow field**. It refers to a **accessible field** or a **shadow field** by its **tree path**.
 
-  **Field concepts**:
+  **Field properties**:
 
   - **Accessible field**: A field that is accessible through normal field **tree** API, i.e. `$` or `at`. A **detached** field is still accessible, while a **shadow** field referenced by a **maybe field reference** is not.
+
+  - **Source field**: A field that is used as a source for a **computed field**. It can be a normal, a **detached** or a **computed** field.
 
 - **Tree**: [TODO]
 

@@ -624,116 +624,32 @@ export class Field<Payload> {
    * @returns Builder object with `from` method
    */
   into<ComputedValue>(
-    mapper: Field.IntoMapper<Payload, ComputedValue>,
+    intoMapper: ComputedField.Into<Payload, ComputedValue>,
   ): Field.Into<Payload, ComputedValue> {
-    const computed = new ComputedField(mapper(this.get(), undefined), this);
-    // [TODO] This creates a leak, so rather than holding on to the computed
-    // field, store it as a weak ref and unsubscribe when it's no longer needed.
-
-    const contextBrand = `computed-${computed.id}`;
-
-    // Watch for the field (source) and update the computed value
-    // on structural changes.
-    this.watch((value, event) => {
-      // Ignore everything but structural changes
-      // [TODO] Tests
-      if (!structuralChanges(event.changes)) return;
-      // Check if the change was triggered by the computed value and ignore it
-      // to prevent double calls.
-      if (event.context[contextBrand]) return;
-      computed.set(mapper(value, computed.get()));
-    }, true);
-
     return {
-      from: (fromMapper) => {
-        // Listen for the computed field changes and update the field
-        // (source) value.
-        computed.watch(
-          (computedValue, event) =>
-            // Set context so we can know if the field change was triggered by
-            // the computed value and ignore it to prevent double calls.
-            ChangesEvent.context({ [contextBrand]: true }, () => {
-              // Ignore everything but structural changes
-              // [TODO] Tests
-              if (!structuralChanges(event.changes)) return;
-              this.set(fromMapper(computedValue, this.get()));
-            }),
-          true,
-        );
-        return computed;
-      },
+      from: (fromMapper) => new ComputedField(this, intoMapper, fromMapper),
     };
   }
 
   // [TODO] Add tests
   useInto<Computed>(
-    mapper: Field.IntoMapper<Payload, Computed>,
-  ): Field.Into<Payload, Computed> {
-    const computed = useMemo(
-      () => new ComputedField(mapper(this.get(), undefined), this),
-      [this.id],
+    intoMapper: ComputedField.Into<Payload, Computed>,
+    intoDeps: DependencyList,
+  ): Field.IntoHook<Payload, Computed> {
+    const from = useCallback<Field.FromHook<Payload, Computed>>(
+      (fromMapper, fromDeps) => {
+        const computed = useMemo(
+          () => new ComputedField(this, intoMapper, fromMapper),
+          // eslint-disable-next-line react-hooks/exhaustive-deps -- We control `intoMapper` and `fromMapper` via `intoDeps` and `fromDeps`.
+          [this, ...intoDeps, ...fromDeps],
+        );
+        useEffect(() => computed.deconstruct.bind(computed), [computed]);
+        return computed;
+      },
+      // eslint-disable-next-line react-hooks/exhaustive-deps -- We control `intoMapper` via `intoDeps`
+      [this, ...intoDeps],
     );
-
-    const contextBrand = `computed-${computed.id}`;
-    const initialIntoRef = useRef(true);
-
-    useEffect(() => {
-      // It's ok to trigger set here because the setting the same value won't
-      // trigger any events, however for the better performance, it is better
-      // if the into and from callbacks are memoized.
-
-      // Prevent extra mapper call
-      if (initialIntoRef.current) initialIntoRef.current = false;
-      else computed.set(mapper(this.get(), computed.get()));
-
-      // Watch for the field (source) and update the computed value
-      // on structural changes.
-      return this.watch(
-        (value, event) => {
-          // Ignore everything but structural changes
-          // [TODO] Tests
-          if (!structuralChanges(event.changes)) return;
-          // Check if the change was triggered by the computed value and ignore it
-          // to prevent chained updates.
-          if (event.context[contextBrand]) return;
-          computed.set(mapper(value, computed.get()));
-        },
-        // [TODO] Add tests and rationale for this. Without it, though, when
-        // rendering collection settings in Mind Control and disabling a package
-        // that triggers rerender and makes the computed field set to initial
-        // value. The culprit is "Prevent extra mapper call" code above that
-        // resets parent computed field value before it gets a chance to update.
-        true,
-      );
-    }, [this.id, initialIntoRef, mapper]);
-
-    return useMemo<Field.Into<Payload, Computed>>(
-      () => ({
-        from: (fromMapper) => {
-          useEffect(
-            () =>
-              // Listen for the computed field changes and update the field
-              // (source) value.
-              computed.watch(
-                (computedValue, event) =>
-                  // Set context so we can know if the field change was triggered by
-                  // the computed value and ignore it to prevent double calls.
-                  ChangesEvent.context({ [contextBrand]: true }, () => {
-                    // Ignore everything but structural changes
-                    // [TODO] Tests
-                    if (!structuralChanges(event.changes)) return;
-                    this.set(fromMapper(computedValue, this.get()));
-                  }),
-                // [TODO] Add tests and rationale for this (see a todo above).
-                true,
-              ),
-            [this.id, computed, fromMapper],
-          );
-          return computed;
-        },
-      }),
-      [this.id, computed],
-    );
+    return useMemo(() => ({ from }), [from]);
   }
 
   narrow<Narrowed extends Payload>(
@@ -1314,28 +1230,42 @@ export namespace Field {
   export type DiscriminatorKey<Payload> = keyof NonUndefined<Payload>;
 
   export interface Into<Value, ComputedValue> {
-    /**
-     * Creates a computed field. It accepts mapper function that transforms
-     * the computed value into original value.
-     *
-     * @param mapper - Mapper function computing original value from computed
-     *
-     * @returns Computed field
-     */
-    from(
-      mapper: FromMapper<Value, ComputedValue>,
+    from: From<Value, ComputedValue>;
+  }
+
+  export interface IntoHook<Value, ComputedValue> {
+    from: FromHook<Value, ComputedValue>;
+  }
+
+  /**
+   * Creates a computed field. It accepts mapper function that transforms
+   * the computed value into original value.
+   *
+   * @param mapper - Mapper function computing original value from computed
+   *
+   * @returns Computed field
+   */
+  export interface From<Value, ComputedValue> {
+    (
+      mapper: ComputedField.From<Value, ComputedValue>,
     ): ComputedField<Value, ComputedValue>;
   }
 
-  export type IntoMapper<Value, ComputedValue> = (
-    value: Value,
-    computedValue: ComputedValue | undefined,
-  ) => ComputedValue;
-
-  export type FromMapper<Value, ComputedValue> = (
-    computedValue: ComputedValue,
-    value: Value,
-  ) => Value;
+  /**
+   * Creates a computed field. It accepts mapper function that transforms
+   * the computed value into original value.
+   *
+   * @param mapper - Mapper function computing original value from computed
+   * @param deps - Dependency list for the mapper function.
+   *
+   * @returns Computed field
+   */
+  export interface FromHook<Value, ComputedValue> {
+    (
+      mapper: ComputedField.From<Value, ComputedValue>,
+      deps: DependencyList,
+    ): ComputedField<Value, ComputedValue>;
+  }
 
   export type NarrowCallback<Payload, Narrowed> = (
     payload: Payload,
@@ -1519,22 +1449,106 @@ export namespace Field {
 
 //#region ComputedField
 
+// [NOTE] We have to keep `ComputedField` in the same file as `Field` to avoid
+// circular dependencies, as it extends `Field` and `Field` uses it in its
+// `into` method.
+
 export class ComputedField<Payload, Computed> extends Field<Computed> {
   #source: Field<Payload>;
+  #brand: symbol = Symbol();
+  #into: ComputedField.Into<Payload, Computed>;
+  #from: ComputedField.From<Payload, Computed>;
+  #unsubs: Field.Unwatch[] = [];
 
-  constructor(payload: Computed, source: Field<Payload>) {
+  constructor(
+    source: Field<Payload>,
+    into: ComputedField.Into<Payload, Computed>,
+    from: ComputedField.From<Payload, Computed>,
+  ) {
+    const payload = into(source.get(), undefined);
     super(payload);
 
-    // Delegate events to the source field
-    this.watch((_, event) => {
-      // Only delegate meta changes, as the value changes are handled by the
-      // source field's `from` method.
-      const changes = metaChanges(event.changes);
-      if (!changes) return;
-      this.#source.trigger(changes, true);
-    });
-
     this.#source = source;
+    this.#into = into;
+    this.#from = from;
+
+    // Watch for the field (source) and update the computed value
+    // on structural changes.
+    this.#unsubs.push(
+      this.#source.watch(
+        (sourceValue, sourceEvent) => {
+          // Check if the change was triggered by the computed value and ignore
+          // it to stop circular updates.
+          if (sourceEvent.context[this.#brand]) return;
+
+          // Set context so we can know if the field change was triggered by
+          // the source value and stop circular updates.
+          ChangesEvent.context({ [this.#brand]: true }, () => {
+            // Update the computed value if the change is structural.
+            // [TODO] Tests
+            if (structuralChanges(sourceEvent.changes))
+              // [TODO] Second argument is unnecessary expensive and probably can
+              // be replaced with simple field.
+              this.set(this.#into(sourceValue, this.get()));
+
+            // Trigger meta changes.
+            // [TODO] Add tests and rationale for this.
+            const sourceMetaChanges = metaChanges(sourceEvent.changes);
+            if (sourceMetaChanges)
+              this.trigger(
+                sourceMetaChanges,
+                // [TODO] Add tests and rationale for this (see a todo below).
+                true,
+              );
+          });
+        },
+        // [TODO] Add tests and rationale for this. Without it, though, when
+        // rendering collection settings in Mind Control and disabling a package
+        // that triggers rerender and makes the computed field set to initial
+        // value. The culprit is "Prevent extra mapper call" code above that
+        // resets parent computed field value before it gets a chance to update.
+        true,
+      ),
+    );
+
+    // Listen for the computed field changes and update the field
+    // (source) value.
+    this.#unsubs.push(
+      this.watch(
+        (computedValue, computedEvent) => {
+          // Check if the change was triggered by the source value and ignore it
+          // to stop circular updates.
+          if (computedEvent.context[this.#brand]) return;
+
+          // Set context so we can know if the field change was triggered by
+          // the computed value and stop circular updates.
+          ChangesEvent.context({ [this.#brand]: true }, () => {
+            // If there are structural changes, update the source field.
+            // // [TODO] Tests
+            if (structuralChanges(computedEvent.changes))
+              // [TODO] Second argument is unnecessary expensive and probably can
+              // be replaced with simple field.
+              this.#source.set(this.#from(computedValue, this.#source.get()));
+
+            // Trigger meta changes.
+            // [TODO] Add tests and rationale for this.
+            const computedMetaChanges = metaChanges(computedEvent.changes);
+            if (computedMetaChanges)
+              this.#source.trigger(
+                computedMetaChanges,
+                // [TODO] Add tests and rationale for this (see a todo above).
+                true,
+              );
+          });
+        },
+        // [TODO] Add tests and rationale for this (see a todo above).
+        true,
+      ),
+    );
+  }
+
+  deconstruct() {
+    this.#unsubs.forEach((unsub) => unsub());
   }
 
   // [NOTE] id mustn't be overridden as it's used as the hooks dependency
@@ -1566,6 +1580,18 @@ export class ComputedField<Payload, Computed> extends Field<Computed> {
   override get validation(): ValidationTree {
     return this.#source.validation;
   }
+}
+
+export namespace ComputedField {
+  export type Into<Value, ComputedValue> = (
+    value: Value,
+    computedValue: ComputedValue | undefined,
+  ) => ComputedValue;
+
+  export type From<Value, ComputedValue> = (
+    computedValue: ComputedValue,
+    value: Value,
+  ) => Value;
 }
 
 //#endregion

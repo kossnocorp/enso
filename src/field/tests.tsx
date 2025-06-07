@@ -2033,6 +2033,7 @@ describe("Field", () => {
           const address = Field.use<Address>({ name: { first: "Alexander" } });
           const name = address.$.name.useDecompose(
             (newName, prevName) => typeof newName !== typeof prevName,
+            [],
           );
 
           return (
@@ -2116,7 +2117,7 @@ describe("Field", () => {
           const [index, setIndex] = useState(0);
           const name = field
             .at(index)
-            .useDecompose((a, b) => typeof a !== typeof b);
+            .useDecompose((a, b) => typeof a !== typeof b, []);
           const nameType = typeof name.value;
 
           return (
@@ -2161,7 +2162,7 @@ describe("Field", () => {
           const [index, setIndex] = useState(0);
           const name = field
             .at(index)
-            .useDecompose((a, b) => typeof a !== typeof b);
+            .useDecompose((a, b) => typeof a !== typeof b, []);
           const nameType = typeof name.value;
 
           return (
@@ -2628,7 +2629,9 @@ describe("Field", () => {
         function Component() {
           const count = useRenderCount();
           const field = Field.use({ message: "Hello" });
-          const codes = field.$.message.useInto(toCodes).from(fromCodes);
+          const codes = field.$.message
+            .useInto(toCodes, [])
+            .from(fromCodes, []);
 
           return (
             <div>
@@ -2693,7 +2696,10 @@ describe("Field", () => {
           const count = useRenderCount();
           const field = Field.use<string[]>(["Hello", "Yo"]);
           const [index, setIndex] = useState(0);
-          const codes = field.at(index).useInto(toCodes).from(fromCodes);
+          const codes = field
+            .at(index)
+            .useInto(toCodes, [])
+            .from(fromCodes, []);
 
           return (
             <div>
@@ -2733,7 +2739,9 @@ describe("Field", () => {
 
         function Component() {
           const field = Field.use({ message: "Hello, world!" });
-          const computed = field.$.message.useInto(intoSpy).from(fromSpy);
+          const computed = field.$.message
+            .useInto(intoSpy, [])
+            .from(fromSpy, []);
 
           return (
             <div>
@@ -2761,7 +2769,10 @@ describe("Field", () => {
           const count = useRenderCount();
           const field = Field.use<string[]>(["Hello", "Yo"]);
           const [index, setIndex] = useState(0);
-          const codes = field.at(index).useInto(toCodes).from(fromCodes);
+          const codes = field
+            .at(index)
+            .useInto(toCodes, [])
+            .from(fromCodes, []);
 
           return (
             <div>
@@ -2817,6 +2828,7 @@ describe("Field", () => {
           const [field, setField] = useState<Field<string> | undefined>();
           const actualField = Field.use("Hello!");
           const ensuredField = Field.useEnsure(field);
+          // eslint-disable-next-line react-hooks/exhaustive-deps
           const dummyField = useMemo(() => ensuredField, []);
           const fieldValue = ensuredField.useGet();
           const dummyValue = dummyField.useGet();

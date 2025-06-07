@@ -131,7 +131,7 @@ export class ChangesEvent extends Event {
       }
     }
 
-    Object.assign(this.context, structuredClone(context));
+    Object.assign(this.context, context);
     this.changes = changes;
   }
 }
@@ -139,7 +139,7 @@ export class ChangesEvent extends Event {
 export namespace ChangesEvent {
   export type Batch = Map<EventTarget, [FieldChange, Context]>;
 
-  export type Context = Record<string, any>;
+  export type Context = Record<string | number | symbol, any>;
 }
 
 //#endregion
