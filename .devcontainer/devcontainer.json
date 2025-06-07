@@ -28,7 +28,8 @@
         "tekumara.typos-vscode",
         "davidlday.languagetool-linter",
         "tintinweb.vscode-inline-bookmarks",
-        "dbaeumer.vscode-eslint"
+        "dbaeumer.vscode-eslint",
+        "ms-vscode.makefile-tools"
       ],
       "settings": {
         "terminal.integrated.defaultProfile.linux": "fish",
