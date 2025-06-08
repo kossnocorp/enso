@@ -1,4 +1,4 @@
-import { change, shiftChildChanges } from "../../change/index.ts";
+import { shiftChildChanges } from "../../change/index.ts";
 import { EnsoUtils } from "../../utils.ts";
 import { Field } from "../index.tsx";
 
@@ -266,19 +266,30 @@ export class MaybeFieldRef<Payload> {
     if (this.#target.type === "direct") {
       this.#target.field.addError(error);
     } else {
-      const prevValid = this.#target.closest.valid;
-
       const path = [...this.#target.closest.path, ...this.#target.path];
-      error = typeof error === "string" ? { message: error } : error;
-      this.#target.closest.validation.add(path, error, null);
+      let changes = Field.errorChangesFor(this.#target.closest);
 
-      let changes = change.field.errors;
-      if (prevValid) changes |= change.field.invalid;
+      // If there are computed fields at this path, we want to trigger changes
+      // on them as well, so that they can react.
+      const computed = this.#target.closest.computedMap.at(path);
+      computed.forEach((field) => field.trigger(changes, true));
+
+      // Shift the changes for each path segment, so that the changes levels are
+      // accurately set for the closest field.
       for (const _ of path) {
         changes = shiftChildChanges(changes);
       }
 
-      this.#target.closest.trigger(changes, true);
+      this.#target.closest.validationTree.add(
+        path,
+        Field.normalizeError(error),
+        null,
+      );
+
+      // No need to trigger changes, as the closest field will still receive
+      // them through the computed fields, however it should not change anything
+      // if we do trigger them.
+      if (!computed.length) this.#target.closest.trigger(changes, true);
     }
   }
 
@@ -313,6 +324,7 @@ export namespace MaybeFieldRef {
   export interface TargetShadow {
     type: "shadow";
     closest: Field<unknown>;
+    /** Path relative to the closest field. */
     path: readonly string[];
   }
 

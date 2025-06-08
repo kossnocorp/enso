@@ -3,6 +3,7 @@ import {
   change,
   ChangesEvent,
   metaChanges,
+  shiftChildChanges,
   structuralChanges,
 } from "./index.ts";
 import { postpone } from "../../tests/utils.ts";
@@ -268,6 +269,35 @@ describe(ChangesEvent, () => {
       const [[eventB]]: any = spyB.mock.calls;
       expect(eventB.context).toEqual({});
     });
+  });
+});
+
+describe(shiftChildChanges, () => {
+  it("shifts changes in the subtree direction", () => {
+    const once = shiftChildChanges(
+      change.field.attach |
+        change.field.commit |
+        change.child.value |
+        change.child.errors |
+        change.subtree.attach |
+        change.subtree.valid,
+    );
+    const twice = shiftChildChanges(once);
+    expect(once).toMatchChanges(
+      change.child.attach |
+        change.child.commit |
+        change.subtree.value |
+        change.subtree.attach |
+        change.subtree.valid |
+        change.subtree.errors,
+    );
+    expect(twice).toMatchChanges(
+      change.subtree.value |
+        change.subtree.attach |
+        change.subtree.commit |
+        change.subtree.valid |
+        change.subtree.errors,
+    );
   });
 });
 

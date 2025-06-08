@@ -9,6 +9,9 @@ import {
 } from "./index.tsx";
 import { FieldRef } from "./ref/index.ts";
 import { postpone } from "../../tests/utils.ts";
+import { ComputedMap } from "../computed/index.ts";
+
+//#region Field
 
 describe(Field, () => {
   it("creates a field instance", () => {
@@ -1289,6 +1292,14 @@ describe(Field, () => {
   });
 
   describe("tree", () => {
+    describe("root", () => {
+      it("returns the root field", () => {
+        const field = new Field({ user: { name: ["Sasha"] } });
+        expect(field.$.user.$.name.at(0).root).toBe(field);
+        expect(field.root).toBe(field);
+      });
+    });
+
     describe("$/at", () => {
       it("returns undefined for primitive", () => {
         const field = new Field(42);
@@ -2066,6 +2077,19 @@ describe(Field, () => {
         }));
     });
 
+    describe("computedMap", () => {
+      it("is a computed map instance", () => {
+        const field = new Field(123);
+        expect(field.computedMap).toBeInstanceOf(ComputedMap);
+      });
+
+      it("points to the root computed map", () => {
+        const field = new Field({ a: { b: { c: 42 } } });
+        expect(field.$.a.$.b.computedMap).toBe(field.computedMap);
+        expect(field.$.a.$.b.$.c.computedMap).toBe(field.computedMap);
+      });
+    });
+
     describe("widen", () => {
       it("allows to widen the field type", () => {
         const field = new Field<string>("Hello, world!");
@@ -2711,16 +2735,16 @@ describe(Field, () => {
   });
 
   describe("validation", () => {
-    describe("validation", () => {
+    describe("validationTree", () => {
       it("is a validation tree instance", () => {
         const field = new Field(42);
-        expect(field.validation).toBeInstanceOf(ValidationTree);
+        expect(field.validationTree).toBeInstanceOf(ValidationTree);
       });
 
       it("points to the root parent validation tree", () => {
         const field = new Field({ a: { b: { c: 42 } } });
-        expect(field.$.a.$.b.validation).toBe(field.validation);
-        expect(field.$.a.$.b.$.c.validation).toBe(field.validation);
+        expect(field.$.a.$.b.validationTree).toBe(field.validationTree);
+        expect(field.$.a.$.b.$.c.validationTree).toBe(field.validationTree);
       });
     });
 
@@ -2880,7 +2904,39 @@ describe(Field, () => {
   });
 });
 
+//#endregion
+
+//#region ComputedField
+
 describe(ComputedField, () => {
+  describe("instance", () => {
+    describe("constructor", () => {
+      it("registers in the source computed map", () => {
+        const source = new Field<string>("Hello, world!");
+        const computed = new ComputedField<string, string>(
+          source,
+          () => "Hi!",
+          (value) => value,
+        );
+        expect(source.computedMap.at(computed.path)).toEqual([computed]);
+      });
+    });
+
+    describe(ComputedField.prototype.deconstruct, () => {
+      it("removes itself from the source computed map", () => {
+        const source = new Field<string>("Hello, world!");
+        const computed = new ComputedField<string, string>(
+          source,
+          () => "Hi!",
+          (value) => value,
+        );
+        expect(source.computedMap.at(computed.path)).toEqual([computed]);
+        computed.deconstruct();
+        expect(source.computedMap.at(computed.path)).toEqual([]);
+      });
+    });
+  });
+
   describe("value", () => {
     describe(ComputedField.prototype.set, () => {
       it("allows chaining multiple computed fields", async () => {
@@ -3047,6 +3103,88 @@ describe(ComputedField, () => {
       expect(first.errors).toHaveLength(0);
       expect(first.valid).toBe(true);
     });
+
+    it("receives validation events through maybe refs", async () => {
+      const source = new Field<{
+        user?: { name?: { first?: string; last?: string } };
+      }>({});
+      const sourceSpyInvalid = vi.fn();
+      source.watch(sourceSpyInvalid);
+      const user = source.$.user
+        .into((user) => user || {})
+        .from((user) => user);
+      const userSpyInvalid = vi.fn();
+      user.watch(userSpyInvalid);
+      const name = user.$.name.into((name) => name || {}).from((name) => name);
+      const nameSpyInvalid = vi.fn();
+      name.watch(nameSpyInvalid);
+      const first = name.$.first
+        .into((first) => first || "")
+        .from((first) => first);
+      const firstSpyInvalid = vi.fn();
+      source.validate((ref) => {
+        ref
+          .maybe()
+          .at("user")
+          .at("name")
+          .at("first")
+          .addError("Something went wrong");
+      });
+      first.watch(firstSpyInvalid);
+      await postpone();
+      expect(sourceSpyInvalid).toHaveBeenCalledOnce();
+      expect(sourceSpyInvalid).toReceiveChanges(
+        change.subtree.errors | change.subtree.invalid,
+      );
+      expect(userSpyInvalid).toHaveBeenCalledOnce();
+      expect(userSpyInvalid).toHaveBeenCalledBefore(sourceSpyInvalid);
+      expect(userSpyInvalid).toReceiveChanges(
+        change.subtree.invalid | change.subtree.errors,
+      );
+      expect(nameSpyInvalid).toHaveBeenCalledOnce();
+      expect(nameSpyInvalid).toHaveBeenCalledBefore(userSpyInvalid);
+      expect(nameSpyInvalid).toReceiveChanges(
+        change.child.invalid | change.child.errors,
+      );
+      expect(firstSpyInvalid).toHaveBeenCalledOnce();
+      expect(firstSpyInvalid).toHaveBeenCalledBefore(nameSpyInvalid);
+      expect(firstSpyInvalid).toReceiveChanges(
+        change.field.invalid | change.field.errors,
+      );
+      expect(first.errors).toEqual([{ message: "Something went wrong" }]);
+      expect(first.valid).toBe(false);
+      const sourceSpyValid = vi.fn();
+      source.watch(sourceSpyValid);
+      const userSpyValid = vi.fn();
+      user.watch(userSpyValid);
+      const nameSpyValid = vi.fn();
+      name.watch(nameSpyValid);
+      const firstSpyValid = vi.fn();
+      first.watch(firstSpyValid);
+      source.clearErrors();
+      await postpone();
+      expect(sourceSpyValid).toHaveBeenCalledOnce();
+      expect(sourceSpyValid).toReceiveChanges(
+        change.subtree.valid | change.subtree.errors,
+      );
+      expect(userSpyValid).toHaveBeenCalledOnce();
+      expect(userSpyValid).toHaveBeenCalledBefore(sourceSpyValid);
+      expect(userSpyValid).toReceiveChanges(
+        change.subtree.valid | change.subtree.errors,
+      );
+      expect(nameSpyValid).toHaveBeenCalledOnce();
+      expect(nameSpyValid).toHaveBeenCalledBefore(userSpyValid);
+      expect(nameSpyValid).toReceiveChanges(
+        change.child.valid | change.child.errors,
+      );
+      expect(firstSpyValid).toHaveBeenCalledOnce();
+      expect(firstSpyValid).toHaveBeenCalledBefore(nameSpyValid);
+      expect(firstSpyValid).toReceiveChanges(
+        change.field.valid | change.field.errors,
+      );
+      expect(first.errors).toHaveLength(0);
+      expect(first.valid).toBe(true);
+    });
   });
 
   describe("validation", () => {
@@ -3057,10 +3195,12 @@ describe(ComputedField, () => {
         () => "Hi!",
         (value) => value,
       );
-      expect(computed.validation).toBe(source.validation);
+      expect(computed.validationTree).toBe(source.validationTree);
     });
   });
 });
+
+//#endregion
 
 //#region Helpers
 

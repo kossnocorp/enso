@@ -26,6 +26,7 @@ import { useRerender } from "../hooks/rerender.ts";
 import { type EnsoUtils } from "../utils.ts";
 import { FieldRef } from "./ref/index.ts";
 import { ValidationTree } from "../validation/index.ts";
+import { ComputedMap } from "../computed/index.ts";
 
 export { FieldRef };
 
@@ -140,8 +141,12 @@ export class Field<Payload> {
     return this.#parent ? [...this.#parent.field.path, this.#parent.key] : [];
   }
 
+  static nameFromPath(path: Field.Path): string {
+    return path.join(".") || ".";
+  }
+
   get name(): string {
-    return this.path.join(".") || ".";
+    return Field.nameFromPath(this.path);
   }
 
   get parent(): Field<any> | undefined {
@@ -353,6 +358,10 @@ export class Field<Payload> {
   //#endregion
 
   //#region Tree
+
+  get root(): Field<unknown> {
+    return this.#parent?.field.root || (this as any as Field<unknown>);
+  }
 
   get $(): Field.$<Payload> {
     return this.#internal.$();
@@ -605,6 +614,12 @@ export class Field<Payload> {
       getValue,
       shouldRender,
     }) as Field.Discriminated<Payload, Discriminator>;
+  }
+
+  #computedMap: ComputedMap | undefined;
+
+  get computedMap(): ComputedMap {
+    return (this.root.#computedMap ??= new ComputedMap());
   }
 
   /**
@@ -875,7 +890,7 @@ export class Field<Payload> {
   get errors(): Field.Error[] {
     // if (this.#cachedErrors)return this.#cachedErrors;
     // return (this.#cachedErrors = this.validation.at(this.path));
-    return this.validation.at(this.path);
+    return this.validationTree.at(this.path);
   }
 
   useErrors<Enable extends boolean | undefined = undefined>(
@@ -907,55 +922,82 @@ export class Field<Payload> {
     });
   }
 
-  addError(error: string | Field.Error) {
-    const prevValid = this.valid;
-    error = typeof error === "string" ? { message: error } : error;
-
-    this.validation.add(this.path, error, this as Field<any>);
-
+  static errorChangesFor(field: Field<unknown>): FieldChange {
+    const prevValid = field.valid;
     let changes = change.field.errors;
     if (prevValid) changes |= change.field.invalid;
+    return changes;
+  }
+
+  static normalizeError(error: string | Field.Error): Field.Error {
+    return typeof error === "string" ? { message: error } : error;
+  }
+
+  addError(error: string | Field.Error) {
+    const changes = Field.errorChangesFor(this as any as Field<unknown>);
+    this.validationTree.add(
+      this.path,
+      Field.normalizeError(error),
+      this as Field<any>,
+    );
     this.trigger(changes, true);
   }
 
   clearErrors() {
     if (this.valid) return;
-    // const paths = new Set<readonly string[]>();
-    const errors = this.validation.nested(this.path); //.forEach(([path]) => paths.add(path));
+    const errors = this.validationTree.nested(this.path);
     const fieldErrors = Map.groupBy(errors, ([_, __, field]) => field);
 
-    // First, we clear all errors
-    this.validation.clear(this.path);
+    // First, we clear all errors, so that when we trigger changes, sync
+    // handlers don't see the errors.
+    // [TODO] Add test for this case
+    this.validationTree.clear(this.path);
 
-    const changes = change.field.errors | change.field.valid;
+    const clearChanges = change.field.errors | change.field.valid;
 
-    fieldErrors.forEach((errors, field) => {
+    fieldErrors.forEach((errorRows, field) => {
       if (field === null) {
         const paths = new Set<readonly string[]>();
-        errors.forEach(([path]) => paths.add(path));
+        errorRows.forEach(([path]) => paths.add(path));
 
         // Now we trigger changes for each path with direct errors
         paths.forEach((path) => {
           const field = this.lookup(path);
           if (field) {
-            field.trigger(changes, true);
+            field.trigger(clearChanges, true);
           } else {
-            // This is a shadow field error, we need to find the first defined parent and notify it.
-            const restPath = [...path];
-            while (restPath.length) {
-              restPath.pop();
-              const parentField = this.lookup(restPath);
+            // This is a shadow field error, we need to find the first defined
+            // parent and notify it. Also, we shift changes to accurately match
+            // the tree level.
+            let changes = clearChanges;
+            const curPath = [...path];
+            while (curPath.length) {
+              // First, try to find the computed fields through the map.
+              const computed = this.computedMap.at(curPath);
+              if (computed.length) {
+                // If we found a computed fields, trigger the clear events
+                // for them and stop the search.
+                computed.forEach((field) => field.trigger(changes, true));
+                return;
+              }
+
+              curPath.pop();
+              changes = shiftChildChanges(changes);
+              // We look for the parent field after we pop, as we already tried
+              // to look up the current path earlier.
+              const parentField = this.lookup(curPath);
               if (parentField) {
                 parentField.trigger(changes, true);
                 return;
               }
             }
+
             // If we reach here, the current field is the closest parent.
             this.trigger(changes, true);
           }
         });
       } else {
-        field.trigger(changes, true);
+        field.trigger(clearChanges, true);
       }
     });
   }
@@ -965,7 +1007,7 @@ export class Field<Payload> {
    */
   get valid(): boolean {
     // [TODO] Figure out if caching is needed here
-    return !this.validation.nested(this.path).length;
+    return !this.validationTree.nested(this.path).length;
   }
 
   useValid<Enable extends boolean | undefined = undefined>(
@@ -992,9 +1034,8 @@ export class Field<Payload> {
 
   #validation: ValidationTree | undefined = undefined;
 
-  get validation(): ValidationTree {
-    if (this.#parent) return this.#parent.field.validation;
-    return (this.#validation ??= new ValidationTree());
+  get validationTree(): ValidationTree {
+    return (this.root.#validation ??= new ValidationTree());
   }
 
   validate<Context>(
@@ -1055,6 +1096,12 @@ export class Field<Payload> {
 }
 
 export namespace Field {
+  //#region Types
+
+  export type Path = readonly string[];
+
+  //#endregion
+
   //#region Value
 
   export interface UseGetProps extends UseMetaProps {
@@ -1477,6 +1524,10 @@ export class ComputedField<Payload, Computed> extends Field<Computed> {
     this.#into = into;
     this.#from = from;
 
+    // Add itself to the computed map, so that we can find it later by the path,
+    // i.e. for validation through maybe references.
+    this.computedMap.add(this as any as ComputedField<unknown, unknown>);
+
     // Watch for the field (source) and update the computed value
     // on structural changes.
     this.#unsubs.push(
@@ -1558,9 +1609,12 @@ export class ComputedField<Payload, Computed> extends Field<Computed> {
 
   deconstruct() {
     this.#unsubs.forEach((unsub) => unsub());
+    this.computedMap.remove(this as any as ComputedField<unknown, unknown>);
   }
 
   // [NOTE] id mustn't be overridden as it's used as the hooks dependency
+  // [TODO] Reconsider the statement above, as we moved on to instance as
+  // dependencies, although id is probably better be different for HTML reasons.
 
   override get key(): string | undefined {
     return this.#source.key;
@@ -1578,8 +1632,8 @@ export class ComputedField<Payload, Computed> extends Field<Computed> {
     return this.#source.dirty;
   }
 
-  override get validation(): ValidationTree {
-    return this.#source.validation;
+  override get root(): Field<unknown> {
+    return this.#source.root;
   }
 }
 

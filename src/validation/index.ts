@@ -6,7 +6,7 @@ export class ValidationTree {
   #errors: Field.Error[] = [];
   #tree: ValidationTree.Node = ValidationTree.node();
 
-  at(path: readonly string[]): Field.Error[] {
+  at(path: Field.Path): Field.Error[] {
     let node = this.#tree;
     for (const key of path) {
       if (!node.children[key]) return [];
@@ -21,7 +21,7 @@ export class ValidationTree {
     );
   }
 
-  nested(path: readonly string[]): ValidationTree.ErrorsList {
+  nested(path: Field.Path): ValidationTree.ErrorsList {
     let node = this.#tree;
     for (const key of path) {
       if (!node.children[key]) return [];
@@ -42,8 +42,8 @@ export class ValidationTree {
 
   static traverse(
     node: ValidationTree.Node,
-    callback: (path: readonly string[], node: ValidationTree.Node) => void,
-    path: readonly string[] = [],
+    callback: (path: Field.Path, node: ValidationTree.Node) => void,
+    path: Field.Path = [],
   ): void {
     callback(path, node);
 
@@ -54,7 +54,7 @@ export class ValidationTree {
   }
 
   add(
-    path: readonly string[],
+    path: Field.Path,
     error: Field.Error,
     field: Field<any> | null,
   ): ValidationTree.Index {
@@ -72,7 +72,7 @@ export class ValidationTree {
     return index;
   }
 
-  clear(path: string[]): void {
+  clear(path: Field.Path): void {
     let node = this.#tree;
     const pathErrors: ValidationTree.ErrorsMap[] = [];
     for (const key of path) {
@@ -108,7 +108,5 @@ export namespace ValidationTree {
 
   export type ErrorsMap = Map<Index, [Field<any> | null] | null>;
 
-  export type ErrorsList = Array<
-    [readonly string[], Field.Error, Field<any> | null]
-  >;
+  export type ErrorsList = Array<[Field.Path, Field.Error, Field<any> | null]>;
 }
