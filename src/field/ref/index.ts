@@ -270,7 +270,7 @@ export class MaybeFieldRef<Payload> {
 
       const path = [...this.#target.closest.path, ...this.#target.path];
       error = typeof error === "string" ? { message: error } : error;
-      this.#target.closest.validation.add(path, error);
+      this.#target.closest.validation.add(path, error, null);
 
       let changes = change.field.errors;
       if (prevValid) changes |= change.field.invalid;

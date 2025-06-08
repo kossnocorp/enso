@@ -405,10 +405,6 @@ export class Field<Payload> {
         this.#withholded[0] &= ~(change.field.invalid | change.field.valid);
 
       if (notifyParents) this.#withholded[1] = true;
-
-      // [TODO] Returning at this point prevents `this.#childTrigger` from being
-      // called which then calls `this.#internal.childUpdate` and updates the
-      // parent and sibling keys. It leads to incomplete update.
     } else {
       ChangesEvent.batch(this.#batchTarget, changes);
       // [TODO] Add tests for this
@@ -915,7 +911,7 @@ export class Field<Payload> {
     const prevValid = this.valid;
     error = typeof error === "string" ? { message: error } : error;
 
-    this.validation.add(this.path, error);
+    this.validation.add(this.path, error, this as Field<any>);
 
     let changes = change.field.errors;
     if (prevValid) changes |= change.field.invalid;
@@ -924,33 +920,42 @@ export class Field<Payload> {
 
   clearErrors() {
     if (this.valid) return;
-    const paths = new Set<readonly string[]>();
-    this.validation.nested(this.path).forEach(([path]) => paths.add(path));
+    // const paths = new Set<readonly string[]>();
+    const errors = this.validation.nested(this.path); //.forEach(([path]) => paths.add(path));
+    const fieldErrors = Map.groupBy(errors, ([_, __, field]) => field);
 
     // First, we clear all errors
     this.validation.clear(this.path);
 
-    // Now we trigger changes for each path with direct errors
-    paths.forEach((path) => {
-      const field = this.lookup(path);
-      let changes = change.field.errors | change.field.valid;
-      if (field) {
-        field.trigger(changes, true);
-      } else {
-        // This is a shadow field error, we need to find the first defined parent and notify it. Also, shift the changes to match
-        // the correct level.
-        const restPath = [...path];
-        while (restPath.length) {
-          restPath.pop();
-          changes = shiftChildChanges(changes);
-          const parentField = this.lookup(restPath);
-          if (parentField) {
-            parentField.trigger(changes, true);
-            return;
+    const changes = change.field.errors | change.field.valid;
+
+    fieldErrors.forEach((errors, field) => {
+      if (field === null) {
+        const paths = new Set<readonly string[]>();
+        errors.forEach(([path]) => paths.add(path));
+
+        // Now we trigger changes for each path with direct errors
+        paths.forEach((path) => {
+          const field = this.lookup(path);
+          if (field) {
+            field.trigger(changes, true);
+          } else {
+            // This is a shadow field error, we need to find the first defined parent and notify it.
+            const restPath = [...path];
+            while (restPath.length) {
+              restPath.pop();
+              const parentField = this.lookup(restPath);
+              if (parentField) {
+                parentField.trigger(changes, true);
+                return;
+              }
+            }
+            // If we reach here, the current field is the closest parent.
+            this.trigger(changes, true);
           }
-        }
-        // If we reach here, the current field is the closest parent.
-        this.trigger(changes, true);
+        });
+      } else {
+        field.trigger(changes, true);
       }
     });
   }
@@ -1486,20 +1491,22 @@ export class ComputedField<Payload, Computed> extends Field<Computed> {
           ChangesEvent.context({ [this.#brand]: true }, () => {
             // Update the computed value if the change is structural.
             // [TODO] Tests
-            if (structuralChanges(sourceEvent.changes))
+            if (structuralChanges(sourceEvent.changes)) {
               // [TODO] Second argument is unnecessary expensive and probably can
               // be replaced with simple field.
               this.set(this.#into(sourceValue, this.get()));
+            }
 
             // Trigger meta changes.
             // [TODO] Add tests and rationale for this.
             const sourceMetaChanges = metaChanges(sourceEvent.changes);
-            if (sourceMetaChanges)
+            if (sourceMetaChanges) {
               this.trigger(
                 sourceMetaChanges,
                 // [TODO] Add tests and rationale for this (see a todo below).
                 true,
               );
+            }
           });
         },
         // [TODO] Add tests and rationale for this. Without it, though, when
@@ -1525,20 +1532,22 @@ export class ComputedField<Payload, Computed> extends Field<Computed> {
           ChangesEvent.context({ [this.#brand]: true }, () => {
             // If there are structural changes, update the source field.
             // // [TODO] Tests
-            if (structuralChanges(computedEvent.changes))
+            if (structuralChanges(computedEvent.changes)) {
               // [TODO] Second argument is unnecessary expensive and probably can
               // be replaced with simple field.
               this.#source.set(this.#from(computedValue, this.#source.get()));
+            }
 
             // Trigger meta changes.
             // [TODO] Add tests and rationale for this.
             const computedMetaChanges = metaChanges(computedEvent.changes);
-            if (computedMetaChanges)
+            if (computedMetaChanges) {
               this.#source.trigger(
                 computedMetaChanges,
                 // [TODO] Add tests and rationale for this (see a todo above).
                 true,
               );
+            }
           });
         },
         // [TODO] Add tests and rationale for this (see a todo above).
@@ -1567,14 +1576,6 @@ export class ComputedField<Payload, Computed> extends Field<Computed> {
 
   override get dirty(): boolean {
     return this.#source.dirty;
-  }
-
-  override addError(error: string | Field.Error): void {
-    this.#source.addError(error);
-  }
-
-  override clearErrors(): void {
-    this.#source.clearErrors();
   }
 
   override get validation(): ValidationTree {
@@ -1816,7 +1817,7 @@ export class InternalObjectState<
   lookup(path: Field.LookupPath): Field<unknown> | undefined {
     if (path.length === 0) return this.external as any;
     const [key, ...restPath] = path;
-    return this.#children.get(String(key))?.lookup(restPath);
+    return this.#$field(String(key))?.lookup(restPath);
   }
 
   //#endregion

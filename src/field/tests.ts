@@ -990,11 +990,12 @@ describe(Field, () => {
       });
 
       describe("computed", () => {
-        it("returns true if the source field has changed", () => {
+        it("returns true if the source field has changed", async () => {
           const field = new Field<string | undefined>("Hello");
           const computed = field.into(toString).from(fromString);
           expect(computed.dirty).toBe(false);
           computed.set("Hi");
+          await postpone();
           expect(computed.dirty).toBe(true);
         });
 
@@ -1532,8 +1533,14 @@ describe(Field, () => {
 
         it("returns undefined for invalid path", () => {
           const field = new Field({ num: 42 });
-          const lookup = field.lookup(["bum"]);
+          const lookup = field.lookup(["bum", "bum"]);
           expect(lookup).toBe(undefined);
+        });
+
+        it("correctly returns detached field", () => {
+          const field = new Field<{ num?: number }>({});
+          const lookup = field.lookup(["num"]);
+          expect(lookup).toBe(field.$.num);
         });
       });
 
@@ -1554,6 +1561,12 @@ describe(Field, () => {
           const field = new Field([1, 2, 3]);
           const lookup = field.lookup([5, 2]);
           expect(lookup).toBe(undefined);
+        });
+
+        it("correctly returns detached field", () => {
+          const field = new Field<number[]>([]);
+          const lookup = field.lookup([0]);
+          expect(lookup).toBe(field.at(0));
         });
       });
     });
@@ -2016,10 +2029,11 @@ describe(Field, () => {
         ]);
       });
 
-      it("updates the field back from computed", () => {
+      it("updates the field back from computed", async () => {
         const field = new Field({ message: "Hello, world!" });
         const computed = field.$.message.into(toCodes).from(fromCodes);
         computed.set([72, 105, 33]);
+        await postpone();
         expect(field.get()).toEqual({ message: "Hi!" });
       });
 
@@ -2869,7 +2883,7 @@ describe(Field, () => {
 describe(ComputedField, () => {
   describe("value", () => {
     describe(ComputedField.prototype.set, () => {
-      it("allows chaining multiple computed fields", () => {
+      it("allows chaining multiple computed fields", async () => {
         const source = new Field<{ name?: { first?: string; last?: string } }>(
           {},
         );
@@ -2883,10 +2897,12 @@ describe(ComputedField, () => {
           .into((last) => last || "")
           .from((last) => last);
         first.set("Sasha");
+        await postpone();
         expect(first.get()).toBe("Sasha");
         expect(name.get()).toEqual({ first: "Sasha" });
         expect(source.get()).toEqual({ name: { first: "Sasha" } });
         last.set("Koss");
+        await postpone();
         expect(last.get()).toBe("Koss");
         expect(name.get()).toEqual({ first: "Sasha", last: "Koss" });
         expect(source.get()).toEqual({
@@ -2931,7 +2947,7 @@ describe(ComputedField, () => {
       expect(detachedSpy).toReceiveChanges(change.field.blur);
     });
 
-    it("delegates events through computed field chains", async () => {
+    it("delegates events through computed chains", async () => {
       const source = new Field<{ name?: { first?: string; last?: string } }>(
         {},
       );
@@ -2964,12 +2980,72 @@ describe(ComputedField, () => {
       expect(spy).toReceiveChanges(change.field.errors | change.field.invalid);
       expect(computed.errors).toEqual([{ message: "Something went wrong" }]);
       expect(computed.valid).toBe(false);
-      computed.clearErrors();
+      source.clearErrors();
       await postpone();
       expect(spy).toHaveBeenCalledTimes(2);
       expect(spy).toReceiveChanges(change.field.valid | change.field.errors);
       expect(computed.errors).toHaveLength(0);
       expect(computed.valid).toBe(true);
+    });
+
+    it("receives validation events through computed chains", async () => {
+      const source = new Field<{ name?: { first?: string; last?: string } }>(
+        {},
+      );
+      const sourceSpyInvalid = vi.fn();
+      source.watch(sourceSpyInvalid);
+      const name = source.$.name
+        .into((name) => name || {})
+        .from((name) => name);
+      const nameSpyInvalid = vi.fn();
+      name.watch(nameSpyInvalid);
+      const first = name.$.first
+        .into((first) => first || "")
+        .from((first) => first);
+      const firstSpyInvalid = vi.fn();
+      first.watch(firstSpyInvalid);
+      first.addError("Something went wrong");
+      await postpone();
+      expect(sourceSpyInvalid).toHaveBeenCalledOnce();
+      expect(sourceSpyInvalid).toReceiveChanges(
+        change.subtree.errors | change.subtree.invalid,
+      );
+      expect(nameSpyInvalid).toHaveBeenCalledOnce();
+      expect(nameSpyInvalid).toHaveBeenCalledBefore(sourceSpyInvalid);
+      expect(nameSpyInvalid).toReceiveChanges(
+        change.child.errors | change.child.invalid,
+      );
+      expect(firstSpyInvalid).toHaveBeenCalledOnce();
+      expect(firstSpyInvalid).toHaveBeenCalledBefore(nameSpyInvalid);
+      expect(firstSpyInvalid).toReceiveChanges(
+        change.field.errors | change.field.invalid,
+      );
+      expect(first.errors).toEqual([{ message: "Something went wrong" }]);
+      expect(first.valid).toBe(false);
+      const sourceSpyValid = vi.fn();
+      source.watch(sourceSpyValid);
+      const nameSpyValid = vi.fn();
+      name.watch(nameSpyValid);
+      const firstSpyValid = vi.fn();
+      first.watch(firstSpyValid);
+      source.clearErrors();
+      await postpone();
+      expect(sourceSpyValid).toHaveBeenCalledOnce();
+      expect(sourceSpyValid).toReceiveChanges(
+        change.subtree.valid | change.subtree.errors,
+      );
+      expect(nameSpyValid).toHaveBeenCalledOnce();
+      expect(nameSpyValid).toHaveBeenCalledBefore(sourceSpyValid);
+      expect(nameSpyValid).toReceiveChanges(
+        change.child.valid | change.child.errors,
+      );
+      expect(firstSpyValid).toHaveBeenCalledOnce();
+      expect(firstSpyValid).toHaveBeenCalledBefore(nameSpyValid);
+      expect(firstSpyValid).toReceiveChanges(
+        change.field.valid | change.field.errors,
+      );
+      expect(first.errors).toHaveLength(0);
+      expect(first.valid).toBe(true);
     });
   });
 

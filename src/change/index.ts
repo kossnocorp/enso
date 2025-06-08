@@ -54,10 +54,7 @@ export class ChangesEvent extends Event {
     if (changes & fieldChange.detach && batchedChanges & fieldChange.attach)
       newChanges &= ~fieldChange.attach;
 
-    const newContext = structuredClone(
-      Object.assign({}, batchedContext, currentContext),
-    );
-
+    const newContext = Object.assign({}, batchedContext, currentContext);
     this.#batch.set(target, [newChanges, newContext]);
 
     queueMicrotask(() => {

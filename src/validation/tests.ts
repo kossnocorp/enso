@@ -13,9 +13,9 @@ describe(ValidationTree, () => {
       const error1 = { message: "Error 1" };
       const error2 = { message: "Error 2" };
       const error3 = { message: "Error 3" };
-      tree.add(["a", "b"], error1);
-      tree.add(["a", "b", "c"], error2);
-      tree.add(["a", "b", "c"], error3);
+      tree.add(["a", "b"], error1, null);
+      tree.add(["a", "b", "c"], error2, null);
+      tree.add(["a", "b", "c"], error3, null);
       expect(tree.at(["a", "b"])).toEqual([error1]);
       expect(tree.at(["a", "b", "c"])).toEqual([error2, error3]);
     });
@@ -29,37 +29,37 @@ describe(ValidationTree, () => {
 
     it("returns all errors with paths at prefix path", () => {
       const tree = new ValidationTree();
-      tree.add(["a", "b", "c"], { message: "a" });
-      tree.add(["a", "b", "d"], { message: "b" });
-      tree.add(["a", "e"], { message: "c" });
+      tree.add(["a", "b", "c"], { message: "a" }, null);
+      tree.add(["a", "b", "d"], { message: "b" }, null);
+      tree.add(["a", "e"], { message: "c" }, null);
       expect(tree.nested(["a"])).toEqual([
-        [["b", "c"], { message: "a" }],
-        [["b", "d"], { message: "b" }],
-        [["e"], { message: "c" }],
+        [["b", "c"], { message: "a" }, null],
+        [["b", "d"], { message: "b" }, null],
+        [["e"], { message: "c" }, null],
       ]);
       expect(tree.nested(["a", "b"])).toEqual([
-        [["c"], { message: "a" }],
-        [["d"], { message: "b" }],
+        [["c"], { message: "a" }, null],
+        [["d"], { message: "b" }, null],
       ]);
-      expect(tree.nested(["a", "e"])).toEqual([[[], { message: "c" }]]);
+      expect(tree.nested(["a", "e"])).toEqual([[[], { message: "c" }, null]]);
     });
 
     it("returns all errors for empty path", () => {
       const tree = new ValidationTree();
-      tree.add(["a", "b", "c"], { message: "a" });
-      tree.add(["a", "b", "d"], { message: "b" });
-      tree.add(["a", "e"], { message: "c" });
+      tree.add(["a", "b", "c"], { message: "a" }, null);
+      tree.add(["a", "b", "d"], { message: "b" }, null);
+      tree.add(["a", "e"], { message: "c" }, null);
       expect(tree.nested([])).toEqual([
-        [["a", "b", "c"], { message: "a" }],
-        [["a", "b", "d"], { message: "b" }],
-        [["a", "e"], { message: "c" }],
+        [["a", "b", "c"], { message: "a" }, null],
+        [["a", "b", "d"], { message: "b" }, null],
+        [["a", "e"], { message: "c" }, null],
       ]);
     });
 
     it("reuses references for the same path", () => {
       const tree = new ValidationTree();
-      tree.add(["a", "b"], { message: "a" });
-      tree.add(["a", "b"], { message: "b" });
+      tree.add(["a", "b"], { message: "a" }, null);
+      tree.add(["a", "b"], { message: "b" }, null);
       const errors = tree.nested([]);
       expect(errors).toHaveLength(2);
       expect(errors[0]![0]).toEqual(["a", "b"]);
@@ -71,14 +71,14 @@ describe(ValidationTree, () => {
     it("inserts error at given path", () => {
       const tree = new ValidationTree();
       const error = { message: "Error message" };
-      tree.add(["a", "b", "c"], error);
+      tree.add(["a", "b", "c"], error, null);
       expect(tree.nested(["a", "b", "c"])[0]![1]).toBe(error);
     });
 
     it("inserts error along the path", () => {
       const tree = new ValidationTree();
       const error = { message: "Error message" };
-      tree.add(["a", "b", "c"], error);
+      tree.add(["a", "b", "c"], error, null);
       expect(tree.nested(["a"])[0]![1]).toBe(error);
       expect(tree.nested(["a", "b"])[0]![1]).toBe(error);
       expect(tree.nested(["a", "b", "c"])[0]![1]).toBe(error);
@@ -86,27 +86,27 @@ describe(ValidationTree, () => {
 
     it("returns unique index", () => {
       const tree = new ValidationTree();
-      expect(tree.add(["a", "b"], { message: "Error 1" })).toBe(0);
-      expect(tree.add(["a", "b", "c"], { message: "Error 2" })).toBe(1);
-      expect(tree.add(["a", "b"], { message: "Error 3" })).toBe(2);
+      expect(tree.add(["a", "b"], { message: "Error 1" }, null)).toBe(0);
+      expect(tree.add(["a", "b", "c"], { message: "Error 2" }, null)).toBe(1);
+      expect(tree.add(["a", "b"], { message: "Error 3" }, null)).toBe(2);
     });
   });
 
   describe(ValidationTree.prototype.clear, () => {
     it("clears errors at the given path", () => {
       const tree = new ValidationTree();
-      tree.add(["a", "b", "c"], { message: "Error 1" });
-      tree.add(["a", "b", "d"], { message: "Error 2" });
-      tree.add(["e"], { message: "Error 3" });
+      tree.add(["a", "b", "c"], { message: "Error 1" }, null);
+      tree.add(["a", "b", "d"], { message: "Error 2" }, null);
+      tree.add(["e"], { message: "Error 3" }, null);
       tree.clear(["a", "b"]);
-      expect(tree.nested([])).toEqual([[["e"], { message: "Error 3" }]]);
+      expect(tree.nested([])).toEqual([[["e"], { message: "Error 3" }, null]]);
     });
 
     it("allows to clear all errors", () => {
       const tree = new ValidationTree();
-      tree.add(["a", "b", "c"], { message: "Error 1" });
-      tree.add(["a", "b", "d"], { message: "Error 2" });
-      tree.add(["e"], { message: "Error 3" });
+      tree.add(["a", "b", "c"], { message: "Error 1" }, null);
+      tree.add(["a", "b", "d"], { message: "Error 2" }, null);
+      tree.add(["e"], { message: "Error 3" }, null);
       tree.clear([]);
       expect(tree.nested([])).toHaveLength(0);
     });
