@@ -1,6 +1,13 @@
 import type { Field } from "../field/index.tsx";
 
-// [TODO] Add tests for field references
+// [TODO] Add tests for field references or completely remove this feature. The
+// thing is that we added them to validation tree in an attempt to fix
+// validation events handling and it worked in case of propagating through
+// detached fields, but wasn't enough to make it work for maybe fields. To make
+// the latter happen we added computed map. While storing fields work well along
+// with the computed map, it is redundant and can be removed. We didn't do it
+// right away as we weren't sure if there are no edge cases and also maybe
+// accessing fields might be useful in the future, so we left it as is.
 
 export class ValidationTree {
   #errors: Field.Error[] = [];
