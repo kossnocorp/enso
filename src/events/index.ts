@@ -60,7 +60,7 @@ export class EventsTree {
 
   trigger(path: Field.Path, changes: FieldChange) {
     let curChanges = changes;
-    this.traverse(path, (path, fields) => {
+    this.traverse(path, (_, fields) => {
       fields.forEach((field) => {
         field.trigger(curChanges);
       });

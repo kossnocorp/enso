@@ -176,7 +176,7 @@ describe(EventsTree, () => {
     });
   });
 
-  describe("trigger", () => {
+  describe(EventsTree.prototype.trigger, () => {
     it("triggers an event on the field", async () => {
       const tree = new EventsTree();
       const field = new Field("Hello, world!");
@@ -218,6 +218,54 @@ describe(EventsTree, () => {
       expect(spy2).toReceiveChanges(change.field.valid | change.child.value);
       expect(spy3).toHaveBeenCalledOnce();
       expect(spy3).toReceiveChanges(change.field.value);
+    });
+
+    describe(Field, () => {
+      it("supports object field paths", async () => {
+        const field = new Field({ stuff: { a: 1, b: 2 } });
+        const rootSpy = vi.fn();
+        field.watch(rootSpy);
+        const stuffSpy = vi.fn();
+        field.$.stuff.watch(stuffSpy);
+        const valueASpy = vi.fn();
+        field.$.stuff.$.a.watch(valueASpy);
+        const valueBSpy = vi.fn();
+        field.$.stuff.$.b.watch(valueBSpy);
+        field.eventsTree.trigger(field.$.stuff.$.a.path, change.field.valid);
+        await postpone();
+        expect(rootSpy).toHaveBeenCalledOnce();
+        expect(rootSpy).toReceiveChanges(change.subtree.valid);
+        expect(stuffSpy).toHaveBeenCalledOnce();
+        expect(stuffSpy).toHaveBeenCalledBefore(rootSpy);
+        expect(stuffSpy).toReceiveChanges(change.child.valid);
+        expect(valueASpy).toHaveBeenCalledOnce();
+        expect(valueASpy).toHaveBeenCalledBefore(stuffSpy);
+        expect(valueASpy).toReceiveChanges(change.field.valid);
+        expect(valueBSpy).not.toHaveBeenCalled();
+      });
+
+      it("supports array field paths", async () => {
+        const field = new Field({ items: [1, 2] });
+        const rootSpy = vi.fn();
+        field.watch(rootSpy);
+        const itemsSpy = vi.fn();
+        field.$.items.watch(itemsSpy);
+        const value1Spy = vi.fn();
+        field.$.items.at(0).watch(value1Spy);
+        const value2Spy = vi.fn();
+        field.$.items.at(1).watch(value2Spy);
+        field.eventsTree.trigger(field.$.items.at(0).path, change.field.valid);
+        await postpone();
+        expect(rootSpy).toHaveBeenCalledOnce();
+        expect(rootSpy).toReceiveChanges(change.subtree.valid);
+        expect(itemsSpy).toHaveBeenCalledOnce();
+        expect(itemsSpy).toHaveBeenCalledBefore(rootSpy);
+        expect(itemsSpy).toReceiveChanges(change.child.valid);
+        expect(value1Spy).toHaveBeenCalledOnce();
+        expect(value1Spy).toHaveBeenCalledBefore(itemsSpy);
+        expect(value1Spy).toReceiveChanges(change.field.valid);
+        expect(value2Spy).not.toHaveBeenCalled();
+      });
     });
   });
 });

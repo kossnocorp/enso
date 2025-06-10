@@ -98,9 +98,12 @@ export class Field<Payload> {
 
   constructor(value: Payload, parent?: Field.Parent<any>) {
     this.#initial = value;
-
-    this.#set(value);
     this.#parent = parent;
+
+    // [NOTE] Parent **must** set before, so that when we setting the children
+    // values, the path is already set. If not, they won't properly register in
+    // the events tree.
+    this.#set(value);
 
     this.eventsTree.add(this.path, this as any);
 
