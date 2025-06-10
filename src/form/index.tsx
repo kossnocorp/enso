@@ -15,6 +15,7 @@ export class Form<Payload> {
   ): Form<Payload> {
     const id = useId();
     const form = useMemo(() => new Form(id, value, options), [id]);
+    useEffect(() => () => form.deconstruct(), [form]);
     const rerender = useRerender();
 
     useEffect(
@@ -78,6 +79,11 @@ export class Form<Payload> {
 
       this.validate();
     });
+  }
+
+  // [TODO] Tests
+  deconstruct() {
+    this.#field.deconstruct();
   }
 
   static create<Payload>(
