@@ -1,4 +1,3 @@
-import { shiftChildChanges } from "../../change/index.ts";
 import { EnsoUtils } from "../../utils.ts";
 import { Field } from "../index.tsx";
 
@@ -199,6 +198,22 @@ export class MaybeFieldRef<Payload> {
     this.#target = target;
   }
 
+  //#region Maybe
+
+  #targetPath(): Field.Path {
+    return this.#target.type === "direct"
+      ? this.#target.field.path
+      : [...this.#target.closest.path, ...this.#target.path];
+  }
+
+  #targetRoot(): Field<any> {
+    return this.#target.type === "direct"
+      ? (this.#target.field.root as any)
+      : (this.#target.closest.root as any);
+  }
+
+  //#endregion
+
   //#region Value
 
   get(): Payload {
@@ -263,34 +278,15 @@ export class MaybeFieldRef<Payload> {
   //#region Errors
 
   addError(error: Field.Error | string): void {
-    if (this.#target.type === "direct") {
-      this.#target.field.addError(error);
-    } else {
-      const path = [...this.#target.closest.path, ...this.#target.path];
-      let changes = Field.errorChangesFor(this.#target.closest);
+    const path = this.#targetPath();
+    const root = this.#targetRoot();
 
-      // If there are computed fields at this path, we want to trigger changes
-      // on them as well, so that they can react.
-      const computed = this.#target.closest.computedMap.at(path);
-      computed.forEach((field) => field.trigger(changes, true));
+    // If there are any nested errors at this path, field is not valid.
+    const wasValid = !root.validationTree.nested(path).length;
+    const changes = Field.errorChangesFor(wasValid);
 
-      // Shift the changes for each path segment, so that the changes levels are
-      // accurately set for the closest field.
-      for (const _ of path) {
-        changes = shiftChildChanges(changes);
-      }
-
-      this.#target.closest.validationTree.add(
-        path,
-        Field.normalizeError(error),
-        null,
-      );
-
-      // No need to trigger changes, as the closest field will still receive
-      // them through the computed fields, however it should not change anything
-      // if we do trigger them.
-      if (!computed.length) this.#target.closest.trigger(changes, true);
-    }
+    root.validationTree.add(path, Field.normalizeError(error));
+    root.eventsTree.trigger(path, changes);
   }
 
   //#endregion

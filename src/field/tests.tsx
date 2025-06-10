@@ -15,7 +15,7 @@ describe("Field", () => {
 
     function Component(props: ComponentProps) {
       const count = useRenderCount();
-      const profile = Field.use<Profile>(props.profile);
+      const profile = Field.use<Profile>(props.profile, []);
 
       return (
         <div>
@@ -76,7 +76,7 @@ describe("Field", () => {
 
     function Component(props: ComponentProps) {
       const count = useRenderCount();
-      const field = Field.use({ names: props.names });
+      const field = Field.use({ names: props.names }, []);
       const names = field.$.names.useBind();
 
       return (
@@ -124,7 +124,7 @@ describe("Field", () => {
       it("allows to watch for field", async () => {
         function Component() {
           const count = useRenderCount();
-          const field = Field.use({ name: { first: "Alexander" } });
+          const field = Field.use({ name: { first: "Alexander" } }, []);
           const name = field.$.name.useGet();
 
           return (
@@ -174,7 +174,10 @@ describe("Field", () => {
       it("allows to listen to value with meta information", async () => {
         function Component() {
           const count = useRenderCount();
-          const field = Field.use({ name: { first: "Alexander", last: "" } });
+          const field = Field.use(
+            { name: { first: "Alexander", last: "" } },
+            [],
+          );
           const [value, { dirty, errors, valid }] = field.useGet({
             meta: true,
           });
@@ -328,7 +331,10 @@ describe("Field", () => {
       it("depends on the field id", async () => {
         function Component() {
           const count = useRenderCount();
-          const field = Field.use([{ name: "Alexander" }, { name: "Sasha" }]);
+          const field = Field.use(
+            [{ name: "Alexander" }, { name: "Sasha" }],
+            [],
+          );
           const [index, setIndex] = useState(0);
           const item = field.at(index).useGet();
 
@@ -367,7 +373,10 @@ describe("Field", () => {
       it("updates the watcher on field id change", async () => {
         function Component() {
           const count = useRenderCount();
-          const field = Field.use([{ name: "Alexander" }, { name: "Sasha" }]);
+          const field = Field.use(
+            [{ name: "Alexander" }, { name: "Sasha" }],
+            [],
+          );
           const [index, setIndex] = useState(0);
           const item = field.at(index).useGet();
 
@@ -434,7 +443,7 @@ describe("Field", () => {
       it("doesn't rerender when setting the same primitive", async () => {
         function Component() {
           const count = useRenderCount();
-          const field = Field.use({ name: "Sasha" });
+          const field = Field.use({ name: "Sasha" }, []);
           const user = field.useGet();
 
           return (
@@ -476,7 +485,7 @@ describe("Field", () => {
       it("allows to watch for field using a function", async () => {
         function Component() {
           const count = useRenderCount();
-          const field = Field.use({ name: { first: "Alexander" } });
+          const field = Field.use({ name: { first: "Alexander" } }, []);
           const [name, setName] = useState(field.$.name.get());
           field.$.name.useWatch(setName);
 
@@ -529,7 +538,10 @@ describe("Field", () => {
 
         function Component() {
           const count = useRenderCount();
-          const field = Field.use([{ name: "Alexander" }, { name: "Sasha" }]);
+          const field = Field.use(
+            [{ name: "Alexander" }, { name: "Sasha" }],
+            [],
+          );
           const [index, setIndex] = useState(0);
           field.at(index).useWatch(spy);
 
@@ -580,7 +592,10 @@ describe("Field", () => {
 
         function Component() {
           const count = useRenderCount();
-          const field = Field.use([{ name: "Alexander" }, { name: "Sasha" }]);
+          const field = Field.use(
+            [{ name: "Alexander" }, { name: "Sasha" }],
+            [],
+          );
           const [index, setIndex] = useState(0);
           field.at(index).useWatch(spy);
 
@@ -631,7 +646,7 @@ describe("Field", () => {
       it("allows to bind object field changes to the component", async () => {
         function Component() {
           const count = useRenderCount();
-          const field = Field.use<UserName>({ first: "Alexander" });
+          const field = Field.use<UserName>({ first: "Alexander" }, []);
           const name = field.useBind();
 
           return (
@@ -671,10 +686,10 @@ describe("Field", () => {
       it("depends on the field id", async () => {
         function Component() {
           const count = useRenderCount();
-          const field = Field.use<UserName[]>([
-            { first: "Alexander" },
-            { first: "Sasha" },
-          ]);
+          const field = Field.use<UserName[]>(
+            [{ first: "Alexander" }, { first: "Sasha" }],
+            [],
+          );
           const [index, setIndex] = useState(0);
           field.at(index).useBind();
 
@@ -725,10 +740,10 @@ describe("Field", () => {
       it("updates the watcher on field id change", async () => {
         function Component() {
           const count = useRenderCount();
-          const field = Field.use<UserName[]>([
-            { first: "Alexander" },
-            { first: "Sasha" },
-          ]);
+          const field = Field.use<UserName[]>(
+            [{ first: "Alexander" }, { first: "Sasha" }],
+            [],
+          );
           const [index, setIndex] = useState(0);
           const _ = field.at(index).useBind();
 
@@ -775,7 +790,7 @@ describe("Field", () => {
       it("allows to listen to field dirty", async () => {
         function Component() {
           const count = useRenderCount();
-          const field = Field.use({ name: { first: "Alexander" } });
+          const field = Field.use({ name: { first: "Alexander" } }, []);
           const dirty = field.useDirty();
 
           return (
@@ -826,7 +841,10 @@ describe("Field", () => {
       it("depends on the field id", async () => {
         function Component() {
           const count = useRenderCount();
-          const field = Field.use([{ name: "Alexander" }, { name: "Sasha" }]);
+          const field = Field.use(
+            [{ name: "Alexander" }, { name: "Sasha" }],
+            [],
+          );
           const [index, setIndex] = useState(0);
           const dirty = field.at(index).useDirty();
 
@@ -875,7 +893,10 @@ describe("Field", () => {
       it("updates the watcher on field id change", async () => {
         function Component() {
           const count = useRenderCount();
-          const field = Field.use([{ name: "Alexander" }, { name: "Sasha" }]);
+          const field = Field.use(
+            [{ name: "Alexander" }, { name: "Sasha" }],
+            [],
+          );
           const [index, setIndex] = useState(0);
           const dirty = field.at(index).useDirty();
 
@@ -928,7 +949,10 @@ describe("Field", () => {
       it("allows to enable/disable the dirty listener", async () => {
         function Component() {
           const count = useRenderCount();
-          const field = Field.use([{ name: "Alexander" }, { name: "Sasha" }]);
+          const field = Field.use(
+            [{ name: "Alexander" }, { name: "Sasha" }],
+            [],
+          );
           const [index, setIndex] = useState(0);
           const [enabled, setEnabled] = useState(false);
           const dirty = field.at(index).useDirty(enabled);
@@ -994,7 +1018,7 @@ describe("Field", () => {
       it("updates on reset", async () => {
         function Component() {
           const count = useRenderCount();
-          const field = Field.use({ name: { first: "Alexander" } });
+          const field = Field.use({ name: { first: "Alexander" } }, []);
           const dirty = field.useDirty();
 
           return (
@@ -1044,7 +1068,7 @@ describe("Field", () => {
       it("updates on commit", async () => {
         function Component() {
           const count = useRenderCount();
-          const field = Field.use({ name: { first: "Alexander" } });
+          const field = Field.use({ name: { first: "Alexander" } }, []);
           const dirty = field.useDirty();
 
           return (
@@ -1096,7 +1120,10 @@ describe("Field", () => {
       it("allows to listen to field error", async () => {
         function Component() {
           const count = useRenderCount();
-          const field = Field.use({ name: { first: "Alexander", last: "" } });
+          const field = Field.use(
+            { name: { first: "Alexander", last: "" } },
+            [],
+          );
           const errors = field.$.name.useErrors();
 
           return (
@@ -1194,7 +1221,10 @@ describe("Field", () => {
       it("depends on the field id", async () => {
         function Component() {
           const count = useRenderCount();
-          const field = Field.use([{ name: "Alexander" }, { name: "Sasha" }]);
+          const field = Field.use(
+            [{ name: "Alexander" }, { name: "Sasha" }],
+            [],
+          );
           const [index, setIndex] = useState(0);
           const errors = field.at(index).useErrors();
 
@@ -1243,7 +1273,10 @@ describe("Field", () => {
       it("updates the watcher on field id change", async () => {
         function Component() {
           const count = useRenderCount();
-          const field = Field.use([{ name: "Alexander" }, { name: "Sasha" }]);
+          const field = Field.use(
+            [{ name: "Alexander" }, { name: "Sasha" }],
+            [],
+          );
           const [index, setIndex] = useState(0);
           const errors = field.at(index).useErrors();
 
@@ -1296,7 +1329,10 @@ describe("Field", () => {
       it("allows to enable/disable the error listener", async () => {
         function Component() {
           const count = useRenderCount();
-          const field = Field.use([{ name: "Alexander" }, { name: "Sasha" }]);
+          const field = Field.use(
+            [{ name: "Alexander" }, { name: "Sasha" }],
+            [],
+          );
           const [index, setIndex] = useState(0);
           const [enabled, setEnabled] = useState(false);
           const errors = field.at(index).useErrors(enabled);
@@ -1364,7 +1400,7 @@ describe("Field", () => {
       it("allows to listen to field valid", async () => {
         function Component() {
           const count = useRenderCount();
-          const field = Field.use({ name: { first: "Alexander" } });
+          const field = Field.use({ name: { first: "Alexander" } }, []);
           const valid = field.useValid();
 
           return (
@@ -1436,7 +1472,10 @@ describe("Field", () => {
       it("depends on the field id", async () => {
         function Component() {
           const count = useRenderCount();
-          const field = Field.use([{ name: "Alexander" }, { name: "Sasha" }]);
+          const field = Field.use(
+            [{ name: "Alexander" }, { name: "Sasha" }],
+            [],
+          );
           const [index, setIndex] = useState(0);
           const valid = field.at(index).useValid();
 
@@ -1485,7 +1524,10 @@ describe("Field", () => {
       it("updates the watcher on field id change", async () => {
         function Component() {
           const count = useRenderCount();
-          const field = Field.use([{ name: "Alexander" }, { name: "Sasha" }]);
+          const field = Field.use(
+            [{ name: "Alexander" }, { name: "Sasha" }],
+            [],
+          );
           const [index, setIndex] = useState(0);
           const valid = field.at(index).useValid();
 
@@ -1538,7 +1580,10 @@ describe("Field", () => {
       it("allows to enable/disable the valid listener", async () => {
         function Component() {
           const count = useRenderCount();
-          const field = Field.use([{ name: "Alexander" }, { name: "Sasha" }]);
+          const field = Field.use(
+            [{ name: "Alexander" }, { name: "Sasha" }],
+            [],
+          );
           const [index, setIndex] = useState(0);
           const [enabled, setEnabled] = useState(false);
           const valid = field.at(index).useValid(enabled);
@@ -1606,7 +1651,10 @@ describe("Field", () => {
       it("allows to listen to meta information", async () => {
         function Component() {
           const count = useRenderCount();
-          const field = Field.use({ name: { first: "Alexander", last: "" } });
+          const field = Field.use(
+            { name: { first: "Alexander", last: "" } },
+            [],
+          );
           const { dirty, errors: errors, valid } = field.useMeta();
 
           return (
@@ -1745,7 +1793,7 @@ describe("Field", () => {
       it("allows to compute value", async () => {
         function Component() {
           const count = useRenderCount();
-          const field = Field.use<User>({ name: { first: "Alexander" } });
+          const field = Field.use<User>({ name: { first: "Alexander" } }, []);
           const hasLastName = field.$.name.useCompute(
             (name) => !!name.last,
             [],
@@ -1832,10 +1880,10 @@ describe("Field", () => {
       it("depends on the field id", async () => {
         function Component() {
           const count = useRenderCount();
-          const field = Field.use<UserName[]>([
-            { first: "Alexander" },
-            { first: "Sasha", last: "Koss" },
-          ]);
+          const field = Field.use<UserName[]>(
+            [{ first: "Alexander" }, { first: "Sasha", last: "Koss" }],
+            [],
+          );
           const [index, setIndex] = useState(0);
           const hasLastName = field
             .at(index)
@@ -1876,10 +1924,10 @@ describe("Field", () => {
       it("updates the watcher on field id change", async () => {
         function Component() {
           const count = useRenderCount();
-          const field = Field.use<UserName[]>([
-            { first: "Alexander" },
-            { first: "Sasha", last: "Koss" },
-          ]);
+          const field = Field.use<UserName[]>(
+            [{ first: "Alexander" }, { first: "Sasha", last: "Koss" }],
+            [],
+          );
           const [index, setIndex] = useState(0);
           const hasLastName = field
             .at(index)
@@ -1934,7 +1982,7 @@ describe("Field", () => {
       it("doesn't rerender when setting the same primitive", async () => {
         function Component() {
           const count = useRenderCount();
-          const field = Field.use<UserName>({ first: "Alexander" });
+          const field = Field.use<UserName>({ first: "Alexander" }, []);
           const hasLastName = field.useCompute((name) => !!name?.last, []);
 
           return (
@@ -1974,7 +2022,7 @@ describe("Field", () => {
       it("allows to specify dependencies", async () => {
         function Component() {
           const count = useRenderCount();
-          const field = Field.use("Alexander");
+          const field = Field.use("Alexander", []);
           const [lastName, setLastName] = useState("Koss");
           const fullName = field.useCompute(
             (name) => `${name} ${lastName}`,
@@ -2030,7 +2078,10 @@ describe("Field", () => {
       it("allows to decompose union field", async () => {
         function Component() {
           const count = useRenderCount();
-          const address = Field.use<Address>({ name: { first: "Alexander" } });
+          const address = Field.use<Address>(
+            { name: { first: "Alexander" } },
+            [],
+          );
           const name = address.$.name.useDecompose(
             (newName, prevName) => typeof newName !== typeof prevName,
             [],
@@ -2110,10 +2161,10 @@ describe("Field", () => {
       it("depends on the field id", async () => {
         function Component() {
           const count = useRenderCount();
-          const field = Field.use<Array<string | UserName>>([
-            "Alexander",
-            { first: "Sasha", last: "Koss" },
-          ]);
+          const field = Field.use<Array<string | UserName>>(
+            ["Alexander", { first: "Sasha", last: "Koss" }],
+            [],
+          );
           const [index, setIndex] = useState(0);
           const name = field
             .at(index)
@@ -2155,10 +2206,10 @@ describe("Field", () => {
       it("updates the watcher on field id change", async () => {
         function Component() {
           const count = useRenderCount();
-          const field = Field.use<Array<string | UserName>>([
-            "Alexander",
-            { first: "Sasha", last: "Koss" },
-          ]);
+          const field = Field.use<Array<string | UserName>>(
+            ["Alexander", { first: "Sasha", last: "Koss" }],
+            [],
+          );
           const [index, setIndex] = useState(0);
           const name = field
             .at(index)
@@ -2220,7 +2271,10 @@ describe("Field", () => {
       it("allows to narrow union field", async () => {
         function Component() {
           const count = useRenderCount();
-          const address = Field.use<Address>({ name: { first: "Alexander" } });
+          const address = Field.use<Address>(
+            { name: { first: "Alexander" } },
+            [],
+          );
           const nameStr = address.$.name.useNarrow(
             (name, ok) => typeof name === "string" && ok(name),
             [],
@@ -2300,10 +2354,10 @@ describe("Field", () => {
       it("depends on the field id", async () => {
         function Component() {
           const count = useRenderCount();
-          const field = Field.use<Array<string | UserName>>([
-            "Alexander",
-            { first: "Sasha", last: "Koss" },
-          ]);
+          const field = Field.use<Array<string | UserName>>(
+            ["Alexander", { first: "Sasha", last: "Koss" }],
+            [],
+          );
           const [index, setIndex] = useState(0);
           const nameObj = field
             .at(index)
@@ -2344,10 +2398,10 @@ describe("Field", () => {
       it("updates the watcher on field id change", async () => {
         function Component() {
           const count = useRenderCount();
-          const field = Field.use<Array<string | UserName>>([
-            "Alexander",
-            { first: "Sasha", last: "Koss" },
-          ]);
+          const field = Field.use<Array<string | UserName>>(
+            ["Alexander", { first: "Sasha", last: "Koss" }],
+            [],
+          );
           const [index, setIndex] = useState(0);
           const nameObj = field
             .at(index)
@@ -2412,9 +2466,12 @@ describe("Field", () => {
 
         function Component() {
           const count = useRenderCount();
-          const field = Field.use<TestState>({
-            hello: { lang: "human", text: "Hello" },
-          });
+          const field = Field.use<TestState>(
+            {
+              hello: { lang: "human", text: "Hello" },
+            },
+            [],
+          );
           const hello = field.$.hello.useDiscriminate("lang");
 
           return (
@@ -2509,10 +2566,13 @@ describe("Field", () => {
       it("depends on the field id", async () => {
         function Component() {
           const count = useRenderCount();
-          const field = Field.use<Hello[]>([
-            { lang: "human", text: "Hello" },
-            { lang: "machine", binary: 0b1101010 },
-          ]);
+          const field = Field.use<Hello[]>(
+            [
+              { lang: "human", text: "Hello" },
+              { lang: "machine", binary: 0b1101010 },
+            ],
+            [],
+          );
           const [index, setIndex] = useState(0);
           const hello = field.at(index).useDiscriminate("lang");
 
@@ -2551,10 +2611,13 @@ describe("Field", () => {
       it("updates the watcher on field id change", async () => {
         function Component() {
           const count = useRenderCount();
-          const field = Field.use<Hello[]>([
-            { lang: "human", text: "Hello" },
-            { lang: "machine", binary: 0b1101010 },
-          ]);
+          const field = Field.use<Hello[]>(
+            [
+              { lang: "human", text: "Hello" },
+              { lang: "machine", binary: 0b1101010 },
+            ],
+            [],
+          );
           const [index, setIndex] = useState(0);
           const hello = field.at(index).useDiscriminate("lang");
 
@@ -2628,7 +2691,7 @@ describe("Field", () => {
       it("allows to compute field", async () => {
         function Component() {
           const count = useRenderCount();
-          const field = Field.use({ message: "Hello" });
+          const field = Field.use({ message: "Hello" }, []);
           const codes = field.$.message
             .useInto(toCodes, [])
             .from(fromCodes, []);
@@ -2694,7 +2757,7 @@ describe("Field", () => {
       it("depends on the field id", async () => {
         function Component() {
           const count = useRenderCount();
-          const field = Field.use<string[]>(["Hello", "Yo"]);
+          const field = Field.use<string[]>(["Hello", "Yo"], []);
           const [index, setIndex] = useState(0);
           const codes = field
             .at(index)
@@ -2738,7 +2801,7 @@ describe("Field", () => {
         const fromSpy = vi.fn().mockReturnValue("Yo!");
 
         function Component() {
-          const field = Field.use({ message: "Hello, world!" });
+          const field = Field.use({ message: "Hello, world!" }, []);
           const computed = field.$.message
             .useInto(intoSpy, [])
             .from(fromSpy, []);
@@ -2767,7 +2830,7 @@ describe("Field", () => {
       it("updates the watcher on field id change", async () => {
         function Component() {
           const count = useRenderCount();
-          const field = Field.use<string[]>(["Hello", "Yo"]);
+          const field = Field.use<string[]>(["Hello", "Yo"], []);
           const [index, setIndex] = useState(0);
           const codes = field
             .at(index)
@@ -2826,7 +2889,7 @@ describe("Field", () => {
         function Component() {
           const count = useRenderCount();
           const [field, setField] = useState<Field<string> | undefined>();
-          const actualField = Field.use("Hello!");
+          const actualField = Field.use("Hello!", []);
           const ensuredField = Field.useEnsure(field);
           // eslint-disable-next-line react-hooks/exhaustive-deps
           const dummyField = useMemo(() => ensuredField, []);
@@ -2941,7 +3004,7 @@ describe("Field", () => {
           const [field, setField] = useState<
             Field<{ hello: string }> | undefined
           >();
-          const actualField = Field.use({ hello: "Hello!" });
+          const actualField = Field.use({ hello: "Hello!" }, []);
           const ensuredField = Field.useEnsure(field, (f) => f.$.hello);
           const dummyField = useMemo(() => ensuredField, []);
           const fieldValue = ensuredField.useGet();
@@ -3037,7 +3100,7 @@ describe("Field", () => {
       it("synchronizes input with the state", async () => {
         function Component() {
           const count = useRenderCount();
-          const field = Field.use<User>({ name: { first: "Alexander" } });
+          const field = Field.use<User>({ name: { first: "Alexander" } }, []);
 
           return (
             <div>
@@ -3092,7 +3155,7 @@ describe("Field", () => {
       it("synchronizes textarea with the state", async () => {
         function Component() {
           const count = useRenderCount();
-          const field = Field.use<User>({ name: { first: "Alexander" } });
+          const field = Field.use<User>({ name: { first: "Alexander" } }, []);
 
           return (
             <div>
@@ -3150,7 +3213,7 @@ describe("Field", () => {
 
         function Component() {
           const count = useRenderCount();
-          const field = Field.use<User>({ name: { first: "Alexander" } });
+          const field = Field.use<User>({ name: { first: "Alexander" } }, []);
 
           return (
             <div>
@@ -3222,7 +3285,7 @@ describe("Field", () => {
       it("allows to control input element", async () => {
         function Component() {
           const count = useRenderCount();
-          const field = Field.use<User>({ name: { first: "Alexander" } });
+          const field = Field.use<User>({ name: { first: "Alexander" } }, []);
 
           return (
             <div>
@@ -3283,7 +3346,10 @@ describe("Field", () => {
       it("allows to subscribe to meta information", async () => {
         function Component() {
           const outsideCount = useRenderCount();
-          const field = Field.use({ name: { first: "Alexander", last: "" } });
+          const field = Field.use(
+            { name: { first: "Alexander", last: "" } },
+            [],
+          );
 
           return (
             <div>
@@ -3466,7 +3532,7 @@ describe("Field", () => {
 
         function Component() {
           const count = useRenderCount();
-          const namesField = Field.use<string[]>(["Alexander", "Sasha"]);
+          const namesField = Field.use<string[]>(["Alexander", "Sasha"], []);
           const [index, setIndex] = useState(0);
           const decomposedField = namesField.at(index).decompose();
           if (!decomposedField.value) return null;
@@ -3633,7 +3699,7 @@ interface UserNameFormComponentProps {
 
 function UserNameFormComponent(props: UserNameFormComponentProps) {
   const count = useRenderCount();
-  const field = Field.use<UserName>({ first: "", last: "" });
+  const field = Field.use<UserName>({ first: "", last: "" }, []);
 
   return (
     <div>

@@ -6,10 +6,10 @@ import React, {
   FocusEvent,
   FocusEventHandler,
   MutableRefObject,
+  useCallback as reactUseCallback,
+  useMemo as reactUseMemo,
   RefCallback,
   useEffect,
-  useMemo as reactUseMemo,
-  useCallback as reactUseCallback,
   useRef,
 } from "react";
 import {
@@ -22,11 +22,11 @@ import {
   shiftChildChanges,
   structuralChanges,
 } from "../change/index.ts";
+import { EventsTree } from "../events/index.ts";
 import { useRerender } from "../hooks/rerender.ts";
 import { type EnsoUtils } from "../utils.ts";
-import { FieldRef } from "./ref/index.ts";
 import { ValidationTree } from "../validation/index.ts";
-import { ComputedMap } from "../computed/index.ts";
+import { FieldRef } from "./ref/index.ts";
 
 export { FieldRef };
 
@@ -45,9 +45,10 @@ export class Field<Payload> {
   static use<Value>(
     initialValue: Value,
     // [TODO] Add tests
-    deps?: DependencyList,
+    deps: DependencyList,
   ): Field<Value> {
-    const field = useMemo(() => new Field(initialValue), deps || []);
+    const field = useMemo(() => new Field(initialValue), deps);
+    useEffect(() => () => field.deconstruct(), [field]);
     return field;
   }
 
@@ -101,6 +102,8 @@ export class Field<Payload> {
     this.#set(value);
     this.#parent = parent;
 
+    this.eventsTree.add(this.path, this as any);
+
     const onInput = (event: Event) => {
       const target = event.target as HTMLInputElement | HTMLTextAreaElement;
       const value = target.value as Payload;
@@ -122,6 +125,10 @@ export class Field<Payload> {
     this.onBlur = this.onBlur.bind(this);
   }
 
+  deconstruct() {
+    this.eventsTree.delete(this.path, this as any);
+  }
+
   #clearCache() {
     this.#cachedGet = detachedValue;
     this.#cachedDirty = undefined;
@@ -134,11 +141,18 @@ export class Field<Payload> {
   }
 
   get key(): string | undefined {
-    return this.#parent?.key;
+    if (!this.#parent) return;
+    return "source" in this.#parent
+      ? this.#parent.source.key
+      : this.#parent.key;
   }
 
   get path(): string[] {
-    return this.#parent ? [...this.#parent.field.path, this.#parent.key] : [];
+    return this.#parent && "source" in this.#parent
+      ? this.#parent.source.path
+      : this.#parent
+        ? [...this.#parent.field.path, this.#parent.key]
+        : [];
   }
 
   static nameFromPath(path: Field.Path): string {
@@ -150,7 +164,9 @@ export class Field<Payload> {
   }
 
   get parent(): Field<any> | undefined {
-    return this.#parent?.field;
+    return this.#parent && "source" in this.#parent
+      ? this.#parent.source.parent
+      : this.#parent?.field;
   }
 
   //#endregion
@@ -262,6 +278,9 @@ export class Field<Payload> {
   #cachedDirty: boolean | undefined;
 
   get dirty(): boolean {
+    if (this.#parent && "source" in this.#parent)
+      return this.#parent.source.dirty;
+
     if (this.#cachedDirty === undefined)
       this.#cachedDirty = this.#internal.dirty(this.#initial);
     return this.#cachedDirty;
@@ -360,7 +379,9 @@ export class Field<Payload> {
   //#region Tree
 
   get root(): Field<unknown> {
-    return this.#parent?.field.root || (this as any as Field<unknown>);
+    return this.#parent && "source" in this.#parent
+      ? this.#parent.source.root
+      : this.#parent?.field.root || (this as any as Field<unknown>);
   }
 
   get $(): Field.$<Payload> {
@@ -395,6 +416,12 @@ export class Field<Payload> {
   #syncTarget = new EventTarget();
   #subs = new Set<(event: Event) => void>();
 
+  #eventsTree: EventsTree | undefined;
+
+  get eventsTree(): EventsTree {
+    return (this.root.#eventsTree ??= new EventsTree());
+  }
+
   trigger(changes: FieldChange, notifyParents: boolean = false) {
     this.#clearCache();
 
@@ -421,7 +448,12 @@ export class Field<Payload> {
     }
 
     // If the updates should flow upstream, trigger parents too
-    if (notifyParents && this.#parent)
+    if (
+      notifyParents &&
+      this.#parent &&
+      "field" in this.#parent &&
+      this.#parent.field
+    )
       this.#parent.field.#childTrigger(changes, this.#parent.key);
   }
 
@@ -616,53 +648,6 @@ export class Field<Payload> {
     }) as Field.Discriminated<Payload, Discriminator>;
   }
 
-  #computedMap: ComputedMap | undefined;
-
-  get computedMap(): ComputedMap {
-    return (this.root.#computedMap ??= new ComputedMap());
-  }
-
-  /**
-   * Initiates a computed field builder. It accepts mapper function that
-   * transforms the current field value into another.
-   *
-   * The returned builder {@link Into} with `from` method allows to define how
-   * the computed value is transformed back into the original and returns
-   * the computed field.
-   *
-   * @param mapper - Mapper function computing new value from field value
-   *
-   * @returns Builder object with `from` method
-   */
-  into<ComputedValue>(
-    intoMapper: ComputedField.Into<Payload, ComputedValue>,
-  ): Field.Into<Payload, ComputedValue> {
-    return {
-      from: (fromMapper) => new ComputedField(this, intoMapper, fromMapper),
-    };
-  }
-
-  // [TODO] Add tests
-  useInto<Computed>(
-    intoMapper: ComputedField.Into<Payload, Computed>,
-    intoDeps: DependencyList,
-  ): Field.IntoHook<Payload, Computed> {
-    const from = useCallback<Field.FromHook<Payload, Computed>>(
-      (fromMapper, fromDeps) => {
-        const computed = useMemo(
-          () => new ComputedField(this, intoMapper, fromMapper),
-          // eslint-disable-next-line react-hooks/exhaustive-deps -- We control `intoMapper` and `fromMapper` via `intoDeps` and `fromDeps`.
-          [this, ...intoDeps, ...fromDeps],
-        );
-        useEffect(() => computed.deconstruct.bind(computed), [computed]);
-        return computed;
-      },
-      // eslint-disable-next-line react-hooks/exhaustive-deps -- We control `intoMapper` via `intoDeps`
-      [this, ...intoDeps],
-    );
-    return useMemo(() => ({ from }), [from]);
-  }
-
   narrow<Narrowed extends Payload>(
     callback: Field.NarrowCallback<Payload, Narrowed>,
   ): Field<Narrowed> | undefined {
@@ -714,7 +699,7 @@ export class Field<Payload> {
   ): Result extends undefined
     ? Field<Payload | undefined>
     : Field<Result | undefined> {
-    const dummy = Field.use(undefined);
+    const dummy = Field.use(undefined, []);
     const frozenDummy = useMemo(() => Object.freeze(dummy), [dummy]);
     const mappedField = (map && field && map(field)) || field;
     // @ts-ignore: [TODO]
@@ -736,6 +721,51 @@ export class Field<Payload> {
   // [TODO] Research if it's possible to make TypeScript accept wider paths.
   widen<Wide>(): Field<Payload | Wide> {
     return this as Field<Payload | Wide>;
+  }
+
+  //#endregion
+
+  //#region Computed
+
+  /**
+   * Initiates a computed field builder. It accepts mapper function that
+   * transforms the current field value into another.
+   *
+   * The returned builder {@link Into} with `from` method allows to define how
+   * the computed value is transformed back into the original and returns
+   * the computed field.
+   *
+   * @param mapper - Mapper function computing new value from field value
+   *
+   * @returns Builder object with `from` method
+   */
+  into<ComputedValue>(
+    intoMapper: ComputedField.Into<Payload, ComputedValue>,
+  ): Field.Into<Payload, ComputedValue> {
+    return {
+      from: (fromMapper) => new ComputedField(this, intoMapper, fromMapper),
+    };
+  }
+
+  // [TODO] Add tests
+  useInto<Computed>(
+    intoMapper: ComputedField.Into<Payload, Computed>,
+    intoDeps: DependencyList,
+  ): Field.IntoHook<Payload, Computed> {
+    const from = useCallback<Field.FromHook<Payload, Computed>>(
+      (fromMapper, fromDeps) => {
+        const computed = useMemo(
+          () => new ComputedField(this, intoMapper, fromMapper),
+          // eslint-disable-next-line react-hooks/exhaustive-deps -- We control `intoMapper` and `fromMapper` via `intoDeps` and `fromDeps`.
+          [this, ...intoDeps, ...fromDeps],
+        );
+        useEffect(() => computed.deconstruct.bind(computed), [computed]);
+        return computed;
+      },
+      // eslint-disable-next-line react-hooks/exhaustive-deps -- We control `intoMapper` via `intoDeps`
+      [this, ...intoDeps],
+    );
+    return useMemo(() => ({ from }), [from]);
   }
 
   //#endregion
@@ -922,10 +952,9 @@ export class Field<Payload> {
     });
   }
 
-  static errorChangesFor(field: Field<unknown>): FieldChange {
-    const prevValid = field.valid;
+  static errorChangesFor(wasValid: boolean): FieldChange {
     let changes = change.field.errors;
-    if (prevValid) changes |= change.field.invalid;
+    if (wasValid) changes |= change.field.invalid;
     return changes;
   }
 
@@ -934,71 +963,30 @@ export class Field<Payload> {
   }
 
   addError(error: string | Field.Error) {
-    const changes = Field.errorChangesFor(this as any as Field<unknown>);
-    this.validationTree.add(
-      this.path,
-      Field.normalizeError(error),
-      this as Field<any>,
-    );
-    this.trigger(changes, true);
+    const changes = Field.errorChangesFor(this.valid);
+    this.validationTree.add(this.path, Field.normalizeError(error));
+    this.eventsTree.trigger(this.path, changes);
   }
 
   clearErrors() {
     if (this.valid) return;
     const errors = this.validationTree.nested(this.path);
-    const fieldErrors = Map.groupBy(errors, ([_, __, field]) => field);
 
     // First, we clear all errors, so that when we trigger changes, sync
     // handlers don't see the errors.
     // [TODO] Add test for this case
     this.validationTree.clear(this.path);
 
+    const errorsByPaths = Object.groupBy(errors, ([path]) =>
+      Field.nameFromPath(path),
+    );
+
     const clearChanges = change.field.errors | change.field.valid;
 
-    fieldErrors.forEach((errorRows, field) => {
-      if (field === null) {
-        const paths = new Set<readonly string[]>();
-        errorRows.forEach(([path]) => paths.add(path));
-
-        // Now we trigger changes for each path with direct errors
-        paths.forEach((path) => {
-          const field = this.lookup(path);
-          if (field) {
-            field.trigger(clearChanges, true);
-          } else {
-            // This is a shadow field error, we need to find the first defined
-            // parent and notify it. Also, we shift changes to accurately match
-            // the tree level.
-            let changes = clearChanges;
-            const curPath = [...path];
-            while (curPath.length) {
-              // First, try to find the computed fields through the map.
-              const computed = this.computedMap.at(curPath);
-              if (computed.length) {
-                // If we found a computed fields, trigger the clear events
-                // for them and stop the search.
-                computed.forEach((field) => field.trigger(changes, true));
-                return;
-              }
-
-              curPath.pop();
-              changes = shiftChildChanges(changes);
-              // We look for the parent field after we pop, as we already tried
-              // to look up the current path earlier.
-              const parentField = this.lookup(curPath);
-              if (parentField) {
-                parentField.trigger(changes, true);
-                return;
-              }
-            }
-
-            // If we reach here, the current field is the closest parent.
-            this.trigger(changes, true);
-          }
-        });
-      } else {
-        field.trigger(clearChanges, true);
-      }
+    Object.values(errorsByPaths).forEach((group) => {
+      const path = group?.[0]?.[0];
+      if (!path) return;
+      this.eventsTree.trigger(path, clearChanges);
     });
   }
 
@@ -1074,8 +1062,10 @@ export class Field<Payload> {
 
   #external = {
     move: (newKey: string) => {
-      assert(this.#parent);
+      always(this.#parent && "field" in this.#parent);
+      const prevPath = this.path;
       this.#parent.key = newKey;
+      this.eventsTree.move(prevPath, this.path, this as any);
       return this.trigger(fieldChange.key);
     },
 
@@ -1132,9 +1122,15 @@ export namespace Field {
 
   //#region Tree
 
-  export interface Parent<Payload> {
+  export type Parent<Payload> = ParentDirect<Payload> | ParentSource<Payload>;
+
+  export interface ParentDirect<Payload> {
     key: string;
     field: Field<Payload>;
+  }
+
+  export interface ParentSource<Payload> {
+    source: Field<Payload>;
   }
 
   export type $<Payload> = Payload extends object
@@ -1281,6 +1277,34 @@ export namespace Field {
 
   export type DiscriminatorKey<Payload> = keyof NonUndefined<Payload>;
 
+  export type NarrowCallback<Payload, Narrowed> = (
+    payload: Payload,
+    wrap: NarrowWrap,
+  ) => NarrowWrapper<Narrowed> | Falsy;
+
+  export type NarrowWrap = <Payload>(
+    payload: Payload,
+  ) => NarrowWrapper<Payload>;
+
+  export type NarrowWrapper<Payload> = {
+    [narrowBrapperBrand]: Payload;
+  };
+
+  declare const narrowBrapperBrand: unique symbol;
+
+  export type Ensured<Payload> = [
+    Field<Payload | undefined>,
+    Readonly<Field<undefined>>,
+  ];
+
+  export type MapField<Payload, Return> = (
+    field: Field<Payload>,
+  ) => Field<Return>;
+
+  //#endregion
+
+  //#region Computed
+
   export interface Into<Value, ComputedValue> {
     from: From<Value, ComputedValue>;
   }
@@ -1318,30 +1342,6 @@ export namespace Field {
       deps: DependencyList,
     ): ComputedField<Value, ComputedValue>;
   }
-
-  export type NarrowCallback<Payload, Narrowed> = (
-    payload: Payload,
-    wrap: NarrowWrap,
-  ) => NarrowWrapper<Narrowed> | Falsy;
-
-  export type NarrowWrap = <Payload>(
-    payload: Payload,
-  ) => NarrowWrapper<Payload>;
-
-  export type NarrowWrapper<Payload> = {
-    [narrowBrapperBrand]: Payload;
-  };
-
-  declare const narrowBrapperBrand: unique symbol;
-
-  export type Ensured<Payload> = [
-    Field<Payload | undefined>,
-    Readonly<Field<undefined>>,
-  ];
-
-  export type MapField<Payload, Return> = (
-    field: Field<Payload>,
-  ) => Field<Return>;
 
   //#endregion
 
@@ -1518,7 +1518,7 @@ export class ComputedField<Payload, Computed> extends Field<Computed> {
     from: ComputedField.From<Payload, Computed>,
   ) {
     const payload = into(source.get(), undefined);
-    super(payload);
+    super(payload, { source: source as any });
 
     this.#source = source;
     this.#into = into;
@@ -1526,7 +1526,7 @@ export class ComputedField<Payload, Computed> extends Field<Computed> {
 
     // Add itself to the computed map, so that we can find it later by the path,
     // i.e. for validation through maybe references.
-    this.computedMap.add(this as any as ComputedField<unknown, unknown>);
+    // this.computedMap.add(this as any as ComputedField<unknown, unknown>);
 
     // Watch for the field (source) and update the computed value
     // on structural changes.
@@ -1537,28 +1537,13 @@ export class ComputedField<Payload, Computed> extends Field<Computed> {
           // it to stop circular updates.
           if (sourceEvent.context[this.#brand]) return;
 
-          // Set context so we can know if the field change was triggered by
-          // the source value and stop circular updates.
-          ChangesEvent.context({ [this.#brand]: true }, () => {
-            // Update the computed value if the change is structural.
-            // [TODO] Tests
-            if (structuralChanges(sourceEvent.changes)) {
-              // [TODO] Second argument is unnecessary expensive and probably can
-              // be replaced with simple field.
-              this.set(this.#into(sourceValue, this.get()));
-            }
-
-            // Trigger meta changes.
-            // [TODO] Add tests and rationale for this.
-            const sourceMetaChanges = metaChanges(sourceEvent.changes);
-            if (sourceMetaChanges) {
-              this.trigger(
-                sourceMetaChanges,
-                // [TODO] Add tests and rationale for this (see a todo below).
-                true,
-              );
-            }
-          });
+          // Update the computed value if the change is structural.
+          // [TODO] Tests
+          if (structuralChanges(sourceEvent.changes)) {
+            // [TODO] Second argument is unnecessary expensive and probably can
+            // be replaced with simple field.
+            this.set(this.#into(sourceValue, this.get()));
+          }
         },
         // [TODO] Add tests and rationale for this. Without it, though, when
         // rendering collection settings in Mind Control and disabling a package
@@ -1607,34 +1592,19 @@ export class ComputedField<Payload, Computed> extends Field<Computed> {
     );
   }
 
-  deconstruct() {
+  override deconstruct() {
+    Field.prototype.deconstruct.call(this);
     this.#unsubs.forEach((unsub) => unsub());
-    this.computedMap.remove(this as any as ComputedField<unknown, unknown>);
+    this.#unsubs = [];
   }
 
-  // [NOTE] id mustn't be overridden as it's used as the hooks dependency
-  // [TODO] Reconsider the statement above, as we moved on to instance as
-  // dependencies, although id is probably better be different for HTML reasons.
+  //#region Computed
 
-  override get key(): string | undefined {
-    return this.#source.key;
+  connect(source: Field<Payload>): void {
+    this.#source = source;
   }
 
-  override get path(): string[] {
-    return this.#source.path;
-  }
-
-  override get parent(): Field<any> | undefined {
-    return this.#source.parent;
-  }
-
-  override get dirty(): boolean {
-    return this.#source.dirty;
-  }
-
-  override get root(): Field<unknown> {
-    return this.#source.root;
-  }
+  //#endregion
 }
 
 export namespace ComputedField {
@@ -1833,11 +1803,10 @@ export class InternalObjectState<
         const undefinedState = this.#undefined.claim(key);
         if (undefinedState) undefinedState[externalSymbol].create(value);
 
-        this.#children.set(
-          key,
-          // @ts-ignore: [TODO]
-          undefinedState || new Field(value, { key, field: this.external }),
-        );
+        const newChild =
+          undefinedState ||
+          new Field(value, { key, field: this.external as Field<any> });
+        this.#children.set(key, newChild as Field<any>);
         changes |= change.child.attach;
       }
     }
@@ -2444,7 +2413,7 @@ function useFieldHook<Value, Result = Value>(
 
 //#endregion
 
-function assert(condition: unknown): asserts condition {
+function always(condition: unknown): asserts condition {
   if (!condition) throw new Error("Assertion failed");
 }
 

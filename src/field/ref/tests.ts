@@ -229,7 +229,7 @@ describe(MaybeFieldRef, () => {
         await postpone();
         expect(spy).toHaveBeenCalledTimes(1);
         expect(spy).toReceiveChanges(
-          change.subtree.errors | change.subtree.invalid,
+          change.child.errors | change.child.invalid,
         );
       });
     });

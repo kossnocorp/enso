@@ -1,14 +1,5 @@
 import type { Field } from "../field/index.tsx";
 
-// [TODO] Add tests for field references or completely remove this feature. The
-// thing is that we added them to validation tree in an attempt to fix
-// validation events handling and it worked in case of propagating through
-// detached fields, but wasn't enough to make it work for maybe fields. To make
-// the latter happen we added computed map. While storing fields work well along
-// with the computed map, it is redundant and can be removed. We didn't do it
-// right away as we weren't sure if there are no edge cases and also maybe
-// accessing fields might be useful in the future, so we left it as is.
-
 export class ValidationTree {
   #errors: Field.Error[] = [];
   #tree: ValidationTree.Node = ValidationTree.node();
@@ -38,9 +29,9 @@ export class ValidationTree {
     const errors: ValidationTree.ErrorsList = [];
 
     ValidationTree.traverse(node, (childPath, childNode) =>
-      childNode.errors.entries().forEach(([index, fieldWrap]) => {
-        if (!fieldWrap) return;
-        errors.push([childPath, this.#errors[index]!, fieldWrap[0]]);
+      childNode.errors.entries().forEach(([index, direct]) => {
+        if (!direct) return;
+        errors.push([[...path, ...childPath], this.#errors[index]!]);
       }),
     );
 
@@ -60,21 +51,17 @@ export class ValidationTree {
     });
   }
 
-  add(
-    path: Field.Path,
-    error: Field.Error,
-    field: Field<any> | null,
-  ): ValidationTree.Index {
+  add(path: Field.Path, error: Field.Error): ValidationTree.Index {
     const index = (this.#errors.push(error) - 1) as ValidationTree.Index;
 
     let node = this.#tree;
 
     for (const key of path) {
-      node.errors.set(index, null);
+      node.errors.set(index, false);
       node = node.children[key] ??= ValidationTree.node();
     }
 
-    node.errors.set(index, [field]);
+    node.errors.set(index, true);
 
     return index;
   }
@@ -113,7 +100,7 @@ export namespace ValidationTree {
     children: Record<string, Node>;
   }
 
-  export type ErrorsMap = Map<Index, [Field<any> | null] | null>;
+  export type ErrorsMap = Map<Index, boolean>;
 
-  export type ErrorsList = Array<[Field.Path, Field.Error, Field<any> | null]>;
+  export type ErrorsList = Array<[Field.Path, Field.Error]>;
 }
