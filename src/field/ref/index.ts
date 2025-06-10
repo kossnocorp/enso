@@ -1,4 +1,5 @@
 import { shiftChildChanges } from "../../change/index.ts";
+import { ComputedMap } from "../../computed/index.ts";
 import { EnsoUtils } from "../../utils.ts";
 import { Field } from "../index.tsx";
 
@@ -262,17 +263,35 @@ export class MaybeFieldRef<Payload> {
 
   //#region Errors
 
+  #triggerComputedErrorChanges(
+    computedMap: ComputedMap,
+    path: Field.Path,
+  ): void {
+    // If there are computed fields at this path, we want to trigger changes
+    // on them, so that they can react.
+    const computedFields = computedMap.at(path);
+    computedFields.forEach((computedField) => {
+      const changes = Field.errorChangesFor(computedField);
+      computedField.trigger(changes, true);
+    });
+  }
+
   addError(error: Field.Error | string): void {
     if (this.#target.type === "direct") {
+      // Trigger changes on the computed fields first, before we add the error
+      // to the source field, so they can properly derive the valid state.
+      this.#triggerComputedErrorChanges(
+        this.#target.field.computedMap,
+        this.#target.field.path,
+      );
+
       this.#target.field.addError(error);
     } else {
       const path = [...this.#target.closest.path, ...this.#target.path];
-      let changes = Field.errorChangesFor(this.#target.closest);
 
-      // If there are computed fields at this path, we want to trigger changes
-      // on them as well, so that they can react.
-      const computed = this.#target.closest.computedMap.at(path);
-      computed.forEach((field) => field.trigger(changes, true));
+      this.#triggerComputedErrorChanges(this.#target.closest.computedMap, path);
+
+      let changes = Field.errorChangesFor(this.#target.closest);
 
       // Shift the changes for each path segment, so that the changes levels are
       // accurately set for the closest field.
@@ -286,10 +305,7 @@ export class MaybeFieldRef<Payload> {
         null,
       );
 
-      // No need to trigger changes, as the closest field will still receive
-      // them through the computed fields, however it should not change anything
-      // if we do trigger them.
-      if (!computed.length) this.#target.closest.trigger(changes, true);
+      this.#target.closest.trigger(changes, true);
     }
   }
 
