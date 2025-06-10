@@ -9,7 +9,6 @@ import {
 } from "./index.tsx";
 import { FieldRef } from "./ref/index.ts";
 import { postpone } from "../../tests/utils.ts";
-import { ComputedMap } from "../computed/index.ts";
 import { EventsTree } from "../events/index.ts";
 
 //#region Field
