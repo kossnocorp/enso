@@ -1651,7 +1651,7 @@ export abstract class InternalState<Payload> {
     )
       return Array.isArray(value)
         ? InternalArrayState
-        : Object.getPrototypeOf(value) === Object.prototype
+        : Object.prototype.toString.call(value) === "[object Object]"
           ? InternalObjectState
           : InternalValueState;
     return InternalValueState;
