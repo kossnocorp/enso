@@ -1643,12 +1643,7 @@ export abstract class InternalState<Payload> {
     | typeof InternalArrayState
     | typeof InternalObjectState
     | typeof InternalValueState {
-    if (
-      value !== detachedValue &&
-      value !== null &&
-      typeof value === "object" &&
-      value !== detachedValue
-    )
+    if (value !== null && typeof value === "object" && value !== detachedValue)
       return Array.isArray(value)
         ? InternalArrayState
         : Object.prototype.toString.call(value) === "[object Object]"
