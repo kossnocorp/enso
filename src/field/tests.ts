@@ -3506,7 +3506,7 @@ describe(ComputedField, () => {
           change.child.errors,
       );
       expect(firstSpyValid).toHaveBeenCalledOnce();
-      // [TODO]
+      // TODO:
       // expect(firstSpyValid).toHaveBeenCalledBefore(nameSpyValid);
       expect(firstSpyValid).toReceiveChanges(
         change.field.valid | change.field.errors,

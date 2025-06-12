@@ -17,7 +17,7 @@ export default defineConfig([
   ...tseslint.configs.recommended,
   pluginReact.configs.flat.recommended,
   pluginReact.configs.flat["jsx-runtime"],
-  // [NOTE] Uncomment after the PR is merged:
+  // NOTE: Uncomment after the PR is merged:
   // https://github.com/facebook/react/pull/33455
   // reactHooks.configs["recommended-latest"],
   {
@@ -31,7 +31,7 @@ export default defineConfig([
           caughtErrorsIgnorePattern: "^_",
         },
       ],
-      // [TODO] Consider enabling some of these rules in the future
+      // TODO: Consider enabling some of these rules in the future
       "no-fallthrough": "off",
       "@typescript-eslint/no-empty-object-type": "off",
       "@typescript-eslint/no-explicit-any": "off",
@@ -39,7 +39,7 @@ export default defineConfig([
       "@typescript-eslint/no-namespace": "off",
       "@typescript-eslint/no-unused-expressions": "off",
       "@typescript-eslint/no-unsafe-function-type": "off",
-      // [NOTE] It spams with "...cannot be called in a class component" that
+      // NOTE: It spams with "...cannot be called in a class component" that
       // doesn't apply.
       "react-hooks/rules-of-hooks": "off",
     },

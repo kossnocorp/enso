@@ -12,7 +12,7 @@
     "allowImportingTsExtensions": true,
     "forceConsistentCasingInFileNames": true,
     "strict": true,
-    // [TODO] Enable it with Mind Control
+    // TODO: Enable it with Mind Control
     // "exactOptionalPropertyTypes": true,
     "noUncheckedIndexedAccess": true,
     "noImplicitOverride": true,

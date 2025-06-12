@@ -91,16 +91,16 @@ export class ChangesEvent extends Event {
     : Result {
     this.#context.push(context);
     const result = callback();
-    // [TODO] Add tests
+    // TODO: Add tests
     if (result instanceof Promise) {
-      // @ts-ignore [TODO]
+      // @ts-ignore TODO:
       return result.finally(() => {
         this.#context.pop();
       });
     }
 
     this.#context.pop();
-    // @ts-ignore [TODO]
+    // @ts-ignore TODO:
     return result;
   }
 
@@ -118,9 +118,9 @@ export class ChangesEvent extends Event {
   constructor(changes: FieldChange, context?: ChangesEvent.Context) {
     super("change");
 
-    // [TODO] Join context building with the batched context so it's computed
+    // TODO: Join context building with the batched context so it's computed
     // in the same place.
-    // [TODO] Add tests
+    // TODO: Add tests
     if (!context) {
       context = {};
       for (const ctx of ChangesEvent.#context) {
@@ -149,7 +149,7 @@ export namespace ChangesEvent {
  * Field change type. It aliases the `bigint` type to represent the changes
  * type.
  */
-// [TODO] Consider making it opaque.
+// TODO: Consider making it opaque.
 export type FieldChange = bigint;
 
 /**
@@ -246,10 +246,10 @@ export const fieldChange = {
    * apply to the field getting detached and attached. */
   key: takeBit(),
   /** Current field value committed as initial. */
-  // [TODO] Utilize this flag
+  // TODO: Utilize this flag
   commit: takeBit(),
   /** Field value reset to initial. */
-  // [TODO] Utilize this flag
+  // TODO: Utilize this flag
   reset: takeBit(),
   /** Field become invalid. */
   invalid: takeBit(),
@@ -276,7 +276,7 @@ if (process.env.NODE_ENV !== "production") {
  * Field change map. It maps the human-readable field change names to
  * the corresponding bit mask.
  */
-// [NOTE] Without using this type to define `childChange` and `subtreeChange`,
+// NOTE: Without using this type to define `childChange` and `subtreeChange`,
 // the LSP actions such as "rename" will not work.
 export type FieldChangeMap = typeof fieldChange;
 

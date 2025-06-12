@@ -148,7 +148,7 @@ describe(MaybeFieldRef, () => {
         it.todo("does not allow to access items by key", () => {
           const field = new Field<Set<string> | undefined>(undefined);
           const _fieldRef = new FieldRef(field);
-          // [TODO]
+          // TODO:
           // const maybeFieldRef = fieldRef
           //   .maybe(new Set<string>())
           //   // @ts-expect-error: It should not be available

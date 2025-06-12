@@ -2,7 +2,7 @@
 import React, { useRef } from "react";
 import { describe, expect, it, vi } from "vitest";
 import { render } from "vitest-browser-react";
-// [TODO] Figure out a way to get rid of it:
+// TODO: Figure out a way to get rid of it:
 // https://github.com/vitest-dev/vitest/issues/6965
 import { userEvent } from "@vitest/browser/context";
 import "@vitest/browser/matchers.d.ts";

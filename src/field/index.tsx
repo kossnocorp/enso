@@ -44,7 +44,7 @@ export class Field<Payload> {
    */
   static use<Value>(
     initialValue: Value,
-    // [TODO] Add tests
+    // TODO: Add tests
     deps: DependencyList,
   ): Field<Value> {
     const field = useMemo(() => new Field(initialValue), deps);
@@ -100,7 +100,7 @@ export class Field<Payload> {
     this.#initial = value;
     this.#parent = parent;
 
-    // [NOTE] Parent **must** set before, so that when we setting the children
+    // NOTE: Parent **must** set before, so that when we setting the children
     // values, the path is already set. If not, they won't properly register in
     // the events tree.
     this.#set(value);
@@ -117,7 +117,7 @@ export class Field<Payload> {
       switch (true) {
         case element instanceof HTMLInputElement:
         case element instanceof HTMLTextAreaElement:
-        // [TODO]
+        // TODO:
         default:
           return onInput;
       }
@@ -239,7 +239,7 @@ export class Field<Payload> {
     }) as Field.UseGet<Payload, Props>;
   }
 
-  // [TODO] Exposing the notify parents flag might be dangerous
+  // TODO: Exposing the notify parents flag might be dangerous
   set(value: Payload | DetachedValue, notifyParents = true): FieldChange {
     const changes = this.#set(value);
     if (changes) this.trigger(changes, notifyParents);
@@ -313,7 +313,7 @@ export class Field<Payload> {
     // const wasDirty = this.dirty;
     // this.#initial = this.get();
 
-    // [TODO] Add tests for the new approach, before it was:
+    // TODO: Add tests for the new approach, before it was:
     //
     //   if (
     //     this.#internal instanceof InternalObjectState ||
@@ -331,17 +331,17 @@ export class Field<Payload> {
     // reproduce it fully in tests, so it still needs to be done.
   }
 
-  // [TODO] Add tests
+  // TODO: Add tests
   reset() {
     const newInitial = this.#initial;
     this.set(newInitial);
     this.#commit(newInitial, false);
 
-    // [TODO] Add tests for the new approach, before it was (see `commit`):
+    // TODO: Add tests for the new approach, before it was (see `commit`):
     //   this.set(this.#initial);
   }
 
-  // [TODO] Add tests for this new approach
+  // TODO: Add tests for this new approach
   #commit(newInitial: Payload, notify = true) {
     const wasDirty = notify && this.dirty;
 
@@ -351,7 +351,7 @@ export class Field<Payload> {
       this.#internal instanceof InternalArrayState
     ) {
       this.#internal.forEach((field: any, key: any) =>
-        // @ts-ignore: [TODO]
+        // @ts-ignore: TODO:
         field.#commit(newInitial[key], notify),
       );
     }
@@ -393,13 +393,13 @@ export class Field<Payload> {
 
   at<Key extends keyof Payload | undefined>(
     key: Payload extends object ? Key : never,
-    // @ts-ignore: [TODO]
+    // @ts-ignore: TODO:
   ): Payload extends object ? Field.At<Payload, Key> : void {
     if (
       this.#internal instanceof InternalObjectState ||
       this.#internal instanceof InternalArrayState
     )
-      // @ts-ignore: [TODO]
+      // @ts-ignore: TODO:
       return this.#internal.at(key);
   }
 
@@ -446,7 +446,7 @@ export class Field<Payload> {
       if (notifyParents) this.#withholded[1] = true;
     } else {
       ChangesEvent.batch(this.#batchTarget, changes);
-      // [TODO] Add tests for this
+      // TODO: Add tests for this
       this.#syncTarget.dispatchEvent(new ChangesEvent(changes));
     }
 
@@ -480,7 +480,7 @@ export class Field<Payload> {
    * changes when submittiing a form and send the submitting even to the field
    * along with the submitting state.
    *
-   * [TODO] I added automatic batching of changes, so all the changes are send
+   * TODO: I added automatic batching of changes, so all the changes are send
    * after the current stack is cleared. Check if this functionality is still
    * needed.
    */
@@ -501,7 +501,7 @@ export class Field<Payload> {
   //#region Watching
 
   watch(callback: Field.WatchCallback<Payload>, sync = false): Field.Unwatch {
-    // [TODO] Add tests for this
+    // TODO: Add tests for this
     const target = sync ? this.#syncTarget : this.#batchTarget;
     const handler = (event: Event) => {
       callback(this.get(), event as ChangesEvent);
@@ -532,7 +532,7 @@ export class Field<Payload> {
   }
 
   unwatch() {
-    // [TODO] Add tests for this
+    // TODO: Add tests for this
     this.#subs.forEach((sub) => {
       this.#batchTarget.removeEventListener("change", sub);
       this.#syncTarget.removeEventListener("change", sub);
@@ -622,7 +622,7 @@ export class Field<Payload> {
     discriminator: Discriminator,
   ): Field.Discriminated<Payload, Discriminator> {
     return {
-      // @ts-ignore: [TODO]
+      // @ts-ignore: TODO:
       discriminator: this.$?.[discriminator]?.get(),
       field: this,
     } as unknown as Field.Discriminated<Payload, Discriminator>;
@@ -656,19 +656,19 @@ export class Field<Payload> {
   ): Field<Narrowed> | undefined {
     let matching = false;
     const payload = this.get();
-    // @ts-ignore: [TODO]
+    // @ts-ignore: TODO:
     callback(payload, (narrowed) => {
-      // @ts-ignore: [TODO]
+      // @ts-ignore: TODO:
       if (payload === narrowed) matching = true;
       return {};
     });
-    // @ts-ignore: [TODO]
+    // @ts-ignore: TODO:
     if (matching) return this;
   }
 
   useNarrow<Narrowed extends Payload>(
     callback: Field.NarrowCallback<Payload, Narrowed>,
-    // [TODO] Add tests
+    // TODO: Add tests
     deps: DependencyList,
   ): Field<Narrowed> | undefined {
     const getValue = useCallback(
@@ -705,7 +705,7 @@ export class Field<Payload> {
     const dummy = Field.use(undefined, []);
     const frozenDummy = useMemo(() => Object.freeze(dummy), [dummy]);
     const mappedField = (map && field && map(field)) || field;
-    // @ts-ignore: [TODO]
+    // @ts-ignore: TODO:
     return (mappedField || frozenDummy) as Field<Payload | undefined>;
   }
 
@@ -721,7 +721,7 @@ export class Field<Payload> {
    *
    * @returns The same field instance with `Widening` added to the payload type.
    */
-  // [TODO] Research if it's possible to make TypeScript accept wider paths.
+  // TODO: Research if it's possible to make TypeScript accept wider paths.
   widen<Wide>(): Field<Payload | Wide> {
     return this as Field<Payload | Wide>;
   }
@@ -750,7 +750,7 @@ export class Field<Payload> {
     };
   }
 
-  // [TODO] Add tests
+  // TODO: Add tests
   useInto<Computed>(
     intoMapper: ComputedField.Into<Payload, Computed>,
     intoDeps: DependencyList,
@@ -842,10 +842,10 @@ export class Field<Payload> {
     return this.#internal.length;
   }
 
-  // @ts-ignore: [TODO]
+  // @ts-ignore: TODO:
   remove: Field.RemoveFn<Payload> = (...args) => {
     if (!args.length) return this.set(detachedValue);
-    // @ts-ignore: [TODO]
+    // @ts-ignore: TODO:
     else return shiftChildChanges(this.at(args[0]).remove());
   };
 
@@ -894,7 +894,7 @@ export class Field<Payload> {
     switch (true) {
       case element instanceof HTMLInputElement:
       case element instanceof HTMLTextAreaElement:
-        // [TODO] Watch for changes and set the value
+        // TODO: Watch for changes and set the value
         element.value = String(this.get()) as string;
         this.#elementUnwatch = this.watch((value) => {
           element.value = String(value) as string;
@@ -917,7 +917,7 @@ export class Field<Payload> {
 
   //#region Errors
 
-  // [TODO] Consider caching errors.
+  // TODO: Consider caching errors.
   // #cachedErrors: Field.Error[] | undefined = undefined;
 
   get errors(): Field.Error[] {
@@ -977,7 +977,7 @@ export class Field<Payload> {
 
     // First, we clear all errors, so that when we trigger changes, sync
     // handlers don't see the errors.
-    // [TODO] Add test for this case
+    // TODO: Add test for this case
     this.validationTree.clear(this.path);
 
     const errorsByPaths = Object.groupBy(errors, ([path]) =>
@@ -997,7 +997,7 @@ export class Field<Payload> {
    * True if the field and its children have no validation errors.
    */
   get valid(): boolean {
-    // [TODO] Figure out if caching is needed here
+    // TODO: Figure out if caching is needed here
     return !this.validationTree.nested(this.path).length;
   }
 
@@ -1051,12 +1051,12 @@ export class Field<Payload> {
     this.clearErrors();
     // Withhold all the changes until the validation is resolved, so that
     // there're no chain reactions.
-    // [TODO] There's a problem with this approach, if the validation is async,
+    // TODO: There's a problem with this approach, if the validation is async,
     // and hits external APIs, form interactions might not react as expected and
     // even lead to impossible state. Either block the form or make withhold
     // optional.
     this.withhold();
-    // @ts-ignore: [TODO]
+    // @ts-ignore: TODO:
     await validator(FieldRef.get(this), context);
     this.unleash();
   }
@@ -1504,7 +1504,7 @@ export namespace Field {
 
 //#region ComputedField
 
-// [NOTE] We have to keep `ComputedField` in the same file as `Field` to avoid
+// NOTE: We have to keep `ComputedField` in the same file as `Field` to avoid
 // circular dependencies, as it extends `Field` and `Field` uses it in its
 // `into` method.
 
@@ -1541,14 +1541,14 @@ export class ComputedField<Payload, Computed> extends Field<Computed> {
           if (sourceEvent.context[this.#brand]) return;
 
           // Update the computed value if the change is structural.
-          // [TODO] Tests
+          // TODO: Tests
           if (structuralChanges(sourceEvent.changes)) {
-            // [TODO] Second argument is unnecessary expensive and probably can
+            // TODO: Second argument is unnecessary expensive and probably can
             // be replaced with simple field.
             this.set(this.#into(sourceValue, this.get()));
           }
         },
-        // [TODO] Add tests and rationale for this. Without it, though, when
+        // TODO: Add tests and rationale for this. Without it, though, when
         // rendering collection settings in Mind Control and disabling a package
         // that triggers rerender and makes the computed field set to initial
         // value. The culprit is "Prevent extra mapper call" code above that
@@ -1570,26 +1570,26 @@ export class ComputedField<Payload, Computed> extends Field<Computed> {
           // the computed value and stop circular updates.
           ChangesEvent.context({ [this.#brand]: true }, () => {
             // If there are structural changes, update the source field.
-            // // [TODO] Tests
+            // // TODO: Tests
             if (structuralChanges(computedEvent.changes)) {
-              // [TODO] Second argument is unnecessary expensive and probably can
+              // TODO: Second argument is unnecessary expensive and probably can
               // be replaced with simple field.
               this.#source.set(this.#from(computedValue, this.#source.get()));
             }
 
             // Trigger meta changes.
-            // [TODO] Add tests and rationale for this.
+            // TODO: Add tests and rationale for this.
             const computedMetaChanges = metaChanges(computedEvent.changes);
             if (computedMetaChanges) {
               this.#source.trigger(
                 computedMetaChanges,
-                // [TODO] Add tests and rationale for this (see a todo above).
+                // TODO: Add tests and rationale for this (see a todo above).
                 true,
               );
             }
           });
         },
-        // [TODO] Add tests and rationale for this (see a todo above).
+        // TODO: Add tests and rationale for this (see a todo above).
         true,
       ),
     );
@@ -1775,7 +1775,7 @@ export class InternalObjectState<
 
   constructor(external: Field<Payload>, value: Payload) {
     super(external, value);
-    // @ts-ignore: [TODO]
+    // @ts-ignore: TODO:
     this.#undefined = new UndefinedStateRegistry(external);
   }
 
@@ -1877,7 +1877,7 @@ export class InternalObjectState<
       if (!child)
         throw new Error("Failed to find the child field when updating");
 
-      // @ts-ignore: [TODO]
+      // @ts-ignore: TODO:
       this.#children.set(key, child);
       changes |= change.child.attach;
     }
@@ -1891,7 +1891,7 @@ export class InternalObjectState<
       child.unwatch();
       changes |= change.child.detach;
 
-      // @ts-ignore: [TODO]
+      // @ts-ignore: TODO:
       this.#undefined.register(key, child);
     }
 
@@ -1936,7 +1936,7 @@ export class InternalObjectState<
     ) => void,
   ) {
     this.#children.forEach((field, key) =>
-      // @ts-ignore: [TODO]
+      // @ts-ignore: TODO:
       callback(field, key as keyof Payload),
     );
   }
@@ -1947,13 +1947,13 @@ export class InternalObjectState<
       index: Key,
     ) => Return,
   ): Return[] {
-    // @ts-ignore: [TODO]
+    // @ts-ignore: TODO:
     const result = [];
     this.#children.forEach((field, key) =>
-      // @ts-ignore: [TODO]
+      // @ts-ignore: TODO:
       result.push(callback(field, key as keyof Payload)),
     );
-    // @ts-ignore: [TODO]
+    // @ts-ignore: TODO:
     return result;
   }
 
@@ -1994,7 +1994,7 @@ export class InternalArrayState<
       }
     });
 
-    // @ts-ignore: [TODO]
+    // @ts-ignore: TODO:
     this.#children = newValue.map((value, index) => {
       const child = this.#children[index];
       if (child) {
@@ -2051,7 +2051,7 @@ export class InternalArrayState<
 
   #try = new Proxy((() => {}) as unknown as Field.Try<Payload>, {
     apply: (_, __, [index]: [number]) => this.#tryItem(index),
-    // @ts-ignore: [TODO]
+    // @ts-ignore: TODO:
     get: (_, index: number) => this.#tryItem(index),
   });
 
@@ -2086,7 +2086,7 @@ export class InternalArrayState<
       // Item already exists at this index, so we need to move it
       if (existingItem) {
         // Insert the attaching item
-        // @ts-ignore: [TODO]
+        // @ts-ignore: TODO:
         this.#children.splice(idx, 0, item);
 
         // Shift children keys
@@ -2094,11 +2094,11 @@ export class InternalArrayState<
           item[externalSymbol].move(String(idx + index));
         });
       } else {
-        // @ts-ignore: [TODO]
+        // @ts-ignore: TODO:
         this.#children[idx] = item;
       }
 
-      // [TODO] Update keys for the rest of the children and trigger move change
+      // TODO: Update keys for the rest of the children and trigger move change
       changes |= change.child.attach;
     }
 
@@ -2119,7 +2119,7 @@ export class InternalArrayState<
         item[externalSymbol].move(String(idx + index));
       });
 
-      // @ts-ignore: [TODO]
+      // @ts-ignore: TODO:
       this.#undefined.register(key, item);
     }
 
@@ -2173,7 +2173,7 @@ export class InternalArrayState<
 
   push(item: Payload[number]) {
     const length = this.#children.length;
-    // @ts-ignore: [TODO]
+    // @ts-ignore: TODO:
     this.#children[length] = new Field(item, {
       key: String(length),
       // @ts-ignore: This is fine
@@ -2232,7 +2232,7 @@ export class UndefinedStateRegistry {
 
   register(key: string, field: Field<DetachedValue>) {
     const fieldRef = new WeakRef(field);
-    // @ts-ignore: [TODO]
+    // @ts-ignore: TODO:
     this.#refsMap.set(key, fieldRef);
     this.#registry.register(fieldRef, key);
   }
@@ -2278,8 +2278,8 @@ export type DetachedValue = typeof detachedValue;
 
 //#region PoC
 
-// [TODO] Move into some kind of helpers module
-// [TODO] Add tests
+// TODO: Move into some kind of helpers module
+// TODO: Add tests
 
 export function useUndefinedStringField<Type extends string>(
   field: Field<Type | undefined>,
@@ -2419,7 +2419,7 @@ type Memoized<Type> = Type & { [memoBrand]: true };
 
 declare const memoBrand: unique symbol;
 
-// [NOTE] It has to be named `useMemo` to make ESLint rules activate.
+// NOTE: It has to be named `useMemo` to make ESLint rules activate.
 function useMemo<Type>(
   factory: () => Type,
   deps: DependencyList,

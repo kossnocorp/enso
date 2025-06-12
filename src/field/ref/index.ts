@@ -6,7 +6,7 @@ import { Field } from "../index.tsx";
  * Map maintaining stable references to fields. It is prevent creating new
  * `FieldRef` instances for the same fields.
  */
-// [TODO] Test if reducing number of allocations is actually worth the memory hit.
+// TODO: Test if reducing number of allocations is actually worth the memory hit.
 const fieldRefsStore = new WeakMap<Field<any>, FieldRef<any>>();
 
 /**
@@ -16,12 +16,12 @@ const fieldRefsStore = new WeakMap<Field<any>, FieldRef<any>>();
  */
 export class FieldRef<Payload> {
   static get<Payload>(field: Field<Payload>) {
-    // @ts-ignore: [TODO]
+    // @ts-ignore: TODO:
     let ref = fieldRefsStore.get(field);
     if (!ref) {
-      // @ts-ignore: [TODO]
+      // @ts-ignore: TODO:
       ref = new FieldRef(field);
-      // @ts-ignore: [TODO]
+      // @ts-ignore: TODO:
       fieldRefsStore.set(field, ref);
     }
     return ref;
@@ -48,7 +48,7 @@ export class FieldRef<Payload> {
   });
 
   at<Key extends keyof Payload>(key: Key): FieldRef.At<Payload, Key> {
-    // @ts-ignore: [TODO]
+    // @ts-ignore: TODO:
     return FieldRef.get(this.#field.at(key));
   }
 
@@ -70,9 +70,9 @@ export class FieldRef<Payload> {
   discriminate<Discriminator extends keyof NonUndefined<Payload>>(
     discriminator: Discriminator,
   ): FieldRef.Discriminated<Payload, Discriminator> {
-    // @ts-ignore: [TODO]
+    // @ts-ignore: TODO:
     return {
-      // @ts-ignore: [TODO]
+      // @ts-ignore: TODO:
       discriminator: this.$[discriminator]?.get(),
       field: this,
     };
@@ -91,7 +91,7 @@ export class FieldRef<Payload> {
   //#region Collections
 
   forEach: FieldRef.ForEachFn<Payload> = ((callback: any) => {
-    // @ts-ignore: [TODO]
+    // @ts-ignore: TODO:
     this.#field.forEach((field, key) => {
       callback(FieldRef.get(field), key);
     });
@@ -248,7 +248,7 @@ export class MaybeFieldRef<Payload> {
       };
     }
 
-    // @ts-ignore: [TODO]
+    // @ts-ignore: TODO:
     return new MaybeFieldRef(target);
   }
 
@@ -266,7 +266,7 @@ export class MaybeFieldRef<Payload> {
   discriminate<Discriminator extends keyof NonNullish<Payload>>(
     discriminator: Discriminator,
   ): MaybeFieldRef.Discriminated<Payload, Discriminator> {
-    // @ts-ignore: [TODO]
+    // @ts-ignore: TODO:
     return {
       discriminator: this.at(discriminator).get(),
       field: this,
@@ -295,7 +295,7 @@ export class MaybeFieldRef<Payload> {
 
   forEach: MaybeFieldRef.ForEachFn<Payload> = ((callback: any) => {
     if (this.#target.type !== "direct") return;
-    // @ts-ignore: [TODO]
+    // @ts-ignore: TODO:
     this.#target.field.forEach((field, key) => {
       callback(FieldRef.get(field), key);
     });

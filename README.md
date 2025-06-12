@@ -4,7 +4,7 @@
 
 ## Glossary
 
-- **Field**: [TODO]
+- **Field**: TODO:
 
   **Field types**:
 
@@ -26,13 +26,13 @@
 
   - **Source field**: A field that is used as a source for a **computed field**. It can be a normal, a **detached** or a **computed** field.
 
-- **Tree**: [TODO]
+- **Tree**: TODO:
 
   **Tree concepts**:
 
   - **Tree path**: A path to a field in the tree, e.g., `["x", "y"]` in `obj : { x: { y: string } }`. It is used to access and refer to **fields** in the tree.
 
-- **Validation error**: [TODO]
+- **Validation error**: TODO:
 
 ### Supporting Terms
 
