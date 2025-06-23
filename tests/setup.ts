@@ -3,7 +3,14 @@ import { devHumanizeChanges, devStringifyChanges } from "../src/dev.ts";
 import { FieldChange } from "../src/index.ts";
 
 expect.extend({
-  toMatchChanges(received: FieldChange, expected: FieldChange) {
+  toMatchChanges(received: unknown, expected: FieldChange) {
+    if (typeof received !== "bigint") {
+      return {
+        pass: false,
+        message: () =>
+          `Expected a bigint, but received ${typeof received} instead.`,
+      };
+    }
     return {
       pass: received === expected,
       message: () => toMatchChangesMessage(received, expected),

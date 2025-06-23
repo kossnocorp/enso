@@ -239,12 +239,29 @@ export class Field<Payload> {
     }) as Field.UseGet<Payload, Props>;
   }
 
+  // NOTE: Since `Field.useEnsure` freezes the dummy field but still allows
+  // running operations such as `set` albeit with no effect, we need to ensure
+  // that `lastChanges` is still assigned correctly, so we must use a static
+  // map instead of changing the field instance directly.
+  static lastChanges: WeakMap<Field<unknown>, FieldChange> = new WeakMap();
+
+  get lastChanges(): FieldChange {
+    // @ts-ignore
+    return Field.lastChanges.get(this) || 0n;
+  }
+
   // TODO: Exposing the notify parents flag might be dangerous
-  set(value: Payload | DetachedValue, notifyParents = true): FieldChange {
+  set<Value extends Payload | DetachedValue>(
+    value: Value,
+    notifyParents = true,
+  ): Field<Payload & Value> {
     const changes = this.#set(value);
     if (changes) this.trigger(changes, notifyParents);
 
-    return changes;
+    // @ts-ignore
+    Field.lastChanges.set(this, changes);
+    // @ts-ignore
+    return this as Field<Payload & Value>;
   }
 
   #set(value: Payload | DetachedValue): FieldChange {
@@ -845,8 +862,15 @@ export class Field<Payload> {
   // @ts-ignore: TODO:
   remove: Field.RemoveFn<Payload> = (...args) => {
     if (!args.length) return this.set(detachedValue);
-    // @ts-ignore: TODO:
-    else return shiftChildChanges(this.at(args[0]).remove());
+    else {
+      // @ts-ignore: TODO:
+      const child = this.at(args[0]);
+      // @ts-ignore: TODO:
+      child.remove();
+      // @ts-ignore: TODO:
+      Field.lastChanges.set(this, shiftChildChanges(child.lastChanges));
+      return child;
+    }
   };
 
   //#endregion
@@ -1388,7 +1412,7 @@ export namespace Field {
 
   export type RemoveFn<Payload> = Payload extends object
     ? ObjectRemoveFn<Payload>
-    : () => void;
+    : () => Field<Payload>;
 
   export type ArrayPredicate<Item, Return> = (
     item: Field<Item>,
@@ -1411,7 +1435,7 @@ export namespace Field {
   >;
 
   export interface ObjectRemoveFn<Payload extends object> {
-    (): void;
+    (): Field<Payload>;
 
     <Key extends EnsoUtils.OptionalKeys<Payload>>(key: Key): At<Payload, Key>;
 
@@ -1795,8 +1819,8 @@ export class InternalObjectState<
     for (const [key, value] of Object.entries(newValue)) {
       const child = this.#children.get(key);
       if (child) {
-        const childChanges = child.set(value, false);
-        changes |= shiftChildChanges(childChanges);
+        child.set(value, false);
+        changes |= shiftChildChanges(child.lastChanges);
       } else {
         const undefinedState = this.#undefined.claim(key);
         if (undefinedState) undefinedState[externalSymbol].create(value);
@@ -1998,8 +2022,8 @@ export class InternalArrayState<
     this.#children = newValue.map((value, index) => {
       const child = this.#children[index];
       if (child) {
-        const childChanges = child.set(value, false);
-        changes |= shiftChildChanges(childChanges);
+        child.set(value, false);
+        changes |= shiftChildChanges(child.lastChanges);
         return child;
       } else {
         const undefinedState = this.#undefined.claim(index.toString());
