@@ -1,18 +1,17 @@
 #!/usr/bin/env bash
 
+# This script is when the container is updated.
+
 set -e
 
 eval "$(mise activate bash --shims)"
 
+# Update mise
+mise self-update -y
+
 # Stack
-
 mise install
-
-# Dependencies
-
-# Node.js
 corepack install
-pnpm install
 
-# Playwright
-pnpm exec playwright install --with-deps
+# pnpm
+pnpm install

@@ -1,5 +1,5 @@
 {
-  "name": "Enso dev env",
+  "name": "Enso",
 
   "build": { "dockerfile": "Dockerfile", "context": ".." },
 
