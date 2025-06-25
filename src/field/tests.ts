@@ -179,59 +179,51 @@ describe(Field, () => {
           expect(field.get()).toEqual({});
         });
 
-        it("does not trigger child fields updates when detached", () =>
-          new Promise((resolve) => {
-            const field = new Field<{ num?: number; str?: string }>({
-              num: 42,
-            });
-            const spy = vi.fn();
-            field.$.num?.watch(spy);
-            field.set({ num: 43 });
-            setTimeout(() => {
-              expect(spy).toHaveBeenCalledOnce();
-              expect(spy).toHaveBeenCalledWith(
-                43,
-                expect.objectContaining({ changes: change.field.value }),
-              );
-              field.set({ str: "hello" });
-              setTimeout(() => {
-                expect(spy).toHaveBeenCalledOnce();
-                resolve(void 0);
-              });
-            });
-          }));
+        it("does not trigger child fields updates when detached", async () => {
+          const field = new Field<{ num?: number; str?: string }>({
+            num: 42,
+          });
+          const spy = vi.fn();
+          field.$.num?.watch(spy);
+          field.set({ num: 43 });
+          await postpone();
+          expect(spy).toHaveBeenCalledOnce();
+          expect(spy).toHaveBeenCalledWith(
+            43,
+            expect.objectContaining({ changes: change.field.value }),
+          );
+          field.set({ str: "hello" });
+          await postpone();
+          expect(spy).toHaveBeenCalledOnce();
+        });
 
-        it("preserves detached fields", () =>
-          new Promise((resolve) => {
-            const field = new Field<{ num?: number; str?: string }>({
-              num: 42,
-            });
-            const spy = vi.fn();
-            const numA = field.$.num;
-            numA?.watch(spy);
-            field.set({ num: 43 });
+        it("preserves detached fields", async () => {
+          const field = new Field<{ num?: number; str?: string }>({
+            num: 42,
+          });
+          const spy = vi.fn();
+          const numA = field.$.num;
+          numA?.watch(spy);
+          field.set({ num: 43 });
 
-            setTimeout(() => {
-              expect(spy).toHaveBeenCalledWith(
-                43,
-                expect.objectContaining({ changes: change.field.value }),
-              );
-              field.set({ str: "hello" });
-              field.set({ num: 44, str: "hello" });
-              const numB = field.$.num;
-              expect(numA).toBeInstanceOf(Field);
-              expect(numA).toBe(numB);
-              setTimeout(() => {
-                expect(spy).toHaveBeenCalledWith(
-                  44,
-                  expect.objectContaining({
-                    changes: change.field.type | change.field.attach,
-                  }),
-                );
-                resolve(void 0);
-              });
-            });
-          }));
+          await postpone();
+          expect(spy).toHaveBeenCalledWith(
+            43,
+            expect.objectContaining({ changes: change.field.value }),
+          );
+          field.set({ str: "hello" });
+          field.set({ num: 44, str: "hello" });
+          const numB = field.$.num;
+          expect(numA).toBeInstanceOf(Field);
+          expect(numA).toBe(numB);
+          await postpone();
+          expect(spy).toHaveBeenCalledWith(
+            44,
+            expect.objectContaining({
+              changes: change.field.type | change.field.attach,
+            }),
+          );
+        });
 
         it("allows to re-attach child fields", () => {
           const field = new Field<Record<string, number>>({ num: 42 });
@@ -488,88 +480,76 @@ describe(Field, () => {
           );
         });
 
-        it("does not trigger item updates when removing", () =>
-          new Promise((resolve) => {
-            const field = new Field<number[]>([1, 2, 3, 4]);
-            const spy = vi.fn();
-            field.$[2]?.watch(spy);
-            field.set([1, 2, 33, 4]);
-            setTimeout(() => {
-              expect(spy).toHaveBeenCalledWith(
-                33,
-                expect.objectContaining({
-                  changes: change.field.value,
-                }),
-              );
-              field.set([1, 2]);
+        it("does not trigger item updates when removing", async () => {
+          const field = new Field<number[]>([1, 2, 3, 4]);
+          const spy = vi.fn();
+          field.$[2]?.watch(spy);
+          field.set([1, 2, 33, 4]);
+          await postpone();
+          expect(spy).toHaveBeenCalledWith(
+            33,
+            expect.objectContaining({
+              changes: change.field.value,
+            }),
+          );
+          field.set([1, 2]);
 
-              setTimeout(() => {
-                expect(spy).toHaveBeenCalledOnce();
-                resolve(void 0);
-              });
-            });
-          }));
+          await postpone();
+          expect(spy).toHaveBeenCalledOnce();
+        });
 
-        it("preserves removed items", () =>
-          new Promise((resolve) => {
-            const field = new Field<number[]>([1, 2, 3, 4]);
-            const spy = vi.fn();
-            const itemA = field.at(2);
-            itemA.watch(spy);
-            field.set([1, 2, 33, 4]);
+        it("preserves removed items", async () => {
+          const field = new Field<number[]>([1, 2, 3, 4]);
+          const spy = vi.fn();
+          const itemA = field.at(2);
+          itemA.watch(spy);
+          field.set([1, 2, 33, 4]);
 
-            setTimeout(() => {
-              field.set([1, 2]);
-              field.set([1, 2, 333]);
-              const itemB = field.at(2);
-              expect(itemA).toBeInstanceOf(Field);
-              expect(itemA).toBe(itemB);
-              setTimeout(() => {
-                expect(spy).toHaveBeenCalledWith(
-                  33,
-                  expect.objectContaining({ changes: change.field.value }),
-                );
+          await postpone();
+          field.set([1, 2]);
+          field.set([1, 2, 333]);
+          const itemB = field.at(2);
+          expect(itemA).toBeInstanceOf(Field);
+          expect(itemA).toBe(itemB);
+          await postpone();
+          expect(spy).toHaveBeenCalledWith(
+            33,
+            expect.objectContaining({ changes: change.field.value }),
+          );
 
-                expect(spy).toHaveBeenCalledWith(
-                  333,
-                  expect.objectContaining({
-                    changes: change.field.type | change.field.attach,
-                  }),
-                );
-                resolve(void 0);
-              });
-            });
-          }));
+          expect(spy).toHaveBeenCalledWith(
+            333,
+            expect.objectContaining({
+              changes: change.field.type | change.field.attach,
+            }),
+          );
+        });
 
-        it("indicates no type change on adding undefined", () =>
-          new Promise((resolve) => {
-            const field = new Field<Array<number | undefined>>([1, 2, 3, 4]);
-            const spy = vi.fn();
-            const itemA = field.at(2);
-            itemA.watch(spy);
-            field.set([1, 2, 33, 4]);
-            setTimeout(() => {
-              expect(spy).toHaveBeenCalledWith(
-                33,
-                expect.objectContaining({ changes: change.field.value }),
-              );
+        it("indicates no type change on adding undefined", async () => {
+          const field = new Field<Array<number | undefined>>([1, 2, 3, 4]);
+          const spy = vi.fn();
+          const itemA = field.at(2);
+          itemA.watch(spy);
+          field.set([1, 2, 33, 4]);
+          await postpone();
+          expect(spy).toHaveBeenCalledWith(
+            33,
+            expect.objectContaining({ changes: change.field.value }),
+          );
 
-              field.set([1, 2]);
-              field.set([1, 2, undefined]);
+          field.set([1, 2]);
+          field.set([1, 2, undefined]);
 
-              setTimeout(() => {
-                expect(spy).toHaveBeenCalledWith(
-                  undefined,
-                  expect.objectContaining({
-                    // This test lacks StateChangeType.Type unlike the above,
-                    // indicating that the value is still undefined
-                    changes: change.field.attach,
-                  }),
-                );
-                resolve(void 0);
-              });
-            });
-          }));
+          await postpone();
+          expect(spy).toHaveBeenCalledWith(
+            undefined,
+            expect.objectContaining({
+              // This test lacks StateChangeType.Type unlike the above,
+              // indicating that the value is still undefined
+              changes: change.field.attach,
+            }),
+          );
+        });
 
         it("does not trigger update when setting undefined value to undefined value", () => {
           const field = new Field<number[]>([1, 2, 3, 4]);
@@ -1097,174 +1077,130 @@ describe(Field, () => {
 
       describe("changes", () => {
         describe("field", () => {
-          it("triggers commit change", () =>
-            new Promise((resolve, reject) => {
-              const field = new Field("");
-              field.set("spam@example.com");
-              expect(field.dirty).toBe(true);
+          it("triggers commit change", async () => {
+            const field = new Field("");
+            field.set("spam@example.com");
+            expect(field.dirty).toBe(true);
 
-              const spy = vi.fn();
-              const unsub = field.watch(spy);
-              field.commit();
+            const spy = vi.fn();
+            const unsub = field.watch(spy);
+            field.commit();
 
-              setTimeout(() => {
-                unsub();
-                try {
-                  expect(field.dirty).toBe(false);
-                  expect(spy).toHaveBeenCalledOnce();
-                  const [[_, event]]: any = spy.mock.calls;
-                  expect(event.changes).toMatchChanges(
-                    change.field.value | change.field.commit,
-                  );
-                  resolve(void 0);
-                } catch (err) {
-                  reject(err);
-                }
-              });
-            }));
+            await postpone();
+            unsub();
+            expect(field.dirty).toBe(false);
+            expect(spy).toHaveBeenCalledOnce();
+            const [[_, event]]: any = spy.mock.calls;
+            expect(event.changes).toMatchChanges(
+              change.field.value | change.field.commit,
+            );
+          });
 
-          it("does't trigger commit change if it wasn't dirty", () =>
-            new Promise((resolve, reject) => {
-              const field = new Field("");
-              field.set("");
-              expect(field.dirty).toBe(false);
+          it("does't trigger commit change if it wasn't dirty", async () => {
+            const field = new Field("");
+            field.set("");
+            expect(field.dirty).toBe(false);
 
-              const spy = vi.fn();
-              const unsub = field.watch(spy);
-              field.commit();
+            const spy = vi.fn();
+            const unsub = field.watch(spy);
+            field.commit();
 
-              setTimeout(() => {
-                unsub();
-                try {
-                  expect(field.dirty).toBe(false);
-                  expect(spy).not.toHaveBeenCalled();
-                  resolve(void 0);
-                } catch (err) {
-                  reject(err);
-                }
-              });
-            }));
+            await postpone();
+            unsub();
+            expect(field.dirty).toBe(false);
+            expect(spy).not.toHaveBeenCalled();
+          });
         });
 
         describe("child", () => {
-          it("triggers commit change", () =>
-            new Promise((resolve, reject) => {
-              const field = new Field({
-                name: { first: "Alexander" },
-                email: "",
-              });
-              field.$.email.set("spam@example.com");
-              expect(field.dirty).toBe(true);
+          it("triggers commit change", async () => {
+            const field = new Field({
+              name: { first: "Alexander" },
+              email: "",
+            });
+            field.$.email.set("spam@example.com");
+            expect(field.dirty).toBe(true);
 
-              const spy = vi.fn();
-              const unsub = field.watch(spy);
-              field.commit();
+            const spy = vi.fn();
+            const unsub = field.watch(spy);
+            field.commit();
 
-              setTimeout(() => {
-                unsub();
-                try {
-                  expect(field.dirty).toBe(false);
-                  expect(spy).toHaveBeenCalledOnce();
-                  const [[_, event]]: any = spy.mock.calls;
-                  expect(event.changes).toMatchChanges(
-                    change.field.commit |
-                      change.child.value |
-                      change.child.commit,
-                  );
-                  resolve(void 0);
-                } catch (err) {
-                  reject(err);
-                }
-              });
-            }));
+            await postpone();
+            unsub();
+            expect(field.dirty).toBe(false);
+            expect(spy).toHaveBeenCalledOnce();
+            const [[_, event]]: any = spy.mock.calls;
+            expect(event.changes).toMatchChanges(
+              change.field.commit | change.child.value | change.child.commit,
+            );
+          });
 
-          it("does't trigger commit change if it wasn't dirty", () =>
-            new Promise((resolve, reject) => {
-              const field = new Field({
-                name: { first: "Alexander" },
-                email: "",
-              });
-              field.$.email.set("");
-              expect(field.dirty).toBe(false);
+          it("does't trigger commit change if it wasn't dirty", async () => {
+            const field = new Field({
+              name: { first: "Alexander" },
+              email: "",
+            });
+            field.$.email.set("");
+            expect(field.dirty).toBe(false);
 
-              const spy = vi.fn();
-              const unsub = field.watch(spy);
-              field.commit();
+            const spy = vi.fn();
+            const unsub = field.watch(spy);
+            field.commit();
 
-              setTimeout(() => {
-                unsub();
-                try {
-                  expect(field.dirty).toBe(false);
-                  expect(spy).not.toHaveBeenCalled();
-                  resolve(void 0);
-                } catch (err) {
-                  reject(err);
-                }
-              });
-            }));
+            await postpone();
+            unsub();
+            expect(field.dirty).toBe(false);
+            expect(spy).not.toHaveBeenCalled();
+          });
         });
 
         describe("subtree", () => {
-          it("triggers commit change", () =>
-            new Promise((resolve, reject) => {
-              const field = new Field({
-                user: {
-                  name: { first: "Alexander" },
-                  email: "",
-                },
-              });
-              field.$.user.$.email.set("spam@example.com");
-              expect(field.dirty).toBe(true);
+          it("triggers commit change", async () => {
+            const field = new Field({
+              user: {
+                name: { first: "Alexander" },
+                email: "",
+              },
+            });
+            field.$.user.$.email.set("spam@example.com");
+            expect(field.dirty).toBe(true);
 
-              const spy = vi.fn();
-              const unsub = field.watch(spy);
-              field.commit();
+            const spy = vi.fn();
+            const unsub = field.watch(spy);
+            field.commit();
 
-              setTimeout(() => {
-                unsub();
-                try {
-                  expect(field.dirty).toBe(false);
-                  expect(spy).toHaveBeenCalledOnce();
-                  const [[_, event]]: any = spy.mock.calls;
-                  expect(event.changes).toMatchChanges(
-                    change.field.commit |
-                      change.child.commit |
-                      change.subtree.value |
-                      change.subtree.commit,
-                  );
-                  resolve(void 0);
-                } catch (err) {
-                  reject(err);
-                }
-              });
-            }));
+            await postpone();
+            unsub();
+            expect(field.dirty).toBe(false);
+            expect(spy).toHaveBeenCalledOnce();
+            const [[_, event]]: any = spy.mock.calls;
+            expect(event.changes).toMatchChanges(
+              change.field.commit |
+                change.child.commit |
+                change.subtree.value |
+                change.subtree.commit,
+            );
+          });
 
-          it("does't trigger commit change if it wasn't dirty", () =>
-            new Promise((resolve, reject) => {
-              const field = new Field({
-                user: {
-                  name: { first: "Alexander" },
-                  email: "",
-                },
-              });
-              field.$.user.$.email.set("");
-              expect(field.dirty).toBe(false);
+          it("does't trigger commit change if it wasn't dirty", async () => {
+            const field = new Field({
+              user: {
+                name: { first: "Alexander" },
+                email: "",
+              },
+            });
+            field.$.user.$.email.set("");
+            expect(field.dirty).toBe(false);
 
-              const spy = vi.fn();
-              const unsub = field.watch(spy);
-              field.commit();
+            const spy = vi.fn();
+            const unsub = field.watch(spy);
+            field.commit();
 
-              setTimeout(() => {
-                unsub();
-                try {
-                  expect(field.dirty).toBe(false);
-                  expect(spy).not.toHaveBeenCalled();
-                  resolve(void 0);
-                } catch (err) {
-                  reject(err);
-                }
-              });
-            }));
+            await postpone();
+            unsub();
+            expect(field.dirty).toBe(false);
+            expect(spy).not.toHaveBeenCalled();
+          });
         });
       });
     });
@@ -1473,16 +1409,24 @@ describe(Field, () => {
       describe("object", () => {
         it("returns the field if it exists", () => {
           const field = new Field<Record<string, number>>({ num: 42 });
-          const num = field.try("num");
-          num satisfies Field<number> | undefined;
-          expect(num).toBeInstanceOf(Field);
-          expect(num?.get()).toBe(42);
+          {
+            const num = field.try("num");
+            num satisfies Field<number> | undefined;
+            expect(num).toBeInstanceOf(Field);
+            expect(num?.get()).toBe(42);
+          }
+          {
+            const num = field.try.num;
+            num satisfies Field<number> | undefined;
+            expect(num).toBeInstanceOf(Field);
+            expect(num?.get()).toBe(42);
+          }
         });
 
         it("returns undefined if field doesn't exist", () => {
           const field = new Field<Record<string, number>>({ num: 42 });
-          const bum = field.try("bum");
-          expect(bum).toBe(undefined);
+          expect(field.try("bum")).toBe(undefined);
+          expect(field.try.bum).toBe(undefined);
         });
 
         it("returns undefined/null if field is undefined/null", () => {
@@ -1491,9 +1435,18 @@ describe(Field, () => {
             bum: undefined,
             hum: null,
           });
-          field.try("bum") satisfies Field<number> | undefined | null;
-          expect(field.try("bum")).toBe(undefined);
-          expect(field.try("hum")).toBe(null);
+          {
+            const bum = field.try("bum");
+            bum satisfies Field<number> | undefined | null;
+            expect(bum).toBe(undefined);
+            expect(field.try("hum")).toBe(null);
+          }
+          {
+            const bum = field.try.bum;
+            bum satisfies Field<number> | undefined | null;
+            expect(bum).toBe(undefined);
+            expect(field.try.hum).toBe(null);
+          }
         });
       });
 
@@ -1641,20 +1594,17 @@ describe(Field, () => {
     });
 
     describe("trigger", () => {
-      it("triggers the watchers", () =>
-        new Promise((resolve) => {
-          const field = new Field(42);
-          const spy = vi.fn();
-          field.watch(spy);
-          field.trigger(change.field.value);
-          setTimeout(() => {
-            expect(spy).toHaveBeenCalledWith(
-              42,
-              expect.objectContaining({ changes: change.field.value }),
-            );
-            resolve(void 0);
-          });
-        }));
+      it("triggers the watchers", async () => {
+        const field = new Field(42);
+        const spy = vi.fn();
+        field.watch(spy);
+        field.trigger(change.field.value);
+        await postpone();
+        expect(spy).toHaveBeenCalledWith(
+          42,
+          expect.objectContaining({ changes: change.field.value }),
+        );
+      });
 
       it("doesn't trigger parent fields", () => {
         const field = new Field({ num: 42 });
@@ -1664,65 +1614,53 @@ describe(Field, () => {
         expect(spy).not.toHaveBeenCalled();
       });
 
-      it("allows to notify parent fields", () =>
-        new Promise((resolve) => {
-          const field = new Field({ num: 42 });
-          const spy = vi.fn();
-          field.watch(spy);
-          field.$.num.trigger(change.field.value, true);
-          setTimeout(() => {
-            const [[value, event]]: any = spy.mock.calls;
-            expect(value).toEqual({ num: 42 });
-            expect(event.changes).toMatchChanges(change.child.value);
-            resolve(void 0);
-          });
-        }));
+      it("allows to notify parent fields", async () => {
+        const field = new Field({ num: 42 });
+        const spy = vi.fn();
+        field.watch(spy);
+        field.$.num.trigger(change.field.value, true);
+        await postpone();
+        const [[value, event]]: any = spy.mock.calls;
+        expect(value).toEqual({ num: 42 });
+        expect(event.changes).toMatchChanges(change.child.value);
+      });
 
-      it("notifies parents about child blurring", () =>
-        new Promise((resolve) => {
-          const field = new Field({ num: 42 });
-          const spy = vi.fn();
-          field.watch(spy);
-          field.$.num.trigger(change.field.blur, true);
-          setTimeout(() => {
-            const [[value, event]]: any = spy.mock.calls;
-            expect(value).toEqual({ num: 42 });
-            expect(event.changes).toMatchChanges(change.child.blur);
-            resolve(void 0);
-          });
-        }));
+      it("notifies parents about child blurring", async () => {
+        const field = new Field({ num: 42 });
+        const spy = vi.fn();
+        field.watch(spy);
+        field.$.num.trigger(change.field.blur, true);
+        await postpone();
+        const [[value, event]]: any = spy.mock.calls;
+        expect(value).toEqual({ num: 42 });
+        expect(event.changes).toMatchChanges(change.child.blur);
+      });
 
-      it("notifies parents about nested child blurring", () =>
-        new Promise((resolve) => {
-          const field = new Field({ user: { name: { first: "Sasha" } } });
-          const spy = vi.fn();
-          field.watch(spy);
-          field.$.user.$.name.$.first.trigger(change.field.blur, true);
-          setTimeout(() => {
-            const [[value, event]]: any = spy.mock.calls;
-            expect(value).toEqual({ user: { name: { first: "Sasha" } } });
-            expect(event.changes).toMatchChanges(change.subtree.blur);
-            resolve(void 0);
-          });
-        }));
+      it("notifies parents about nested child blurring", async () => {
+        const field = new Field({ user: { name: { first: "Sasha" } } });
+        const spy = vi.fn();
+        field.watch(spy);
+        field.$.user.$.name.$.first.trigger(change.field.blur, true);
+        await postpone();
+        const [[value, event]]: any = spy.mock.calls;
+        expect(value).toEqual({ user: { name: { first: "Sasha" } } });
+        expect(event.changes).toMatchChanges(change.subtree.blur);
+      });
 
-      it("batches the changes", () =>
-        new Promise((resolve) => {
-          const field = new Field({ user: { name: { first: "Sasha" } } });
-          const spy = vi.fn();
-          field.watch(spy);
-          field.$.user.$.name.$.first.trigger(change.field.blur, true);
-          field.$.user.$.name.$.first.trigger(change.field.shape, true);
-          setTimeout(() => {
-            expect(spy).toHaveBeenCalledOnce();
-            const [[value, event]]: any = spy.mock.calls;
-            expect(value).toEqual({ user: { name: { first: "Sasha" } } });
-            expect(event.changes).toMatchChanges(
-              change.subtree.blur | change.subtree.shape,
-            );
-            resolve(void 0);
-          });
-        }));
+      it("batches the changes", async () => {
+        const field = new Field({ user: { name: { first: "Sasha" } } });
+        const spy = vi.fn();
+        field.watch(spy);
+        field.$.user.$.name.$.first.trigger(change.field.blur, true);
+        field.$.user.$.name.$.first.trigger(change.field.shape, true);
+        await postpone();
+        expect(spy).toHaveBeenCalledOnce();
+        const [[value, event]]: any = spy.mock.calls;
+        expect(value).toEqual({ user: { name: { first: "Sasha" } } });
+        expect(event.changes).toMatchChanges(
+          change.subtree.blur | change.subtree.shape,
+        );
+      });
 
       describe.todo("child");
 
@@ -1730,178 +1668,161 @@ describe(Field, () => {
     });
 
     describe("withhold", () => {
-      it("allows to withhold the events until it's unleashed", () =>
-        new Promise((resolve) => {
-          const field = new Field({ num: 42 });
-          const spy = vi.fn();
-          field.watch(spy);
-          field.withhold();
-          field.$.num.trigger(change.field.value, true);
-          field.$.num.trigger(change.child.detach, true);
-          field.$.num.trigger(change.child.attach, true);
-          setTimeout(() => {
-            expect(spy).not.toHaveBeenCalled();
+      it("allows to withhold the events until it's unleashed", async () => {
+        const field = new Field({ num: 42 });
+        const spy = vi.fn();
+        field.watch(spy);
+        field.withhold();
+        field.$.num.trigger(change.field.value, true);
+        field.$.num.trigger(change.child.detach, true);
+        field.$.num.trigger(change.child.attach, true);
+        await postpone();
+        expect(spy).not.toHaveBeenCalled();
 
-            field.unleash();
+        field.unleash();
 
-            setTimeout(() => {
-              const [[value, event]]: any = spy.mock.calls;
-              expect(value).toEqual({ num: 42 });
-              expect(event.changes).toMatchChanges(
-                change.child.value |
-                  change.subtree.detach |
-                  change.subtree.attach,
-              );
-              resolve(void 0);
-            });
-          });
-        }));
+        await postpone();
+        const [[value, event]]: any = spy.mock.calls;
+        expect(value).toEqual({ num: 42 });
+        expect(event.changes).toMatchChanges(
+          change.child.value | change.subtree.detach | change.subtree.attach,
+        );
+      });
 
-      it("combines the changes into a single event", () =>
-        new Promise((resolve) => {
-          const field = new Field(42);
-          const spy = vi.fn();
-          field.watch(spy);
-          field.withhold();
-          field.trigger(change.field.value, true);
-          field.trigger(change.child.detach, true);
-          field.trigger(change.child.attach, true);
+      it("combines the changes into a single event", async () => {
+        const field = new Field(42);
+        const spy = vi.fn();
+        field.watch(spy);
+        field.withhold();
+        field.trigger(change.field.value, true);
+        field.trigger(change.child.detach, true);
+        field.trigger(change.child.attach, true);
 
-          setTimeout(() => {
-            expect(spy).not.toHaveBeenCalled();
+        await postpone();
+        expect(spy).not.toHaveBeenCalled();
 
-            field.unleash();
+        field.unleash();
 
-            setTimeout(() => {
-              expect(spy).toHaveBeenCalledWith(
-                42,
-                expect.objectContaining({
-                  changes:
-                    change.field.value |
-                    change.child.detach |
-                    change.child.attach,
-                }),
-              );
-              resolve(void 0);
-            });
-          });
-        }));
+        await postpone();
+        expect(spy).toHaveBeenCalledWith(
+          42,
+          expect.objectContaining({
+            changes:
+              change.field.value | change.child.detach | change.child.attach,
+          }),
+        );
+      });
 
-      it("neutralizes valid/invalid changes", () =>
-        new Promise((resolve) => {
-          const field = new Field(42);
-          const spy = vi.fn();
-          field.watch(spy);
-          field.withhold();
-          field.trigger(change.field.value, true);
-          field.trigger(change.field.invalid, true);
-          field.trigger(change.field.valid, true);
+      it("neutralizes valid/invalid changes", async () => {
+        const field = new Field(42);
+        const spy = vi.fn();
+        field.watch(spy);
+        field.withhold();
+        field.trigger(change.field.value, true);
+        field.trigger(change.field.invalid, true);
+        field.trigger(change.field.valid, true);
 
-          setTimeout(() => {
-            expect(spy).not.toHaveBeenCalled();
+        await postpone();
+        expect(spy).not.toHaveBeenCalled();
 
-            field.unleash();
+        field.unleash();
 
-            setTimeout(() => {
-              expect(spy).toHaveBeenCalledWith(
-                42,
-                expect.objectContaining({ changes: change.field.value }),
-              );
-              resolve(void 0);
-            });
-          });
-        }));
+        await postpone();
+        expect(spy).toHaveBeenCalledWith(
+          42,
+          expect.objectContaining({ changes: change.field.value }),
+        );
+      });
     });
   });
 
   describe("watching", () => {
     describe("watch", () => {
       describe("primitive", () => {
-        it("allows to subscribe for field changes", async () =>
-          new Promise<void>((resolve) => {
-            const field = new Field(42);
+        it("allows to subscribe for field changes", async () => {
+          const field = new Field(42);
 
-            const unsub = field.watch((value) => {
-              expect(value).toBe(43);
-              unsub();
-              // Check if the callback is not called after unsub
-              field.set(44);
-              setTimeout(resolve);
-            });
+          const unsub = field.watch((value) => {
+            expect(value).toBe(43);
+            unsub();
+            // Check if the callback is not called after unsub
+            field.set(44);
+            setTimeout(resolve);
+          });
 
-            field.set(43);
-          }));
+          field.set(43);
 
-        it("provides event object with change type as changes", async () =>
-          new Promise<void>((resolve) => {
-            const field = new Field(42);
+          function resolve() {
+            // Test passes if we reach here without the callback being called again
+          }
+        });
 
-            const unsub = field.watch((value, event) => {
-              expect(event.changes).toBe(change.field.value);
-              unsub();
-              resolve();
-            });
+        it("provides event object with change type as changes", async () => {
+          const field = new Field(42);
 
-            field.set(43);
-          }));
+          const unsub = field.watch((value, event) => {
+            expect(event.changes).toBe(change.field.value);
+            unsub();
+          });
+
+          field.set(43);
+          await postpone();
+        });
 
         describe.todo("changes");
       });
 
       describe("object", () => {
-        it("listens to the field changes", async () =>
-          new Promise<void>((resolve) => {
-            const field = new Field({ num: 42 });
+        it("listens to the field changes", async () => {
+          const field = new Field({ num: 42 });
 
-            const unsub = field.watch((value, event) => {
-              try {
-                expect(event.changes).toMatchChanges(change.child.value);
-                expect(value.num).toBe(43);
-              } finally {
-                unsub();
-                resolve();
-              }
-            });
-
-            field.$.num.set(43);
-          }));
-
-        it("listens to fields create", async () =>
-          new Promise<void>((resolve) => {
-            const field = new Field<{ num: number; str?: string }>({
-              num: 42,
-            });
-
-            const unsub = field.watch((value, event) => {
-              expect(event.changes).toBe(
-                change.child.attach | change.field.shape,
-              );
-              expect(value.str).toBe("Hello!");
+          const unsub = field.watch((value, event) => {
+            try {
+              expect(event.changes).toMatchChanges(change.child.value);
+              expect(value.num).toBe(43);
+            } finally {
               unsub();
-              resolve();
-            });
+            }
+          });
 
-            field.$.str.set("Hello!");
-          }));
+          field.$.num.set(43);
+          await postpone();
+        });
 
-        it("listens to field object create", async () =>
-          new Promise<void>((resolve) => {
-            const field = new Field<Record<number, { n: number }>>({
-              1: { n: 1 },
-              2: { n: 2 },
-            });
+        it("listens to fields create", async () => {
+          const field = new Field<{ num: number; str?: string }>({
+            num: 42,
+          });
 
-            const unsub = field.watch((value, event) => {
-              expect(event.changes).toBe(
-                change.child.attach | change.field.shape,
-              );
-              expect(value[3]).toEqual({ n: 3 });
-              unsub();
-              resolve();
-            });
+          const unsub = field.watch((value, event) => {
+            expect(event.changes).toBe(
+              change.child.attach | change.field.shape,
+            );
+            expect(value.str).toBe("Hello!");
+            unsub();
+          });
 
-            field.at(3).set({ n: 3 });
-          }));
+          field.$.str.set("Hello!");
+          await postpone();
+        });
+
+        it("listens to field object create", async () => {
+          const field = new Field<Record<number, { n: number }>>({
+            1: { n: 1 },
+            2: { n: 2 },
+          });
+
+          const unsub = field.watch((value, event) => {
+            expect(event.changes).toBe(
+              change.child.attach | change.field.shape,
+            );
+            expect(value[3]).toEqual({ n: 3 });
+            unsub();
+          });
+
+          field.at(3).set({ n: 3 });
+          await postpone();
+        });
 
         describe("changes", () => {
           describe.todo("field");
@@ -1913,54 +1834,51 @@ describe(Field, () => {
       });
 
       describe("array", () => {
-        it("listens to the item field changes", async () =>
-          new Promise<void>((resolve) => {
-            const field = new Field([1, 2, 3]);
+        it("listens to the item field changes", async () => {
+          const field = new Field([1, 2, 3]);
 
-            const unsub = field.watch((value, event) => {
-              try {
-                expect(event.changes).toMatchChanges(change.child.value);
-                expect(value[1]).toBe(43);
-              } finally {
-                unsub();
-                resolve();
-              }
-            });
-
-            field.at(1).set(43);
-          }));
-
-        it("listens to items create", async () =>
-          new Promise<void>((resolve) => {
-            const field = new Field([1, 2, 3]);
-
-            const unsub = field.watch((value, event) => {
-              expect(event.changes).toBe(
-                change.child.attach | change.field.shape,
-              );
-              expect(value[5]).toBe(43);
+          const unsub = field.watch((value, event) => {
+            try {
+              expect(event.changes).toMatchChanges(change.child.value);
+              expect(value[1]).toBe(43);
+            } finally {
               unsub();
-              resolve();
-            });
+            }
+          });
 
-            field.at(5).set(43);
-          }));
+          field.at(1).set(43);
+          await postpone();
+        });
 
-        it("listens to items object create", async () =>
-          new Promise<void>((resolve) => {
-            const field = new Field<Array<{ n: number }>>([{ n: 1 }, { n: 2 }]);
+        it("listens to items create", async () => {
+          const field = new Field([1, 2, 3]);
 
-            const unsub = field.watch((value, event) => {
-              expect(event.changes).toBe(
-                change.child.attach | change.field.shape,
-              );
-              expect(value[2]).toEqual({ n: 3 });
-              unsub();
-              resolve();
-            });
+          const unsub = field.watch((value, event) => {
+            expect(event.changes).toBe(
+              change.child.attach | change.field.shape,
+            );
+            expect(value[5]).toBe(43);
+            unsub();
+          });
 
-            field.at(2).set({ n: 3 });
-          }));
+          field.at(5).set(43);
+          await postpone();
+        });
+
+        it("listens to items object create", async () => {
+          const field = new Field<Array<{ n: number }>>([{ n: 1 }, { n: 2 }]);
+
+          const unsub = field.watch((value, event) => {
+            expect(event.changes).toBe(
+              change.child.attach | change.field.shape,
+            );
+            expect(value[2]).toEqual({ n: 3 });
+            unsub();
+          });
+
+          field.at(2).set({ n: 3 });
+          await postpone();
+        });
 
         describe("changes", () => {
           describe.todo("field");
@@ -1972,37 +1890,35 @@ describe(Field, () => {
       });
 
       describe("instance", () => {
-        it("allows to subscribe for field changes", async () =>
-          new Promise<void>((resolve) => {
-            const map = new Map();
-            map.set("num", 42);
-            const field = new Field(map);
+        it("allows to subscribe for field changes", async () => {
+          const map = new Map();
+          map.set("num", 42);
+          const field = new Field(map);
 
-            const unsub = field.watch((value) => {
-              expect(Object.fromEntries(value)).toEqual({ num: 43 });
-              unsub();
-              // Check if the callback is not called after unsub
-              field.set(new Map());
-              setTimeout(resolve);
-            });
+          const unsub = field.watch((value) => {
+            expect(Object.fromEntries(value)).toEqual({ num: 43 });
+            unsub();
+            // Check if the callback is not called after unsub
+            field.set(new Map());
+          });
 
-            const newMap = new Map();
-            newMap.set("num", 43);
-            field.set(newMap);
-          }));
+          const newMap = new Map();
+          newMap.set("num", 43);
+          field.set(newMap);
+          await postpone();
+        });
 
-        it("provides event object with change type as changes", async () =>
-          new Promise<void>((resolve) => {
-            const field = new Field(42);
+        it("provides event object with change type as changes", async () => {
+          const field = new Field(42);
 
-            const unsub = field.watch((value, event) => {
-              expect(event.changes).toBe(change.field.value);
-              unsub();
-              resolve();
-            });
+          const unsub = field.watch((value, event) => {
+            expect(event.changes).toBe(change.field.value);
+            unsub();
+          });
 
-            field.set(43);
-          }));
+          field.set(43);
+          await postpone();
+        });
 
         describe.todo("changes");
       });
@@ -2128,19 +2044,18 @@ describe(Field, () => {
         expect(fromSpy).toBeCalledWith("Hi!", "Hello, world!");
       });
 
-      it("triggers field update", async () =>
-        new Promise<void>((resolve) => {
-          const field = new Field({ message: "Hello, world!" });
-          const computed = field.$.message.into(toCodes).from(fromCodes);
+      it("triggers field update", async () => {
+        const field = new Field({ message: "Hello, world!" });
+        const computed = field.$.message.into(toCodes).from(fromCodes);
 
-          const unsub = field.$.message.watch((value) => {
-            expect(value).toBe("Hi!");
-            unsub();
-            resolve();
-          });
+        const unsub = field.$.message.watch((value) => {
+          expect(value).toBe("Hi!");
+          unsub();
+        });
 
-          computed.set([72, 105, 33]);
-        }));
+        computed.set([72, 105, 33]);
+        await postpone();
+      });
     });
 
     // describe("computedMap", () => {
@@ -2220,25 +2135,22 @@ describe(Field, () => {
               );
             });
 
-            it("triggers updates", () =>
-              new Promise((resolve) => {
-                const spy = vi.fn();
-                const field = new Field<Record<string, number>>({
-                  one: 1,
-                  two: 2,
-                  three: 3,
-                });
-                field.watch(spy);
-                field.at("one").remove();
-                setTimeout(() => {
-                  const [[value, event]]: any = spy.mock.calls;
-                  expect(value).toEqual({ two: 2, three: 3 });
-                  expect(event.changes).toMatchChanges(
-                    change.field.shape | change.child.detach,
-                  );
-                  resolve(void 0);
-                });
-              }));
+            it("triggers updates", async () => {
+              const spy = vi.fn();
+              const field = new Field<Record<string, number>>({
+                one: 1,
+                two: 2,
+                three: 3,
+              });
+              field.watch(spy);
+              field.at("one").remove();
+              await postpone();
+              const [[value, event]]: any = spy.mock.calls;
+              expect(value).toEqual({ two: 2, three: 3 });
+              expect(event.changes).toMatchChanges(
+                change.field.shape | change.child.detach,
+              );
+            });
           });
 
           describe("child", () => {
@@ -2252,25 +2164,22 @@ describe(Field, () => {
               expect(field.lastChanges).toMatchChanges(change.child.detach);
             });
 
-            it("triggers updates", () =>
-              new Promise((resolve) => {
-                const spy = vi.fn();
-                const field = new Field<Record<string, number>>({
-                  one: 1,
-                  two: 2,
-                  three: 3,
-                });
-                field.watch(spy);
-                field.remove("one");
-                setTimeout(() => {
-                  const [[value, event]]: any = spy.mock.calls;
-                  expect(value).toEqual({ two: 2, three: 3 });
-                  expect(event.changes).toMatchChanges(
-                    change.field.shape | change.child.detach,
-                  );
-                  resolve(void 0);
-                });
-              }));
+            it("triggers updates", async () => {
+              const spy = vi.fn();
+              const field = new Field<Record<string, number>>({
+                one: 1,
+                two: 2,
+                three: 3,
+              });
+              field.watch(spy);
+              field.remove("one");
+              await postpone();
+              const [[value, event]]: any = spy.mock.calls;
+              expect(value).toEqual({ two: 2, three: 3 });
+              expect(event.changes).toMatchChanges(
+                change.field.shape | change.child.detach,
+              );
+            });
           });
         });
       });
@@ -2304,21 +2213,18 @@ describe(Field, () => {
               );
             });
 
-            it("triggers updates", () =>
-              new Promise((resolve) => {
-                const spy = vi.fn();
-                const field = new Field([1, 2, 3, 4]);
-                field.watch(spy);
-                field.at(1).remove();
-                setTimeout(() => {
-                  const [[value, event]]: any = spy.mock.calls;
-                  expect(value).toEqual([1, 3, 4]);
-                  expect(event.changes).toMatchChanges(
-                    change.field.shape | change.child.detach,
-                  );
-                  resolve(void 0);
-                });
-              }));
+            it("triggers updates", async () => {
+              const spy = vi.fn();
+              const field = new Field([1, 2, 3, 4]);
+              field.watch(spy);
+              field.at(1).remove();
+              await postpone();
+              const [[value, event]]: any = spy.mock.calls;
+              expect(value).toEqual([1, 3, 4]);
+              expect(event.changes).toMatchChanges(
+                change.field.shape | change.child.detach,
+              );
+            });
           });
 
           describe("child", () => {
@@ -2328,22 +2234,19 @@ describe(Field, () => {
               expect(field.lastChanges).toMatchChanges(change.child.detach);
             });
 
-            it("triggers updates", () =>
-              new Promise((resolve) => {
-                const spy = vi.fn();
-                const field = new Field([[1, 2, 3, 4]]);
-                field.watch(spy);
-                // @ts-expect-error: This is fine!
-                field.at(0).remove(1);
-                setTimeout(() => {
-                  const [[value, event]]: any = spy.mock.calls;
-                  expect(value).toEqual([[1, 3, 4]]);
-                  expect(event.changes).toMatchChanges(
-                    change.child.shape | change.subtree.detach,
-                  );
-                  resolve(void 0);
-                });
-              }));
+            it("triggers updates", async () => {
+              const spy = vi.fn();
+              const field = new Field([[1, 2, 3, 4]]);
+              field.watch(spy);
+              // @ts-expect-error: This is fine!
+              field.at(0).remove(1);
+              await postpone();
+              const [[value, event]]: any = spy.mock.calls;
+              expect(value).toEqual([[1, 3, 4]]);
+              expect(event.changes).toMatchChanges(
+                change.child.shape | change.subtree.detach,
+              );
+            });
           });
 
           describe.todo("subtree");
@@ -2420,70 +2323,49 @@ describe(Field, () => {
 
       describe("changes", () => {
         describe("field", () => {
-          it("triggers updates", () =>
-            new Promise((resolve, reject) => {
-              const field = new Field([1, 2, 3]);
-              const spy = vi.fn();
-              field.watch(spy);
-              field.push(4);
-              setTimeout(() => {
-                const [[value, event]]: any = spy.mock.calls;
-                try {
-                  expect(value).toEqual([1, 2, 3, 4]);
-                  expect(event.changes).toMatchChanges(
-                    change.field.shape | change.child.attach,
-                  );
-                  resolve(void 0);
-                } catch (err) {
-                  reject(err);
-                }
-              });
-            }));
+          it("triggers updates", async () => {
+            const field = new Field([1, 2, 3]);
+            const spy = vi.fn();
+            field.watch(spy);
+            field.push(4);
+            await postpone();
+            const [[value, event]]: any = spy.mock.calls;
+            expect(value).toEqual([1, 2, 3, 4]);
+            expect(event.changes).toMatchChanges(
+              change.field.shape | change.child.attach,
+            );
+          });
         });
 
         describe("child", () => {
-          it("triggers updates", () =>
-            new Promise((resolve, reject) => {
-              const field = new Field([[1, 2, 3]]);
-              const spy = vi.fn();
-              field.watch(spy);
-              field.at(0).push(4);
-              setTimeout(() => {
-                const [[value, event]]: any = spy.mock.calls;
-                try {
-                  expect(value).toEqual([[1, 2, 3, 4]]);
-                  expect(event.changes).toMatchChanges(
-                    change.child.shape | change.subtree.attach,
-                  );
-                  resolve(void 0);
-                } catch (err) {
-                  reject(err);
-                }
-              });
-            }));
+          it("triggers updates", async () => {
+            const field = new Field([[1, 2, 3]]);
+            const spy = vi.fn();
+            field.watch(spy);
+            field.at(0).push(4);
+            await postpone();
+            const [[value, event]]: any = spy.mock.calls;
+            expect(value).toEqual([[1, 2, 3, 4]]);
+            expect(event.changes).toMatchChanges(
+              change.child.shape | change.subtree.attach,
+            );
+          });
         });
 
         describe("subtree", () => {
-          it("triggers updates", () =>
-            new Promise((resolve, reject) => {
-              const field = new Field([[[1, 2, 3]]]);
-              const spy = vi.fn();
-              field.watch(spy);
-              // @ts-expect-error: This is fine!
-              field.at(0).at(0).push(4);
-              setTimeout(() => {
-                const [[value, event]]: any = spy.mock.calls;
-                try {
-                  expect(value).toEqual([[[1, 2, 3, 4]]]);
-                  expect(event.changes).toMatchChanges(
-                    change.subtree.shape | change.subtree.attach,
-                  );
-                  resolve(void 0);
-                } catch (err) {
-                  reject(err);
-                }
-              });
-            }));
+          it("triggers updates", async () => {
+            const field = new Field([[[1, 2, 3]]]);
+            const spy = vi.fn();
+            field.watch(spy);
+            // @ts-expect-error: This is fine!
+            field.at(0).at(0).push(4);
+            await postpone();
+            const [[value, event]]: any = spy.mock.calls;
+            expect(value).toEqual([[[1, 2, 3, 4]]]);
+            expect(event.changes).toMatchChanges(
+              change.subtree.shape | change.subtree.attach,
+            );
+          });
         });
       });
     });
@@ -2504,70 +2386,49 @@ describe(Field, () => {
 
       describe("changes", () => {
         describe("field", () => {
-          it("triggers updates", () =>
-            new Promise((resolve, reject) => {
-              const field = new Field([1, 2, 3]);
-              const spy = vi.fn();
-              field.watch(spy);
-              field.insert(0, 4);
-              setTimeout(() => {
-                const [[value, event]]: any = spy.mock.calls;
-                try {
-                  expect(value).toEqual([4, 1, 2, 3]);
-                  expect(event.changes).toMatchChanges(
-                    change.field.shape | change.child.attach,
-                  );
-                  resolve(void 0);
-                } catch (err) {
-                  reject(err);
-                }
-              });
-            }));
+          it("triggers updates", async () => {
+            const field = new Field([1, 2, 3]);
+            const spy = vi.fn();
+            field.watch(spy);
+            field.insert(0, 4);
+            await postpone();
+            const [[value, event]]: any = spy.mock.calls;
+            expect(value).toEqual([4, 1, 2, 3]);
+            expect(event.changes).toMatchChanges(
+              change.field.shape | change.child.attach,
+            );
+          });
         });
 
         describe("child", () => {
-          it("triggers updates", () =>
-            new Promise((resolve, reject) => {
-              const field = new Field([[1, 2, 3]]);
-              const spy = vi.fn();
-              field.watch(spy);
-              field.at(0).insert(0, 4);
-              setTimeout(() => {
-                const [[value, event]]: any = spy.mock.calls;
-                try {
-                  expect(value).toEqual([[4, 1, 2, 3]]);
-                  expect(event.changes).toMatchChanges(
-                    change.child.shape | change.subtree.attach,
-                  );
-                  resolve(void 0);
-                } catch (err) {
-                  reject(err);
-                }
-              });
-            }));
+          it("triggers updates", async () => {
+            const field = new Field([[1, 2, 3]]);
+            const spy = vi.fn();
+            field.watch(spy);
+            field.at(0).insert(0, 4);
+            await postpone();
+            const [[value, event]]: any = spy.mock.calls;
+            expect(value).toEqual([[4, 1, 2, 3]]);
+            expect(event.changes).toMatchChanges(
+              change.child.shape | change.subtree.attach,
+            );
+          });
         });
 
         describe("subtree", () => {
-          it("triggers updates", () =>
-            new Promise((resolve, reject) => {
-              const field = new Field([[[1, 2, 3]]]);
-              const spy = vi.fn();
-              field.watch(spy);
-              // @ts-expect-error: This is fine!
-              field.at(0).at(0).insert(0, 4);
-              setTimeout(() => {
-                const [[value, event]]: any = spy.mock.calls;
-                try {
-                  expect(value).toEqual([[[4, 1, 2, 3]]]);
-                  expect(event.changes).toMatchChanges(
-                    change.subtree.shape | change.subtree.attach,
-                  );
-                  resolve(void 0);
-                } catch (err) {
-                  reject(err);
-                }
-              });
-            }));
+          it("triggers updates", async () => {
+            const field = new Field([[[1, 2, 3]]]);
+            const spy = vi.fn();
+            field.watch(spy);
+            // @ts-expect-error: This is fine!
+            field.at(0).at(0).insert(0, 4);
+            await postpone();
+            const [[value, event]]: any = spy.mock.calls;
+            expect(value).toEqual([[[4, 1, 2, 3]]]);
+            expect(event.changes).toMatchChanges(
+              change.subtree.shape | change.subtree.attach,
+            );
+          });
         });
       });
     });
