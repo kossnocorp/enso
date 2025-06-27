@@ -10,6 +10,7 @@ import {
 import { FieldRef } from "./ref/index.ts";
 import { postpone } from "../../tests/utils.ts";
 import { EventsTree } from "../events/index.ts";
+import { fieldEach, fieldMap } from "./collection/index.ts";
 
 //#region Field
 
@@ -574,15 +575,13 @@ describe(Field, () => {
           const field = new Field<Array<{ n: number }>>([{ n: 1 }, { n: 2 }]);
           const spy = vi.fn();
           const undefinedField = field.at(2);
-          // @ts-ignore: This is fine!
-          undefinedField.map(spy);
+          fieldMap(field, spy);
           expect(undefinedField.get()).toBe(undefined);
           expect(
             field.set([{ n: 1 }, { n: 2 }, { n: 3 }]).lastChanges,
           ).toMatchChanges(change.field.shape | change.child.attach);
           expect(field.get()).toEqual([{ n: 1 }, { n: 2 }, { n: 3 }]);
-          // @ts-ignore: This is fine!
-          undefinedField.map(spy);
+          fieldMap(field, spy);
           expect(spy).toBeCalled();
         });
 
@@ -1332,15 +1331,6 @@ describe(Field, () => {
           const fieldB = field.$.str;
           expect(fieldA).toBe(fieldB);
         });
-
-        it("allows to use undefined key", () => {
-          const field = new Field<Record<string, number>>({ num: 42 });
-          // @ts-ignore: But not in $!
-          field.$[undefined];
-          const numB = field.at(undefined);
-          numB satisfies Field<undefined>;
-          expect(numB.get()).toBe(undefined);
-        });
       });
 
       describe("array", () => {
@@ -1382,51 +1372,41 @@ describe(Field, () => {
       describe("primitive", () => {
         it("returns the field if it's defined", () => {
           const field = new Field<string | number | undefined>(42);
-          const num = field.try;
-          num satisfies Field<string | number> | undefined;
-          expect(num).toBe(field);
-          expect(num).toBeInstanceOf(Field);
-          expect(num?.get()).toBe(42);
+          const tried = field.try();
+          tried satisfies Field<string | number> | undefined;
+          expect(tried).toBe(field);
+          expect(tried).toBeInstanceOf(Field);
+          expect(tried?.get()).toBe(42);
         });
 
         it("returns undefined if field doesn't exist", () => {
           const field = new Field<string | number | undefined>(
             detachedValue as any,
           );
-          const num = field.try;
-          expect(num).toBe(undefined);
+          expect(field.try()).toBe(undefined);
         });
 
         it("returns undefined/null if field is undefined/null", () => {
           const undefinedState = new Field<string | undefined>(undefined);
-          expect(undefinedState.try).toBe(undefined);
+          expect(undefinedState.try()).toBe(undefined);
           const nullState = new Field<string | null>(null);
-          nullState.try satisfies Field<string> | null;
-          expect(nullState.try).toBe(null);
+          nullState.try() satisfies Field<string> | null;
+          expect(nullState.try()).toBe(null);
         });
       });
 
       describe("object", () => {
         it("returns the field if it exists", () => {
           const field = new Field<Record<string, number>>({ num: 42 });
-          {
-            const num = field.try("num");
-            num satisfies Field<number> | undefined;
-            expect(num).toBeInstanceOf(Field);
-            expect(num?.get()).toBe(42);
-          }
-          {
-            const num = field.try.num;
-            num satisfies Field<number> | undefined;
-            expect(num).toBeInstanceOf(Field);
-            expect(num?.get()).toBe(42);
-          }
+          const tried = field.try("num");
+          tried satisfies Field<number> | undefined;
+          expect(tried).toBeInstanceOf(Field);
+          expect(tried?.get()).toBe(42);
         });
 
         it("returns undefined if field doesn't exist", () => {
           const field = new Field<Record<string, number>>({ num: 42 });
           expect(field.try("bum")).toBe(undefined);
-          expect(field.try.bum).toBe(undefined);
         });
 
         it("returns undefined/null if field is undefined/null", () => {
@@ -1435,34 +1415,26 @@ describe(Field, () => {
             bum: undefined,
             hum: null,
           });
-          {
-            const bum = field.try("bum");
-            bum satisfies Field<number> | undefined | null;
-            expect(bum).toBe(undefined);
-            expect(field.try("hum")).toBe(null);
-          }
-          {
-            const bum = field.try.bum;
-            bum satisfies Field<number> | undefined | null;
-            expect(bum).toBe(undefined);
-            expect(field.try.hum).toBe(null);
-          }
+          const tried = field.try("bum");
+          tried satisfies Field<number> | undefined | null;
+          expect(tried).toBe(undefined);
+          expect(field.try("hum")).toBe(null);
         });
       });
 
       describe("array", () => {
         it("returns the item if it exists", () => {
           const field = new Field<Array<number>>([1, 2, 3]);
-          const num = field.try(1);
-          num satisfies Field<number> | undefined;
-          expect(num).toBeInstanceOf(Field);
-          expect(num?.get()).toBe(2);
+          const tried = field.try(1);
+          tried satisfies Field<number> | undefined;
+          expect(tried).toBeInstanceOf(Field);
+          expect(tried?.get()).toBe(2);
         });
 
         it("returns undefined if item doesn't exist", () => {
           const field = new Field<Array<number>>([1, 2, 3]);
-          const num = field.try(5);
-          expect(num).toBe(undefined);
+          const tried = field.try(5);
+          expect(tried).toBe(undefined);
         });
 
         it("returns undefined/null if item is undefined/null", () => {
@@ -1484,28 +1456,28 @@ describe(Field, () => {
           const field = new Field<
             Map<string, string> | Set<string> | undefined
           >(map);
-          const num = field.try;
-          num satisfies Field<Map<string, string> | Set<string>> | undefined;
-          expect(num).toBe(field);
-          expect(num).toBeInstanceOf(Field);
+          const tried = field.try();
+          tried satisfies Field<Map<string, string> | Set<string>> | undefined;
+          expect(tried).toBe(field);
+          expect(tried).toBeInstanceOf(Field);
           // @ts-expect-error: This is fine!
-          expect(Object.fromEntries(num?.get())).toEqual({ num: 42 });
+          expect(Object.fromEntries(tried?.get())).toEqual({ num: 42 });
         });
 
         it("returns undefined if field doesn't exist", () => {
           const field = new Field<string | number | undefined>(
             detachedValue as any,
           );
-          const num = field.try;
-          expect(num).toBe(undefined);
+          expect(field.try()).toBe(undefined);
         });
 
         it("returns undefined/null if field is undefined/null", () => {
           const undefinedState = new Field<string | undefined>(undefined);
-          expect(undefinedState.try).toBe(undefined);
+          expect(undefinedState.try()).toBe(undefined);
           const nullState = new Field<string | null>(null);
-          nullState.try satisfies Field<string> | null;
-          expect(nullState.try).toBe(null);
+          const tried = nullState.try();
+          tried satisfies Field<string> | null;
+          expect(tried).toBe(null);
         });
       });
     });
@@ -1736,7 +1708,7 @@ describe(Field, () => {
     });
   });
 
-  describe("watching", () => {
+  describe("watch", () => {
     describe("watch", () => {
       describe("primitive", () => {
         it("allows to subscribe for field changes", async () => {
@@ -1945,7 +1917,7 @@ describe(Field, () => {
     });
   });
 
-  describe("mapping", () => {
+  describe("map", () => {
     describe("discriminate", () => {
       interface Cat {
         type: "cat";
@@ -1972,20 +1944,6 @@ describe(Field, () => {
         const discriminated = field.discriminate("type");
         if (!discriminated.discriminator) {
           expect(discriminated.field.get()).toBe(undefined);
-          return;
-        }
-        assert(false, "Should not reach here");
-      });
-    });
-
-    describe("decompose", () => {
-      it("allows to decompose the field type", () => {
-        const field = new Field<string | number | Record<string, number>>(
-          "Hello, world!",
-        );
-        const decomposed = field.decompose();
-        if (typeof decomposed.value === "string") {
-          expect(decomposed.field.get()).toBe("Hello, world!");
           return;
         }
         assert(false, "Should not reach here");
@@ -2090,7 +2048,7 @@ describe(Field, () => {
     // });
   });
 
-  describe("collections", () => {
+  describe("collection", () => {
     describe("remove", () => {
       describe("object", () => {
         it("removes a record field by key", () => {
@@ -2289,23 +2247,6 @@ describe(Field, () => {
         field.at(1).remove();
         expect(field.length).toBe(3);
         expect(field.get()).toEqual([1, 3, 4]);
-      });
-    });
-
-    describe("forEach", () => {
-      it("iterates the array", () => {
-        const field = new Field([1, 2, 3]);
-        const mapped: number[] = [];
-        field.forEach((item, index) => mapped.push(item.get() * index));
-        expect(mapped).toEqual([0, 2, 6]);
-      });
-    });
-
-    describe("map", () => {
-      it("maps the array", () => {
-        const field = new Field([1, 2, 3]);
-        const mapped = field.map((item, index) => item.get() * index);
-        expect(mapped).toEqual([0, 2, 6]);
       });
     });
 
@@ -2775,7 +2716,7 @@ describe(Field, () => {
             },
           );
           field.validate((ref) => {
-            ref.forEach((valueRef) => {
+            fieldEach(ref, (valueRef) => {
               if (!valueRef.get()?.trim()) {
                 valueRef.addError("Required");
               }

@@ -20,4 +20,9 @@ declare global {
    * Falsy value type.
    */
   type Falsy = false | 0 | "" | Nullish;
+
+  type Static<
+    Class extends Interface & { new (...args) },
+    Interface,
+  > = InstanceType<Class>;
 }

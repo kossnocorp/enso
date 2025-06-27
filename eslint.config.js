@@ -16,7 +16,7 @@ export default defineConfig([
   },
   ...tseslint.configs.recommended,
   pluginReact.configs.flat.recommended,
-  pluginReact.configs.flat["jsx-runtime"],
+  pluginReact.configs.flat["jsx-uses-react"],
   // NOTE: Uncomment after the PR is merged:
   // https://github.com/facebook/react/pull/33455
   // reactHooks.configs["recommended-latest"],

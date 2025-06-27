@@ -6,8 +6,6 @@ import React, {
   FocusEvent,
   FocusEventHandler,
   MutableRefObject,
-  useCallback as reactUseCallback,
-  useMemo as reactUseMemo,
   RefCallback,
   useEffect,
   useRef,
@@ -24,9 +22,17 @@ import {
 } from "../change/index.ts";
 import { EventsTree } from "../events/index.ts";
 import { useRerender } from "../hooks/rerender.ts";
-import { type EnsoUtils } from "../utils.ts";
+import type { EnsoUtils as Utils } from "../utils.ts";
 import { ValidationTree } from "../validation/index.ts";
 import { FieldRef } from "./ref/index.ts";
+import type { Enso } from "../types.ts";
+import {
+  useFieldHook,
+  UseFieldHook,
+  useTypedCallback as useCallback,
+  useTypedMemo as useMemo,
+} from "./hook/index.ts";
+import { AsCollection } from "./collection/index.ts";
 
 export { FieldRef };
 
@@ -34,7 +40,22 @@ export { FieldRef };
 
 const externalSymbol = Symbol();
 
-export class Field<Payload> {
+export class Field<Payload>
+  // Static<typeof Field<unknown>, AsCollection>,
+  implements
+    Enso.InterfaceAttributes<Field.InterfaceDef<Payload>>,
+    Enso.InterfaceValueRead<Payload>,
+    Field.InterfaceValueWrite<Field.InterfaceDef<Payload>>,
+    Field.InterfaceTree<Field.InterfaceDef<Payload>>,
+    Enso.InterfaceEvents,
+    Enso.InterfaceWatch<Field.InterfaceDef<Payload>>,
+    Enso.InterfaceMap<Field.InterfaceDef<Payload>>,
+    Field.InterfaceComputed<Field.InterfaceDef<Payload>>,
+    Field.InterfaceCollection<Field.InterfaceDef<Payload>>,
+    Enso.InterfaceSystem
+{
+  //#region Static
+
   /**
    * Creates and memoizes a new field instance from the provided initial value.
    * Just like `useState`, it will not recreate the field on the value change.
@@ -84,6 +105,8 @@ export class Field<Payload> {
 
     return props.render(control, meta as any);
   }
+
+  //#endregion
 
   #id = nanoid();
   #parent?: Field.Parent<any> | undefined;
@@ -143,6 +166,12 @@ export class Field<Payload> {
     return this.#id;
   }
 
+  get parent(): Field<unknown> | undefined {
+    return this.#parent && "source" in this.#parent
+      ? this.#parent.source.parent
+      : (this.#parent?.field as Field<unknown> | undefined);
+  }
+
   get key(): string | undefined {
     if (!this.#parent) return;
     return "source" in this.#parent
@@ -158,18 +187,12 @@ export class Field<Payload> {
         : [];
   }
 
-  static nameFromPath(path: Field.Path): string {
+  static nameFromPath(path: Enso.Path): string {
     return path.join(".") || ".";
   }
 
   get name(): string {
     return Field.nameFromPath(this.path);
-  }
-
-  get parent(): Field<any> | undefined {
-    return this.#parent && "source" in this.#parent
-      ? this.#parent.source.parent
-      : this.#parent?.field;
   }
 
   //#endregion
@@ -185,9 +208,9 @@ export class Field<Payload> {
     return this.#cachedGet;
   }
 
-  useGet<Props extends Field.UseGetProps | undefined = undefined>(
+  useGet<Props extends Enso.UseGetProps | undefined = undefined>(
     props?: Props,
-  ): Field.UseGet<Payload, Props> {
+  ): Enso.UseGet<Payload, Props> {
     const watchAllMeta = !!props?.meta;
     const watchMeta = watchAllMeta || props?.valid || props?.dirty;
     const meta = this.useMeta(
@@ -208,7 +231,7 @@ export class Field<Payload> {
       ],
     );
 
-    const watch = useCallback<UseFieldHookWatch<Payload>>(
+    const watch = useCallback<UseFieldHook.Watch<Payload>>(
       ({ valueRef, rerender }) =>
         this.watch((payload, event) => {
           // React only on structural changes
@@ -224,10 +247,10 @@ export class Field<Payload> {
     );
 
     const toResult = useCallback<
-      UseFieldHookToResult<Payload, Field.UseGet<Payload, Props>>
+      UseFieldHook.ToResult<Payload, Enso.UseGet<Payload, Props>>
     >(
       (result) =>
-        (watchMeta ? [result, meta] : result) as Field.UseGet<Payload, Props>,
+        (watchMeta ? [result, meta] : result) as Enso.UseGet<Payload, Props>,
       [meta, watchMeta],
     );
 
@@ -236,7 +259,11 @@ export class Field<Payload> {
       getValue,
       watch,
       toResult,
-    }) as Field.UseGet<Payload, Props>;
+    }) as Enso.UseGet<Payload, Props>;
+  }
+
+  get initial(): Payload {
+    return this.#initial;
   }
 
   // NOTE: Since `Field.useEnsure` freezes the dummy field but still allows
@@ -251,6 +278,7 @@ export class Field<Payload> {
   }
 
   // TODO: Exposing the notify parents flag might be dangerous
+  // TODO: Share interface with set
   set<Value extends Payload | DetachedValue>(
     value: Value,
     notifyParents = true,
@@ -291,38 +319,7 @@ export class Field<Payload> {
     return changes;
   }
 
-  get initial(): Payload {
-    return this.#initial;
-  }
-
   #cachedDirty: boolean | undefined;
-
-  get dirty(): boolean {
-    if (this.#parent && "source" in this.#parent)
-      return this.#parent.source.dirty;
-
-    if (this.#cachedDirty === undefined)
-      this.#cachedDirty = this.#internal.dirty(this.#initial);
-    return this.#cachedDirty;
-  }
-
-  useDirty<Enable extends boolean | undefined = undefined>(
-    enable?: Enable,
-  ): Field.ToggleableResult<Enable, boolean> {
-    const getValue = useCallback(
-      () => this.dirty,
-      [
-        // eslint-disable-next-line react-hooks/exhaustive-deps -- It can't handle this
-        this,
-      ],
-    );
-
-    return useFieldHook({
-      enable,
-      field: this as Field<any>,
-      getValue,
-    });
-  }
 
   commit() {
     this.#commit(this.get());
@@ -348,16 +345,6 @@ export class Field<Payload> {
     // reproduce it fully in tests, so it still needs to be done.
   }
 
-  // TODO: Add tests
-  reset() {
-    const newInitial = this.#initial;
-    this.set(newInitial);
-    this.#commit(newInitial, false);
-
-    // TODO: Add tests for the new approach, before it was (see `commit`):
-    //   this.set(this.#initial);
-  }
-
   // TODO: Add tests for this new approach
   #commit(newInitial: Payload, notify = true) {
     const wasDirty = notify && this.dirty;
@@ -367,7 +354,7 @@ export class Field<Payload> {
       this.#internal instanceof InternalObjectState ||
       this.#internal instanceof InternalArrayState
     ) {
-      this.#internal.forEach((field: any, key: any) =>
+      this.#internal.each((field: any, key: any) =>
         // @ts-ignore: TODO:
         field.#commit(newInitial[key], notify),
       );
@@ -375,6 +362,16 @@ export class Field<Payload> {
     this.#clearCache();
 
     if (notify && wasDirty) this.trigger(change.field.commit, true);
+  }
+
+  // TODO: Add tests
+  reset() {
+    const newInitial = this.#initial;
+    this.set(newInitial);
+    this.#commit(newInitial, false);
+
+    // TODO: Add tests for the new approach, before it was (see `commit`):
+    //   this.set(this.#initial);
   }
 
   /**
@@ -396,6 +393,46 @@ export class Field<Payload> {
 
   //#endregion
 
+  //#region Meta
+
+  get dirty(): boolean {
+    if (this.#parent && "source" in this.#parent)
+      return this.#parent.source.dirty;
+
+    if (this.#cachedDirty === undefined)
+      this.#cachedDirty = this.#internal.dirty(this.#initial);
+    return this.#cachedDirty;
+  }
+
+  useDirty<Enable extends boolean | undefined = undefined>(
+    enable?: Enable,
+  ): Enso.ToggleableResult<Enable, boolean> {
+    const getValue = useCallback(
+      () => this.dirty,
+      [
+        // eslint-disable-next-line react-hooks/exhaustive-deps -- It can't handle this
+        this,
+      ],
+    );
+
+    return useFieldHook({
+      enable,
+      field: this as Field<any>,
+      getValue,
+    }) as Enso.ToggleableResult<Enable, boolean>;
+  }
+
+  useMeta<Props extends Enso.UseMetaProps | undefined = undefined>(
+    props?: Props,
+  ): Enso.Meta<Props> {
+    const valid = this.useValid(!props || !!props.valid);
+    const errors = this.useErrors(!props || !!props.errors);
+    const dirty = this.useDirty(!props || !!props.dirty);
+    return { valid, errors, dirty } as Enso.Meta<Props>;
+  }
+
+  //#endregion
+
   //#region Tree
 
   get root(): Field<unknown> {
@@ -408,23 +445,31 @@ export class Field<Payload> {
     return this.#internal.$();
   }
 
-  at<Key extends keyof Payload | undefined>(
-    key: Payload extends object ? Key : never,
-    // @ts-ignore: TODO:
-  ): Payload extends object ? Field.At<Payload, Key> : void {
+  // @ts-ignore: DO
+  at<Key extends keyof Payload>(key: Key): Field.At<Payload, Key> {
     if (
       this.#internal instanceof InternalObjectState ||
       this.#internal instanceof InternalArrayState
     )
       // @ts-ignore: TODO:
       return this.#internal.at(key);
+    // DO:
+    // throw new Error(
+    //   `Field at ${this.path.join(".")} is not an object or array`,
+    // );
   }
 
-  get try(): Field.Try<Payload> {
-    return this.#internal.try();
+  try(): Enso.TryUnion<Field.InterfaceDef<Payload>>;
+
+  try<Key extends keyof NonNullish<Payload>>(
+    key: Key,
+  ): Field.TryKey<Field.InterfaceDef<Payload>, Key>;
+
+  try(key?: any): any {
+    return this.#internal.try(key);
   }
 
-  lookup(path: Field.LookupPath): Field<unknown> | undefined {
+  lookup(path: Enso.Path): Field<unknown> | undefined {
     return this.#internal.lookup(path);
   }
 
@@ -515,9 +560,9 @@ export class Field<Payload> {
 
   //#endregion
 
-  //#region Watching
+  //#region Watch
 
-  watch(callback: Field.WatchCallback<Payload>, sync = false): Field.Unwatch {
+  watch(callback: Enso.WatchCallback<Payload>, sync = false): Enso.Unwatch {
     // TODO: Add tests for this
     const target = sync ? this.#syncTarget : this.#batchTarget;
     const handler = (event: Event) => {
@@ -533,7 +578,7 @@ export class Field<Payload> {
     };
   }
 
-  useWatch(callback: Field.WatchCallback<Payload>): void {
+  useWatch(callback: Enso.WatchCallback<Payload>): void {
     // Preserve id to detected the active field swap.
     const idRef = useRef(this.id);
 
@@ -572,21 +617,12 @@ export class Field<Payload> {
     return this as unknown as BoundField<Payload>;
   }
 
-  useMeta<Props extends Field.UseMetaProps | undefined = undefined>(
-    props?: Props,
-  ): Field.Meta<Props> {
-    const valid = this.useValid(!props || !!props.valid);
-    const errors = this.useErrors(!props || !!props.errors);
-    const dirty = this.useDirty(!props || !!props.dirty);
-    return { valid, errors, dirty } as Field.Meta<Props>;
-  }
-
   //#endregion
 
-  //#region Mapping
+  //#region Map
 
   useCompute<Computed>(
-    callback: Field.ComputeCallback<Payload, Computed>,
+    callback: Enso.ComputeCallback<Payload, Computed>,
     deps: DependencyList,
   ): Computed {
     const getValue = useCallback(
@@ -599,40 +635,6 @@ export class Field<Payload> {
       field: this as Field<any>,
       getValue,
     }) as Computed;
-  }
-
-  decompose(): Field.Decomposed<Payload> {
-    return {
-      value: this.get(),
-      field: this,
-    } as unknown as Field.Decomposed<Payload>;
-  }
-
-  useDecompose(
-    callback: Field.DecomposeCallback<Payload>,
-    deps: DependencyList,
-  ): Field.Decomposed<Payload> {
-    const getValue = useCallback(
-      () => this.decompose(),
-      [
-        // eslint-disable-next-line react-hooks/exhaustive-deps -- It can't handle this
-        this,
-      ],
-    );
-
-    const shouldRender = useCallback<
-      UseFieldHookShouldRender<Field.Decomposed<Payload>>
-    >(
-      (prev, next) => !!prev && callback(next.value, prev.value),
-      // eslint-disable-next-line react-hooks/exhaustive-deps -- It can't handle this
-      deps,
-    );
-
-    return useFieldHook({
-      field: this as Field<any>,
-      getValue,
-      shouldRender,
-    }) as Field.Decomposed<Payload>;
   }
 
   discriminate<Discriminator extends keyof NonUndefined<Payload>>(
@@ -658,7 +660,7 @@ export class Field<Payload> {
     );
 
     const shouldRender = useCallback<
-      UseFieldHookShouldRender<Field.Discriminated<Payload, Discriminator>>
+      UseFieldHook.ShouldRender<Field.Discriminated<Payload, Discriminator>>
     >((prev, next) => prev?.discriminator !== next.discriminator, []);
 
     return useFieldHook({
@@ -751,7 +753,7 @@ export class Field<Payload> {
    * Initiates a computed field builder. It accepts mapper function that
    * transforms the current field value into another.
    *
-   * The returned builder {@link Into} with `from` method allows to define how
+   * The returned builder {@link IntoObj} with `from` method allows to define how
    * the computed value is transformed back into the original and returns
    * the computed field.
    *
@@ -760,8 +762,8 @@ export class Field<Payload> {
    * @returns Builder object with `from` method
    */
   into<ComputedValue>(
-    intoMapper: ComputedField.Into<Payload, ComputedValue>,
-  ): Field.Into<Payload, ComputedValue> {
+    intoMapper: Field.IntoCallback<Payload, ComputedValue>,
+  ): Field.IntoObj<Payload, ComputedValue> {
     return {
       from: (fromMapper) => new ComputedField(this, intoMapper, fromMapper),
     };
@@ -769,13 +771,13 @@ export class Field<Payload> {
 
   // TODO: Add tests
   useInto<Computed>(
-    intoMapper: ComputedField.Into<Payload, Computed>,
+    intoCallback: Field.IntoCallback<Payload, Computed>,
     intoDeps: DependencyList,
   ): Field.IntoHook<Payload, Computed> {
     const from = useCallback<Field.FromHook<Payload, Computed>>(
-      (fromMapper, fromDeps) => {
+      (fromCallback, fromDeps) => {
         const computed = useMemo(
-          () => new ComputedField(this, intoMapper, fromMapper),
+          () => new ComputedField(this, intoCallback, fromCallback),
           // eslint-disable-next-line react-hooks/exhaustive-deps -- We control `intoMapper` and `fromMapper` via `intoDeps` and `fromDeps`.
           [this, ...intoDeps, ...fromDeps],
         );
@@ -790,23 +792,72 @@ export class Field<Payload> {
 
   //#endregion
 
-  //#region Collections
+  //#region Collection
 
-  forEach: Field.ForEachFn<Payload> = ((callback: any) => {
+  static asCollection<Value>(field: Field<Value>): AsCollection.Result<Value> {
     if (
-      this.#internal instanceof InternalObjectState ||
-      this.#internal instanceof InternalArrayState
+      field.#internal instanceof InternalObjectState ||
+      field.#internal instanceof InternalArrayState
     )
-      this.#internal.forEach(callback);
-  }) as Field.ForEachFn<Payload>;
+      return field.#internal as any;
+  }
 
-  map: Field.MapFn<Payload> = ((callback: any) => {
+  static asArray<Value>(
+    field: Field<Value>,
+  ): AsCollection.AsArrayResult<Value> {
+    if (field.#internal instanceof InternalArrayState)
+      return field.#internal as any;
+  }
+
+  static fromField<Value>(field: Field<Value>): Field<Value> {
+    return field;
+  }
+
+  static each<Value extends Array<unknown>>(
+    field: Field<Value>,
+    callback: Field.CollectionCallbackArray<Value>,
+  ): void;
+
+  static each<Value extends object>(
+    field: Field<Value>,
+    callback: Field.CollectionCallbackObjectPair<Value>,
+  ): void;
+
+  static each<Value extends object>(
+    field: Field<Value>,
+    callback: Field.CollectionCallbackObjectSingle<Value>,
+  ): void;
+
+  static each(field: Field<any>, callback: (...args: any) => void): void {
     if (
-      this.#internal instanceof InternalObjectState ||
-      this.#internal instanceof InternalArrayState
+      field.#internal instanceof InternalObjectState ||
+      field.#internal instanceof InternalArrayState
     )
-      return this.#internal.map(callback);
-  }) as Field.MapFn<Payload>;
+      field.#internal.each(callback);
+  }
+
+  static map<Value extends Array<unknown>, Result>(
+    field: Field<Value>,
+    callback: Field.CollectionCallbackArray<Value, Result>,
+  ): Result[];
+
+  static map<Value extends object, Result>(
+    field: Field<Value>,
+    callback: Field.CollectionCallbackObjectPair<Value, Result>,
+  ): Result[];
+
+  static map<Value extends object, Result>(
+    field: Field<Value>,
+    callback: Field.CollectionCallbackObjectSingle<Value, Result>,
+  ): Result[];
+
+  static map(field: Field<any>, callback: (...args: any) => void): any {
+    if (
+      field.#internal instanceof InternalObjectState ||
+      field.#internal instanceof InternalArrayState
+    )
+      return field.#internal.map(callback);
+  }
 
   // @ts-ignore: This is fine
   push: Payload extends Array<infer Item> ? (item: Item) => number : never = (
@@ -891,7 +942,7 @@ export class Field<Payload> {
   }
 
   #element: HTMLElement | null = null;
-  #elementUnwatch: Field.Unwatch | undefined;
+  #elementUnwatch: Enso.Unwatch | undefined;
   #customRef:
     | RefCallback<Element>
     | MutableRefObject<Element | null>
@@ -961,7 +1012,7 @@ export class Field<Payload> {
       ],
     );
 
-    const shouldRender = useCallback<UseFieldHookShouldRender<Field.Error[]>>(
+    const shouldRender = useCallback<UseFieldHook.ShouldRender<Field.Error[]>>(
       (prev, next) =>
         !(
           next === prev ||
@@ -1027,7 +1078,7 @@ export class Field<Payload> {
 
   useValid<Enable extends boolean | undefined = undefined>(
     enable?: Enable,
-  ): Field.ToggleableResult<Enable, undefined> {
+  ): Enso.ToggleableResult<Enable, undefined> {
     const getValue = useCallback(
       () => this.valid,
       [
@@ -1087,6 +1138,8 @@ export class Field<Payload> {
 
   //#endregion
 
+  //#region External
+
   #external = {
     move: (newKey: string) => {
       always(this.#parent && "field" in this.#parent);
@@ -1110,40 +1163,91 @@ export class Field<Payload> {
   get [externalSymbol]() {
     return this.#external;
   }
+
+  //#endregion
 }
 
 export namespace Field {
-  //#region Types
+  //#region Interfaces
 
-  export type Path = readonly string[];
+  export type InterfaceDef<Payload> = {
+    Payload: Payload;
+    Unknown: Field<unknown>;
+    NonNullish: Field<NonNullish<Payload>>;
+    Bound: BoundField<Payload>;
+  };
 
-  //#endregion
-
-  //#region Value
-
-  export interface UseGetProps extends UseMetaProps {
-    meta?: boolean | undefined;
+  export interface InterfaceValueWrite<Def extends Enso.InterfaceDef>
+    extends Enso.InterfaceValueWrite<Def> {
+    set<Value extends Def["Payload"] | DetachedValue>(
+      value: Value,
+      notifyParents?: boolean,
+    ): Field<Def["Payload"] & Value>;
   }
 
-  export type UseGet<Payload, Props extends UseGetProps | undefined> =
-    UseGetIncludeMeta<Props> extends true
-      ? [Payload, Props extends { meta: true } ? Meta<undefined> : Meta<Props>]
-      : Payload;
+  export interface InterfaceTree<Def extends Enso.InterfaceDef>
+    extends Enso.InterfaceTree<Def> {
+    get $(): $<Def["Payload"]>;
 
-  export type UseGetIncludeMeta<Props extends UseGetProps | undefined> =
-    undefined extends Props
-      ? false
-      : Props extends UseGetProps
-        ? Props["meta"] extends true
-          ? true
-          : Props["meta"] extends false
-            ? false
-            : Props["valid"] extends true
-              ? true
-              : Props["dirty"] extends true
-                ? true
-                : false
-        : false;
+    at<Key extends keyof Def["Payload"]>(key: Key): At<Def["Payload"], Key>;
+
+    try(): Enso.TryUnion<Def>;
+
+    try<Key extends keyof NonNullish<Def["Payload"]>>(
+      key: Key,
+    ): Field.TryKey<Field.InterfaceDef<Def["Payload"]>, Key>;
+  }
+
+  export interface InterfaceMap<Def extends Enso.InterfaceDef>
+    extends Enso.InterfaceMap<Def> {
+    // DO: Figure out variants-returned methods!
+    //
+    // decompose(): Decomposed<Def["Payload"]>;
+    //
+    // useDecompose(
+    //   callback: DecomposeCallback<Def["Payload"]>,
+    //   deps: DependencyList,
+    // ): Decomposed<Def["Payload"]>;
+    //
+    // discriminate<Discriminator extends keyof NonUndefined<Def["Payload"]>>(
+    //   discriminator: Discriminator,
+    // ): Field.Discriminated<Def["Payload"], Discriminator>;
+    //
+    // useDiscriminate<
+    //   Discriminator extends Field.DiscriminatorKey<Def["Payload"]>,
+    // >(
+    //   discriminator: Discriminator,
+    // ): Field.Discriminated<Def["Payload"], Discriminator>;
+    //
+    // narrow<Narrowed extends Def["Payload"]>(
+    //   callback: NarrowCallback<Def["Payload"], Narrowed>,
+    // ): Field<Narrowed> | undefined;
+    //
+    // useNarrow<Narrowed extends Def["Payload"]>(
+    //   callback: NarrowCallback<Def["Payload"], Narrowed>,
+    //   // TODO: Add tests
+    //   deps: DependencyList,
+    // ): Field<Narrowed> | undefined;
+    //
+    // widen<Wide>(): Field<Def["Payload"] | Wide>;
+  }
+
+  export interface InterfaceComputed<Def extends Enso.InterfaceDef>
+    extends Enso.InterfaceComputed {
+    into<ComputedValue>(
+      intoMapper: IntoCallback<Def["Payload"], ComputedValue>,
+    ): Field.IntoObj<Def["Payload"], ComputedValue>;
+
+    useInto<Computed>(
+      intoMapper: IntoCallback<Def["Payload"], Computed>,
+      intoDeps: DependencyList,
+    ): Field.IntoHook<Def["Payload"], Computed>;
+  }
+
+  export interface InterfaceCollection<Def extends Enso.InterfaceDef>
+    extends Enso.InterfaceCollection {
+    // forEach: Field.ForEachFn<Def["Payload"]>;
+  }
 
   //#endregion
 
@@ -1166,121 +1270,30 @@ export namespace Field {
 
   export type $Object<Payload> = {
     [Key in keyof Payload]-?: Field<
-      EnsoUtils.IsStaticKey<Payload, Key> extends true
+      Utils.IsStaticKey<Payload, Key> extends true
         ? Payload[Key]
         : Payload[Key] | undefined
     >;
   };
 
-  export type AtFn<Payload> = Payload extends object
-    ? <Key extends keyof Payload>(key: Key) => At<Payload, Key>
-    : (key: never) => never;
+  export type At<Payload, Key extends keyof Payload> =
+    Utils.IsStaticKey<Payload, Key> extends true
+      ? Field<Payload[Key]>
+      : Field<Payload[Key] | undefined>;
 
-  export type At<
-    Payload,
-    Key extends keyof Payload | undefined,
-  > = Key extends keyof Payload
-    ? Field<
-        EnsoUtils.IsStaticKey<Payload, Key> extends true
-          ? Payload[Key]
-          : Payload[Key] | undefined
-      >
-    : Field<undefined>;
-
-  export type Try<Payload> = [Payload] extends [object]
-    ? TryObject<Payload>
-    : TryState<Payload>;
-
-  export type TryObject<Payload> = TryFn<Payload> & {
-    [Key in keyof Payload]-?: TryState<
-      EnsoUtils.IsStaticKey<Payload, Key> extends true
-        ? Payload[Key]
-        : Payload[Key] | undefined
-    >;
-  };
-
-  export type TryFn<Payload> = <Key extends keyof Payload>(
-    key: Key,
-  ) => TryState<
-    EnsoUtils.IsStaticKey<Payload, Key> extends true
-      ? Payload[Key]
-      : Payload[Key] | undefined
-  >;
-
-  export type TryState<Payload> =
-    // Add null to the union
-    | (null extends Payload ? null : never)
-    // Add undefined to the union
-    | (undefined extends Payload ? undefined : never)
-    // Resolve field without null or undefined
-    | Field<NonNullish<Payload>>;
-
-  export type LookupPath = readonly (string | number)[];
+  export type TryKey<
+    Def extends Enso.InterfaceDef,
+    Key extends keyof NonNullish<Def["Payload"]>,
+  > =
+    | Enso.TryUnion<InterfaceDef<NonNullish<Def["Payload"]>[Key]>>
+    // Add undefined if the key is not static (i.e. a record key).
+    | (Utils.IsStaticKey<NonNullish<Def["Payload"]>, Key> extends true
+        ? never
+        : undefined);
 
   //#endregion
 
-  //#region Watching
-
-  export type WatchCallback<Payload> = (
-    payload: Payload,
-    event: ChangesEvent,
-  ) => void;
-
-  export type Unwatch = () => void;
-
-  export interface UseMetaProps {
-    valid?: boolean | undefined;
-    errors?: boolean | undefined;
-    dirty?: boolean | undefined;
-  }
-
-  export type Meta<Props extends UseMetaProps | undefined> =
-    Props extends UseMetaProps
-      ? {
-          valid: MetaEnable<Props["valid"], boolean>;
-          errors: MetaEnable<Props["errors"], Error[]>;
-          dirty: MetaEnable<Props["dirty"], boolean>;
-        }
-      : {
-          valid: boolean;
-          errors: Error[];
-          dirty: boolean;
-        };
-
-  export type MetaEnable<Enable, Payload> = Enable extends true
-    ? Payload
-    : Enable extends false
-      ? undefined
-      : Enable extends boolean
-        ? Payload | undefined
-        : Enable extends undefined
-          ? undefined
-          : never;
-
-  //#endregion
-
-  //#region Mapping
-
-  export type ToggleableResult<
-    Enable extends boolean | undefined,
-    Type,
-  > = Enable extends true | undefined ? Type | undefined : undefined;
-
-  export type ComputeCallback<Payload, Computed> = (
-    payload: Payload,
-  ) => Computed;
-
-  export type Decomposed<Payload> = Payload extends Payload
-    ? {
-        value: Payload;
-        field: Field<Payload>;
-      }
-    : never;
-
-  export type DecomposeCallback<Payload> = (
-    newPayload: Payload,
-    prevPayload: Payload,
-  ) => boolean;
+  //#region Map
 
   export type Discriminated<
     Payload,
@@ -1332,8 +1345,8 @@ export namespace Field {
 
   //#region Computed
 
-  export interface Into<Value, ComputedValue> {
-    from: From<Value, ComputedValue>;
+  export interface IntoObj<Value, ComputedValue> {
+    from: FromFn<Value, ComputedValue>;
   }
 
   export interface IntoHook<Value, ComputedValue> {
@@ -1348,9 +1361,9 @@ export namespace Field {
    *
    * @returns Computed field
    */
-  export interface From<Value, ComputedValue> {
+  export interface FromFn<Value, ComputedValue> {
     (
-      mapper: ComputedField.From<Value, ComputedValue>,
+      mapper: FromCallback<Value, ComputedValue>,
     ): ComputedField<Value, ComputedValue>;
   }
 
@@ -1365,50 +1378,80 @@ export namespace Field {
    */
   export interface FromHook<Value, ComputedValue> {
     (
-      mapper: ComputedField.From<Value, ComputedValue>,
+      mapper: FromCallback<Value, ComputedValue>,
       deps: DependencyList,
     ): ComputedField<Value, ComputedValue>;
   }
 
+  export type IntoCallback<Value, ComputedValue> = (
+    value: Value,
+    computedValue: ComputedValue | undefined,
+  ) => ComputedValue;
+
+  export type FromCallback<Value, ComputedValue> = (
+    computedValue: ComputedValue,
+    value: Value,
+  ) => Value;
+
   //#endregion
 
-  //#region Collections
+  //#region Collection
 
-  export type ForEachFn<Payload> =
-    Payload extends Array<any>
-      ? ArrayForEach<Payload>
-      : Payload extends object
-        ? ObjectForEach<Payload>
-        : (cb: never) => never;
+  export type CollectionCallbackArray<
+    Value extends Array<unknown>,
+    Result = void,
+  > = (item: CollectionCallbackArrayItem<Value>, index: number) => Result;
 
-  export type ObjectForEach<Payload extends object> = (
-    callback: <Key extends keyof Payload>(
-      item: Field<Payload[Key]>,
-      key: Key,
-    ) => void,
-  ) => void;
+  export type CollectionCallbackArrayItem<Value extends Array<unknown>> =
+    Value extends Array<infer Item>
+      ? Item extends Item
+        ? Field<Item>
+        : never
+      : never;
 
-  export type ArrayForEach<Payload extends Array<any>> = (
-    callback: (item: Field<Payload[number]>, index: number) => void,
-  ) => void;
+  export type CollectionCallbackObjectPair<
+    Value extends object,
+    Result = void,
+  > = (
+    // Exclude is needed to remove undefined that appears when there're optional
+    // fields in the object.
+    ...args: Exclude<
+      { [Key in keyof Value]: [Field<Value[Key]>, Key] }[keyof Value],
+      undefined
+    >
+  ) => Result;
 
-  export type MapFn<Payload> =
-    Payload extends Array<any>
-      ? ArrayMap<Payload>
-      : Payload extends object
-        ? ObjectMap<Payload>
-        : (cb: never) => never;
+  export type CollectionCallbackObjectSingle<
+    Value extends object,
+    Result = void,
+  > = (
+    // Exclude is needed to remove undefined that appears when there're optional
+    // fields in the object.
+    item: Exclude<
+      { [Key in keyof Value]: Field<Value[Key]> }[keyof Value],
+      undefined
+    >,
+  ) => Result;
 
-  export type ObjectMap<Payload extends object> = <Return>(
-    callback: <Key extends keyof Payload>(
-      item: Field<Payload[Key]>,
-      key: Key,
-    ) => Return,
-  ) => Return[];
+  type Test1 = CollectionCallbackObjectPair<{
+    a: string;
+    b: number;
+  }>;
 
-  export type ArrayMap<Payload extends Array<any>> = <Return>(
-    callback: (item: Field<Payload[number]>, index: number) => Return,
-  ) => Return[];
+  type Test2 = CollectionCallbackObjectPair<{
+    a: string;
+    b?: number;
+  }>;
+
+  export type AsCollection<Value> =
+    Value extends Array<any>
+      ? InternalArrayState<Value>
+      : Value extends object
+        ? InternalObjectState<Value>
+        : undefined;
+
+  export type AsArray<Value> =
+    Value extends Array<any> ? InternalArrayState<Value> : undefined;
 
   export type RemoveFn<Payload> = Payload extends object
     ? ObjectRemoveFn<Payload>
@@ -1437,9 +1480,9 @@ export namespace Field {
   export interface ObjectRemoveFn<Payload extends object> {
     (): Field<Payload>;
 
-    <Key extends EnsoUtils.OptionalKeys<Payload>>(key: Key): At<Payload, Key>;
+    <Key extends Utils.OptionalKeys<Payload>>(key: Key): At<Payload, Key>;
 
-    <Key extends EnsoUtils.IndexedKeys<Payload>>(key: Key): At<Payload, Key>;
+    <Key extends Utils.IndexedKeys<Payload>>(key: Key): At<Payload, Key>;
   }
 
   //#endregion
@@ -1478,8 +1521,11 @@ export namespace Field {
 
   export type InputRender<
     Payload,
-    InputMetaProps extends UseMetaProps | undefined,
-  > = (input: Input<Payload>, meta: Meta<InputMetaProps>) => React.ReactNode;
+    InputMetaProps extends Enso.UseMetaProps | undefined,
+  > = (
+    input: Input<Payload>,
+    meta: Enso.Meta<InputMetaProps>,
+  ) => React.ReactNode;
 
   export type Input<Payload> = {
     name: string;
@@ -1526,6 +1572,55 @@ export namespace Field {
 
 //#endregion
 
+//#region Field Declarations
+
+declare module "./collection/index.ts" {
+  // `each`
+
+  interface FieldEach {
+    <Value extends unknown[]>(
+      field: Field<Value>,
+      callback: Field.CollectionCallbackArray<Value>,
+    ): void;
+
+    // NOTE: We have to have two separate overloads for objects as with
+    // the current approach binding the key and value in the arguments on the
+    // type level, TypeScript fails to find the correct overload for when
+    // the callback accepts a single argument (i.e. the item field), TODO...
+
+    <Value extends object>(
+      field: Field<Value>,
+      callback: Field.CollectionCallbackObjectPair<Value>,
+    ): void;
+
+    <Value extends object>(
+      field: Field<Value>,
+      callback: Field.CollectionCallbackObjectSingle<Value>,
+    ): void;
+  }
+
+  // `map`
+
+  interface FieldMap {
+    <Value extends Array<unknown>, Result>(
+      field: Field<Value>,
+      callback: Field.CollectionCallbackArray<Value, Result>,
+    ): Result[];
+
+    <Value extends object, Result>(
+      field: Field<Value>,
+      callback: Field.CollectionCallbackObjectPair<Value, Result>,
+    ): Result[];
+
+    <Value extends object, Result>(
+      field: Field<Value>,
+      callback: Field.CollectionCallbackObjectSingle<Value, Result>,
+    ): Result[];
+  }
+}
+
+//#endregion
+
 //#region ComputedField
 
 // NOTE: We have to keep `ComputedField` in the same file as `Field` to avoid
@@ -1535,14 +1630,14 @@ export namespace Field {
 export class ComputedField<Payload, Computed> extends Field<Computed> {
   #source: Field<Payload>;
   #brand: symbol = Symbol();
-  #into: ComputedField.Into<Payload, Computed>;
-  #from: ComputedField.From<Payload, Computed>;
-  #unsubs: Field.Unwatch[] = [];
+  #into: Field.IntoCallback<Payload, Computed>;
+  #from: Field.FromCallback<Payload, Computed>;
+  #unsubs: Enso.Unwatch[] = [];
 
   constructor(
     source: Field<Payload>,
-    into: ComputedField.Into<Payload, Computed>,
-    from: ComputedField.From<Payload, Computed>,
+    into: Field.IntoCallback<Payload, Computed>,
+    from: Field.FromCallback<Payload, Computed>,
   ) {
     const payload = into(source.get(), undefined);
     super(payload, { source: source as any });
@@ -1634,27 +1729,15 @@ export class ComputedField<Payload, Computed> extends Field<Computed> {
   //#endregion
 }
 
-export namespace ComputedField {
-  export type Into<Value, ComputedValue> = (
-    value: Value,
-    computedValue: ComputedValue | undefined,
-  ) => ComputedValue;
-
-  export type From<Value, ComputedValue> = (
-    computedValue: ComputedValue,
-    value: Value,
-  ) => Value;
-}
+export namespace ComputedField {}
 
 //#endregion
 
 //#region BoundField
 
-export interface BoundField<Payload> extends Field<Payload> {
-  [boundBrand]: true;
-}
-
-declare const boundBrand: unique symbol;
+export interface BoundField<Payload>
+  extends Field<Payload>,
+    Enso.InterfaceBound {}
 
 //#endregion
 
@@ -1692,9 +1775,19 @@ export abstract class InternalState<Payload> {
 
   abstract $(): Field.$<Payload>;
 
-  abstract try(): Field.Try<Payload>;
+  try(): Enso.TryUnion<Field.InterfaceDef<Payload>>;
 
-  abstract lookup(path: Field.LookupPath): Field<unknown> | undefined;
+  try<Key extends keyof Payload>(
+    key: Key,
+  ): Field.TryKey<Field.InterfaceDef<Payload>, Key>;
+
+  try(): any {
+    const value = this.get();
+    if (value === undefined || value === null) return value;
+    return this.external;
+  }
+
+  abstract lookup(path: Enso.Path): Field<unknown> | undefined;
 
   //#endregion
 
@@ -1758,14 +1851,7 @@ export class InternalValueState<Payload> extends InternalState<Payload> {
     return undefined as Field.$<Payload>;
   }
 
-  try(): Field.Try<Payload> {
-    const value = this.get();
-    if (value === undefined || value === null)
-      return value as Field.Try<Payload>;
-    return this.external as Field.Try<Payload>;
-  }
-
-  lookup(path: Field.LookupPath): Field<unknown> | undefined {
+  lookup(path: Enso.Path): Field<unknown> | undefined {
     if (path.length === 0) return this.external as any;
     return undefined;
   }
@@ -1859,7 +1945,7 @@ export class InternalObjectState<
     return this.#$field(String(key)) as Field.At<Payload, Key>;
   }
 
-  lookup(path: Field.LookupPath): Field<unknown> | undefined {
+  lookup(path: Enso.Path): Field<unknown> | undefined {
     if (path.length === 0) return this.external as any;
     const [key, ...restPath] = path;
     return this.#$field(String(key))?.lookup(restPath);
@@ -1874,22 +1960,12 @@ export class InternalObjectState<
     return this.#undefined.ensure(key);
   }
 
-  try(): Field.Try<Payload> {
-    return this.#try;
-  }
-
-  #try = new Proxy((() => {}) as unknown as Field.Try<Payload>, {
-    apply: (_, __, [key]: [string]) => this.#tryField(key),
-    get: (_, key: string) => this.#tryField(key),
-  });
-
-  #tryField(key: string) {
-    const field = this.#children.get(key);
-    if (field) {
-      const value = field.get();
-      if (value === undefined || value === null) return value;
+  override try(key?: string): any {
+    if (key !== undefined && key !== null) {
+      return this.#children.get(key)?.try();
+    } else {
+      return this.external;
     }
-    return field;
   }
 
   override childUpdate(childChanges: FieldChange, key: string): FieldChange {
@@ -1951,37 +2027,32 @@ export class InternalObjectState<
     this.#children.forEach((field) => field.unleash());
   }
 
-  //#region Array methods
+  //#region Collection
 
-  forEach(
-    callback: <Key extends keyof Payload>(
-      item: Field<Payload[Key]>,
-      index: Key,
-    ) => void,
-  ) {
-    this.#children.forEach((field, key) =>
-      // @ts-ignore: TODO:
-      callback(field, key as keyof Payload),
-    );
+  each(callback: InternalObjectState.CollectionCallback<Payload>) {
+    this.#children.forEach((field, key) => (callback as any)(field, key));
   }
 
-  map<Return>(
-    callback: <Key extends keyof Payload>(
-      item: Field<Payload[Key]>,
-      index: Key,
-    ) => Return,
-  ): Return[] {
-    // @ts-ignore: TODO:
-    const result = [];
+  map<Result>(
+    callback: InternalObjectState.CollectionCallback<Payload, Result>,
+  ): Result[] {
+    const result: Result[] = [];
     this.#children.forEach((field, key) =>
-      // @ts-ignore: TODO:
-      result.push(callback(field, key as keyof Payload)),
+      result.push((callback as any)(field, key as keyof Payload)),
     );
-    // @ts-ignore: TODO:
     return result;
   }
 
   //#endregion
+}
+
+export namespace InternalObjectState {
+  export type CollectionCallback<Value extends object, Result = void> = <
+    Key extends keyof Value,
+  >(
+    item: Field<Value[Key]>,
+    key: Key,
+  ) => Result;
 }
 
 //#endregion
@@ -2069,26 +2140,15 @@ export class InternalArrayState<
     return this.#undefined.ensure(indexStr);
   }
 
-  try(): Field.Try<Payload> {
-    return this.#try;
-  }
-
-  #try = new Proxy((() => {}) as unknown as Field.Try<Payload>, {
-    apply: (_, __, [index]: [number]) => this.#tryItem(index),
-    // @ts-ignore: TODO:
-    get: (_, index: number) => this.#tryItem(index),
-  });
-
-  #tryItem(index: number) {
-    const field = this.#children[index];
-    if (field) {
-      const value = field.get();
-      if (value === undefined || value === null) return value;
+  override try(index?: number): any {
+    if (index !== undefined && index !== null) {
+      return this.#item(index)?.try();
+    } else {
+      return this.external;
     }
-    return field;
   }
 
-  lookup(path: Field.LookupPath): Field<unknown> | undefined {
+  lookup(path: Enso.Path): Field<unknown> | undefined {
     if (path.length === 0) return this.external as any;
     const [index, ...restPath] = path;
     return this.#item(Number(index))?.lookup(restPath);
@@ -2179,20 +2239,20 @@ export class InternalArrayState<
     this.#children.forEach((field) => field.unleash());
   }
 
-  //#region Array methods
+  //#region Collection
 
   get length(): number {
     return this.#children.length;
   }
 
-  forEach(callback: (item: Payload[number], index: number) => void) {
-    this.#children.forEach(callback);
+  each(callback: InternalArrayState.CollectionCallback<Payload>) {
+    this.#children.forEach(callback as any);
   }
 
-  map<Return>(
-    callback: (item: Payload[number], index: number) => Return,
-  ): Return[] {
-    return this.#children.map(callback);
+  map<Result>(
+    callback: InternalArrayState.CollectionCallback<Payload, Result>,
+  ): Result[] {
+    return this.#children.map(callback as any);
   }
 
   push(item: Payload[number]) {
@@ -2236,6 +2296,13 @@ export class InternalArrayState<
   }
 
   //#endregion
+}
+
+export namespace InternalArrayState {
+  export type CollectionCallback<Value extends Array<any>, Result = void> = (
+    item: Field<Value[number]>,
+    index: number,
+  ) => Result;
 }
 
 //#endregion
@@ -2315,145 +2382,6 @@ export function useUndefinedStringField<Type extends string>(
 
 //#endregion
 
-//#region Internals
-
-interface UseFieldHookRef<Value> {
-  id: string;
-  value: Value | undefined;
-  enable: boolean;
-}
-
-interface UseFieldHookWatchProps<Value> {
-  valueRef: React.MutableRefObject<UseFieldHookRef<Value>>;
-  rerender: () => void;
-}
-
-type UseFieldHookShouldRender<Value> = (
-  prevValue: Value | undefined,
-  nextValue: Value,
-) => boolean;
-
-type UseFieldHookWatch<Value> = (
-  props: UseFieldHookWatchProps<Value>,
-) => Field.Unwatch;
-
-type UseFieldHookToResult<Value, Result> = (
-  value: Value | undefined,
-) => Result | undefined;
-
-interface UseFieldHookProps<Value, Result = Value> {
-  enable?: boolean | undefined;
-  field: Field<any>;
-  getValue: Memoized<() => Value>;
-  shouldRender?: Memoized<UseFieldHookShouldRender<Value>>;
-  watch?: Memoized<UseFieldHookWatch<Value>>;
-  toResult?: Memoized<UseFieldHookToResult<Value, Result>>;
-}
-
-function defaultShouldRender<Value>(
-  prev: Value | undefined,
-  next: Value,
-): boolean {
-  return prev !== next;
-}
-
-function useFieldHook<Value, Result = Value>(
-  props: UseFieldHookProps<Value, Result>,
-): Result | undefined {
-  const enable = props.enable ?? true;
-  const {
-    field,
-    getValue,
-    shouldRender = defaultShouldRender as Memoized<
-      UseFieldHookShouldRender<Value>
-    >,
-    watch,
-    toResult,
-  } = props;
-
-  const initial: Value = useMemo(
-    () => (enable ? getValue() : undefined),
-    [enable, getValue],
-  );
-  const valueRef = useRef<{
-    id: string;
-    value: Value | undefined;
-    enable: boolean;
-  }>({ id: field.id, value: initial, enable });
-
-  // When the field changes, we update the value
-  useEffect(() => {
-    if (valueRef.current.id === field.id && valueRef.current.enable === enable)
-      return;
-
-    valueRef.current = {
-      id: field.id,
-      value: enable ? getValue() : undefined,
-      enable,
-    };
-    // We don't need to rerender as the value will resolve to initial and we
-    // don't want to trigger another render.
-  }, [field, enable, getValue]);
-
-  const rerender = useRerender();
-
-  const onUpdate = useCallback(() => {
-    const prevValue = valueRef.current.value;
-
-    const nextValue = getValue();
-    valueRef.current = { id: field.id, value: nextValue, enable };
-
-    if (shouldRender(prevValue, nextValue)) rerender();
-  }, [field, enable, getValue, valueRef, rerender, shouldRender]);
-
-  useEffect(() => {
-    if (enable === false) return;
-
-    return watch?.({ valueRef, rerender }) || field.watch(onUpdate);
-  }, [field, enable, valueRef, watch, rerender, onUpdate]);
-
-  // Handle dependencies. When they change, we trigger update.
-  const depsInitialized = useRef(false);
-  useEffect(() => {
-    if (enable === false) return;
-
-    // Prevent unnecessary update on first render
-    if (depsInitialized.current) onUpdate();
-    else depsInitialized.current = true;
-  }, [field, enable, rerender, depsInitialized, onUpdate]);
-
-  // If the ref value id doesn't match the current id, use initial value.
-  // Otherwise, use the value from the ref.
-  const value =
-    valueRef.current.id === field.id && valueRef.current.enable === enable
-      ? valueRef.current.value
-      : initial;
-
-  const result = enable ? value : undefined;
-  return toResult ? toResult(result) : (result as Result);
-}
-
-//#endregion
-
 function always(condition: unknown): asserts condition {
   if (!condition) throw new Error("Assertion failed");
-}
-
-type Memoized<Type> = Type & { [memoBrand]: true };
-
-declare const memoBrand: unique symbol;
-
-// NOTE: It has to be named `useMemo` to make ESLint rules activate.
-function useMemo<Type>(
-  factory: () => Type,
-  deps: DependencyList,
-): Memoized<Type> {
-  return reactUseMemo(factory, deps) as Memoized<Type>;
-}
-
-function useCallback<Type extends Function>(
-  callback: Type,
-  deps: DependencyList,
-): Memoized<Type> {
-  return reactUseCallback(callback, deps) as Memoized<Type>;
 }

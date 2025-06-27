@@ -90,7 +90,7 @@ describe("Form", () => {
     });
   });
 
-  describe("watching", () => {
+  describe("watch", () => {
     it("delegates watch", () => {
       const unwatch = () => {};
       const spy = vi.spyOn(Field.prototype, "watch").mockReturnValue(unwatch);
@@ -109,7 +109,7 @@ describe("Form", () => {
     });
   });
 
-  describe("mapping", () => {
+  describe("map", () => {
     it("delegates useCompute", () => {
       const compute = {};
       const spy = vi
@@ -119,27 +119,6 @@ describe("Form", () => {
       const computeCb = () => {};
       expect(form.useCompute(computeCb as any, [1, 2, 3])).toBe(compute);
       expect(spy).toHaveBeenCalledWith(computeCb, [1, 2, 3]);
-    });
-
-    it("delegates decompose", () => {
-      const decomposed = {};
-      const spy = vi
-        .spyOn(Field.prototype, "decompose")
-        .mockReturnValue(decomposed as any);
-      const form = new Form(nanoid(), { type: "hello", value: 42 });
-      expect(form.decompose()).toBe(decomposed);
-      expect(spy).toHaveBeenCalled();
-    });
-
-    it("delegates useDecompose", () => {
-      const decomposed = {};
-      const spy = vi
-        .spyOn(Field.prototype, "useDecompose")
-        .mockReturnValue(decomposed as any);
-      const form = new Form(nanoid(), { type: "hello", value: 42 });
-      const decomposeCb = () => {};
-      expect(form.useDecompose(decomposeCb as any, [1, 2, 3])).toBe(decomposed);
-      expect(spy).toHaveBeenCalledWith(decomposeCb, [1, 2, 3]);
     });
 
     it("delegates discriminate", () => {

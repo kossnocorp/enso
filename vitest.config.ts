@@ -7,9 +7,9 @@ export default defineConfig({
         test: {
           name: "node",
           setupFiles: ["./tests/setup.ts"],
-          include: ["src/**/tests.ts"],
+          include: ["src/**/tests.ts", "src/**/tests.tsx"],
           restoreMocks: true,
-          environment: "node",
+          environment: "happy-dom",
           testTimeout: 100,
         },
       },
@@ -17,7 +17,7 @@ export default defineConfig({
         test: {
           name: "browser",
           setupFiles: ["./tests/setup.ts"],
-          include: ["src/**/tests.tsx"],
+          include: ["src/**/tests.browser.tsx"],
           testTimeout: 500,
           browser: {
             enabled: true,

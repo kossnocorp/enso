@@ -1,10 +1,11 @@
 import type { Field } from "../field/index.tsx";
+import { Enso } from "../types.ts";
 
 export class ValidationTree {
   #errors: Field.Error[] = [];
   #tree: ValidationTree.Node = ValidationTree.node();
 
-  at(path: Field.Path): Field.Error[] {
+  at(path: Enso.Path): Field.Error[] {
     let node = this.#tree;
     for (const key of path) {
       if (!node.children[key]) return [];
@@ -19,7 +20,7 @@ export class ValidationTree {
     );
   }
 
-  nested(path: Field.Path): ValidationTree.ErrorsList {
+  nested(path: Enso.Path): ValidationTree.ErrorsList {
     let node = this.#tree;
     for (const key of path) {
       if (!node.children[key]) return [];
@@ -40,8 +41,8 @@ export class ValidationTree {
 
   static traverse(
     node: ValidationTree.Node,
-    callback: (path: Field.Path, node: ValidationTree.Node) => void,
-    path: Field.Path = [],
+    callback: (path: Enso.Path, node: ValidationTree.Node) => void,
+    path: Enso.Path = [],
   ): void {
     callback(path, node);
 
@@ -51,7 +52,7 @@ export class ValidationTree {
     });
   }
 
-  add(path: Field.Path, error: Field.Error): ValidationTree.Index {
+  add(path: Enso.Path, error: Field.Error): ValidationTree.Index {
     const index = (this.#errors.push(error) - 1) as ValidationTree.Index;
 
     let node = this.#tree;
@@ -66,7 +67,7 @@ export class ValidationTree {
     return index;
   }
 
-  clear(path: Field.Path): void {
+  clear(path: Enso.Path): void {
     let node = this.#tree;
     const pathErrors: ValidationTree.ErrorsMap[] = [];
     for (const key of path) {
@@ -102,5 +103,5 @@ export namespace ValidationTree {
 
   export type ErrorsMap = Map<Index, boolean>;
 
-  export type ErrorsList = Array<[Field.Path, Field.Error]>;
+  export type ErrorsList = Array<[Enso.Path, Field.Error]>;
 }

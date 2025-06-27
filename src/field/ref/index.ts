@@ -1,5 +1,13 @@
+import { Enso } from "../../types.ts";
 import { EnsoUtils } from "../../utils.ts";
+import {
+  AsCollection,
+  AsCollectionRead,
+  fieldEach,
+  fieldMap,
+} from "../collection/index.ts";
 import { Field } from "../index.tsx";
+import { staticImplements } from "../util.ts";
 
 /**
  * @internal
@@ -15,9 +23,14 @@ const fieldRefsStore = new WeakMap<Field<any>, FieldRef<any>>();
  * never the value.
  */
 export class FieldRef<Payload> {
-  static get<Payload>(field: Field<Payload>) {
+  // implements
+  //   Static<
+  //     typeof FieldRef<Payload>,
+  //     AsCollectionRead<FieldRef<Payload>, Payload>
+  //   >
+  static get<Payload>(field: Field<Payload>): FieldRef<Payload> {
     // @ts-ignore: TODO:
-    let ref = fieldRefsStore.get(field);
+    let ref: any = fieldRefsStore.get(field);
     if (!ref) {
       // @ts-ignore: TODO:
       ref = new FieldRef(field);
@@ -58,7 +71,7 @@ export class FieldRef<Payload> {
 
   //#endregion
 
-  //#region Mapping
+  //#region Map
 
   decompose(): FieldRef.Decomposed<Payload> {
     return {
@@ -88,14 +101,69 @@ export class FieldRef<Payload> {
 
   //#endregion
 
-  //#region Collections
+  //#region Collection
 
-  forEach: FieldRef.ForEachFn<Payload> = ((callback: any) => {
-    // @ts-ignore: TODO:
-    this.#field.forEach((field, key) => {
-      callback(FieldRef.get(field), key);
-    });
-  }) as FieldRef.ForEachFn<Payload>;
+  static asCollection<Value>(
+    field: FieldRef<Value>,
+  ): AsCollection.Result<Value> {
+    return Field.asCollection(field.#field);
+  }
+
+  static asArray<Value>(
+    field: FieldRef<Value>,
+  ): AsCollection.AsArrayResult<Value> {
+    return Field.asArray(field.#field);
+  }
+
+  static fromField<Value>(field: Field<Value>): FieldRef<Value> {
+    return FieldRef.get(field);
+  }
+
+  // `each`
+
+  static each<Value extends Array<unknown>>(
+    field: FieldRef<Value>,
+    callback: FieldRef.CollectionCallbackArray<Value>,
+  ): void;
+
+  static each<Value extends object>(
+    field: FieldRef<Value>,
+    callback: FieldRef.CollectionCallbackObjectPair<Value>,
+  ): void;
+
+  static each<Value extends object>(
+    field: FieldRef<Value>,
+    callback: FieldRef.CollectionCallbackObjectSingle<Value>,
+  ): void;
+
+  static each(field: FieldRef<any>, callback: (...args: any) => void): void {
+    return fieldEach(field.#field, (field, key) =>
+      callback(FieldRef.get(field), key),
+    );
+  }
+
+  // `map`
+
+  static map<Value extends Array<unknown>, Result>(
+    field: FieldRef<Value>,
+    callback: FieldRef.CollectionCallbackArray<Value, Result>,
+  ): Result;
+
+  static map<Value extends object, Result>(
+    field: FieldRef<Value>,
+    callback: FieldRef.CollectionCallbackObjectPair<Value, Result>,
+  ): Result;
+
+  static map<Value extends object, Result>(
+    field: FieldRef<Value>,
+    callback: FieldRef.CollectionCallbackObjectSingle<Value, Result>,
+  ): Result;
+
+  static map(field: FieldRef<any>, callback: (...args: any) => any): any {
+    return fieldMap(field.#field, (field, key) =>
+      callback(FieldRef.get(field), key),
+    );
+  }
 
   //#endregion
 }
@@ -122,7 +190,7 @@ export namespace FieldRef {
 
   //#endregion
 
-  //#region Mapping
+  //#region Map
 
   export type Decomposed<Payload> = Payload extends Payload
     ? {
@@ -153,25 +221,43 @@ export namespace FieldRef {
 
   //#endregion
 
-  //#region Collections
+  //#region Collection
 
-  export type ForEachFn<Payload> =
-    Payload extends Array<any>
-      ? ArrayForEach<Payload>
-      : Payload extends object
-        ? ObjectForEach<Payload>
-        : (cb: never) => never;
+  export type CollectionCallbackArray<
+    Value extends Array<unknown>,
+    Result = void,
+  > = (item: CollectionCallbackArrayItem<Value>, index: number) => Result;
 
-  export type ObjectForEach<Payload extends object> = (
-    callback: <Key extends keyof Payload>(
-      item: FieldRef<Payload[Key]>,
-      key: Key,
-    ) => void,
-  ) => void;
+  export type CollectionCallbackArrayItem<Value extends Array<unknown>> =
+    Value extends Array<infer Item>
+      ? Item extends Item
+        ? FieldRef<Item>
+        : never
+      : never;
 
-  export type ArrayForEach<Payload extends Array<any>> = (
-    callback: (item: FieldRef<Payload[number]>, index: number) => void,
-  ) => void;
+  export type CollectionCallbackObjectPair<
+    Value extends object,
+    Result = void,
+  > = (
+    // Exclude is needed to remove undefined that appears when there're optional
+    // fields in the object.
+    ...args: Exclude<
+      { [Key in keyof Value]: [FieldRef<Value[Key]>, Key] }[keyof Value],
+      undefined
+    >
+  ) => Result;
+
+  export type CollectionCallbackObjectSingle<
+    Value extends object,
+    Result = void,
+  > = (
+    // Exclude is needed to remove undefined that appears when there're optional
+    // fields in the object.
+    item: Exclude<
+      { [Key in keyof Value]: FieldRef<Value[Key]> }[keyof Value],
+      undefined
+    >,
+  ) => Result;
 
   //#endregion
 
@@ -183,6 +269,50 @@ export namespace FieldRef {
 
   //#endregion
 }
+
+//#region FieldRef Declarations
+
+declare module "../collection/index.ts" {
+  // `each`
+
+  interface FieldEach {
+    <Value extends Array<unknown>>(
+      field: FieldRef<Value>,
+      callback: FieldRef.CollectionCallbackArray<Value>,
+    ): void;
+
+    <Value extends object>(
+      field: FieldRef<Value>,
+      callback: FieldRef.CollectionCallbackObjectPair<Value>,
+    ): void;
+
+    <Value extends object>(
+      field: FieldRef<Value>,
+      callback: FieldRef.CollectionCallbackObjectSingle<Value>,
+    ): void;
+  }
+
+  // `map`
+
+  interface FieldMap {
+    <Value extends Array<unknown>, Result>(
+      field: FieldRef<Value>,
+      callback: FieldRef.CollectionCallbackArray<Value, Result>,
+    ): Result[];
+
+    <Value extends object, Result>(
+      field: FieldRef<Value>,
+      callback: FieldRef.CollectionCallbackObjectPair<Value, Result>,
+    ): Result[];
+
+    <Value extends object, Result>(
+      field: FieldRef<Value>,
+      callback: FieldRef.CollectionCallbackObjectSingle<Value, Result>,
+    ): Result[];
+  }
+}
+
+//#endregion
 
 /**
  * Class representing maybe fields references. Unlike `FieldRef` representing
@@ -200,7 +330,7 @@ export class MaybeFieldRef<Payload> {
 
   //#region Maybe
 
-  #targetPath(): Field.Path {
+  #targetPath(): Enso.Path {
     return this.#target.type === "direct"
       ? this.#target.field.path
       : [...this.#target.closest.path, ...this.#target.path];
@@ -254,7 +384,7 @@ export class MaybeFieldRef<Payload> {
 
   //#endregion
 
-  //#region Mapping
+  //#region Map
 
   decompose(): MaybeFieldRef.Decomposed<Payload> {
     return {
@@ -291,15 +421,62 @@ export class MaybeFieldRef<Payload> {
 
   //#endregion
 
-  //#region Collections
+  //#region Collection
 
-  forEach: MaybeFieldRef.ForEachFn<Payload> = ((callback: any) => {
-    if (this.#target.type !== "direct") return;
-    // @ts-ignore: TODO:
-    this.#target.field.forEach((field, key) => {
+  // `each`
+
+  static each<Value extends Array<unknown>>(
+    field: MaybeFieldRef<Value>,
+    callback: MaybeFieldRef.CollectionCallbackArray<Value>,
+  ): void;
+
+  static each<Value extends object>(
+    field: MaybeFieldRef<Value>,
+    callback: MaybeFieldRef.CollectionCallbackObjectPair<Value>,
+  ): void;
+
+  static each<Value extends object>(
+    field: MaybeFieldRef<Value>,
+    callback: MaybeFieldRef.CollectionCallbackObjectSingle<Value>,
+  ): void;
+
+  static each(
+    field: MaybeFieldRef<any>,
+    callback: (...args: any) => void,
+  ): void {
+    // If it is a shadow field, there can't be anything to iterate.
+    if (field.#target.type !== "direct") return;
+
+    fieldEach(field.#target.field, (field, key) => {
       callback(FieldRef.get(field), key);
     });
-  }) as MaybeFieldRef.ForEachFn<Payload>;
+  }
+
+  // `map`
+
+  static map<Value extends Array<unknown>, Result>(
+    field: MaybeFieldRef<Value>,
+    callback: MaybeFieldRef.CollectionCallbackArray<Value, Result>,
+  ): Result;
+
+  static map<Value extends object, Result>(
+    field: MaybeFieldRef<Value>,
+    callback: MaybeFieldRef.CollectionCallbackObjectPair<Value, Result>,
+  ): Result;
+
+  static map<Value extends object, Result>(
+    field: MaybeFieldRef<Value>,
+    callback: MaybeFieldRef.CollectionCallbackObjectSingle<Value, Result>,
+  ): Result;
+
+  static map(field: MaybeFieldRef<any>, callback: (...args: any) => any): any {
+    // If it is a shadow field, there can't be anything to iterate.
+    if (field.#target.type !== "direct") return;
+
+    return fieldMap(field.#target.field, (field, key) =>
+      callback(FieldRef.get(field), key),
+    );
+  }
 
   //#endregion
 }
@@ -343,7 +520,7 @@ export namespace MaybeFieldRef {
 
   //#endregion
 
-  //#region Mapping
+  //#region Map
 
   export type Decomposed<Payload> = Payload extends Payload
     ? {
@@ -374,25 +551,45 @@ export namespace MaybeFieldRef {
 
   //#endregion
 
-  //#region Collections
+  //#region Collection
 
-  export type ForEachFn<Payload> =
-    Payload extends Array<any>
-      ? ArrayForEach<Payload>
-      : Payload extends object
-        ? ObjectForEach<Payload>
-        : (cb: never) => never;
+  export type CollectionCallbackArray<
+    Value extends Array<unknown>,
+    Result = void,
+  > = (item: CollectionCallbackArrayItem<Value>, index: number) => Result;
 
-  export type ObjectForEach<Payload extends object> = (
-    callback: <Key extends keyof Payload>(
-      item: MaybeFieldRef<Payload[Key]>,
-      key: Key,
-    ) => void,
-  ) => void;
+  export type CollectionCallbackArrayItem<Value extends Array<unknown>> =
+    Value extends Array<infer Item>
+      ? Item extends Item
+        ? MaybeFieldRef<Item>
+        : never
+      : never;
 
-  export type ArrayForEach<Payload extends Array<any>> = (
-    callback: (item: MaybeFieldRef<Payload[number]>, index: number) => void,
-  ) => void;
+  export type CollectionCallbackObjectPair<
+    Value extends object,
+    Result = void,
+  > = (
+    // Exclude is needed to remove undefined that appears when there're optional
+    // fields in the object.
+    ...args: Exclude<
+      {
+        [Key in keyof Value]: [MaybeFieldRef<Value[Key]>, Key];
+      }[keyof Value],
+      undefined
+    >
+  ) => Result;
+
+  export type CollectionCallbackObjectSingle<
+    Value extends object,
+    Result = void,
+  > = (
+    // Exclude is needed to remove undefined that appears when there're optional
+    // fields in the object.
+    item: Exclude<
+      { [Key in keyof Value]: MaybeFieldRef<Value[Key]> }[keyof Value],
+      undefined
+    >,
+  ) => Result;
 
   //#endregion
 
@@ -404,3 +601,47 @@ export namespace MaybeFieldRef {
 
   // //#endregion
 }
+
+//#region MaybeFieldRef Declarations
+
+declare module "../collection/index.ts" {
+  // `each`
+
+  interface FieldEach {
+    <Value extends Array<unknown>>(
+      field: MaybeFieldRef<Value>,
+      callback: MaybeFieldRef.CollectionCallbackArray<Value>,
+    ): void;
+
+    <Value extends object>(
+      field: MaybeFieldRef<Value>,
+      callback: MaybeFieldRef.CollectionCallbackObjectPair<Value>,
+    ): void;
+
+    <Value extends object>(
+      field: MaybeFieldRef<Value>,
+      callback: MaybeFieldRef.CollectionCallbackObjectSingle<Value>,
+    ): void;
+  }
+
+  // `map`
+
+  interface FieldMap {
+    <Value extends Array<unknown>, Result>(
+      field: MaybeFieldRef<Value>,
+      callback: MaybeFieldRef.CollectionCallbackArray<Value, Result>,
+    ): Result[];
+
+    <Value extends object, Result>(
+      field: MaybeFieldRef<Value>,
+      callback: MaybeFieldRef.CollectionCallbackObjectPair<Value, Result>,
+    ): Result[];
+
+    <Value extends object, Result>(
+      field: MaybeFieldRef<Value>,
+      callback: MaybeFieldRef.CollectionCallbackObjectSingle<Value, Result>,
+    ): Result[];
+  }
+}
+
+//#endregion

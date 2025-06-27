@@ -18,7 +18,7 @@
     "noImplicitOverride": true,
     "skipLibCheck": true,
     "allowJs": true,
-    "jsx": "preserve",
+    "jsx": "react",
     // Project References setup
     "composite": true,
     "incremental": true,

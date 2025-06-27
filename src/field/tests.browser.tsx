@@ -2,7 +2,7 @@ import { userEvent } from "@vitest/browser/context";
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { describe, expect, it, vi } from "vitest";
 import { render } from "vitest-browser-react";
-import "../../tests/browser.d.ts";
+import "../../tests/browser.js";
 import { change } from "../change/index.ts";
 import { Field } from "./index.tsx";
 import { postpone } from "../../tests/utils.ts";
@@ -1788,7 +1788,7 @@ describe("Field", () => {
     });
   });
 
-  describe("mapping", () => {
+  describe("map", () => {
     describe("useCompute", () => {
       it("allows to compute value", async () => {
         function Component() {

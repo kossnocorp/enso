@@ -5,10 +5,12 @@ import React, { DependencyList, useEffect, useId, useMemo } from "react";
 import { change, maskedChanges } from "../change/index.ts";
 import { ComputedField, Field } from "../field/index.tsx";
 import { useRerender } from "../hooks/rerender.ts";
+import { Enso } from "../types.ts";
 
 //#region Form
 
-export class Form<Payload> {
+// TODO: Implement for common interfaces?
+export class Form<Payload> implements Enso.InterfaceSystem {
   static use<Payload>(
     value: Payload,
     options?: Form.Options<Payload>,
@@ -138,7 +140,7 @@ export class Form<Payload> {
 
   //#endregion
 
-  //#region Watching
+  //#region Watch
 
   watch(callback: Field.WatchCallback<Payload>) {
     return this.#field.watch(callback);
@@ -150,24 +152,13 @@ export class Form<Payload> {
 
   //#endregion
 
-  //#region Mapping
+  //#region Map
 
   useCompute<Computed>(
     callback: Field.ComputeCallback<Payload, Computed>,
     deps: DependencyList,
   ): Computed {
     return this.#field.useCompute(callback, deps);
-  }
-
-  decompose(): Field.Decomposed<Payload> {
-    return this.#field.decompose();
-  }
-
-  useDecompose(
-    callback: Field.DecomposeCallback<Payload>,
-    deps: DependencyList,
-  ): Field.Decomposed<Payload> {
-    return this.#field.useDecompose(callback, deps);
   }
 
   discriminate<Discriminator extends keyof NonUndefined<Payload>>(
@@ -184,7 +175,7 @@ export class Form<Payload> {
 
   into<Computed>(
     intoCallback: ComputedField.Into<Payload, Computed>,
-  ): Field.Into<Payload, Computed> {
+  ): Field.IntoObj<Payload, Computed> {
     return this.#field.into(intoCallback);
   }
 
