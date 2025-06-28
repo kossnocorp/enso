@@ -199,8 +199,11 @@ export namespace Enso {
     | (null extends Def["Payload"] ? null : never)
     // Add undefined to the union
     | (undefined extends Def["Payload"] ? undefined : never)
-    // Resolve field without null or undefined
-    | Def["NonNullish"];
+    // Resolve branded field without null or undefined
+    | Tried<Def["NonNullish"]>;
+
+  export type Tried<Type> = Type & { [tryBrand]: true };
+  declare const tryBrand: unique symbol;
 
   //#endregion
 

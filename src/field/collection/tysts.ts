@@ -1,12 +1,19 @@
 import { Field, FieldRef } from "../index.tsx";
 import { MaybeFieldRef } from "../ref/index.ts";
-import { fieldEach, fieldMap } from "./index.ts";
+import { fieldEach, fieldMap, fieldPush } from "./index.ts";
 
-const fieldArray = new Field<Array<string | number>>(["Hello", "world", 123]);
+const arr = new Field<Array<string | number>>([]);
+const arrOrUnd = new Field<Array<string | number> | undefined>([]);
+const arrOrNum = new Field<Array<string | number> | number>([]);
+const arrOrNumOrUnd = new Field<Array<string | number> | number | undefined>(
+  [],
+);
 
-const fieldObj = new Field<Hello>({ hello: "hi", world: 42 });
-
-const fieldObjOptional = new Field<Ok>({ ok: true });
+const obj = new Field<Hello>({ hello: "hi", world: 42 });
+const objOpt = new Field<Ok>({ ok: true });
+const objOrUnd = new Field<Ok | undefined>({ ok: true });
+const objOrNum = new Field<Ok | number>({ ok: true });
+const objOrNumOrUnd = new Field<Ok | number | undefined>({ ok: true });
 
 // `fieldEach`
 {
@@ -14,7 +21,8 @@ const fieldObjOptional = new Field<Ok>({ ok: true });
   {
     // Field
 
-    const result = fieldEach(fieldArray, (item, index) => {
+    // Regular
+    const result = fieldEach(arr, (item, index) => {
       item satisfies Field<string> | Field<number>;
       // @ts-expect-error
       item.any;
@@ -24,17 +32,31 @@ const fieldObjOptional = new Field<Ok>({ ok: true });
       index.any;
     });
     result satisfies void;
-    fieldEach(fieldArray, (item) => {
+    fieldEach(arr, (item) => {
       item satisfies Field<string> | Field<number>;
       // @ts-expect-error
       item.any;
     });
-    fieldEach(fieldArray, () => {});
+    fieldEach(arr, () => {});
+
+    // Undefined
+    fieldEach(arrOrUnd.try(), (item, index) => {
+      item satisfies Field<string> | Field<number>;
+      // @ts-expect-error
+      item.any;
+
+      index satisfies number;
+      // @ts-expect-error
+      index.any;
+    });
+    // @ts-expect-error
+    fieldEach(arrOrUnd, () => {});
 
     // FieldRef
 
-    const fieldRef = new FieldRef(fieldArray);
-    fieldEach(fieldRef, (item, index) => {
+    // Regular
+    const ref = new FieldRef(arr);
+    fieldEach(ref, (item, index) => {
       item satisfies FieldRef<string> | FieldRef<number>;
       // @ts-expect-error
       item.any;
@@ -43,20 +65,35 @@ const fieldObjOptional = new Field<Ok>({ ok: true });
       // @ts-expect-error
       index.any;
     });
-    fieldEach(fieldRef, (item) => {
+    fieldEach(ref, (item) => {
       item satisfies FieldRef<string> | FieldRef<number>;
       // @ts-expect-error
       item.any;
     });
-    fieldEach(fieldRef, () => {});
+    fieldEach(ref, () => {});
+
+    // Undefined
+    const refUnd = new FieldRef(arrOrUnd);
+    fieldEach(refUnd.try(), (item, index) => {
+      item satisfies FieldRef<string> | FieldRef<number>;
+      // @ts-expect-error
+      item.any;
+
+      index satisfies number;
+      // @ts-expect-error
+      index.any;
+    });
+    // @ts-expect-error
+    fieldEach(refUnd, () => {});
 
     // MaybeRef
 
-    const maybeFieldRef = new MaybeFieldRef({
+    // Regular
+    const maybe = new MaybeFieldRef({
       type: "direct",
-      field: fieldArray,
+      field: arr,
     });
-    fieldEach(maybeFieldRef, (item, index) => {
+    fieldEach(maybe, (item, index) => {
       item satisfies MaybeFieldRef<string> | MaybeFieldRef<number>;
       // @ts-expect-error
       item.any;
@@ -65,12 +102,29 @@ const fieldObjOptional = new Field<Ok>({ ok: true });
       // @ts-expect-error
       index.any;
     });
-    fieldEach(maybeFieldRef, (item) => {
+    fieldEach(maybe, (item) => {
       item satisfies MaybeFieldRef<string> | MaybeFieldRef<number>;
       // @ts-expect-error
       item.any;
     });
-    fieldEach(maybeFieldRef, () => {});
+    fieldEach(maybe, () => {});
+
+    // Undefined
+    const maybeUnd = new MaybeFieldRef({
+      type: "direct",
+      field: arrOrUnd,
+    });
+    fieldEach(maybeUnd.try(), (item, index) => {
+      item satisfies MaybeFieldRef<string> | MaybeFieldRef<number>;
+      // @ts-expect-error
+      item.any;
+
+      index satisfies number;
+      // @ts-expect-error
+      index.any;
+    });
+    // @ts-expect-error
+    fieldEach(new MaybeFieldRef({ type: "direct", field: arrOrUnd }), () => {});
   }
 
   // Object
@@ -78,7 +132,7 @@ const fieldObjOptional = new Field<Ok>({ ok: true });
     // Field
 
     // Regular
-    const result = fieldEach(fieldObj, (item, key) => {
+    const result = fieldEach(obj, (item, key) => {
       item satisfies Field<string> | Field<number>;
       // @ts-expect-error
       item.any;
@@ -98,15 +152,15 @@ const fieldObjOptional = new Field<Ok>({ ok: true });
       }
     });
     result satisfies void;
-    fieldEach(fieldObj, (item) => {
+    fieldEach(obj, (item) => {
       item satisfies Field<string> | Field<number>;
       // @ts-expect-error
       item.any;
     });
-    fieldEach(fieldObj, () => {});
+    fieldEach(obj, () => {});
 
     // Optional
-    fieldEach(fieldObjOptional, (item, key) => {
+    fieldEach(objOpt, (item, key) => {
       item satisfies Field<boolean> | Field<string | undefined>;
       // @ts-expect-error
       item.any;
@@ -125,18 +179,41 @@ const fieldObjOptional = new Field<Ok>({ ok: true });
         item.get() satisfies boolean;
       }
     });
-    fieldEach(fieldObjOptional, (item) => {
+    fieldEach(objOpt, (item) => {
       item satisfies Field<boolean> | Field<string | undefined>;
       // @ts-expect-error
       item.any;
     });
-    fieldEach(fieldObjOptional, () => {});
+    fieldEach(objOpt, () => {});
+
+    // Undefined
+    fieldEach(objOrUnd.try(), (item, key) => {
+      item satisfies Field<boolean> | Field<string | undefined>;
+      // @ts-expect-error
+      item.any;
+
+      key satisfies keyof Ok;
+      // @ts-expect-error
+      key.any;
+
+      if (key === "ok") {
+        item.get() satisfies boolean;
+        // @ts-expect-error
+        item.get() satisfies string | undefined;
+      } else {
+        item.get() satisfies string | undefined;
+        // @ts-expect-error
+        item.get() satisfies boolean;
+      }
+    });
+    // @ts-expect-error
+    fieldEach(objOrUnd, () => {});
 
     // FieldRef
 
-    const fieldRef = new FieldRef(fieldObj);
     // Regular
-    fieldEach(fieldRef, (item, key) => {
+    const ref = new FieldRef(obj);
+    fieldEach(ref, (item, key) => {
       item satisfies FieldRef<string> | FieldRef<number>;
       // @ts-expect-error
       item.any;
@@ -155,12 +232,12 @@ const fieldObjOptional = new Field<Ok>({ ok: true });
         item.get() satisfies string;
       }
     });
-    fieldEach(fieldRef, (item) => {});
-    fieldEach(fieldRef, () => {});
+    fieldEach(ref, (item) => {});
+    fieldEach(ref, () => {});
 
     // Optional
-    const fieldRefOptional = new FieldRef(fieldObjOptional);
-    fieldEach(fieldRefOptional, (item, key) => {
+    const refOpt = new FieldRef(objOpt);
+    fieldEach(refOpt, (item, key) => {
       item satisfies FieldRef<boolean> | FieldRef<string | undefined>;
       // @ts-expect-error
       item.any;
@@ -179,21 +256,45 @@ const fieldObjOptional = new Field<Ok>({ ok: true });
         item.get() satisfies boolean;
       }
     });
-    fieldEach(fieldRefOptional, (item) => {
+    fieldEach(refOpt, (item) => {
       item satisfies FieldRef<boolean> | FieldRef<string | undefined>;
       // @ts-expect-error
       item.any;
     });
-    fieldEach(fieldRefOptional, () => {});
+    fieldEach(refOpt, () => {});
+
+    // Undefined
+    const refUnd = new FieldRef(objOrUnd);
+    fieldEach(refUnd.try(), (item, key) => {
+      item satisfies FieldRef<boolean> | FieldRef<string | undefined>;
+      // @ts-expect-error
+      item.any;
+
+      key satisfies keyof Ok;
+      // @ts-expect-error
+      key.any;
+
+      if (key === "ok") {
+        item.get() satisfies boolean;
+        // @ts-expect-error
+        item.get() satisfies string | undefined;
+      } else {
+        item.get() satisfies string | undefined;
+        // @ts-expect-error
+        item.get() satisfies boolean;
+      }
+    });
+    // @ts-expect-error
+    fieldEach(refUnd, () => {});
 
     // MaybeRef
 
-    const maybeFieldRef = new MaybeFieldRef({
-      type: "direct",
-      field: fieldObj,
-    });
     // Regular
-    fieldEach(maybeFieldRef, (item, key) => {
+    const maybe = new MaybeFieldRef({
+      type: "direct",
+      field: obj,
+    });
+    fieldEach(maybe, (item, key) => {
       item satisfies MaybeFieldRef<string> | MaybeFieldRef<number>;
       // @ts-expect-error
       item.any;
@@ -212,15 +313,15 @@ const fieldObjOptional = new Field<Ok>({ ok: true });
         item.get() satisfies string;
       }
     });
-    fieldEach(maybeFieldRef, (item) => {});
-    fieldEach(maybeFieldRef, () => {});
+    fieldEach(maybe, (item) => {});
+    fieldEach(maybe, () => {});
 
     // Optional
-    const maybeFieldRefOptional = new MaybeFieldRef({
+    const maybeOpt = new MaybeFieldRef({
       type: "direct",
-      field: fieldObjOptional,
+      field: objOpt,
     });
-    fieldEach(maybeFieldRefOptional, (item, key) => {
+    fieldEach(maybeOpt, (item, key) => {
       item satisfies MaybeFieldRef<boolean> | MaybeFieldRef<string | undefined>;
       // @ts-expect-error
       item.any;
@@ -239,12 +340,39 @@ const fieldObjOptional = new Field<Ok>({ ok: true });
         item.get() satisfies boolean;
       }
     });
-    fieldEach(maybeFieldRefOptional, (item) => {
+    fieldEach(maybeOpt, (item) => {
       item satisfies MaybeFieldRef<boolean> | MaybeFieldRef<string | undefined>;
       // @ts-expect-error
       item.any;
     });
-    fieldEach(maybeFieldRefOptional, () => {});
+    fieldEach(maybeOpt, () => {});
+
+    // Undefined
+    const maybeUnd = new MaybeFieldRef({
+      type: "direct",
+      field: objOrUnd,
+    });
+    fieldEach(maybeUnd.try(), (item, key) => {
+      item satisfies MaybeFieldRef<boolean> | MaybeFieldRef<string | undefined>;
+      // @ts-expect-error
+      item.any;
+
+      key satisfies keyof Ok;
+      // @ts-expect-error
+      key.any;
+
+      if (key === "ok") {
+        item.get() satisfies boolean;
+        // @ts-expect-error
+        item.get() satisfies string | undefined;
+      } else {
+        item.get() satisfies string | undefined;
+        // @ts-expect-error
+        item.get() satisfies boolean;
+      }
+    });
+    // @ts-expect-error
+    fieldEach(maybeUnd, () => {});
   }
 }
 
@@ -254,7 +382,8 @@ const fieldObjOptional = new Field<Ok>({ ok: true });
   {
     // Field
 
-    const result = fieldMap(fieldArray, (item, index) => {
+    // Regular
+    const result = fieldMap(arr, (item, index) => {
       item satisfies Field<string> | Field<number>;
       // @ts-expect-error
       item.any;
@@ -267,10 +396,26 @@ const fieldObjOptional = new Field<Ok>({ ok: true });
     });
     result satisfies number[];
 
+    // Undefined
+    fieldMap(arrOrUnd.try(), (item, index) => {
+      item satisfies Field<string> | Field<number>;
+      // @ts-expect-error
+      item.any;
+
+      index satisfies number;
+      // @ts-expect-error
+      index.any;
+
+      return Number(item.get());
+    });
+    // @ts-expect-error
+    fieldMap(arrOrUnd, () => {});
+
     // FieldRef
 
-    const fieldRef = new FieldRef(fieldArray);
-    const refResult = fieldMap(fieldRef, (item, index) => {
+    // Regular
+    const ref = new FieldRef(arr);
+    const refResult = fieldMap(ref, (item, index) => {
       item satisfies FieldRef<string> | FieldRef<number>;
       // @ts-expect-error
       item.any;
@@ -283,13 +428,30 @@ const fieldObjOptional = new Field<Ok>({ ok: true });
     });
     refResult satisfies number[];
 
+    // Undefined
+    const refUnd = new FieldRef(arrOrUnd);
+    fieldMap(refUnd.try(), (item, index) => {
+      item satisfies FieldRef<string> | FieldRef<number>;
+      // @ts-expect-error
+      item.any;
+
+      index satisfies number;
+      // @ts-expect-error
+      index.any;
+
+      return Number(item.get());
+    });
+    // @ts-expect-error
+    fieldMap(refUnd, () => {});
+
     // MaybeFieldRef
 
-    const maybeFieldRef = new MaybeFieldRef({
+    // Regular
+    const maybe = new MaybeFieldRef({
       type: "direct",
-      field: fieldArray,
+      field: arr,
     });
-    const maybeRefResult = fieldMap(maybeFieldRef, (item, index) => {
+    const maybeResult = fieldMap(maybe, (item, index) => {
       item satisfies MaybeFieldRef<string> | MaybeFieldRef<number>;
       // @ts-expect-error
       item.any;
@@ -300,14 +462,34 @@ const fieldObjOptional = new Field<Ok>({ ok: true });
 
       return Number(item.get());
     });
-    maybeRefResult satisfies number[];
+    maybeResult satisfies number[];
+
+    // Undefined
+    const maybeUnd = new MaybeFieldRef({
+      type: "direct",
+      field: arrOrUnd,
+    });
+    fieldMap(maybeUnd.try(), (item, index) => {
+      item satisfies MaybeFieldRef<string> | MaybeFieldRef<number>;
+      // @ts-expect-error
+      item.any;
+
+      index satisfies number;
+      // @ts-expect-error
+      index.any;
+
+      return Number(item.get());
+    });
+    // @ts-expect-error
+    fieldMap(new MaybeFieldRef({ type: "direct", field: arrOrUnd }), () => {});
   }
 
   // Object
   {
     // Field
 
-    const result = fieldMap(fieldObj, (item, key) => {
+    // Regular
+    const result = fieldMap(obj, (item, key) => {
       item satisfies Field<string> | Field<number>;
       // @ts-expect-error
       item.any;
@@ -330,11 +512,60 @@ const fieldObjOptional = new Field<Ok>({ ok: true });
     });
     result satisfies number[];
 
+    // Optional
+    const resultOpt = fieldMap(objOpt, (item, key) => {
+      item satisfies Field<boolean> | Field<string | undefined>;
+      // @ts-expect-error
+      item.any;
+
+      key satisfies keyof Ok;
+      // @ts-expect-error
+      key.any;
+
+      if (key === "ok") {
+        item.get() satisfies boolean;
+        // @ts-expect-error
+        item.get() satisfies string | undefined;
+        return item.get() ? 1 : 0;
+      } else {
+        item.get() satisfies string | undefined;
+        // @ts-expect-error
+        item.get() satisfies boolean;
+        return item.get()?.length ?? 0;
+      }
+    });
+    resultOpt satisfies number[];
+
+    // Undefined
+    fieldMap(objOrUnd.try(), (item, key) => {
+      item satisfies Field<boolean> | Field<string | undefined>;
+      // @ts-expect-error
+      item.any;
+
+      key satisfies keyof Ok;
+      // @ts-expect-error
+      key.any;
+
+      if (key === "ok") {
+        item.get() satisfies boolean;
+        // @ts-expect-error
+        item.get() satisfies string | undefined;
+        return item.get() ? 1 : 0;
+      } else {
+        item.get() satisfies string | undefined;
+        // @ts-expect-error
+        item.get() satisfies boolean;
+        return item.get()?.length ?? 0;
+      }
+    });
+    // @ts-expect-error
+    fieldMap(objOrUnd, () => {});
+
     // FieldRef
 
-    const fieldRef = new FieldRef(fieldObj);
     // Regular
-    const refResult = fieldMap(fieldRef, (item, key) => {
+    const ref = new FieldRef(obj);
+    const refResult = fieldMap(ref, (item, key) => {
       item satisfies FieldRef<string> | FieldRef<number>;
       // @ts-expect-error
       item.any;
@@ -358,8 +589,8 @@ const fieldObjOptional = new Field<Ok>({ ok: true });
     refResult satisfies number[];
 
     // Optional
-    const fieldRefOptional = new FieldRef(fieldObjOptional);
-    const refResultOptional = fieldMap(fieldRefOptional, (item, key) => {
+    const refOpt = new FieldRef(objOpt);
+    const refOptResult = fieldMap(refOpt, (item, key) => {
       item satisfies FieldRef<boolean> | FieldRef<string | undefined>;
       // @ts-expect-error
       item.any;
@@ -380,16 +611,42 @@ const fieldObjOptional = new Field<Ok>({ ok: true });
         return item.get()?.length ?? 0;
       }
     });
-    refResultOptional satisfies number[];
+    refOptResult satisfies number[];
+
+    // Undefined
+    const refUnd = new FieldRef(objOrUnd);
+    fieldMap(refUnd.try(), (item, key) => {
+      item satisfies FieldRef<boolean> | FieldRef<string | undefined>;
+      // @ts-expect-error
+      item.any;
+
+      key satisfies keyof Ok;
+      // @ts-expect-error
+      key.any;
+
+      if (key === "ok") {
+        item.get() satisfies boolean;
+        // @ts-expect-error
+        item.get() satisfies string | undefined;
+        return item.get() ? 1 : 0;
+      } else {
+        item.get() satisfies string | undefined;
+        // @ts-expect-error
+        item.get() satisfies boolean;
+        return item.get()?.length ?? 0;
+      }
+    });
+    // @ts-expect-error
+    fieldMap(refUnd, () => {});
 
     // MaybeFieldRef
 
-    const maybeFieldRef = new MaybeFieldRef({
-      type: "direct",
-      field: fieldObj,
-    });
     // Regular
-    const maybeRefResult = fieldMap(maybeFieldRef, (item, key) => {
+    const maybe = new MaybeFieldRef({
+      type: "direct",
+      field: obj,
+    });
+    const maybeResult = fieldMap(maybe, (item, key) => {
       item satisfies MaybeFieldRef<string> | MaybeFieldRef<number>;
       // @ts-expect-error
       item.any;
@@ -410,40 +667,97 @@ const fieldObjOptional = new Field<Ok>({ ok: true });
         return item.get();
       }
     });
-    maybeRefResult satisfies number[];
+    maybeResult satisfies number[];
 
     // Optional
-    const maybeFieldRefOptional = new MaybeFieldRef({
+    const maybeOpt = new MaybeFieldRef({
       type: "direct",
-      field: fieldObjOptional,
+      field: objOpt,
     });
-    const maybeRefResultOptional = fieldMap(
-      maybeFieldRefOptional,
-      (item, key) => {
-        item satisfies
-          | MaybeFieldRef<boolean>
-          | MaybeFieldRef<string | undefined>;
-        // @ts-expect-error
-        item.any;
+    const maybeOptResult = fieldMap(maybeOpt, (item, key) => {
+      item satisfies MaybeFieldRef<boolean> | MaybeFieldRef<string | undefined>;
+      // @ts-expect-error
+      item.any;
 
-        key satisfies keyof Ok;
-        // @ts-expect-error
-        key.any;
+      key satisfies keyof Ok;
+      // @ts-expect-error
+      key.any;
 
-        if (key === "ok") {
-          item.get() satisfies boolean;
-          // @ts-expect-error
-          item.get() satisfies string | undefined;
-          return item.get() ? 1 : 0;
-        } else {
-          item.get() satisfies string | undefined;
-          // @ts-expect-error
-          item.get() satisfies boolean;
-          return item.get()?.length ?? 0;
-        }
-      },
-    );
-    maybeRefResultOptional satisfies number[];
+      if (key === "ok") {
+        item.get() satisfies boolean;
+        // @ts-expect-error
+        item.get() satisfies string | undefined;
+        return item.get() ? 1 : 0;
+      } else {
+        item.get() satisfies string | undefined;
+        // @ts-expect-error
+        item.get() satisfies boolean;
+        return item.get()?.length ?? 0;
+      }
+    });
+    maybeOptResult satisfies number[];
+
+    // Undefined
+    const maybeUnd = new MaybeFieldRef({
+      type: "direct",
+      field: objOrUnd,
+    });
+    fieldMap(maybeUnd.try(), (item, key) => {
+      item satisfies MaybeFieldRef<boolean> | MaybeFieldRef<string | undefined>;
+      // @ts-expect-error
+      item.any;
+
+      key satisfies keyof Ok;
+      // @ts-expect-error
+      key.any;
+
+      if (key === "ok") {
+        item.get() satisfies boolean;
+        // @ts-expect-error
+        item.get() satisfies string | undefined;
+        return item.get() ? 1 : 0;
+      } else {
+        item.get() satisfies string | undefined;
+        // @ts-expect-error
+        item.get() satisfies boolean;
+        return item.get()?.length ?? 0;
+      }
+    });
+    // @ts-expect-error
+    fieldMap(maybeUnd, () => {});
+  }
+}
+
+// `push`
+{
+  // Regular
+  {
+    const result = fieldPush(arr, "new item");
+    result satisfies Field<string>;
+    // @ts-expect-error
+    result.any;
+
+    fieldPush(arr, 456);
+    // @ts-expect-error
+    fieldPush(arr, false);
+
+    // @ts-expect-error
+    fieldPush(arrOrNum, 456);
+  }
+
+  // Undefined
+  {
+    const result = fieldPush(arrOrUnd.try(), "new item");
+    result satisfies Field<string>;
+    // @ts-expect-error
+    result.any;
+
+    // @ts-expect-error
+    fieldPush(arrOrNum.try(), 456);
+    // @ts-expect-error
+    fieldPush(arrOrNumOrUnd.try(), 456);
+    // @ts-expect-error
+    fieldPush(arrOrUnd.try(), false);
   }
 }
 

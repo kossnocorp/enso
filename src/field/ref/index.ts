@@ -1,11 +1,6 @@
 import { Enso } from "../../types.ts";
-import { EnsoUtils } from "../../utils.ts";
-import {
-  AsCollection,
-  AsCollectionRead,
-  fieldEach,
-  fieldMap,
-} from "../collection/index.ts";
+import { EnsoUtils as Utils } from "../../utils.ts";
+import { AsCollection, AsCollectionRead } from "../collection/index.ts";
 import { Field } from "../index.tsx";
 import { staticImplements } from "../util.ts";
 
@@ -22,12 +17,10 @@ const fieldRefsStore = new WeakMap<Field<any>, FieldRef<any>>();
  * allows to change the metadata of the field, such as validation errors, but
  * never the value.
  */
+@staticImplements<AsCollectionRead>()
+// TODO: Try making this work or remove:
+// Static<typeof FieldRef<unknown>, AsCollectionRead>,
 export class FieldRef<Payload> {
-  // implements
-  //   Static<
-  //     typeof FieldRef<Payload>,
-  //     AsCollectionRead<FieldRef<Payload>, Payload>
-  //   >
   static get<Payload>(field: Field<Payload>): FieldRef<Payload> {
     // @ts-ignore: TODO:
     let ref: any = fieldRefsStore.get(field);
@@ -63,6 +56,17 @@ export class FieldRef<Payload> {
   at<Key extends keyof Payload>(key: Key): FieldRef.At<Payload, Key> {
     // @ts-ignore: TODO:
     return FieldRef.get(this.#field.at(key));
+  }
+
+  try(): Enso.TryUnion<FieldRef.InterfaceDef<Payload>>;
+
+  try<Key extends keyof NonNullish<Payload>>(
+    key: Key,
+  ): FieldRef.TryKey<Field.InterfaceDef<Payload>, Key>;
+
+  try(...[key]: any[]): any {
+    const field = this.#field.try(key);
+    return field && FieldRef.get(field);
   }
 
   maybe(): MaybeFieldRef<Payload> {
@@ -119,61 +123,26 @@ export class FieldRef<Payload> {
     return FieldRef.get(field);
   }
 
-  // `each`
-
-  static each<Value extends Array<unknown>>(
-    field: FieldRef<Value>,
-    callback: FieldRef.CollectionCallbackArray<Value>,
-  ): void;
-
-  static each<Value extends object>(
-    field: FieldRef<Value>,
-    callback: FieldRef.CollectionCallbackObjectPair<Value>,
-  ): void;
-
-  static each<Value extends object>(
-    field: FieldRef<Value>,
-    callback: FieldRef.CollectionCallbackObjectSingle<Value>,
-  ): void;
-
-  static each(field: FieldRef<any>, callback: (...args: any) => void): void {
-    return fieldEach(field.#field, (field, key) =>
-      callback(FieldRef.get(field), key),
-    );
-  }
-
-  // `map`
-
-  static map<Value extends Array<unknown>, Result>(
-    field: FieldRef<Value>,
-    callback: FieldRef.CollectionCallbackArray<Value, Result>,
-  ): Result;
-
-  static map<Value extends object, Result>(
-    field: FieldRef<Value>,
-    callback: FieldRef.CollectionCallbackObjectPair<Value, Result>,
-  ): Result;
-
-  static map<Value extends object, Result>(
-    field: FieldRef<Value>,
-    callback: FieldRef.CollectionCallbackObjectSingle<Value, Result>,
-  ): Result;
-
-  static map(field: FieldRef<any>, callback: (...args: any) => any): any {
-    return fieldMap(field.#field, (field, key) =>
-      callback(FieldRef.get(field), key),
-    );
-  }
-
   //#endregion
 }
 
 export namespace FieldRef {
+  //#region Interfaces
+
+  export type InterfaceDef<Payload> = {
+    Payload: Payload;
+    Unknown: FieldRef<unknown>;
+    NonNullish: FieldRef<NonNullish<Payload>>;
+    Bound: unknown;
+  };
+
+  //#endregion
+
   //#region Tree
 
   export type $Object<Payload> = {
     [Key in keyof Payload]-?: FieldRef<
-      EnsoUtils.IsStaticKey<Payload, Key> extends true
+      Utils.IsStaticKey<Payload, Key> extends true
         ? Payload[Key]
         : Payload[Key] | undefined
     >;
@@ -184,9 +153,19 @@ export namespace FieldRef {
   >;
 
   export type AtPayload<Payload, Key extends keyof Payload> =
-    EnsoUtils.IsStaticKey<Payload, Key> extends true
+    Utils.IsStaticKey<Payload, Key> extends true
       ? Payload[Key]
       : Payload[Key] | undefined;
+
+  export type TryKey<
+    Def extends Enso.InterfaceDef,
+    Key extends keyof NonNullish<Def["Payload"]>,
+  > =
+    | Enso.TryUnion<InterfaceDef<NonNullish<Def["Payload"]>[Key]>>
+    // Add undefined if the key is not static (i.e. a record key).
+    | (Utils.IsStaticKey<NonNullish<Def["Payload"]>, Key> extends true
+        ? never
+        : undefined);
 
   //#endregion
 
@@ -277,17 +256,17 @@ declare module "../collection/index.ts" {
 
   interface FieldEach {
     <Value extends Array<unknown>>(
-      field: FieldRef<Value>,
+      field: FieldRef<Value> | Nullish<Enso.Tried<FieldRef<Value>>>,
       callback: FieldRef.CollectionCallbackArray<Value>,
     ): void;
 
     <Value extends object>(
-      field: FieldRef<Value>,
+      field: FieldRef<Value> | Nullish<Enso.Tried<FieldRef<Value>>>,
       callback: FieldRef.CollectionCallbackObjectPair<Value>,
     ): void;
 
     <Value extends object>(
-      field: FieldRef<Value>,
+      field: FieldRef<Value> | Nullish<Enso.Tried<FieldRef<Value>>>,
       callback: FieldRef.CollectionCallbackObjectSingle<Value>,
     ): void;
   }
@@ -296,17 +275,17 @@ declare module "../collection/index.ts" {
 
   interface FieldMap {
     <Value extends Array<unknown>, Result>(
-      field: FieldRef<Value>,
+      field: FieldRef<Value> | Nullish<Enso.Tried<FieldRef<Value>>>,
       callback: FieldRef.CollectionCallbackArray<Value, Result>,
     ): Result[];
 
     <Value extends object, Result>(
-      field: FieldRef<Value>,
+      field: FieldRef<Value> | Nullish<Enso.Tried<FieldRef<Value>>>,
       callback: FieldRef.CollectionCallbackObjectPair<Value, Result>,
     ): Result[];
 
     <Value extends object, Result>(
-      field: FieldRef<Value>,
+      field: FieldRef<Value> | Nullish<Enso.Tried<FieldRef<Value>>>,
       callback: FieldRef.CollectionCallbackObjectSingle<Value, Result>,
     ): Result[];
   }
@@ -321,6 +300,9 @@ declare module "../collection/index.ts" {
  * state (e.g. parent is a actually a `number` but was accessed as an object in
  * `number | { a?: string }`).
  */
+@staticImplements<AsCollectionRead>()
+// TODO: Try making this work or remove:
+// Static<typeof MaybeFieldRef<unknown>, AsCollectionRead>,
 export class MaybeFieldRef<Payload> {
   #target: MaybeFieldRef.Target<Payload>;
 
@@ -382,6 +364,19 @@ export class MaybeFieldRef<Payload> {
     return new MaybeFieldRef(target);
   }
 
+  try(): Enso.TryUnion<MaybeFieldRef.InterfaceDef<Payload>>;
+
+  try<Key extends keyof NonNullish<Payload>>(
+    key: Key,
+  ): Field.TryKey<MaybeFieldRef.InterfaceDef<Payload>, Key>;
+
+  try(...[key]: any[]): any {
+    // If it is a shadow field, there can't be anything to try.
+    if (this.#target.type !== "direct") return;
+    const field = this.#target.field.try(key);
+    return field && FieldRef.get(field);
+  }
+
   //#endregion
 
   //#region Map
@@ -423,65 +418,44 @@ export class MaybeFieldRef<Payload> {
 
   //#region Collection
 
-  // `each`
-
-  static each<Value extends Array<unknown>>(
+  static asCollection<Value>(
     field: MaybeFieldRef<Value>,
-    callback: MaybeFieldRef.CollectionCallbackArray<Value>,
-  ): void;
-
-  static each<Value extends object>(
-    field: MaybeFieldRef<Value>,
-    callback: MaybeFieldRef.CollectionCallbackObjectPair<Value>,
-  ): void;
-
-  static each<Value extends object>(
-    field: MaybeFieldRef<Value>,
-    callback: MaybeFieldRef.CollectionCallbackObjectSingle<Value>,
-  ): void;
-
-  static each(
-    field: MaybeFieldRef<any>,
-    callback: (...args: any) => void,
-  ): void {
+  ): AsCollection.Result<Value> {
     // If it is a shadow field, there can't be anything to iterate.
     if (field.#target.type !== "direct") return;
-
-    fieldEach(field.#target.field, (field, key) => {
-      callback(FieldRef.get(field), key);
-    });
+    return Field.asCollection(field.#target.field);
   }
 
-  // `map`
-
-  static map<Value extends Array<unknown>, Result>(
+  static asArray<Value>(
     field: MaybeFieldRef<Value>,
-    callback: MaybeFieldRef.CollectionCallbackArray<Value, Result>,
-  ): Result;
-
-  static map<Value extends object, Result>(
-    field: MaybeFieldRef<Value>,
-    callback: MaybeFieldRef.CollectionCallbackObjectPair<Value, Result>,
-  ): Result;
-
-  static map<Value extends object, Result>(
-    field: MaybeFieldRef<Value>,
-    callback: MaybeFieldRef.CollectionCallbackObjectSingle<Value, Result>,
-  ): Result;
-
-  static map(field: MaybeFieldRef<any>, callback: (...args: any) => any): any {
+  ): AsCollection.AsArrayResult<Value> {
     // If it is a shadow field, there can't be anything to iterate.
     if (field.#target.type !== "direct") return;
+    return Field.asArray(field.#target.field);
+  }
 
-    return fieldMap(field.#target.field, (field, key) =>
-      callback(FieldRef.get(field), key),
-    );
+  static fromField<Value>(field: Field<Value>): MaybeFieldRef<Value> {
+    return new MaybeFieldRef({
+      type: "direct",
+      field,
+    });
   }
 
   //#endregion
 }
 
 export namespace MaybeFieldRef {
+  //#region Interfaces
+
+  export type InterfaceDef<Payload> = {
+    Payload: Payload;
+    Unknown: MaybeFieldRef<unknown>;
+    NonNullish: MaybeFieldRef<NonNullish<Payload>>;
+    Bound: unknown;
+  };
+
+  //#endregion
+
   //#region Target
 
   /**
@@ -517,6 +491,16 @@ export namespace MaybeFieldRef {
     // `a.b` in `{ a?: { b: string } }` is not just `string`.
     | (Payload extends undefined ? undefined : never)
   >;
+
+  export type TryKey<
+    Def extends Enso.InterfaceDef,
+    Key extends keyof NonNullish<Def["Payload"]>,
+  > =
+    | Enso.TryUnion<InterfaceDef<NonNullish<Def["Payload"]>[Key]>>
+    // Add undefined if the key is not static (i.e. a record key).
+    | (Utils.IsStaticKey<NonNullish<Def["Payload"]>, Key> extends true
+        ? never
+        : undefined);
 
   //#endregion
 
@@ -609,17 +593,17 @@ declare module "../collection/index.ts" {
 
   interface FieldEach {
     <Value extends Array<unknown>>(
-      field: MaybeFieldRef<Value>,
+      field: MaybeFieldRef<Value> | Nullish<Enso.Tried<MaybeFieldRef<Value>>>,
       callback: MaybeFieldRef.CollectionCallbackArray<Value>,
     ): void;
 
     <Value extends object>(
-      field: MaybeFieldRef<Value>,
+      field: MaybeFieldRef<Value> | Nullish<Enso.Tried<MaybeFieldRef<Value>>>,
       callback: MaybeFieldRef.CollectionCallbackObjectPair<Value>,
     ): void;
 
     <Value extends object>(
-      field: MaybeFieldRef<Value>,
+      field: MaybeFieldRef<Value> | Nullish<Enso.Tried<MaybeFieldRef<Value>>>,
       callback: MaybeFieldRef.CollectionCallbackObjectSingle<Value>,
     ): void;
   }
@@ -628,17 +612,17 @@ declare module "../collection/index.ts" {
 
   interface FieldMap {
     <Value extends Array<unknown>, Result>(
-      field: MaybeFieldRef<Value>,
+      field: MaybeFieldRef<Value> | Nullish<Enso.Tried<MaybeFieldRef<Value>>>,
       callback: MaybeFieldRef.CollectionCallbackArray<Value, Result>,
     ): Result[];
 
     <Value extends object, Result>(
-      field: MaybeFieldRef<Value>,
+      field: MaybeFieldRef<Value> | Nullish<Enso.Tried<MaybeFieldRef<Value>>>,
       callback: MaybeFieldRef.CollectionCallbackObjectPair<Value, Result>,
     ): Result[];
 
     <Value extends object, Result>(
-      field: MaybeFieldRef<Value>,
+      field: MaybeFieldRef<Value> | Nullish<Enso.Tried<MaybeFieldRef<Value>>>,
       callback: MaybeFieldRef.CollectionCallbackObjectSingle<Value, Result>,
     ): Result[];
   }

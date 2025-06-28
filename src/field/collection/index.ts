@@ -39,15 +39,16 @@ export namespace AsCollection {
   export type AsReadArrayResult<Value> = InternalReadArray<Value> | undefined;
 
   export interface InternalReadCollection<Value> {
-    // DO:
-    // each(callback: InternalCollectionCallback<Value>): void;
+    each(callback: InternalCollectionCallback<Value>): void;
+
+    map<Result>(callback: InternalCollectionCallback<Value, Result>): Result[];
   }
 
   export interface InternalReadArray<Value>
     extends InternalReadCollection<Value> {}
 
   export interface InternalArray<Value> extends InternalReadArray<Value> {
-    push<Item extends Value>(field: Field<Value>, item: Item): number;
+    push(item: any): number;
   }
 
   export interface InternalReadObject<Value>
@@ -63,17 +64,27 @@ export namespace AsCollection {
   ) => Result;
 }
 
-export const fieldEach = ((field: any, callback: () => void) =>
-  field.constructor.each(field, callback)) as FieldEach;
+export const fieldEach = ((
+  field: Nullish<StaticImplements<AsCollectionRead>>,
+  callback: () => void,
+) =>
+  field?.constructor
+    .asCollection(field)
+    ?.each(callback)) as unknown as FieldEach;
 
 export interface FieldEach {}
 
-export const fieldMap = ((field: any, callback: () => void) =>
-  field.constructor.map(field, callback)) as FieldMap;
+export const fieldMap = ((
+  field: Nullish<StaticImplements<AsCollectionRead>>,
+  callback: () => void,
+) =>
+  field?.constructor.asCollection(field)?.map(callback)) as unknown as FieldMap;
 
 export interface FieldMap {}
 
-export const fieldPush = <Fieldish, Value>(
-  field: StaticImplements<AsCollection>,
+export const fieldPush = ((
+  field: Nullish<StaticImplements<AsCollection>>,
   item: any,
-) => field.constructor.asArray(field)?.push(field, item);
+) => field?.constructor.asArray(field)?.push(item)) as unknown as FieldPush;
+
+export interface FieldPush {}

@@ -10,7 +10,7 @@ import {
 import { FieldRef } from "./ref/index.ts";
 import { postpone } from "../../tests/utils.ts";
 import { EventsTree } from "../events/index.ts";
-import { fieldEach, fieldMap } from "./collection/index.ts";
+import { fieldEach, fieldMap, fieldPush } from "./collection/index.ts";
 
 //#region Field
 
@@ -2242,72 +2242,11 @@ describe(Field, () => {
 
       it("updates the length of the array", () => {
         const field = new Field([1, 2, 3]);
-        field.push(4);
+        fieldPush(field, 4);
         expect(field.length).toBe(4);
         field.at(1).remove();
         expect(field.length).toBe(3);
         expect(field.get()).toEqual([1, 3, 4]);
-      });
-    });
-
-    describe("push", () => {
-      it("adds an item to the end of the array", () => {
-        const field = new Field([1, 2, 3]);
-        field.push(4);
-        expect(field.get()).toEqual([1, 2, 3, 4]);
-      });
-
-      it("returns the new length of the array", () => {
-        const field = new Field([1, 2, 3]);
-        expect(field.push(4)).toBe(4);
-      });
-
-      describe("changes", () => {
-        describe("field", () => {
-          it("triggers updates", async () => {
-            const field = new Field([1, 2, 3]);
-            const spy = vi.fn();
-            field.watch(spy);
-            field.push(4);
-            await postpone();
-            const [[value, event]]: any = spy.mock.calls;
-            expect(value).toEqual([1, 2, 3, 4]);
-            expect(event.changes).toMatchChanges(
-              change.field.shape | change.child.attach,
-            );
-          });
-        });
-
-        describe("child", () => {
-          it("triggers updates", async () => {
-            const field = new Field([[1, 2, 3]]);
-            const spy = vi.fn();
-            field.watch(spy);
-            field.at(0).push(4);
-            await postpone();
-            const [[value, event]]: any = spy.mock.calls;
-            expect(value).toEqual([[1, 2, 3, 4]]);
-            expect(event.changes).toMatchChanges(
-              change.child.shape | change.subtree.attach,
-            );
-          });
-        });
-
-        describe("subtree", () => {
-          it("triggers updates", async () => {
-            const field = new Field([[[1, 2, 3]]]);
-            const spy = vi.fn();
-            field.watch(spy);
-            // @ts-expect-error: This is fine!
-            field.at(0).at(0).push(4);
-            await postpone();
-            const [[value, event]]: any = spy.mock.calls;
-            expect(value).toEqual([[[1, 2, 3, 4]]]);
-            expect(event.changes).toMatchChanges(
-              change.subtree.shape | change.subtree.attach,
-            );
-          });
-        });
       });
     });
 

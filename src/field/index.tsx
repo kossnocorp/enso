@@ -33,6 +33,7 @@ import {
   useTypedMemo as useMemo,
 } from "./hook/index.ts";
 import { AsCollection } from "./collection/index.ts";
+import { staticImplements } from "./util.ts";
 
 export { FieldRef };
 
@@ -40,8 +41,10 @@ export { FieldRef };
 
 const externalSymbol = Symbol();
 
+@staticImplements<AsCollection>()
+// TODO: Try making this work or remove:
+// Static<typeof Field<unknown>, AsCollection>,
 export class Field<Payload>
-  // Static<typeof Field<unknown>, AsCollection>,
   implements
     Enso.InterfaceAttributes<Field.InterfaceDef<Payload>>,
     Enso.InterfaceValueRead<Payload>,
@@ -813,64 +816,6 @@ export class Field<Payload>
     return field;
   }
 
-  static each<Value extends Array<unknown>>(
-    field: Field<Value>,
-    callback: Field.CollectionCallbackArray<Value>,
-  ): void;
-
-  static each<Value extends object>(
-    field: Field<Value>,
-    callback: Field.CollectionCallbackObjectPair<Value>,
-  ): void;
-
-  static each<Value extends object>(
-    field: Field<Value>,
-    callback: Field.CollectionCallbackObjectSingle<Value>,
-  ): void;
-
-  static each(field: Field<any>, callback: (...args: any) => void): void {
-    if (
-      field.#internal instanceof InternalObjectState ||
-      field.#internal instanceof InternalArrayState
-    )
-      field.#internal.each(callback);
-  }
-
-  static map<Value extends Array<unknown>, Result>(
-    field: Field<Value>,
-    callback: Field.CollectionCallbackArray<Value, Result>,
-  ): Result[];
-
-  static map<Value extends object, Result>(
-    field: Field<Value>,
-    callback: Field.CollectionCallbackObjectPair<Value, Result>,
-  ): Result[];
-
-  static map<Value extends object, Result>(
-    field: Field<Value>,
-    callback: Field.CollectionCallbackObjectSingle<Value, Result>,
-  ): Result[];
-
-  static map(field: Field<any>, callback: (...args: any) => void): any {
-    if (
-      field.#internal instanceof InternalObjectState ||
-      field.#internal instanceof InternalArrayState
-    )
-      return field.#internal.map(callback);
-  }
-
-  // @ts-ignore: This is fine
-  push: Payload extends Array<infer Item> ? (item: Item) => number : never = (
-    item: Payload extends Array<infer Item> ? Item : never,
-  ) => {
-    if (!(this.#internal instanceof InternalArrayState))
-      throw new Error("State is not an array");
-
-    const length = this.#internal.push(item);
-    this.trigger(change.field.shape | change.child.attach, true);
-    return length;
-  };
-
   // @ts-ignore: This is fine
   insert: Payload extends Array<infer Item>
     ? (index: number, item: Item) => number
@@ -1579,22 +1524,28 @@ declare module "./collection/index.ts" {
 
   interface FieldEach {
     <Value extends unknown[]>(
-      field: Field<Value>,
+      field: Field<Value> | Nullish<Enso.Tried<Field<Value>>>,
       callback: Field.CollectionCallbackArray<Value>,
     ): void;
 
-    // NOTE: We have to have two separate overloads for objects as with
-    // the current approach binding the key and value in the arguments on the
-    // type level, TypeScript fails to find the correct overload for when
-    // the callback accepts a single argument (i.e. the item field), TODO...
+    // <Value extends unknown[]>(
+    //   field: Nullish<Enso.Tried<Field<Value>>>,
+    //   callback: Field.CollectionCallbackArray<Value>,
+    // ): void;
+
+    // NOTE: We have to have two separate overloads for objects (`CollectionCallbackObjectPair`
+    // and `CollectionCallbackObjectSingle`) as with the current approach
+    // binding the key and value in the arguments on the type level, TypeScript
+    // fails to find the correct overload for when the callback accepts a single
+    // argument (i.e. just the item field).
 
     <Value extends object>(
-      field: Field<Value>,
+      field: Field<Value> | Nullish<Enso.Tried<Field<Value>>>,
       callback: Field.CollectionCallbackObjectPair<Value>,
     ): void;
 
     <Value extends object>(
-      field: Field<Value>,
+      field: Field<Value> | Nullish<Enso.Tried<Field<Value>>>,
       callback: Field.CollectionCallbackObjectSingle<Value>,
     ): void;
   }
@@ -1603,19 +1554,33 @@ declare module "./collection/index.ts" {
 
   interface FieldMap {
     <Value extends Array<unknown>, Result>(
-      field: Field<Value>,
+      field: Field<Value> | Nullish<Enso.Tried<Field<Value>>>,
       callback: Field.CollectionCallbackArray<Value, Result>,
     ): Result[];
 
     <Value extends object, Result>(
-      field: Field<Value>,
+      field: Field<Value> | Nullish<Enso.Tried<Field<Value>>>,
       callback: Field.CollectionCallbackObjectPair<Value, Result>,
     ): Result[];
 
     <Value extends object, Result>(
-      field: Field<Value>,
+      field: Field<Value> | Nullish<Enso.Tried<Field<Value>>>,
       callback: Field.CollectionCallbackObjectSingle<Value, Result>,
     ): Result[];
+  }
+
+  // `push`
+
+  interface FieldPush {
+    <Value extends Array<unknown>, ItemValue extends Value[number]>(
+      field: Field<Value>,
+      item: ItemValue,
+    ): Field<ItemValue>;
+
+    <Value extends Array<unknown>, ItemValue extends Value[number]>(
+      field: Enso.Tried<Field<Value>> | undefined | null,
+      item: ItemValue,
+    ): Field<ItemValue>;
   }
 }
 
@@ -2255,15 +2220,18 @@ export class InternalArrayState<
     return this.#children.map(callback as any);
   }
 
-  push(item: Payload[number]) {
+  push<ItemValue extends Payload[number]>(item: ItemValue): Field<ItemValue> {
     const length = this.#children.length;
-    // @ts-ignore: TODO:
-    this.#children[length] = new Field(item, {
+    const field = new Field(item, {
       key: String(length),
       // @ts-ignore: This is fine
       field: this.external,
     });
-    return length + 1;
+    // @ts-ignore: TODO:
+    this.#children[length] = field;
+
+    this.external.trigger(change.field.shape | change.child.attach, true);
+    return field;
   }
 
   insert(index: number, item: Payload[number]) {
