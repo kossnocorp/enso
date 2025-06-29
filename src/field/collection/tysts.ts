@@ -1,6 +1,13 @@
-import { Field, FieldRef } from "../index.tsx";
+import { Enso } from "../../types.ts";
+import { DetachedValue, Field, FieldRef } from "../index.tsx";
 import { MaybeFieldRef } from "../ref/index.ts";
-import { fieldEach, fieldInsert, fieldMap, fieldPush } from "./index.ts";
+import {
+  fieldEach,
+  fieldInsert,
+  fieldMap,
+  fieldPush,
+  fieldRemove,
+} from "./index.ts";
 
 const arr = new Field<Array<string | number>>([]);
 const arrOrUnd = new Field<Array<string | number> | undefined>([]);
@@ -10,10 +17,11 @@ const arrOrNumOrUnd = new Field<Array<string | number> | number | undefined>(
 );
 
 const obj = new Field<Hello>({ hello: "hi", world: 42 });
-const objOpt = new Field<Ok>({ ok: true });
+const objPart = new Field<Ok>({ ok: true });
 const objOrUnd = new Field<Ok | undefined>({ ok: true });
-const objOrNum = new Field<Ok | number>({ ok: true });
-const objOrNumOrUnd = new Field<Ok | number | undefined>({ ok: true });
+
+const rec = new Field<Record<string, string | number>>({});
+const prim = new Field<string | number>("hello");
 
 // `fieldEach`
 {
@@ -160,7 +168,7 @@ const objOrNumOrUnd = new Field<Ok | number | undefined>({ ok: true });
     fieldEach(obj, () => {});
 
     // Optional
-    fieldEach(objOpt, (item, key) => {
+    fieldEach(objPart, (item, key) => {
       item satisfies Field<boolean> | Field<string | undefined>;
       // @ts-expect-error
       item.any;
@@ -179,12 +187,12 @@ const objOrNumOrUnd = new Field<Ok | number | undefined>({ ok: true });
         item.get() satisfies boolean;
       }
     });
-    fieldEach(objOpt, (item) => {
+    fieldEach(objPart, (item) => {
       item satisfies Field<boolean> | Field<string | undefined>;
       // @ts-expect-error
       item.any;
     });
-    fieldEach(objOpt, () => {});
+    fieldEach(objPart, () => {});
 
     // Undefined
     fieldEach(objOrUnd.try(), (item, key) => {
@@ -236,7 +244,7 @@ const objOrNumOrUnd = new Field<Ok | number | undefined>({ ok: true });
     fieldEach(ref, () => {});
 
     // Optional
-    const refOpt = new FieldRef(objOpt);
+    const refOpt = new FieldRef(objPart);
     fieldEach(refOpt, (item, key) => {
       item satisfies FieldRef<boolean> | FieldRef<string | undefined>;
       // @ts-expect-error
@@ -319,7 +327,7 @@ const objOrNumOrUnd = new Field<Ok | number | undefined>({ ok: true });
     // Optional
     const maybeOpt = new MaybeFieldRef({
       type: "direct",
-      field: objOpt,
+      field: objPart,
     });
     fieldEach(maybeOpt, (item, key) => {
       item satisfies MaybeFieldRef<boolean> | MaybeFieldRef<string | undefined>;
@@ -513,7 +521,7 @@ const objOrNumOrUnd = new Field<Ok | number | undefined>({ ok: true });
     result satisfies number[];
 
     // Optional
-    const resultOpt = fieldMap(objOpt, (item, key) => {
+    const resultOpt = fieldMap(objPart, (item, key) => {
       item satisfies Field<boolean> | Field<string | undefined>;
       // @ts-expect-error
       item.any;
@@ -589,7 +597,7 @@ const objOrNumOrUnd = new Field<Ok | number | undefined>({ ok: true });
     refResult satisfies number[];
 
     // Optional
-    const refOpt = new FieldRef(objOpt);
+    const refOpt = new FieldRef(objPart);
     const refOptResult = fieldMap(refOpt, (item, key) => {
       item satisfies FieldRef<boolean> | FieldRef<string | undefined>;
       // @ts-expect-error
@@ -672,7 +680,7 @@ const objOrNumOrUnd = new Field<Ok | number | undefined>({ ok: true });
     // Optional
     const maybeOpt = new MaybeFieldRef({
       type: "direct",
-      field: objOpt,
+      field: objPart,
     });
     const maybeOptResult = fieldMap(maybeOpt, (item, key) => {
       item satisfies MaybeFieldRef<boolean> | MaybeFieldRef<string | undefined>;
@@ -728,7 +736,7 @@ const objOrNumOrUnd = new Field<Ok | number | undefined>({ ok: true });
   }
 }
 
-// `push`
+// `fieldPush`
 {
   // Regular
   {
@@ -761,7 +769,7 @@ const objOrNumOrUnd = new Field<Ok | number | undefined>({ ok: true });
   }
 }
 
-// `insert`
+// `fieldInsert`
 {
   // Regular
   {
@@ -791,6 +799,81 @@ const objOrNumOrUnd = new Field<Ok | number | undefined>({ ok: true });
     fieldInsert(arrOrNumOrUnd.try(), 0, 456);
     // @ts-expect-error
     fieldInsert(arrOrUnd.try(), 0, false);
+  }
+}
+
+// `fieldRemove`
+{
+  // Object
+  {
+    // Field
+    {
+      const removed = fieldRemove(objPart, "message");
+      removed satisfies Field<DetachedValue>;
+
+      // @ts-expect-error
+      fieldRemove(objPart, "ok");
+      // @ts-expect-error
+      fieldRemove(objPart, "nope");
+      // @ts-expect-error
+      fieldRemove(objPart, 0);
+      // @ts-expect-error
+      fieldRemove(objPart, false);
+    }
+
+    // Undefined
+    {
+      const objUnd = new Field<Record<string, number> | undefined>({ a: 1 });
+      fieldRemove(objUnd.try(), "a");
+      // @ts-expect-error
+      fieldRemove(objUnd, "a");
+    }
+  }
+
+  // Array
+  {
+    // Field
+    {
+      const arrField = new Field<number[]>([1, 2, 3]);
+      fieldRemove(arrField, 1);
+      // @ts-expect-error
+      fieldRemove(arrField, "a");
+      // @ts-expect-error
+      fieldRemove(arrField, false);
+    }
+
+    // Undefined
+    {
+      const arrUnd = new Field<number[] | undefined>([1, 2, 3]);
+      fieldRemove(arrUnd.try(), 1);
+      // @ts-expect-error
+      fieldRemove(arrUnd, 1);
+    }
+  }
+
+  // Self
+  {
+    // Object
+
+    const removed = fieldRemove(objPart.$.message);
+    removed satisfies Field<DetachedValue>;
+
+    // @ts-expect-error
+    fieldRemove(objPart.$.ok);
+
+    // Record
+
+    fieldRemove(rec.at("hello"));
+    fieldRemove(rec.at("world"));
+    // @ts-expect-error
+    fieldRemove(rec.$.hello);
+    // @ts-expect-error
+    fieldRemove(rec, number);
+
+    // Primitive
+    fieldRemove(prim as unknown as Enso.Detachable<Field<string>>);
+    // @ts-expect-error
+    fieldRemove(prim);
   }
 }
 

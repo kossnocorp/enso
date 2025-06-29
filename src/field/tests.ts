@@ -1,6 +1,15 @@
 import { assert, describe, expect, it, vi } from "vitest";
+import { postpone } from "../../tests/utils.ts";
 import { change } from "../change/index.ts";
+import { EventsTree } from "../events/index.ts";
+import { Enso } from "../types.ts";
 import { ValidationTree } from "../validation/index.ts";
+import {
+  fieldEach,
+  fieldMap,
+  fieldPush,
+  fieldRemove,
+} from "./collection/index.ts";
 import {
   ComputedField,
   DetachedValue,
@@ -8,9 +17,6 @@ import {
   Field,
 } from "./index.tsx";
 import { FieldRef } from "./ref/index.ts";
-import { postpone } from "../../tests/utils.ts";
-import { EventsTree } from "../events/index.ts";
-import { fieldEach, fieldMap, fieldPush } from "./collection/index.ts";
 
 //#region Field
 
@@ -229,7 +235,7 @@ describe(Field, () => {
         it("allows to re-attach child fields", () => {
           const field = new Field<Record<string, number>>({ num: 42 });
           const childField = field.at("num");
-          childField.remove();
+          fieldRemove(childField);
           childField.set(9);
           expect(field.get()).toEqual({ num: 9 });
         });
@@ -595,7 +601,7 @@ describe(Field, () => {
         it("allows to re-attach item fields", () => {
           const field = new Field<number[]>([1, 2, 3]);
           const itemField = field.at(1);
-          itemField.remove();
+          fieldRemove(itemField);
           itemField.set(9);
           expect(field.get()).toEqual([1, 9, 3]);
         });
@@ -604,7 +610,7 @@ describe(Field, () => {
           const field = new Field<number[]>([1, 2, 3]);
           const itemField = field.at(1);
 
-          itemField.remove();
+          fieldRemove(field, 1);
           expect(field.get()).toEqual([1, 3]);
           expect(field.at(0).key).toBe("0");
           expect(field.at(1).key).toBe("1");
@@ -1301,7 +1307,7 @@ describe(Field, () => {
         it("allows to access record fields", () => {
           const field = new Field<Record<string, number>>({ num: 42 });
           const numA = field.$["num"];
-          numA satisfies Field<number | undefined> | undefined;
+          numA satisfies Enso.Detachable<Field<number | undefined>> | undefined;
           expect(numA?.get()).toBe(42);
           const numB = field.at("num");
           numB satisfies Field<number | undefined>;
@@ -1320,7 +1326,7 @@ describe(Field, () => {
         it("allows to access undefined fields", () => {
           const field = new Field<{ num?: number; str?: string }>({ num: 42 });
           const str = field.$.str;
-          str satisfies Field<string | undefined>;
+          str satisfies Enso.Detachable<Field<string | undefined>>;
           expect(str).toBeInstanceOf(Field);
           expect(str.get()).toBe(undefined);
         });
@@ -2048,191 +2054,6 @@ describe(Field, () => {
     // });
   });
 
-  describe("collection", () => {
-    describe("remove", () => {
-      describe("object", () => {
-        it("removes a record field by key", () => {
-          const field = new Field<Record<string, number>>({
-            one: 1,
-            two: 2,
-            three: 3,
-          });
-          field.remove("one");
-          expect(field.get()).toEqual({ two: 2, three: 3 });
-        });
-
-        it("removes a optional field by key", () => {
-          const field = new Field<{ one: 1; two: 2 | undefined; three?: 3 }>({
-            one: 1,
-            two: 2,
-            three: 3,
-          });
-          field.remove("three");
-          expect(field.get()).toEqual({ one: 1, two: 2 });
-          // @ts-ignore
-          field.remove("one");
-          // @ts-ignore
-          field.remove("two");
-        });
-
-        it("doesn't throw on removing non-existing field", () => {
-          const field = new Field<Record<string, number>>({ one: 1 });
-          expect(() => field.remove("two")).not.toThrow();
-        });
-
-        describe("changes", () => {
-          describe("field", () => {
-            it("assigns field detach changes", () => {
-              const field = new Field<Record<string, number>>({
-                one: 1,
-                two: 2,
-                three: 3,
-              });
-              expect(field.at("one").remove().lastChanges).toMatchChanges(
-                change.field.detach,
-              );
-            });
-
-            it("triggers updates", async () => {
-              const spy = vi.fn();
-              const field = new Field<Record<string, number>>({
-                one: 1,
-                two: 2,
-                three: 3,
-              });
-              field.watch(spy);
-              field.at("one").remove();
-              await postpone();
-              const [[value, event]]: any = spy.mock.calls;
-              expect(value).toEqual({ two: 2, three: 3 });
-              expect(event.changes).toMatchChanges(
-                change.field.shape | change.child.detach,
-              );
-            });
-          });
-
-          describe("child", () => {
-            it("assigns child detach changes", () => {
-              const field = new Field<Record<string, number>>({
-                one: 1,
-                two: 2,
-                three: 3,
-              });
-              field.remove("one");
-              expect(field.lastChanges).toMatchChanges(change.child.detach);
-            });
-
-            it("triggers updates", async () => {
-              const spy = vi.fn();
-              const field = new Field<Record<string, number>>({
-                one: 1,
-                two: 2,
-                three: 3,
-              });
-              field.watch(spy);
-              field.remove("one");
-              await postpone();
-              const [[value, event]]: any = spy.mock.calls;
-              expect(value).toEqual({ two: 2, three: 3 });
-              expect(event.changes).toMatchChanges(
-                change.field.shape | change.child.detach,
-              );
-            });
-          });
-        });
-      });
-
-      describe("array", () => {
-        it("removes a field by index", () => {
-          const field = new Field([1, 2, 3]);
-          field.remove(1);
-          expect(field.get()).toEqual([1, 3]);
-        });
-
-        it("doesn't throw on removing non-existing item", () => {
-          const field = new Field([1, 2, 3]);
-          expect(() => field.remove(6)).not.toThrow();
-        });
-
-        it("updates the children indices", () => {
-          const field = new Field([1, 2, 3, 4]);
-          field.remove(1);
-          expect(field.at(0).key).toBe("0");
-          expect(field.at(1).key).toBe("1");
-          expect(field.at(2).key).toBe("2");
-        });
-
-        describe("changes", () => {
-          describe("field", () => {
-            it("assigns field detach changes", () => {
-              const field = new Field([1, 2, 3]);
-              expect(field.at(2).remove().lastChanges).toMatchChanges(
-                change.field.detach,
-              );
-            });
-
-            it("triggers updates", async () => {
-              const spy = vi.fn();
-              const field = new Field([1, 2, 3, 4]);
-              field.watch(spy);
-              field.at(1).remove();
-              await postpone();
-              const [[value, event]]: any = spy.mock.calls;
-              expect(value).toEqual([1, 3, 4]);
-              expect(event.changes).toMatchChanges(
-                change.field.shape | change.child.detach,
-              );
-            });
-          });
-
-          describe("child", () => {
-            it("assigns child detach", () => {
-              const field = new Field([1, 2, 3]);
-              field.remove(2);
-              expect(field.lastChanges).toMatchChanges(change.child.detach);
-            });
-
-            it("triggers updates", async () => {
-              const spy = vi.fn();
-              const field = new Field([[1, 2, 3, 4]]);
-              field.watch(spy);
-              // @ts-expect-error: This is fine!
-              field.at(0).remove(1);
-              await postpone();
-              const [[value, event]]: any = spy.mock.calls;
-              expect(value).toEqual([[1, 3, 4]]);
-              expect(event.changes).toMatchChanges(
-                change.child.shape | change.subtree.detach,
-              );
-            });
-          });
-
-          describe.todo("subtree");
-        });
-      });
-
-      describe("item", () => {
-        it("removes an item in an object", () => {
-          const field = new Field<{
-            one?: number;
-            two?: number;
-            three?: number;
-          }>({ one: 1, two: 2, three: 3 });
-          field.$.two.remove();
-          expect(field.get()).toEqual({ one: 1, three: 3 });
-        });
-
-        it("removes an item in an array", () => {
-          const field = new Field([1, 2, 3]);
-          field.at(1).remove();
-          expect(field.get()).toEqual([1, 3]);
-        });
-
-        describe.todo("changes");
-      });
-    });
-  });
-
   describe("array", () => {
     describe("length", () => {
       it("returns the length of the array", () => {
@@ -2244,7 +2065,7 @@ describe(Field, () => {
         const field = new Field([1, 2, 3]);
         fieldPush(field, 4);
         expect(field.length).toBe(4);
-        field.at(1).remove();
+        fieldRemove(field, 1);
         expect(field.length).toBe(3);
         expect(field.get()).toEqual([1, 3, 4]);
       });
@@ -3149,7 +2970,7 @@ describe(ComputedField, () => {
 
     it("listens to validation events through data updates", async () => {
       const source = new Field<{
-        user?: { name?: { first?: string; last?: string } };
+        user?: { name?: { first?: string | undefined; last?: string } };
       }>({});
       const sourceSpyInvalid = vi.fn();
       source.watch(sourceSpyInvalid);

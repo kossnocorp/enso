@@ -119,6 +119,12 @@ export class FieldRef<Payload> {
     return Field.asArray(field.#field);
   }
 
+  static asChild<Value>(
+    field: FieldRef<Value>,
+  ): AsCollection.AsChildResult<Value> {
+    return Field.asChild(field.#field);
+  }
+
   static fromField<Value>(field: Field<Value>): FieldRef<Value> {
     return FieldRef.get(field);
   }
@@ -432,6 +438,14 @@ export class MaybeFieldRef<Payload> {
     // If it is a shadow field, there can't be anything to iterate.
     if (field.#target.type !== "direct") return;
     return Field.asArray(field.#target.field);
+  }
+
+  static asChild<Value>(
+    field: MaybeFieldRef<Value>,
+  ): AsCollection.AsChildResult<Value> {
+    // If it is a shadow field, there can't be anything to access.
+    if (field.#target.type !== "direct") return;
+    return Field.asChild(field.#target.field);
   }
 
   static fromField<Value>(field: Field<Value>): MaybeFieldRef<Value> {

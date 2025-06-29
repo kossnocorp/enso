@@ -1,6 +1,8 @@
 import { DependencyList } from "react";
 import { ChangesEvent, FieldChange } from "./change/index.ts";
 import { EventsTree } from "./events/index.ts";
+import { Field } from "./field/index.tsx";
+import { EnsoUtils } from "./utils.ts";
 
 export namespace Enso {
   //#region Foundation
@@ -223,6 +225,24 @@ export namespace Enso {
   export type ComputeCallback<Payload, Computed> = (
     payload: Payload,
   ) => Computed;
+
+  //#endregion
+
+  //#region Collection
+
+  export type Detachable<Type> = Type & { [detachableBrand]: true };
+  declare const detachableBrand: unique symbol;
+
+  export type DetachableKeys<Value> = Exclude<
+    {
+      [Key in keyof Value]: EnsoUtils.IsStaticKey<Value, Key> extends true
+        ? EnsoUtils.IsOptionalKey<Value, Key> extends true
+          ? Key
+          : never
+        : Key;
+    }[keyof Value],
+    undefined
+  >;
 
   //#endregion
 

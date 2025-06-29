@@ -68,4 +68,7 @@ export namespace EnsoUtils {
   };
 
   export type OptionalKeys<Payload> = keyof PickOptional<Payload>;
+
+  export type IsOptionalKey<Payload, Key extends keyof Payload> =
+    Key extends OptionalKeys<Payload> ? true : false;
 }

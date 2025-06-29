@@ -282,17 +282,16 @@ export class Field<Payload>
 
   // TODO: Exposing the notify parents flag might be dangerous
   // TODO: Share interface with set
-  set<Value extends Payload | DetachedValue>(
-    value: Value,
+  set<SetValue extends Payload | DetachedValue>(
+    value: SetValue,
     notifyParents = true,
-  ): Field<Payload & Value> {
+  ): Field<SetValue> {
     const changes = this.#set(value);
     if (changes) this.trigger(changes, notifyParents);
 
     // @ts-ignore
     Field.lastChanges.set(this, changes);
-    // @ts-ignore
-    return this as Field<Payload & Value>;
+    return this as any;
   }
 
   #set(value: Payload | DetachedValue): FieldChange {
@@ -812,6 +811,12 @@ export class Field<Payload>
       return field.#internal as any;
   }
 
+  static asChild<Value>(
+    field: Field<Value>,
+  ): AsCollection.AsChildResult<Value> {
+    return field.#internal as any;
+  }
+
   static fromField<Value>(field: Field<Value>): Field<Value> {
     return field;
   }
@@ -840,19 +845,13 @@ export class Field<Payload>
     return this.#internal.length;
   }
 
-  // @ts-ignore: TODO:
-  remove: Field.RemoveFn<Payload> = (...args) => {
-    if (!args.length) return this.set(detachedValue);
-    else {
-      // @ts-ignore: TODO:
-      const child = this.at(args[0]);
-      // @ts-ignore: TODO:
-      child.remove();
-      // @ts-ignore: TODO:
-      Field.lastChanges.set(this, shiftChildChanges(child.lastChanges));
-      return child;
-    }
-  };
+  static remove<Value>(
+    field: Field<Value>,
+    key?: keyof Value | undefined,
+  ): Field<DetachedValue> {
+    if (key === undefined) return field.set(detachedValue, true);
+    return Field.remove(field.at(key as any) as any);
+  }
 
   //#endregion
 
@@ -1109,10 +1108,10 @@ export namespace Field {
 
   export interface InterfaceValueWrite<Def extends Enso.InterfaceDef>
     extends Enso.InterfaceValueWrite<Def> {
-    set<Value extends Def["Payload"] | DetachedValue>(
-      value: Value,
+    set<SetValue extends Def["Payload"] | DetachedValue>(
+      value: SetValue,
       notifyParents?: boolean,
-    ): Field<Def["Payload"] & Value>;
+    ): Field<SetValue>;
   }
 
   export interface InterfaceTree<Def extends Enso.InterfaceDef>
@@ -1194,22 +1193,22 @@ export namespace Field {
     source: Field<Payload>;
   }
 
-  export type $<Payload> = Payload extends object
-    ? $Object<Payload>
-    : undefined;
+  export type $<Payload> = Payload extends object ? $Object<Payload> : never;
 
   export type $Object<Payload> = {
-    [Key in keyof Payload]-?: Field<
-      Utils.IsStaticKey<Payload, Key> extends true
-        ? Payload[Key]
-        : Payload[Key] | undefined
-    >;
+    [Key in keyof Payload]-?: Utils.IsStaticKey<Payload, Key> extends true
+      ? Utils.IsOptionalKey<Payload, Key> extends true
+        ? Enso.Detachable<Field<Payload[Key]>>
+        : Field<Payload[Key]>
+      : Enso.Detachable<Field<Payload[Key] | undefined>>;
   };
 
   export type At<Payload, Key extends keyof Payload> =
     Utils.IsStaticKey<Payload, Key> extends true
-      ? Field<Payload[Key]>
-      : Field<Payload[Key] | undefined>;
+      ? Utils.IsOptionalKey<Payload, Key> extends true
+        ? Enso.Detachable<Field<Payload[Key]>>
+        : Field<Payload[Key]>
+      : Enso.Detachable<Field<Payload[Key] | undefined>>;
 
   export type TryKey<
     Def extends Enso.InterfaceDef,
@@ -1363,16 +1362,6 @@ export namespace Field {
     >,
   ) => Result;
 
-  type Test1 = CollectionCallbackObjectPair<{
-    a: string;
-    b: number;
-  }>;
-
-  type Test2 = CollectionCallbackObjectPair<{
-    a: string;
-    b?: number;
-  }>;
-
   export type AsCollection<Value> =
     Value extends Array<any>
       ? InternalArrayState<Value>
@@ -1505,13 +1494,17 @@ export namespace Field {
 //#region Field Declarations
 
 declare module "./collection/index.ts" {
-  // `each`
+  // `fieldEach`
 
   interface FieldEach {
+    // Array
+
     <Value extends unknown[]>(
       field: Field<Value> | Nullish<Enso.Tried<Field<Value>>>,
       callback: Field.CollectionCallbackArray<Value>,
     ): void;
+
+    // Object
 
     // NOTE: We have to have two separate overloads for objects (`CollectionCallbackObjectPair`
     // and `CollectionCallbackObjectSingle`) as with the current approach
@@ -1530,13 +1523,17 @@ declare module "./collection/index.ts" {
     ): void;
   }
 
-  // `map`
+  // `fieldMap`
 
   interface FieldMap {
+    // Array
+
     <Value extends Array<unknown>, Result>(
       field: Field<Value> | Nullish<Enso.Tried<Field<Value>>>,
       callback: Field.CollectionCallbackArray<Value, Result>,
     ): Result[];
+
+    // Object
 
     <Value extends object, Result>(
       field: Field<Value> | Nullish<Enso.Tried<Field<Value>>>,
@@ -1549,7 +1546,7 @@ declare module "./collection/index.ts" {
     ): Result[];
   }
 
-  // `push`
+  // `fieldPush`
 
   interface FieldPush {
     <Value extends Array<unknown>, ItemValue extends Value[number]>(
@@ -1563,7 +1560,7 @@ declare module "./collection/index.ts" {
     ): Field<ItemValue>;
   }
 
-  // `insert`
+  // `fieldInsert`
 
   interface FieldInsert {
     <Value extends Array<unknown>, ItemValue extends Value[number]>(
@@ -1577,6 +1574,42 @@ declare module "./collection/index.ts" {
       index: number,
       item: ItemValue,
     ): Field<ItemValue>;
+  }
+
+  // `fieldRemove`
+
+  interface FieldRemove {
+    // Array
+
+    <Value extends Array<unknown>, ItemValue extends Value[number]>(
+      field: Field<Value>,
+      item: ItemValue,
+    ): Field<DetachedValue>;
+
+    <Value extends Array<unknown>, ItemValue extends Value[number]>(
+      field: Enso.Tried<Field<Value>> | undefined | null,
+      item: ItemValue,
+    ): Field<DetachedValue>;
+
+    // Object
+
+    <Value extends object, Key extends Enso.DetachableKeys<Value>>(
+      field: Field<Value>,
+      key: Key,
+    ): Field<DetachedValue>;
+
+    <Value extends object, Key extends Enso.DetachableKeys<Value>>(
+      field: Enso.Tried<Field<Value>> | undefined | null,
+      key: Key,
+    ): Field<DetachedValue>;
+
+    // Self
+
+    <Value>(field: Enso.Detachable<Field<Value>>): Field<DetachedValue>;
+
+    <Value>(
+      field: Enso.Tried<Enso.Detachable<Field<Value>>> | undefined | null,
+    ): Field<DetachedValue>;
   }
 }
 
@@ -1806,6 +1839,10 @@ export class InternalValueState<Payload> extends InternalState<Payload> {
     return this.#value === detachedValue ? (undefined as Payload) : this.#value;
   }
 
+  remove(): Field<DetachedValue> {
+    return Field.remove(this.external);
+  }
+
   //#region Tree
 
   $(): Field.$<Payload> {
@@ -2002,6 +2039,10 @@ export class InternalObjectState<
       result.push((callback as any)(field, key as keyof Payload)),
     );
     return result;
+  }
+
+  remove(key?: keyof Payload): Field<DetachedValue> {
+    return Field.remove(this.external, key);
   }
 
   //#endregion
@@ -2246,6 +2287,10 @@ export class InternalArrayState<
 
     this.external.trigger(change.field.shape | change.child.attach, true);
     return field;
+  }
+
+  remove(key?: keyof Payload): Field<DetachedValue> {
+    return Field.remove(this.external, key);
   }
 
   find(
