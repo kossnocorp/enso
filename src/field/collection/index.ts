@@ -48,7 +48,9 @@ export namespace AsCollection {
     extends InternalReadCollection<Value> {}
 
   export interface InternalArray<Value> extends InternalReadArray<Value> {
-    push(item: any): number;
+    push(item: any): any;
+
+    insert(index: number, item: any): any;
   }
 
   export interface InternalReadObject<Value>
@@ -88,3 +90,14 @@ export const fieldPush = ((
 ) => field?.constructor.asArray(field)?.push(item)) as unknown as FieldPush;
 
 export interface FieldPush {}
+
+export const fieldInsert = ((
+  field: Nullish<StaticImplements<AsCollection>>,
+  index: number,
+  item: any,
+) =>
+  field?.constructor
+    .asArray(field)
+    ?.insert(index, item)) as unknown as FieldInsert;
+
+export interface FieldInsert {}

@@ -817,21 +817,6 @@ export class Field<Payload>
   }
 
   // @ts-ignore: This is fine
-  insert: Payload extends Array<infer Item>
-    ? (index: number, item: Item) => number
-    : never = (
-    index: number,
-    item: Payload extends Array<infer Item> ? Item : never,
-  ) => {
-    if (!(this.#internal instanceof InternalArrayState))
-      throw new Error("State is not an array");
-
-    const length = this.#internal.insert(index, item);
-    this.trigger(change.field.shape | change.child.attach, true);
-    return length;
-  };
-
-  // @ts-ignore: This is fine
   find: Field.FindFn<Payload> = (predicate) => {
     if (!(this.#internal instanceof InternalArrayState))
       throw new Error("State is not an array");
@@ -1528,11 +1513,6 @@ declare module "./collection/index.ts" {
       callback: Field.CollectionCallbackArray<Value>,
     ): void;
 
-    // <Value extends unknown[]>(
-    //   field: Nullish<Enso.Tried<Field<Value>>>,
-    //   callback: Field.CollectionCallbackArray<Value>,
-    // ): void;
-
     // NOTE: We have to have two separate overloads for objects (`CollectionCallbackObjectPair`
     // and `CollectionCallbackObjectSingle`) as with the current approach
     // binding the key and value in the arguments on the type level, TypeScript
@@ -1579,6 +1559,22 @@ declare module "./collection/index.ts" {
 
     <Value extends Array<unknown>, ItemValue extends Value[number]>(
       field: Enso.Tried<Field<Value>> | undefined | null,
+      item: ItemValue,
+    ): Field<ItemValue>;
+  }
+
+  // `insert`
+
+  interface FieldInsert {
+    <Value extends Array<unknown>, ItemValue extends Value[number]>(
+      field: Field<Value>,
+      index: number,
+      item: ItemValue,
+    ): Field<ItemValue>;
+
+    <Value extends Array<unknown>, ItemValue extends Value[number]>(
+      field: Enso.Tried<Field<Value>> | undefined | null,
+      index: number,
       item: ItemValue,
     ): Field<ItemValue>;
   }
@@ -2235,18 +2231,21 @@ export class InternalArrayState<
   }
 
   insert(index: number, item: Payload[number]) {
+    // @ts-ignore: TODO
+    const field = new Field(item, { key: String(index), field: this.external });
     this.#children.splice(
       index,
       0,
-      // @ts-ignore: This is fine
-      new Field(item, { key: String(index), field: this.external }),
+      // @ts-ignore: TODO
+      field,
     );
 
     this.#children.slice(index).forEach((item, index) => {
       item[externalSymbol].move(String(index));
     });
 
-    return this.#children.length;
+    this.external.trigger(change.field.shape | change.child.attach, true);
+    return field;
   }
 
   find(

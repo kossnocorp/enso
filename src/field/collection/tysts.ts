@@ -1,6 +1,6 @@
 import { Field, FieldRef } from "../index.tsx";
 import { MaybeFieldRef } from "../ref/index.ts";
-import { fieldEach, fieldMap, fieldPush } from "./index.ts";
+import { fieldEach, fieldInsert, fieldMap, fieldPush } from "./index.ts";
 
 const arr = new Field<Array<string | number>>([]);
 const arrOrUnd = new Field<Array<string | number> | undefined>([]);
@@ -758,6 +758,39 @@ const objOrNumOrUnd = new Field<Ok | number | undefined>({ ok: true });
     fieldPush(arrOrNumOrUnd.try(), 456);
     // @ts-expect-error
     fieldPush(arrOrUnd.try(), false);
+  }
+}
+
+// `insert`
+{
+  // Regular
+  {
+    const result = fieldInsert(arr, 0, "new item");
+    result satisfies Field<string>;
+    // @ts-expect-error
+    result.any;
+
+    fieldInsert(arr, 1, 456);
+    // @ts-expect-error
+    fieldInsert(arr, 2, false);
+
+    // @ts-expect-error
+    fieldInsert(arrOrNum, 0, 456);
+  }
+
+  // Undefined
+  {
+    const result = fieldInsert(arrOrUnd.try(), 0, "new item");
+    result satisfies Field<string>;
+    // @ts-expect-error
+    result.any;
+
+    // @ts-expect-error
+    fieldInsert(arrOrNum.try(), 0, 456);
+    // @ts-expect-error
+    fieldInsert(arrOrNumOrUnd.try(), 0, 456);
+    // @ts-expect-error
+    fieldInsert(arrOrUnd.try(), 0, false);
   }
 }
 
