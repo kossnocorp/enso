@@ -1546,6 +1546,14 @@ declare module "./collection/index.ts" {
     ): Result[];
   }
 
+  // `fieldSize`
+
+  interface FieldSize {
+    <Value extends Array<unknown>>(field: Field<Value>): number;
+
+    <Value extends object>(field: Field<Value>): number;
+  }
+
   // `fieldPush`
 
   interface FieldPush {
@@ -2041,6 +2049,10 @@ export class InternalObjectState<
     return result;
   }
 
+  size(): number {
+    return this.#children.size;
+  }
+
   remove(key?: keyof Payload): Field<DetachedValue> {
     return Field.remove(this.external, key);
   }
@@ -2255,6 +2267,10 @@ export class InternalArrayState<
     callback: InternalArrayState.CollectionCallback<Payload, Result>,
   ): Result[] {
     return this.#children.map(callback as any);
+  }
+
+  size(): number {
+    return this.#children.length;
   }
 
   push<ItemValue extends Payload[number]>(item: ItemValue): Field<ItemValue> {

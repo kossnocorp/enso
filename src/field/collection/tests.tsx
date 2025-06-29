@@ -9,6 +9,7 @@ import {
   fieldMap,
   fieldPush,
   fieldRemove,
+  fieldSize,
 } from "./index.ts";
 
 describe(fieldEach, () => {
@@ -259,6 +260,58 @@ describe(fieldMap, () => {
         const spy = vi.fn();
         fieldMap(ref.try(), spy);
         expect(spy).not.toHaveBeenCalled();
+      });
+    });
+  });
+});
+
+describe(fieldSize, () => {
+  describe(Array, () => {
+    describe(Field, () => {
+      it("returns size", () => {
+        const field = new Field([1, 2, 3]);
+        expect(fieldSize(field)).toBe(3);
+      });
+    });
+
+    describe(FieldRef, () => {
+      it("returns size", () => {
+        const field = new Field([1, 2, 3]);
+        const ref = new FieldRef(field);
+        expect(fieldSize(ref)).toBe(3);
+      });
+    });
+
+    describe(MaybeFieldRef, () => {
+      it("returns size", () => {
+        const field = new Field([1, 2, 3]);
+        const ref = new MaybeFieldRef({ type: "direct", field });
+        expect(fieldSize(ref)).toBe(3);
+      });
+    });
+  });
+
+  describe(Object, () => {
+    describe(Field, () => {
+      it("returns size", () => {
+        const field = new Field({ a: 1, b: 2, c: 3 });
+        expect(fieldSize(field)).toBe(3);
+      });
+    });
+
+    describe(FieldRef, () => {
+      it("returns size", () => {
+        const field = new Field({ a: 1, b: 2, c: 3 });
+        const ref = new FieldRef(field);
+        expect(fieldSize(ref)).toBe(3);
+      });
+    });
+
+    describe(MaybeFieldRef, () => {
+      it("returns size", () => {
+        const field = new Field({ a: 1, b: 2, c: 3 });
+        const ref = new MaybeFieldRef({ type: "direct", field });
+        expect(fieldSize(ref)).toBe(3);
       });
     });
   });

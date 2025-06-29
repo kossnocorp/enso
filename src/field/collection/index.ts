@@ -52,6 +52,8 @@ export namespace AsCollection {
     each(callback: InternalCollectionCallback<Value>): void;
 
     map<Result>(callback: InternalCollectionCallback<Value, Result>): Result[];
+
+    size(): number;
   }
 
   export interface InternalCollection<Value>
@@ -138,3 +140,9 @@ export const fieldRemove = ((
         ?.remove(key)) as unknown as FieldRemove;
 
 export interface FieldRemove {}
+
+export const fieldSize = ((
+  field: Nullish<StaticImplements<AsCollectionRead>>,
+) => field?.constructor.asCollection(field)?.size()) as unknown as FieldSize;
+
+export interface FieldSize {}

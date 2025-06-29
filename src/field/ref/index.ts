@@ -258,7 +258,7 @@ export namespace FieldRef {
 //#region FieldRef Declarations
 
 declare module "../collection/index.ts" {
-  // `each`
+  // `fieldEach`
 
   interface FieldEach {
     <Value extends Array<unknown>>(
@@ -277,7 +277,7 @@ declare module "../collection/index.ts" {
     ): void;
   }
 
-  // `map`
+  // `fieldMap`
 
   interface FieldMap {
     <Value extends Array<unknown>, Result>(
@@ -294,6 +294,14 @@ declare module "../collection/index.ts" {
       field: FieldRef<Value> | Nullish<Enso.Tried<FieldRef<Value>>>,
       callback: FieldRef.CollectionCallbackObjectSingle<Value, Result>,
     ): Result[];
+  }
+
+  // `fieldSize`
+
+  interface FieldSize {
+    <Value extends Array<unknown>>(field: FieldRef<Value>): number;
+
+    <Value extends object>(field: FieldRef<Value>): number;
   }
 }
 
@@ -603,7 +611,7 @@ export namespace MaybeFieldRef {
 //#region MaybeFieldRef Declarations
 
 declare module "../collection/index.ts" {
-  // `each`
+  // `fieldEach`
 
   interface FieldEach {
     <Value extends Array<unknown>>(
@@ -622,7 +630,7 @@ declare module "../collection/index.ts" {
     ): void;
   }
 
-  // `map`
+  // `fieldMap`
 
   interface FieldMap {
     <Value extends Array<unknown>, Result>(
@@ -639,6 +647,14 @@ declare module "../collection/index.ts" {
       field: MaybeFieldRef<Value> | Nullish<Enso.Tried<MaybeFieldRef<Value>>>,
       callback: MaybeFieldRef.CollectionCallbackObjectSingle<Value, Result>,
     ): Result[];
+  }
+
+  // `fieldSize`
+
+  interface FieldSize {
+    <Value extends Array<unknown>>(field: MaybeFieldRef<Value>): number;
+
+    <Value extends object>(field: MaybeFieldRef<Value>): number;
   }
 }
 

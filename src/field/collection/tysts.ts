@@ -7,6 +7,7 @@ import {
   fieldMap,
   fieldPush,
   fieldRemove,
+  fieldSize,
 } from "./index.ts";
 
 const arr = new Field<Array<string | number>>([]);
@@ -874,6 +875,103 @@ const prim = new Field<string | number>("hello");
     fieldRemove(prim as unknown as Enso.Detachable<Field<string>>);
     // @ts-expect-error
     fieldRemove(prim);
+  }
+}
+
+// `fieldSize`
+{
+  // Array
+  {
+    // Field
+    {
+      const size = fieldSize(arr);
+      size satisfies number;
+      // @ts-expect-error
+      size.any;
+
+      // @ts-expect-error
+      fieldSize(arrOrUnd.try());
+      // @ts-expect-error
+      fieldSize(arrOrNum);
+    }
+
+    // FieldRef
+    {
+      const ref = new FieldRef(arr);
+      const size = fieldSize(ref);
+      size satisfies number;
+      // @ts-expect-error
+      size.any;
+
+      // @ts-expect-error
+      fieldSize(new FieldRef(arrOrUnd.try()));
+      // @ts-expect-error
+      fieldSize(new FieldRef(arrOrNum));
+    }
+
+    // MaybeFieldRef
+    {
+      const maybe = new MaybeFieldRef({
+        type: "direct",
+        field: arr,
+      });
+      const size = fieldSize(maybe);
+      size satisfies number;
+      // @ts-expect-error
+      size.any;
+
+      // @ts-expect-error
+      fieldSize(new MaybeFieldRef({ type: "direct", field: arrOrUnd.try() }));
+      // @ts-expect-error
+      fieldSize(new MaybeFieldRef({ type: "direct", field: arrOrNum }));
+    }
+  }
+
+  // Object
+  {
+    // Field
+    {
+      const size = fieldSize(obj);
+      size satisfies number;
+      // @ts-expect-error
+      size.any;
+
+      // @ts-expect-error
+      fieldSize(objOrUnd.try());
+      // @ts-expect-error
+      fieldSize(objOrUnd);
+    }
+
+    // FieldRef
+    {
+      const ref = new FieldRef(obj);
+      const size = fieldSize(ref);
+      size satisfies number;
+      // @ts-expect-error
+      size.any;
+
+      // @ts-expect-error
+      fieldSize(new FieldRef(objOrUnd.try()));
+      // @ts-expect-error
+      fieldSize(new FieldRef(objOrUnd));
+    }
+
+    // MaybeFieldRef
+    {
+      const maybe = new MaybeFieldRef({
+        type: "direct",
+        field: obj,
+      });
+      const size = fieldSize(maybe);
+      size satisfies number;
+      // @ts-expect-error
+      size.any;
+
+      // @ts-expect-error
+      fieldSize(new MaybeFieldRef({ type: "direct", field: objOrUnd.try() }));
+      // @ts-expect-error
+      fieldSize(new MaybeFieldRef({ type: "direct", field: objOrUnd }));
+    }
   }
 }
 
