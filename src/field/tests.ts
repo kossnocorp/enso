@@ -4,12 +4,7 @@ import { change } from "../change/index.ts";
 import { EventsTree } from "../events/index.ts";
 import { Enso } from "../types.ts";
 import { ValidationTree } from "../validation/index.ts";
-import {
-  fieldEach,
-  fieldMap,
-  fieldPush,
-  fieldRemove,
-} from "./collection/index.ts";
+import { fieldEach, fieldMap, fieldRemove } from "./collection/index.ts";
 import {
   ComputedField,
   DetachedValue,
@@ -2052,46 +2047,6 @@ describe(Field, () => {
     //     expect(field.at(1).computedFields).toEqual([]);
     //   });
     // });
-  });
-
-  describe("array", () => {
-    describe("length", () => {
-      it("returns the length of the array", () => {
-        const field = new Field([1, 2, 3]);
-        expect(field.length).toBe(3);
-      });
-
-      it("updates the length of the array", () => {
-        const field = new Field([1, 2, 3]);
-        fieldPush(field, 4);
-        expect(field.length).toBe(4);
-        fieldRemove(field, 1);
-        expect(field.length).toBe(3);
-        expect(field.get()).toEqual([1, 3, 4]);
-      });
-    });
-
-    describe("find", () => {
-      it("finds an item in the array", () => {
-        const field = new Field([1, 2, 3]);
-        const item = field.find((item) => item.get() === 2);
-        expect(item?.get()).toBe(2);
-      });
-
-      it("returns undefined if item not found", () => {
-        const field = new Field([1, 2, 3]);
-        const item = field.find((item) => item.get() === 4);
-        expect(item).toBe(undefined);
-      });
-
-      it("passes index to the predicate", () => {
-        const field = new Field([1, 2, 3]);
-        const item = field.find(
-          (item, index) => item.get() === 2 && index === 1,
-        );
-        expect(item?.get()).toBe(2);
-      });
-    });
   });
 
   describe("input", () => {

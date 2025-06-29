@@ -54,6 +54,14 @@ export namespace AsCollection {
     map<Result>(callback: InternalCollectionCallback<Value, Result>): Result[];
 
     size(): number;
+
+    find(
+      predicate: (item: Field<Value[keyof Value]>, key: keyof Value) => boolean,
+    ): Field<Value[keyof Value]> | undefined;
+
+    filter(
+      predicate: (item: Field<Value[keyof Value]>, key: keyof Value) => boolean,
+    ): Field<Value[keyof Value]>[];
   }
 
   export interface InternalCollection<Value>
@@ -111,6 +119,22 @@ export const fieldMap = ((
 
 export interface FieldMap {}
 
+export const fieldSize = ((
+  field: Nullish<StaticImplements<AsCollectionRead>>,
+) => field?.constructor.asCollection(field)?.size()) as unknown as FieldSize;
+
+export interface FieldSize {}
+
+export const fieldFind = ((
+  field: Nullish<StaticImplements<AsCollectionRead>>,
+  predicate: any,
+) =>
+  field?.constructor
+    .asCollection(field)
+    ?.find(predicate)) as unknown as FieldFind;
+
+export interface FieldFind {}
+
 export const fieldPush = ((
   field: Nullish<StaticImplements<AsCollection>>,
   item: any,
@@ -140,9 +164,3 @@ export const fieldRemove = ((
         ?.remove(key)) as unknown as FieldRemove;
 
 export interface FieldRemove {}
-
-export const fieldSize = ((
-  field: Nullish<StaticImplements<AsCollectionRead>>,
-) => field?.constructor.asCollection(field)?.size()) as unknown as FieldSize;
-
-export interface FieldSize {}

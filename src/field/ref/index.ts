@@ -208,17 +208,22 @@ export namespace FieldRef {
 
   //#region Collection
 
+  export type Every<Value> =
+    // Handle boolean separately, so it doesn't produce FieldRef<true> | FieldRef<false>
+    | (boolean extends Value ? FieldRef<boolean> : never)
+    | (Exclude<Value, boolean> extends infer Value
+        ? Value extends Value
+          ? FieldRef<Value>
+          : never
+        : never);
+
   export type CollectionCallbackArray<
     Value extends Array<unknown>,
     Result = void,
   > = (item: CollectionCallbackArrayItem<Value>, index: number) => Result;
 
   export type CollectionCallbackArrayItem<Value extends Array<unknown>> =
-    Value extends Array<infer Item>
-      ? Item extends Item
-        ? FieldRef<Item>
-        : never
-      : never;
+    Value extends Array<infer Item> ? Every<Item> : never;
 
   export type CollectionCallbackObjectPair<
     Value extends object,
@@ -243,6 +248,17 @@ export namespace FieldRef {
       undefined
     >,
   ) => Result;
+
+  export type Predicate<ItemValue> = (
+    item: Every<ItemValue>,
+    index: number,
+  ) => unknown;
+
+  export type FindResultArray<ItemValue> = Every<ItemValue> | undefined;
+
+  export type FindResultObject<Value extends object> =
+    // Use mapped type to preserve Type | undefined for optional fields
+    { [Key in keyof Value]: FieldRef<Value[Key]> }[keyof Value] | undefined;
 
   //#endregion
 
@@ -302,6 +318,29 @@ declare module "../collection/index.ts" {
     <Value extends Array<unknown>>(field: FieldRef<Value>): number;
 
     <Value extends object>(field: FieldRef<Value>): number;
+  }
+
+  // `fieldFind`
+
+  interface FieldFind {
+    // Array
+
+    <Value extends Array<unknown>, ItemValue extends Value[number]>(
+      field: FieldRef<Value> | Nullish<Enso.Tried<FieldRef<Value>>>,
+      predicate: FieldRef.Predicate<ItemValue>,
+    ): FieldRef.FindResultArray<ItemValue> | undefined;
+
+    // Object
+
+    <Value extends object>(
+      field: FieldRef<Value> | Nullish<Enso.Tried<FieldRef<Value>>>,
+      predicate: FieldRef.CollectionCallbackObjectPair<Value, unknown>,
+    ): FieldRef.FindResultObject<Value>;
+
+    <Value extends object>(
+      field: FieldRef<Value> | Nullish<Enso.Tried<FieldRef<Value>>>,
+      predicate: FieldRef.CollectionCallbackObjectSingle<Value, unknown>,
+    ): FieldRef.FindResultObject<Value>;
   }
 }
 
@@ -559,17 +598,22 @@ export namespace MaybeFieldRef {
 
   //#region Collection
 
+  export type Every<Value> =
+    // Handle boolean separately, so it doesn't produce FieldRef<true> | FieldRef<false>
+    | (boolean extends Value ? MaybeFieldRef<boolean> : never)
+    | (Exclude<Value, boolean> extends infer Value
+        ? Value extends Value
+          ? MaybeFieldRef<Value>
+          : never
+        : never);
+
   export type CollectionCallbackArray<
     Value extends Array<unknown>,
     Result = void,
   > = (item: CollectionCallbackArrayItem<Value>, index: number) => Result;
 
   export type CollectionCallbackArrayItem<Value extends Array<unknown>> =
-    Value extends Array<infer Item>
-      ? Item extends Item
-        ? MaybeFieldRef<Item>
-        : never
-      : never;
+    Value extends Array<infer ItemValue> ? Every<ItemValue> : never;
 
   export type CollectionCallbackObjectPair<
     Value extends object,
@@ -596,6 +640,18 @@ export namespace MaybeFieldRef {
       undefined
     >,
   ) => Result;
+
+  export type Predicate<ItemValue> = (
+    item: Every<ItemValue>,
+    index: number,
+  ) => unknown;
+
+  export type FindResultArray<ItemValue> = Every<ItemValue> | undefined;
+
+  export type FindResultObject<Value extends object> =
+    // Use mapped type to preserve Type | undefined for optional fields
+    | { [Key in keyof Value]: MaybeFieldRef<Value[Key]> }[keyof Value]
+    | undefined;
 
   //#endregion
 
@@ -655,6 +711,29 @@ declare module "../collection/index.ts" {
     <Value extends Array<unknown>>(field: MaybeFieldRef<Value>): number;
 
     <Value extends object>(field: MaybeFieldRef<Value>): number;
+  }
+
+  // `fieldFind`
+
+  interface FieldFind {
+    // Array
+
+    <Value extends Array<unknown>, ItemValue extends Value[number]>(
+      field: MaybeFieldRef<Value> | Nullish<Enso.Tried<MaybeFieldRef<Value>>>,
+      predicate: MaybeFieldRef.Predicate<ItemValue>,
+    ): MaybeFieldRef.FindResultArray<ItemValue> | undefined;
+
+    // Object
+
+    <Value extends object>(
+      field: MaybeFieldRef<Value> | Nullish<Enso.Tried<MaybeFieldRef<Value>>>,
+      predicate: MaybeFieldRef.CollectionCallbackObjectPair<Value, unknown>,
+    ): MaybeFieldRef.FindResultObject<Value>;
+
+    <Value extends object>(
+      field: MaybeFieldRef<Value> | Nullish<Enso.Tried<MaybeFieldRef<Value>>>,
+      predicate: MaybeFieldRef.CollectionCallbackObjectSingle<Value, unknown>,
+    ): MaybeFieldRef.FindResultObject<Value>;
   }
 }
 

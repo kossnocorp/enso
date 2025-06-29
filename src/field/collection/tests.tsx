@@ -5,6 +5,7 @@ import { Field, FieldRef } from "../index.tsx";
 import { MaybeFieldRef } from "../ref/index.ts";
 import {
   fieldEach,
+  fieldFind,
   fieldInsert,
   fieldMap,
   fieldPush,
@@ -312,6 +313,162 @@ describe(fieldSize, () => {
         const field = new Field({ a: 1, b: 2, c: 3 });
         const ref = new MaybeFieldRef({ type: "direct", field });
         expect(fieldSize(ref)).toBe(3);
+      });
+    });
+  });
+});
+
+describe(fieldFind, () => {
+  describe(Array, () => {
+    describe(Field, () => {
+      it("finds an item in the array", () => {
+        const field = new Field([1, 2, 3]);
+        const item = fieldFind(field, (item) => item.get() === 2);
+        expect(item?.get()).toBe(2);
+      });
+
+      it("returns undefined if item not found", () => {
+        const field = new Field([1, 2, 3]);
+        const item = fieldFind(field, (item) => item.get() === 4);
+        expect(item).toBe(undefined);
+      });
+
+      it("passes index to the predicate", () => {
+        const field = new Field([1, 2, 3]);
+        const item = fieldFind(
+          field,
+          (item, index) => item.get() === 2 && index === 1,
+        );
+        expect(item?.get()).toBe(2);
+      });
+    });
+
+    describe(FieldRef, () => {
+      it("finds an item in the array", () => {
+        const field = new Field([1, 2, 3]);
+        const ref = new FieldRef(field);
+        const item = fieldFind(ref, (item) => item.get() === 2);
+        expect(item?.get()).toBe(2);
+      });
+
+      it("returns undefined if item not found", () => {
+        const field = new Field([1, 2, 3]);
+        const ref = new FieldRef(field);
+        const item = fieldFind(ref, (item) => item.get() === 4);
+        expect(item).toBe(undefined);
+      });
+
+      it("passes index to the predicate", () => {
+        const field = new Field([1, 2, 3]);
+        const ref = new FieldRef(field);
+        const item = fieldFind(
+          ref,
+          (item, index) => item.get() === 2 && index === 1,
+        );
+        expect(item?.get()).toBe(2);
+      });
+    });
+
+    describe(MaybeFieldRef, () => {
+      it("finds an item in the array", () => {
+        const field = new Field([1, 2, 3]);
+        const ref = new MaybeFieldRef({ type: "direct", field });
+        const item = fieldFind(ref, (item) => item.get() === 2);
+        expect(item?.get()).toBe(2);
+      });
+
+      it("returns undefined if item not found", () => {
+        const field = new Field([1, 2, 3]);
+        const ref = new MaybeFieldRef({ type: "direct", field });
+        const item = fieldFind(ref, (item) => item.get() === 4);
+        expect(item).toBe(undefined);
+      });
+
+      it("passes index to the predicate", () => {
+        const field = new Field([1, 2, 3]);
+        const ref = new MaybeFieldRef({ type: "direct", field });
+        const item = fieldFind(
+          ref,
+          (item, index) => item.get() === 2 && index === 1,
+        );
+        expect(item?.get()).toBe(2);
+      });
+    });
+  });
+
+  describe(Object, () => {
+    describe(Field, () => {
+      it("finds an item in the object", () => {
+        const field = new Field({ a: 1, b: 2, c: 3 });
+        const item = fieldFind(field, (item) => item.get() === 2);
+        expect(item?.get()).toBe(2);
+      });
+
+      it("returns undefined if item not found", () => {
+        const field = new Field({ a: 1, b: 2, c: 3 });
+        const item = fieldFind(field, (item) => item.get() === 4);
+        expect(item).toBe(undefined);
+      });
+
+      it("passes key to the predicate", () => {
+        const field = new Field({ a: 1, b: 2, c: 3 });
+        const item = fieldFind(
+          field,
+          (item, key) => item.get() === 2 && key === "b",
+        );
+        expect(item?.get()).toBe(2);
+      });
+    });
+
+    describe(FieldRef, () => {
+      it("finds an item in the object", () => {
+        const field = new Field({ a: 1, b: 2, c: 3 });
+        const ref = new FieldRef(field);
+        const item = fieldFind(ref, (item) => item.get() === 2);
+        expect(item?.get()).toBe(2);
+      });
+
+      it("returns undefined if item not found", () => {
+        const field = new Field({ a: 1, b: 2, c: 3 });
+        const ref = new FieldRef(field);
+        const item = fieldFind(ref, (item) => item.get() === 4);
+        expect(item).toBe(undefined);
+      });
+
+      it("passes key to the predicate", () => {
+        const field = new Field({ a: 1, b: 2, c: 3 });
+        const ref = new FieldRef(field);
+        const item = fieldFind(
+          ref,
+          (item, key) => item.get() === 2 && key === "b",
+        );
+        expect(item?.get()).toBe(2);
+      });
+    });
+
+    describe(MaybeFieldRef, () => {
+      it("finds an item in the object", () => {
+        const field = new Field({ a: 1, b: 2, c: 3 });
+        const ref = new MaybeFieldRef({ type: "direct", field });
+        const item = fieldFind(ref, (item) => item.get() === 2);
+        expect(item?.get()).toBe(2);
+      });
+
+      it("returns undefined if item not found", () => {
+        const field = new Field({ a: 1, b: 2, c: 3 });
+        const ref = new MaybeFieldRef({ type: "direct", field });
+        const item = fieldFind(ref, (item) => item.get() === 4);
+        expect(item).toBe(undefined);
+      });
+
+      it("passes key to the predicate", () => {
+        const field = new Field({ a: 1, b: 2, c: 3 });
+        const ref = new MaybeFieldRef({ type: "direct", field });
+        const item = fieldFind(
+          ref,
+          (item, key) => item.get() === 2 && key === "b",
+        );
+        expect(item?.get()).toBe(2);
       });
     });
   });

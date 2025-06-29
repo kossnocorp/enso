@@ -821,30 +821,6 @@ export class Field<Payload>
     return field;
   }
 
-  // @ts-ignore: This is fine
-  find: Field.FindFn<Payload> = (predicate) => {
-    if (!(this.#internal instanceof InternalArrayState))
-      throw new Error("State is not an array");
-    // @ts-ignore: This is fine
-    return this.#internal.find(predicate);
-  };
-
-  // @ts-ignore: This is fine
-  filter: Field.FilterFn<Payload> = (predicate) => {
-    if (!(this.#internal instanceof InternalArrayState))
-      throw new Error("State is not an array");
-    // @ts-ignore: This is fine
-    return this.#internal.filter(predicate);
-  };
-
-  get length(): Payload extends Array<any> ? number : never {
-    if (!(this.#internal instanceof InternalArrayState))
-      throw new Error("State is not an array");
-
-    // @ts-ignore: This is fine
-    return this.#internal.length;
-  }
-
   static remove<Value>(
     field: Field<Value>,
     key?: keyof Value | undefined,
@@ -1326,17 +1302,22 @@ export namespace Field {
 
   //#region Collection
 
+  export type Every<Value> =
+    // Handle boolean separately, so it doesn't produce Field<true> | Field<false>
+    | (boolean extends Value ? Field<boolean> : never)
+    | (Exclude<Value, boolean> extends infer Value
+        ? Value extends Value
+          ? Field<Value>
+          : never
+        : never);
+
   export type CollectionCallbackArray<
     Value extends Array<unknown>,
     Result = void,
   > = (item: CollectionCallbackArrayItem<Value>, index: number) => Result;
 
   export type CollectionCallbackArrayItem<Value extends Array<unknown>> =
-    Value extends Array<infer Item>
-      ? Item extends Item
-        ? Field<Item>
-        : never
-      : never;
+    Value extends Array<infer Item> ? Every<Item> : never;
 
   export type CollectionCallbackObjectPair<
     Value extends object,
@@ -1372,37 +1353,16 @@ export namespace Field {
   export type AsArray<Value> =
     Value extends Array<any> ? InternalArrayState<Value> : undefined;
 
-  export type RemoveFn<Payload> = Payload extends object
-    ? ObjectRemoveFn<Payload>
-    : () => Field<Payload>;
-
-  export type ArrayPredicate<Item, Return> = (
-    item: Field<Item>,
+  export type Predicate<ItemValue> = (
+    item: Every<ItemValue>,
     index: number,
-  ) => Return;
+  ) => unknown;
 
-  export type FindFn<Payload> =
-    Payload extends Array<infer Item>
-      ? (predicate: TestPredicate<Item>) => Field<Item> | undefined
-      : never;
+  export type FindResultArray<ItemValue> = Every<ItemValue> | undefined;
 
-  export type FilterFn<Payload> =
-    Payload extends Array<infer Item>
-      ? (predicate: TestPredicate<Item>) => Field<Item>[]
-      : never;
-
-  export type TestPredicate<Item> = ArrayPredicate<
-    Item,
-    Item | boolean | false | 0 | "" | null | undefined
-  >;
-
-  export interface ObjectRemoveFn<Payload extends object> {
-    (): Field<Payload>;
-
-    <Key extends Utils.OptionalKeys<Payload>>(key: Key): At<Payload, Key>;
-
-    <Key extends Utils.IndexedKeys<Payload>>(key: Key): At<Payload, Key>;
-  }
+  export type FindResultObject<Value extends object> =
+    // Use mapped type to preserve Type | undefined for optional fields
+    { [Key in keyof Value]: Field<Value[Key]> }[keyof Value] | undefined;
 
   //#endregion
 
@@ -1489,6 +1449,14 @@ export namespace Field {
   //#endregion
 }
 
+// export const isBrandedSymbol = Symbol("isBranded");
+
+export class IsBranded<Value> {
+  constructor(public readonly value: Value) {}
+}
+
+// export type IsBranded<Type> = Type & { [isBrandedSymbol]: true };
+
 //#endregion
 
 //#region Field Declarations
@@ -1552,6 +1520,29 @@ declare module "./collection/index.ts" {
     <Value extends Array<unknown>>(field: Field<Value>): number;
 
     <Value extends object>(field: Field<Value>): number;
+  }
+
+  // `fieldFind`
+
+  interface FieldFind {
+    // Array
+
+    <Value extends Array<unknown>, ItemValue extends Value[number]>(
+      field: Field<Value> | Nullish<Enso.Tried<Field<Value>>>,
+      predicate: Field.Predicate<ItemValue>,
+    ): Field.FindResultArray<ItemValue>;
+
+    // Object
+
+    <Value extends object>(
+      field: Field<Value> | Nullish<Enso.Tried<Field<Value>>>,
+      predicate: Field.CollectionCallbackObjectPair<Value, unknown>,
+    ): Field.FindResultObject<Value>;
+
+    <Value extends object>(
+      field: Field<Value> | Nullish<Enso.Tried<Field<Value>>>,
+      predicate: Field.CollectionCallbackObjectSingle<Value, unknown>,
+    ): Field.FindResultObject<Value>;
   }
 
   // `fieldPush`
@@ -2310,14 +2301,14 @@ export class InternalArrayState<
   }
 
   find(
-    predicate: Field.TestPredicate<Payload[number]>,
+    predicate: Field.Predicate<Payload[number]>,
   ): Field<Payload[number]> | undefined {
     // @ts-ignore: This is fine
     return this.#children.find(predicate);
   }
 
   filter(
-    predicate: Field.TestPredicate<Payload[number]>,
+    predicate: Field.Predicate<Payload[number]>,
   ): Field<Payload[number]>[] {
     // @ts-ignore: This is fine
     return this.#children.filter(predicate);
