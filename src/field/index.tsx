@@ -1206,20 +1206,26 @@ export namespace Field {
   export type Discriminated<
     Payload,
     Discriminator extends keyof Utils.NonUndefined<Payload>,
+  > = DiscriminatedInner<Payload, Payload, Discriminator>;
+
+  export type DiscriminatedInner<
+    Payload,
+    PayloadSource,
+    Discriminator extends keyof Utils.NonUndefined<Payload>,
   > = Payload extends Payload
     ? Discriminator extends keyof Payload
       ? Payload[Discriminator] extends infer DiscriminatorValue
         ? DiscriminatorValue extends Payload[Discriminator]
           ? {
               discriminator: DiscriminatorValue;
-              field: Field<Payload>;
+              field: Enso.TransferBrands<Field<Payload>, PayloadSource>;
             }
           : never
         : never
       : // Add the payload type without the discriminator (i.e. undefined)
         {
           discriminator: undefined;
-          field: Field<Payload>;
+          field: Enso.TransferBrands<Field<Payload>, PayloadSource>;
         }
     : never;
 
