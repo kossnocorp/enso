@@ -9,6 +9,7 @@ import {
   fieldPush,
   fieldRemove,
   fieldSize,
+  fieldFilter,
 } from "./index.ts";
 
 const arr = new Field<Array<string | boolean>>([]);
@@ -999,6 +1000,11 @@ const prim = new Field<string | boolean>("hello");
         fieldFind(arrOrUnd.try(), (item) => item);
         fieldFind(arrOrUnd.try(), () => true);
 
+        // @ts-expect-error
+        fieldFind(arrOrUnd, (item) => item);
+        // @ts-expect-error
+        fieldFind(arrOrUnd, () => true);
+
         fieldFind(arrOrUnd.try(), (_item) => 0);
         fieldFind(arrOrUnd.try(), (_item) => "");
         fieldFind(arrOrUnd.try(), (_item) => null);
@@ -1055,6 +1061,11 @@ const prim = new Field<string | boolean>("hello");
 
         fieldFind(refUnd.try(), (item) => item);
         fieldFind(refUnd.try(), () => true);
+
+        // @ts-expect-error
+        fieldFind(refUnd, (item) => item);
+        // @ts-expect-error
+        fieldFind(refUnd, () => true);
 
         fieldFind(refUnd.try(), (_item) => 0);
         fieldFind(refUnd.try(), (_item) => "");
@@ -1118,6 +1129,11 @@ const prim = new Field<string | boolean>("hello");
 
         fieldFind(maybeUnd.try(), (item) => item);
         fieldFind(maybeUnd.try(), () => true);
+
+        // @ts-expect-error
+        fieldFind(maybeUnd, (item) => item);
+        // @ts-expect-error
+        fieldFind(maybeUnd, () => true);
 
         fieldFind(maybeUnd.try(), (_item) => 0);
         fieldFind(maybeUnd.try(), (_item) => "");
@@ -1506,6 +1522,521 @@ const prim = new Field<string | boolean>("hello");
         fieldFind(maybeUnd.try(), (_item) => null);
         // @ts-expect-error
         fieldFind(maybeUnd.try(), (item) => item.toExponential());
+      }
+    }
+  }
+}
+//#endregion
+
+//#region fieldFilter
+{
+  // Array
+  {
+    // Field
+    {
+      // Regular
+      {
+        const result = fieldFilter(arr, (item, index) => {
+          item satisfies Field<string> | Field<boolean>;
+          index satisfies number;
+          return true;
+        });
+
+        result satisfies Array<Field<string> | Field<boolean>>;
+        // @ts-expect-error
+        result.any;
+
+        fieldFilter(arr, (item) => {
+          item satisfies Field<string> | Field<boolean>;
+          return true;
+        });
+        fieldFilter(arr, () => true);
+
+        fieldFilter(arr, (_item) => 0);
+        fieldFilter(arr, (_item) => "");
+        fieldFilter(arr, (_item) => null);
+        // @ts-expect-error
+        fieldFilter(arr, (item) => item.toExponential());
+      }
+
+      // Undefined
+      {
+        const result = fieldFilter(arrOrUnd.try(), (item, index) => {
+          item satisfies Field<string> | Field<boolean>;
+          index satisfies number;
+          return true;
+        });
+
+        result satisfies Array<Field<string> | Field<boolean>>;
+        // @ts-expect-error
+        result.any;
+
+        fieldFilter(arrOrUnd.try(), (item) => item);
+        fieldFilter(arrOrUnd.try(), () => true);
+
+        // @ts-expect-error
+        fieldFilter(arrOrUnd, (item) => item);
+        // @ts-expect-error
+        fieldFilter(arrOrUnd, () => true);
+
+        fieldFilter(arrOrUnd.try(), (_item) => 0);
+        fieldFilter(arrOrUnd.try(), (_item) => "");
+        fieldFilter(arrOrUnd.try(), (_item) => null);
+        // @ts-expect-error
+        fieldFilter(arrOrUnd.try(), (item) => item.toExponential());
+      }
+    }
+
+    // FieldRef
+    {
+      // Regular
+      {
+        const ref = new FieldRef(arr);
+        const result = fieldFilter(ref, (item, index) => {
+          item satisfies FieldRef<string> | FieldRef<boolean>;
+          index satisfies number;
+          return true;
+        });
+
+        result satisfies Array<FieldRef<string> | FieldRef<boolean>>;
+        // @ts-expect-error
+        result.any;
+
+        fieldFilter(ref, (item) => {
+          item satisfies FieldRef<string> | FieldRef<boolean>;
+          return true;
+        });
+        fieldFilter(ref, () => true);
+
+        fieldFilter(ref, (_item) => 0);
+        fieldFilter(ref, (_item) => "");
+        fieldFilter(ref, (_item) => null);
+        // @ts-expect-error
+        fieldFilter(ref, (item) => item.toExponential());
+      }
+
+      // Undefined
+      {
+        const refUnd = new FieldRef(arrOrUnd);
+        const result = fieldFilter(refUnd.try(), (item, index) => {
+          item satisfies FieldRef<string> | FieldRef<boolean>;
+          index satisfies number;
+          return true;
+        });
+
+        result satisfies Array<FieldRef<string> | FieldRef<boolean>>;
+        // @ts-expect-error
+        result.any;
+
+        fieldFilter(refUnd.try(), (item) => item);
+        fieldFilter(refUnd.try(), () => true);
+
+        // @ts-expect-error
+        fieldFilter(refUnd, (item) => item);
+        // @ts-expect-error
+        fieldFilter(refUnd, () => true);
+
+        fieldFilter(refUnd.try(), (_item) => 0);
+        fieldFilter(refUnd.try(), (_item) => "");
+        fieldFilter(refUnd.try(), (_item) => null);
+        // @ts-expect-error
+        fieldFilter(refUnd.try(), (item) => item.toExponential());
+      }
+    }
+
+    // MaybeFieldRef
+    {
+      // Regular
+      {
+        const maybe = new MaybeFieldRef({ type: "direct", field: arr });
+        const result = fieldFilter(maybe, (item, index) => {
+          item satisfies MaybeFieldRef<string> | MaybeFieldRef<boolean>;
+          index satisfies number;
+          return true;
+        });
+
+        result satisfies Array<MaybeFieldRef<string> | MaybeFieldRef<boolean>>;
+        // @ts-expect-error
+        result.any;
+
+        fieldFilter(maybe, (item) => {
+          item satisfies MaybeFieldRef<string> | MaybeFieldRef<boolean>;
+          return true;
+        });
+        fieldFilter(maybe, () => true);
+
+        fieldFilter(maybe, (_item) => 0);
+        fieldFilter(maybe, (_item) => "");
+        fieldFilter(maybe, (_item) => null);
+        // @ts-expect-error
+        fieldFilter(maybe, (item) => item.toExponential());
+      }
+
+      // Undefined
+      {
+        const maybeUnd = new MaybeFieldRef({ type: "direct", field: arrOrUnd });
+        const result = fieldFilter(maybeUnd.try(), (item, index) => {
+          item satisfies MaybeFieldRef<string> | MaybeFieldRef<boolean>;
+          index satisfies number;
+          return true;
+        });
+
+        result satisfies Array<MaybeFieldRef<string> | MaybeFieldRef<boolean>>;
+        // @ts-expect-error
+        result.any;
+
+        fieldFilter(maybeUnd.try(), (item) => item);
+        fieldFilter(maybeUnd.try(), () => true);
+
+        // @ts-expect-error
+        fieldFilter(maybeUnd, (item) => item);
+        // @ts-expect-error
+        fieldFilter(maybeUnd, () => true);
+
+        fieldFilter(maybeUnd.try(), (_item) => 0);
+        fieldFilter(maybeUnd.try(), (_item) => "");
+        fieldFilter(maybeUnd.try(), (_item) => null);
+        // @ts-expect-error
+        fieldFilter(maybeUnd.try(), (item) => item.toExponential());
+      }
+    }
+  }
+
+  // Object
+  {
+    // Field
+    {
+      // Regular
+      {
+        const result = fieldFilter(obj, (item, key) => {
+          item satisfies Field<string> | Field<boolean>;
+          // @ts-expect-error
+          item.any;
+
+          key satisfies keyof Hello;
+          // @ts-expect-error
+          key.any;
+
+          if (key === "hello") {
+            item.get() satisfies string;
+            // @ts-expect-error
+            item.get() satisfies number;
+            return item.get().length > 0;
+          } else {
+            item.get() satisfies boolean;
+            // @ts-expect-error
+            item.get() satisfies string;
+            return item.get() === true;
+          }
+        });
+
+        result satisfies Array<Field<string> | Field<boolean>>;
+        // @ts-expect-error
+        result.any;
+
+        fieldFilter(obj, (item) => {
+          item satisfies Field<string> | Field<boolean>;
+          // @ts-expect-error
+          item.any;
+          return true;
+        });
+        fieldFilter(obj, () => true);
+
+        fieldFilter(obj, (_item) => 0);
+        fieldFilter(obj, (_item) => "");
+        fieldFilter(obj, (_item) => null);
+        // @ts-expect-error
+        fieldFilter(obj, (item) => item.toExponential());
+      }
+
+      // Optional
+      {
+        const resultOpt = fieldFilter(objPart, (item, key) => {
+          item satisfies Field<boolean> | Field<string | undefined>;
+          // @ts-expect-error
+          item.any;
+
+          key satisfies keyof Ok;
+          // @ts-expect-error
+          key.any;
+
+          if (key === "ok") {
+            item.get() satisfies boolean;
+            // @ts-expect-error
+            item.get() satisfies string | undefined;
+            return item.get();
+          } else {
+            item.get() satisfies string | undefined;
+            // @ts-expect-error
+            item.get() satisfies boolean;
+            return !!item.get();
+          }
+        });
+
+        resultOpt satisfies Array<Field<boolean> | Field<string | undefined>>;
+        // @ts-expect-error
+        resultOpt.any;
+
+        fieldFilter(objPart, (item) => {
+          item satisfies Field<boolean> | Field<string | undefined>;
+          // @ts-expect-error
+          item.any;
+          return true;
+        });
+        fieldFilter(objPart, () => true);
+      }
+
+      // Undefined
+      {
+        const result = fieldFilter(objOrUnd.try(), (item, key) => {
+          item satisfies Field<boolean> | Field<string | undefined>;
+          // @ts-expect-error
+          item.any;
+
+          key satisfies keyof Ok;
+          // @ts-expect-error
+          key.any;
+
+          if (key === "ok") {
+            item.get() satisfies boolean;
+            // @ts-expect-error
+            item.get() satisfies string | undefined;
+            return item.get();
+          } else {
+            item.get() satisfies string | undefined;
+            // @ts-expect-error
+            item.get() satisfies boolean;
+            return !!item.get();
+          }
+        });
+
+        result satisfies Array<Field<boolean> | Field<string | undefined>>;
+        // @ts-expect-error
+        result.any;
+
+        fieldFilter(objOrUnd.try(), (item) => {
+          item satisfies Field<boolean> | Field<string | undefined>;
+          // @ts-expect-error
+          item.any;
+          return true;
+        });
+        fieldFilter(objOrUnd.try(), () => true);
+
+        fieldFilter(objOrUnd.try(), (_item) => 0);
+        fieldFilter(objOrUnd.try(), (_item) => "");
+        fieldFilter(objOrUnd.try(), (_item) => null);
+        // @ts-expect-error
+        fieldFilter(objOrUnd.try(), (item) => item.toExponential());
+        // @ts-expect-error
+        fieldFilter(objOrUnd, () => true);
+      }
+    }
+
+    // FieldRef
+    {
+      // Regular
+      {
+        const ref = new FieldRef(obj);
+        const result = fieldFilter(ref, (item, key) => {
+          item satisfies FieldRef<string> | FieldRef<boolean>;
+          key satisfies keyof Hello;
+          if (key === "hello") {
+            item.get() satisfies string;
+            // @ts-expect-error
+            item.get() satisfies number;
+            return item.get().length > 0;
+          } else {
+            item.get() satisfies boolean;
+            // @ts-expect-error
+            item.get() satisfies string;
+            return item.get() === true;
+          }
+        });
+
+        result satisfies Array<FieldRef<string> | FieldRef<boolean>>;
+        // @ts-expect-error
+        result.any;
+
+        fieldFilter(ref, (item) => item);
+        fieldFilter(ref, (_item) => 0);
+        fieldFilter(ref, (_item) => "");
+        fieldFilter(ref, (_item) => null);
+        // @ts-expect-error
+        fieldFilter(ref, (item) => item.toExponential());
+      }
+
+      // Optional
+      {
+        const refOpt = new FieldRef(objPart);
+        const result = fieldFilter(refOpt, (item, key) => {
+          item satisfies FieldRef<boolean> | FieldRef<string | undefined>;
+          key satisfies keyof Ok;
+          if (key === "ok") {
+            item.get() satisfies boolean;
+            // @ts-expect-error
+            item.get() satisfies string | undefined;
+            return item.get();
+          } else {
+            item.get() satisfies string | undefined;
+            // @ts-expect-error
+            item.get() satisfies boolean;
+            return !!item.get();
+          }
+        });
+
+        result satisfies Array<
+          FieldRef<boolean> | FieldRef<string | undefined>
+        >;
+        // @ts-expect-error
+        result.any;
+
+        fieldFilter(refOpt, (item) => item);
+        fieldFilter(refOpt, (_item) => 0);
+        fieldFilter(refOpt, (_item) => "");
+        fieldFilter(refOpt, (_item) => null);
+        // @ts-expect-error
+        fieldFilter(refOpt, (item) => item.get().toExponential());
+      }
+
+      // Undefined
+      {
+        const refUnd = new FieldRef(objOrUnd);
+        const result = fieldFilter(refUnd.try(), (item, key) => {
+          item satisfies FieldRef<boolean> | FieldRef<string | undefined>;
+          key satisfies keyof Ok;
+          if (key === "ok") {
+            item.get() satisfies boolean;
+            // @ts-expect-error
+            item.get() satisfies string | undefined;
+            return item.get();
+          } else {
+            item.get() satisfies string | undefined;
+            // @ts-expect-error
+            item.get() satisfies boolean;
+            return !!item.get();
+          }
+        });
+
+        result satisfies Array<
+          FieldRef<boolean> | FieldRef<string | undefined>
+        >;
+        // @ts-expect-error
+        result.any;
+
+        fieldFilter(refUnd.try(), (item) => item);
+        fieldFilter(refUnd.try(), (_item) => 0);
+        fieldFilter(refUnd.try(), (_item) => "");
+        fieldFilter(refUnd.try(), (_item) => null);
+        // @ts-expect-error
+        fieldFilter(refUnd.try(), (item) => item.toExponential());
+        // @ts-expect-error
+        fieldFilter(refUnd, () => true);
+      }
+    }
+
+    // MaybeFieldRef
+    {
+      // Regular
+      {
+        const maybe = new MaybeFieldRef({ type: "direct", field: obj });
+        const result = fieldFilter(maybe, (item, key) => {
+          item satisfies MaybeFieldRef<string> | MaybeFieldRef<boolean>;
+          key satisfies keyof Hello;
+          if (key === "hello") {
+            item.get() satisfies string;
+            // @ts-expect-error
+            item.get() satisfies number;
+            return item.get().length > 0;
+          } else {
+            item.get() satisfies boolean;
+            // @ts-expect-error
+            item.get() satisfies string;
+            return item.get() === true;
+          }
+        });
+
+        result satisfies Array<MaybeFieldRef<string> | MaybeFieldRef<boolean>>;
+        // @ts-expect-error
+        result.any;
+
+        fieldFilter(maybe, (item) => item);
+        fieldFilter(maybe, (_item) => 0);
+        fieldFilter(maybe, (_item) => "");
+        fieldFilter(maybe, (_item) => null);
+        // @ts-expect-error
+        fieldFilter(maybe, (item) => item.toExponential());
+      }
+
+      // Optional
+      {
+        const maybeOpt = new MaybeFieldRef({ type: "direct", field: objPart });
+        const result = fieldFilter(maybeOpt, (item, key) => {
+          item satisfies
+            | MaybeFieldRef<boolean>
+            | MaybeFieldRef<string | undefined>;
+          key satisfies keyof Ok;
+          if (key === "ok") {
+            item.get() satisfies boolean;
+            // @ts-expect-error
+            item.get() satisfies string | undefined;
+            return item.get();
+          } else {
+            item.get() satisfies string | undefined;
+            // @ts-expect-error
+            item.get() satisfies boolean;
+            return !!item.get();
+          }
+        });
+
+        result satisfies Array<
+          MaybeFieldRef<boolean> | MaybeFieldRef<string | undefined>
+        >;
+        // @ts-expect-error
+        result.any;
+
+        fieldFilter(maybeOpt, (item) => item);
+        fieldFilter(maybeOpt, (_item) => 0);
+        fieldFilter(maybeOpt, (_item) => "");
+        fieldFilter(maybeOpt, (_item) => null);
+        // @ts-expect-error
+        fieldFilter(maybeOpt, (item) => item.toExponential());
+      }
+
+      // Undefined
+      {
+        const maybeUnd = new MaybeFieldRef({ type: "direct", field: objOrUnd });
+        const result = fieldFilter(maybeUnd.try(), (item, key) => {
+          item satisfies
+            | MaybeFieldRef<boolean>
+            | MaybeFieldRef<string | undefined>;
+          key satisfies keyof Ok;
+          if (key === "ok") {
+            item.get() satisfies boolean;
+            // @ts-expect-error
+            item.get() satisfies string | undefined;
+            return item.get();
+          } else {
+            item.get() satisfies string | undefined;
+            // @ts-expect-error
+            item.get() satisfies boolean;
+            return !!item.get();
+          }
+        });
+
+        result satisfies Array<
+          MaybeFieldRef<boolean> | MaybeFieldRef<string | undefined>
+        >;
+        // @ts-expect-error
+        result.any;
+
+        fieldFilter(maybeUnd.try(), (item) => item);
+        fieldFilter(maybeUnd.try(), (_item) => 0);
+        fieldFilter(maybeUnd.try(), (_item) => "");
+        fieldFilter(maybeUnd.try(), (_item) => null);
+        // @ts-expect-error
+        fieldFilter(maybeUnd.try(), (item) => item.toExponential());
+        // @ts-expect-error
+        fieldFilter(maybeUnd, () => true);
       }
     }
   }

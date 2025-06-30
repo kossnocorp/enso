@@ -11,6 +11,7 @@ import {
   fieldPush,
   fieldRemove,
   fieldSize,
+  fieldFilter,
 } from "./index.ts";
 
 describe(fieldEach, () => {
@@ -474,18 +475,150 @@ describe(fieldFind, () => {
   });
 });
 
+describe(fieldFilter, () => {
+  describe(Array, () => {
+    describe(Field, () => {
+      it("filters items in the array", () => {
+        const field = new Field([1, 2, 3, 4]);
+        const items = fieldFilter(field, (item) => item.get() % 2 === 0);
+        expect(items.map((f) => f.get())).toEqual([2, 4]);
+      });
+
+      it("returns empty array if none match", () => {
+        const field = new Field([1, 3, 5]);
+        const items = fieldFilter(field, (item) => item.get() === 2);
+        expect(items).toEqual([]);
+      });
+
+      it("passes index to the predicate", () => {
+        const field = new Field([1, 2, 3]);
+        const items = fieldFilter(field, (item, index) => index === 1);
+        expect(items.map((f) => f.get())).toEqual([2]);
+      });
+    });
+
+    describe(FieldRef, () => {
+      it("filters items in the array", () => {
+        const field = new Field([1, 2, 3, 4]);
+        const ref = new FieldRef(field);
+        const items = fieldFilter(ref, (item) => item.get() % 2 === 0);
+        expect(items.map((f) => f.get())).toEqual([2, 4]);
+      });
+
+      it("returns empty array if none match", () => {
+        const field = new Field([1, 3, 5]);
+        const ref = new FieldRef(field);
+        const items = fieldFilter(ref, (item) => item.get() === 2);
+        expect(items).toEqual([]);
+      });
+
+      it("passes index to the predicate", () => {
+        const field = new Field([1, 2, 3]);
+        const ref = new FieldRef(field);
+        const items = fieldFilter(ref, (item, index) => index === 1);
+        expect(items.map((f) => f.get())).toEqual([2]);
+      });
+    });
+
+    describe(MaybeFieldRef, () => {
+      it("filters items in the array", () => {
+        const field = new Field([1, 2, 3, 4]);
+        const ref = new MaybeFieldRef({ type: "direct", field });
+        const items = fieldFilter(ref, (item) => item.get() % 2 === 0);
+        expect(items.map((f) => f.get())).toEqual([2, 4]);
+      });
+
+      it("returns empty array if none match", () => {
+        const field = new Field([1, 3, 5]);
+        const ref = new MaybeFieldRef({ type: "direct", field });
+        const items = fieldFilter(ref, (item) => item.get() === 2);
+        expect(items).toEqual([]);
+      });
+
+      it("passes index to the predicate", () => {
+        const field = new Field([1, 2, 3]);
+        const ref = new MaybeFieldRef({ type: "direct", field });
+        const items = fieldFilter(ref, (item, index) => index === 1);
+        expect(items.map((f) => f.get())).toEqual([2]);
+      });
+    });
+  });
+
+  describe(Object, () => {
+    describe(Field, () => {
+      it("filters items in the object", () => {
+        const field = new Field({ a: 1, b: 2, c: 3, d: 4 });
+        const items = fieldFilter(field, (item) => item.get() % 2 === 0);
+        expect(items.map((f) => f.get())).toEqual([2, 4]);
+      });
+
+      it("returns empty array if none match", () => {
+        const field = new Field({ a: 1, b: 3 });
+        const items = fieldFilter(field, (item) => item.get() === 2);
+        expect(items).toEqual([]);
+      });
+
+      it("passes key to the predicate", () => {
+        const field = new Field({ a: 1, b: 2, c: 3 });
+        const items = fieldFilter(field, (item, key) => key === "b");
+        expect(items.map((f) => f.get())).toEqual([2]);
+      });
+    });
+
+    describe(FieldRef, () => {
+      it("filters items in the object", () => {
+        const field = new Field({ a: 1, b: 2, c: 3, d: 4 });
+        const ref = new FieldRef(field);
+        const items = fieldFilter(ref, (item) => item.get() % 2 === 0);
+        expect(items.map((f) => f.get())).toEqual([2, 4]);
+      });
+
+      it("returns empty array if none match", () => {
+        const field = new Field({ a: 1, b: 3 });
+        const ref = new FieldRef(field);
+        const items = fieldFilter(ref, (item) => item.get() === 2);
+        expect(items).toEqual([]);
+      });
+
+      it("passes key to the predicate", () => {
+        const field = new Field({ a: 1, b: 2, c: 3 });
+        const ref = new FieldRef(field);
+        const items = fieldFilter(ref, (item, key) => key === "b");
+        expect(items.map((f) => f.get())).toEqual([2]);
+      });
+    });
+
+    describe(MaybeFieldRef, () => {
+      it("filters items in the object", () => {
+        const field = new Field({ a: 1, b: 2, c: 3, d: 4 });
+        const ref = new MaybeFieldRef({ type: "direct", field });
+        const items = fieldFilter(ref, (item) => item.get() % 2 === 0);
+        expect(items.map((f) => f.get())).toEqual([2, 4]);
+      });
+
+      it("returns empty array if none match", () => {
+        const field = new Field({ a: 1, b: 3 });
+        const ref = new MaybeFieldRef({ type: "direct", field });
+        const items = fieldFilter(ref, (item) => item.get() === 2);
+        expect(items).toEqual([]);
+      });
+
+      it("passes key to the predicate", () => {
+        const field = new Field({ a: 1, b: 2, c: 3 });
+        const ref = new MaybeFieldRef({ type: "direct", field });
+        const items = fieldFilter(ref, (item, key) => key === "b");
+        expect(items.map((f) => f.get())).toEqual([2]);
+      });
+    });
+  });
+});
+
 describe(fieldPush, () => {
   it("pushes items to array fields", () => {
     const field = new Field([1, 2, 3]);
     fieldPush(field, 4);
     expect(field.get()).toEqual([1, 2, 3, 4]);
   });
-
-  // it("assigns last changes", () => {
-  //   const field = new Field([1, 2, 3]);
-  //   fieldPush(field, 4);
-  //   expect(field.lastChanges).toMatchChanges(change.child.attach);
-  // });
 
   it("returns new field", () => {
     const field = new Field([1, 2, 3]);
@@ -530,8 +663,7 @@ describe(fieldPush, () => {
         const field = new Field([[[1, 2, 3]]]);
         const spy = vi.fn();
         field.watch(spy);
-        // @ts-expect-error: This is fine!
-        fieldPush(field.at(0).at(0), 4);
+        fieldPush(field.at(0).try()?.at(0).try(), 4);
         await postpone();
         const [[value, event]]: any = spy.mock.calls;
         expect(value).toEqual([[[1, 2, 3, 4]]]);
@@ -595,8 +727,7 @@ describe(fieldInsert, () => {
         const field = new Field([[[1, 2, 3]]]);
         const spy = vi.fn();
         field.watch(spy);
-        // @ts-expect-error: This is fine!
-        fieldInsert(field.at(0).at(0), 0, 4);
+        fieldInsert(field.at(0).try()?.at(0).try(), 0, 4);
         await postpone();
         const [[value, event]]: any = spy.mock.calls;
         expect(value).toEqual([[[4, 1, 2, 3]]]);

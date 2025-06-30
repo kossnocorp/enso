@@ -1317,7 +1317,7 @@ export namespace Field {
   > = (item: CollectionCallbackArrayItem<Value>, index: number) => Result;
 
   export type CollectionCallbackArrayItem<Value extends Array<unknown>> =
-    Value extends Array<infer Item> ? Every<Item> : never;
+    Value extends Array<infer ItemValue> ? Every<ItemValue> : never;
 
   export type CollectionCallbackObjectPair<
     Value extends object,
@@ -1358,11 +1358,15 @@ export namespace Field {
     index: number,
   ) => unknown;
 
-  export type FindResultArray<ItemValue> = Every<ItemValue> | undefined;
+  export type ItemResultArray<ItemValue> = Every<ItemValue>;
 
-  export type FindResultObject<Value extends object> =
-    // Use mapped type to preserve Type | undefined for optional fields
-    { [Key in keyof Value]: Field<Value[Key]> }[keyof Value] | undefined;
+  export type ItemResultObject<Value extends object> =
+    // Remove undefined that sneaks in
+    Exclude<
+      // Use mapped type to preserve Type | undefined for optional fields
+      { [Key in keyof Value]: Field<Value[Key]> }[keyof Value],
+      undefined
+    >;
 
   //#endregion
 
@@ -1530,19 +1534,42 @@ declare module "./collection/index.ts" {
     <Value extends Array<unknown>, ItemValue extends Value[number]>(
       field: Field<Value> | Nullish<Enso.Tried<Field<Value>>>,
       predicate: Field.Predicate<ItemValue>,
-    ): Field.FindResultArray<ItemValue>;
+    ): Field.ItemResultArray<ItemValue> | undefined;
 
     // Object
 
     <Value extends object>(
       field: Field<Value> | Nullish<Enso.Tried<Field<Value>>>,
       predicate: Field.CollectionCallbackObjectPair<Value, unknown>,
-    ): Field.FindResultObject<Value>;
+    ): Field.ItemResultObject<Value> | undefined;
 
     <Value extends object>(
       field: Field<Value> | Nullish<Enso.Tried<Field<Value>>>,
       predicate: Field.CollectionCallbackObjectSingle<Value, unknown>,
-    ): Field.FindResultObject<Value>;
+    ): Field.ItemResultObject<Value> | undefined;
+  }
+
+  // `fieldFilter`
+
+  interface FieldFilter {
+    // Array
+
+    <Value extends Array<unknown>, ItemValue extends Value[number]>(
+      field: Field<Value> | Nullish<Enso.Tried<Field<Value>>>,
+      callback: Field.Predicate<ItemValue>,
+    ): Field.ItemResultArray<ItemValue>[];
+
+    // Object
+
+    <Value extends object>(
+      field: Field<Value> | Nullish<Enso.Tried<Field<Value>>>,
+      predicate: Field.CollectionCallbackObjectPair<Value, unknown>,
+    ): Field.ItemResultObject<Value>[];
+
+    <Value extends object>(
+      field: Field<Value> | Nullish<Enso.Tried<Field<Value>>>,
+      predicate: Field.CollectionCallbackObjectSingle<Value, unknown>,
+    ): Field.ItemResultObject<Value>[];
   }
 
   // `fieldPush`
@@ -2026,6 +2053,10 @@ export class InternalObjectState<
 
   //#region Collection
 
+  size(): number {
+    return this.#children.size;
+  }
+
   each(callback: InternalObjectState.CollectionCallback<Payload>) {
     this.#children.forEach((field, key) => (callback as any)(field, key));
   }
@@ -2040,8 +2071,22 @@ export class InternalObjectState<
     return result;
   }
 
-  size(): number {
-    return this.#children.size;
+  find(
+    predicate: InternalObjectState.CollectionCallback<Payload, any>,
+  ): Field<Payload[keyof Payload]> | undefined {
+    for (const [key, value] of this.#children.entries() as any) {
+      if (predicate(value, key)) return value;
+    }
+  }
+
+  filter(
+    predicate: InternalObjectState.CollectionCallback<Payload, unknown>,
+  ): Field<Payload[keyof Payload]>[] {
+    return Array.from(this.#children.entries()).reduce<any[]>(
+      (acc, [key, value]: any) =>
+        predicate(value, key) ? (acc.push(value), acc) : acc,
+      [],
+    );
   }
 
   remove(key?: keyof Payload): Field<DetachedValue> {

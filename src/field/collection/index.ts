@@ -164,3 +164,13 @@ export const fieldRemove = ((
         ?.remove(key)) as unknown as FieldRemove;
 
 export interface FieldRemove {}
+
+export const fieldFilter = ((
+  field: Nullish<StaticImplements<AsCollectionRead>>,
+  predicate: any,
+) =>
+  field?.constructor
+    .asCollection(field)
+    ?.filter(predicate)) as unknown as FieldFilter;
+
+export interface FieldFilter {}
