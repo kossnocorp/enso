@@ -53,6 +53,7 @@ export class Form<Payload> implements Enso.InterfaceSystem {
     return (
       <form
         {...restProps}
+        // @ts-ignore
         {...form.control({ onSubmit, onReset, server })}
         id={form.#id}
       >
@@ -142,11 +143,11 @@ export class Form<Payload> implements Enso.InterfaceSystem {
 
   //#region Watch
 
-  watch(callback: Field.WatchCallback<Payload>) {
+  watch(callback: Enso.WatchCallback<Payload>) {
     return this.#field.watch(callback);
   }
 
-  useWatch(callback: Field.WatchCallback<Payload>) {
+  useWatch(callback: Enso.WatchCallback<Payload>) {
     return this.#field.useWatch(callback);
   }
 
@@ -155,7 +156,7 @@ export class Form<Payload> implements Enso.InterfaceSystem {
   //#region Map
 
   useCompute<Computed>(
-    callback: Field.ComputeCallback<Payload, Computed>,
+    callback: Enso.ComputeCallback<Payload, Computed>,
     deps: DependencyList,
   ): Computed {
     return this.#field.useCompute(callback, deps);
@@ -174,13 +175,13 @@ export class Form<Payload> implements Enso.InterfaceSystem {
   }
 
   into<Computed>(
-    intoCallback: ComputedField.Into<Payload, Computed>,
+    intoCallback: Field.IntoCallback<Payload, Computed>,
   ): Field.IntoObj<Payload, Computed> {
     return this.#field.into(intoCallback);
   }
 
   useInto<Computed>(
-    intoCallback: ComputedField.Into<Payload, Computed>,
+    intoCallback: Field.IntoCallback<Payload, Computed>,
     deps: DependencyList,
   ): Field.IntoHook<Payload, Computed> {
     return this.#field.useInto(intoCallback, deps);
@@ -314,6 +315,7 @@ export class Form<Payload> implements Enso.InterfaceSystem {
   at<Key extends keyof Payload>(
     key: Payload extends object ? Key : never,
   ): Payload extends object ? Field.At<Payload, Key> : void {
+    // @ts-ignore
     return this.#field.at(key);
   }
 }

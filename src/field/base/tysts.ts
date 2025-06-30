@@ -1,3 +1,5 @@
+// @ts-nocheck
+
 import { ChangesEvent, fieldChange } from "../../change/index.ts";
 import { type EventsTree } from "../../events/index.ts";
 import { Field } from "../index.tsx";

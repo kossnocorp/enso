@@ -6,6 +6,8 @@ import "../../tests/browser.js";
 import { change } from "../change/index.ts";
 import { Field } from "./index.tsx";
 import { postpone } from "../../tests/utils.ts";
+import { fieldDecompose, useFieldDecompose } from "./transform/index.ts";
+import { fieldMap, fieldPush, fieldRemove } from "./collection/index.ts";
 
 describe("Field", () => {
   it("allows to control object field", async () => {
@@ -83,11 +85,12 @@ describe("Field", () => {
         <div>
           <div data-testid="render-names">{count}</div>
 
-          {names.map((name, index) => (
+          {fieldMap(names, (name, index) => (
             <div data-testid={`name-${index}`} key={name.id}>
               <UserNameComponent name={name} />
               <button
-                onClick={() => name.remove()}
+                // @ts-ignore -- TODO
+                onClick={() => fieldRemove(name)}
                 data-testid={`remove-${index}`}
               >
                 Remove
@@ -95,7 +98,7 @@ describe("Field", () => {
             </div>
           ))}
 
-          <UserNameFormComponent onSubmit={(name) => names.push(name)} />
+          <UserNameFormComponent onSubmit={(name) => fieldPush(names, name)} />
         </div>
       );
     }
@@ -568,7 +571,7 @@ describe("Field", () => {
 
         expect(spy).toHaveBeenCalledOnce();
         {
-          const [[value, event]] = spy.mock.calls;
+          const [[value, event]] = spy.mock.calls as any;
           expect(value).toEqual({ name: "Sasha" });
           expect(event.changes).toMatchChanges(change.field.id);
         }
@@ -577,7 +580,7 @@ describe("Field", () => {
 
         expect(spy).toHaveBeenCalledTimes(2);
         {
-          const [, [value, event]] = spy.mock.calls;
+          const [, [value, event]] = spy.mock.calls as any;
           expect(value).toEqual({ name: "Alex" });
           expect(event.changes).toMatchChanges(change.child.value);
         }
@@ -2082,7 +2085,8 @@ describe("Field", () => {
             { name: { first: "Alexander" } },
             [],
           );
-          const name = address.$.name.useDecompose(
+          const name = useFieldDecompose(
+            address.$.name,
             (newName, prevName) => typeof newName !== typeof prevName,
             [],
           );
@@ -2166,9 +2170,11 @@ describe("Field", () => {
             [],
           );
           const [index, setIndex] = useState(0);
-          const name = field
-            .at(index)
-            .useDecompose((a, b) => typeof a !== typeof b, []);
+          const name = useFieldDecompose(
+            field.at(index),
+            (a, b) => typeof a !== typeof b,
+            [],
+          );
           const nameType = typeof name.value;
 
           return (
@@ -2211,9 +2217,11 @@ describe("Field", () => {
             [],
           );
           const [index, setIndex] = useState(0);
-          const name = field
-            .at(index)
-            .useDecompose((a, b) => typeof a !== typeof b, []);
+          const name = useFieldDecompose(
+            field.at(index),
+            (a, b) => typeof a !== typeof b,
+            [],
+          );
           const nameType = typeof name.value;
 
           return (
@@ -3534,7 +3542,7 @@ describe("Field", () => {
           const count = useRenderCount();
           const namesField = Field.use<string[]>(["Alexander", "Sasha"], []);
           const [index, setIndex] = useState(0);
-          const decomposedField = namesField.at(index).decompose();
+          const decomposedField = fieldDecompose(namesField.at(index));
           if (!decomposedField.value) return null;
           const { field } = decomposedField;
 

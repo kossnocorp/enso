@@ -37,6 +37,9 @@ import { staticImplements } from "./util.ts";
 
 export { FieldRef };
 
+export * from "./collection/index.ts";
+export * from "./transform/index.ts";
+
 //#region Field
 
 const externalSymbol = Symbol();
@@ -1872,7 +1875,7 @@ export class InternalValueState<Payload> extends InternalState<Payload> {
   //#region Tree
 
   $(): Field.$<Payload> {
-    return undefined as Field.$<Payload>;
+    return undefined as unknown as Field.$<Payload>;
   }
 
   lookup(path: Enso.Path): Field<unknown> | undefined {

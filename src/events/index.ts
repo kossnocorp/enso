@@ -18,7 +18,7 @@ export class EventsTree {
     const queue = [];
     let node: EventsTree.Node | undefined = this.#tree;
     const pathQueue = [...path];
-    let curPath: string[] = [];
+    let curPath: Enso.Path = [];
     while (true) {
       const fields = node ? Array.from(node.fields) : [];
       queue.push([curPath, fields] as const);
