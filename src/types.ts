@@ -252,6 +252,12 @@ export namespace Enso {
   export type TransferDetachable<Type, SourceType> =
     SourceType extends Detachable<any> ? Detachable<Type> : Type;
 
+  export type Bound<Type> = Type & {
+    [boundBrand]: true;
+  };
+
+  declare const boundBrand: unique symbol;
+
   //#endregion
 
   //#region Hooks

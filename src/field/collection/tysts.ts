@@ -35,7 +35,7 @@ const prim = new Field<string | boolean>("hello");
       // Regular
       {
         const result = fieldEach(arr, (item, index) => {
-          item satisfies Field<string> | Field<boolean>;
+          item satisfies Field.Detachable<string> | Field.Detachable<boolean>;
           // @ts-expect-error
           item.any;
 
@@ -45,7 +45,7 @@ const prim = new Field<string | boolean>("hello");
         });
         result satisfies void;
         fieldEach(arr, (item) => {
-          item satisfies Field<string> | Field<boolean>;
+          item satisfies Field.Detachable<string> | Field.Detachable<boolean>;
           // @ts-expect-error
           item.any;
         });
@@ -55,7 +55,7 @@ const prim = new Field<string | boolean>("hello");
       // Undefined
       {
         fieldEach(arrOrUnd.try(), (item, index) => {
-          item satisfies Field<string> | Field<boolean>;
+          item satisfies Field.Detachable<string> | Field.Detachable<boolean>;
           // @ts-expect-error
           item.any;
 
@@ -66,6 +66,29 @@ const prim = new Field<string | boolean>("hello");
         fieldEach(arrOrUnd.try(), (item) => {});
         // @ts-expect-error
         fieldEach(arrOrUnd, () => {});
+      }
+
+      // Bound
+      {
+        const result = fieldEach(
+          arr as Field.Bound<(string | boolean)[]>,
+          (item, index) => {
+            item satisfies Field.Detachable<string> | Field.Detachable<boolean>;
+            // @ts-expect-error
+            item.any;
+
+            index satisfies number;
+            // @ts-expect-error
+            index.any;
+          },
+        );
+        result satisfies void;
+        fieldEach(arr as Field.Bound<(string | boolean)[]>, (item) => {
+          item satisfies Field.Detachable<string> | Field.Detachable<boolean>;
+          // @ts-expect-error
+          item.any;
+        });
+        fieldEach(arr as Field.Bound<(string | boolean)[]>, () => {});
       }
     }
 
@@ -444,7 +467,7 @@ const prim = new Field<string | boolean>("hello");
       // Regular
       {
         const result = fieldMap(arr, (item, index) => {
-          item satisfies Field<string> | Field<boolean>;
+          item satisfies Field.Detachable<string> | Field.Detachable<boolean>;
           // @ts-expect-error
           item.any;
 
@@ -460,7 +483,7 @@ const prim = new Field<string | boolean>("hello");
       // Undefined
       {
         fieldMap(arrOrUnd.try(), (item, index) => {
-          item satisfies Field<string> | Field<boolean>;
+          item satisfies Field.Detachable<string> | Field.Detachable<boolean>;
           // @ts-expect-error
           item.any;
 
@@ -955,14 +978,17 @@ const prim = new Field<string | boolean>("hello");
       // Regular
       {
         const result = fieldFind(arr, (item, index) => {
-          item satisfies Field<string> | Field<boolean>;
+          item satisfies Field.Detachable<string> | Field.Detachable<boolean>;
           index satisfies number;
           return item.get() === "hello";
         });
 
-        result satisfies Field<string> | Field<boolean> | undefined;
+        result satisfies
+          | Field.Detachable<string>
+          | Field.Detachable<boolean>
+          | undefined;
         // @ts-expect-error
-        result satisfies Field<string> | Field<boolean>;
+        result satisfies Field.Detachable<string> | Field.Detachable<boolean>;
         // @ts-expect-error
         result satisfies undefined;
         // @ts-expect-error
@@ -984,14 +1010,17 @@ const prim = new Field<string | boolean>("hello");
       // Undefined
       {
         const result = fieldFind(arrOrUnd.try(), (item, index) => {
-          item satisfies Field<string> | Field<boolean>;
+          item satisfies Field.Detachable<string> | Field.Detachable<boolean>;
           index satisfies number;
           return item.get() === "hello";
         });
 
-        result satisfies Field<string> | Field<boolean> | undefined;
+        result satisfies
+          | Field.Detachable<string>
+          | Field.Detachable<boolean>
+          | undefined;
         // @ts-expect-error
-        result satisfies Field<string> | Field<boolean>;
+        result satisfies Field.Detachable<string> | Field.Detachable<boolean>;
         // @ts-expect-error
         result satisfies undefined;
         // @ts-expect-error
@@ -1537,17 +1566,19 @@ const prim = new Field<string | boolean>("hello");
       // Regular
       {
         const result = fieldFilter(arr, (item, index) => {
-          item satisfies Field<string> | Field<boolean>;
+          item satisfies Field.Detachable<string> | Field.Detachable<boolean>;
           index satisfies number;
           return true;
         });
 
-        result satisfies Array<Field<string> | Field<boolean>>;
+        result satisfies Array<
+          Field.Detachable<string> | Field.Detachable<boolean>
+        >;
         // @ts-expect-error
         result.any;
 
         fieldFilter(arr, (item) => {
-          item satisfies Field<string> | Field<boolean>;
+          item satisfies Field.Detachable<string> | Field.Detachable<boolean>;
           return true;
         });
         fieldFilter(arr, () => true);
@@ -1562,12 +1593,14 @@ const prim = new Field<string | boolean>("hello");
       // Undefined
       {
         const result = fieldFilter(arrOrUnd.try(), (item, index) => {
-          item satisfies Field<string> | Field<boolean>;
+          item satisfies Field.Detachable<string> | Field.Detachable<boolean>;
           index satisfies number;
           return true;
         });
 
-        result satisfies Array<Field<string> | Field<boolean>>;
+        result satisfies Array<
+          Field.Detachable<string> | Field.Detachable<boolean>
+        >;
         // @ts-expect-error
         result.any;
 
@@ -1726,7 +1759,7 @@ const prim = new Field<string | boolean>("hello");
             item.get() satisfies boolean;
             // @ts-expect-error
             item.get() satisfies string;
-            return item.get() === true;
+            return item.get() === true ? 1 : 0;
           }
         });
 
@@ -2048,7 +2081,7 @@ const prim = new Field<string | boolean>("hello");
   // Regular
   {
     const result = fieldPush(arr, "new item");
-    result satisfies Field<string>;
+    result satisfies Field.Detachable<string>;
     // @ts-expect-error
     result.any;
 
@@ -2063,7 +2096,7 @@ const prim = new Field<string | boolean>("hello");
   // Undefined
   {
     const result = fieldPush(arrOrUnd.try(), "new item");
-    result satisfies Field<string>;
+    result satisfies Field.Detachable<string>;
     // @ts-expect-error
     result.any;
 
@@ -2082,7 +2115,7 @@ const prim = new Field<string | boolean>("hello");
   // Regular
   {
     const result = fieldInsert(arr, 0, "new item");
-    result satisfies Field<string>;
+    result satisfies Field.Detachable<string>;
     // @ts-expect-error
     result.any;
 
@@ -2097,7 +2130,7 @@ const prim = new Field<string | boolean>("hello");
   // Undefined
   {
     const result = fieldInsert(arrOrUnd.try(), 0, "new item");
-    result satisfies Field<string>;
+    result satisfies Field.Detachable<string>;
     // @ts-expect-error
     result.any;
 
@@ -2118,7 +2151,7 @@ const prim = new Field<string | boolean>("hello");
     // Field
     {
       const removed = fieldRemove(objPart, "message");
-      removed satisfies Field<DetachedValue>;
+      removed satisfies Field.Detachable<DetachedValue>;
 
       // @ts-expect-error
       fieldRemove(objPart, "ok");

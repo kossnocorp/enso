@@ -608,7 +608,7 @@ export class Field<Payload>
     this.#internal.unwatch();
   }
 
-  useBind(): BoundField<Payload> {
+  useBind(): Field.Bound<Payload> {
     const rerender = useRerender();
 
     useEffect(
@@ -619,7 +619,7 @@ export class Field<Payload>
       [this.id, rerender],
     );
 
-    return this as unknown as BoundField<Payload>;
+    return this as unknown as Field.Bound<Payload>;
   }
 
   //#endregion
@@ -1082,7 +1082,7 @@ export namespace Field {
     Payload: Payload;
     Unknown: Field<unknown>;
     NonNullish: Field<NonNullish<Payload>>;
-    Bound: BoundField<Payload>;
+    Bound: Bound<Payload>;
   };
 
   export interface InterfaceValueWrite<Def extends Enso.InterfaceDef>
@@ -1305,6 +1305,10 @@ export namespace Field {
 
   //#region Collection
 
+  export type Bound<Value> = Enso.Bound<Field<Value>>;
+
+  export type Detachable<Value> = Enso.Detachable<Field<Value>>;
+
   export type Every<Value> =
     // Handle boolean separately, so it doesn't produce Field<true> | Field<false>
     | (boolean extends Value ? Field<boolean> : never)
@@ -1320,7 +1324,9 @@ export namespace Field {
   > = (item: CollectionCallbackArrayItem<Value>, index: number) => Result;
 
   export type CollectionCallbackArrayItem<Value extends Array<unknown>> =
-    Value extends Array<infer ItemValue> ? Every<ItemValue> : never;
+    Value extends Array<infer ItemValue>
+      ? Enso.Detachable<Every<ItemValue>>
+      : never;
 
   export type CollectionCallbackObjectPair<
     Value extends object,
@@ -1357,11 +1363,11 @@ export namespace Field {
     Value extends Array<any> ? InternalArrayState<Value> : undefined;
 
   export type Predicate<ItemValue> = (
-    item: Every<ItemValue>,
+    item: Enso.Detachable<Every<ItemValue>>,
     index: number,
   ) => unknown;
 
-  export type ItemResultArray<ItemValue> = Every<ItemValue>;
+  export type ItemResultArray<ItemValue> = Enso.Detachable<Every<ItemValue>>;
 
   export type ItemResultObject<Value extends object> =
     // Remove undefined that sneaks in
@@ -1581,12 +1587,12 @@ declare module "./collection/index.ts" {
     <Value extends Array<unknown>, ItemValue extends Value[number]>(
       field: Field<Value>,
       item: ItemValue,
-    ): Field<ItemValue>;
+    ): Field.Detachable<ItemValue>;
 
     <Value extends Array<unknown>, ItemValue extends Value[number]>(
       field: Enso.Tried<Field<Value>> | undefined | null,
       item: ItemValue,
-    ): Field<ItemValue>;
+    ): Field.Detachable<ItemValue>;
   }
 
   // `fieldInsert`
@@ -1596,13 +1602,13 @@ declare module "./collection/index.ts" {
       field: Field<Value>,
       index: number,
       item: ItemValue,
-    ): Field<ItemValue>;
+    ): Field.Detachable<ItemValue>;
 
     <Value extends Array<unknown>, ItemValue extends Value[number]>(
       field: Enso.Tried<Field<Value>> | undefined | null,
       index: number,
       item: ItemValue,
-    ): Field<ItemValue>;
+    ): Field.Detachable<ItemValue>;
   }
 
   // `fieldRemove`
@@ -1613,32 +1619,34 @@ declare module "./collection/index.ts" {
     <Value extends Array<unknown>, ItemValue extends Value[number]>(
       field: Field<Value>,
       item: ItemValue,
-    ): Field<DetachedValue>;
+    ): Field.Detachable<DetachedValue>;
 
     <Value extends Array<unknown>, ItemValue extends Value[number]>(
       field: Enso.Tried<Field<Value>> | undefined | null,
       item: ItemValue,
-    ): Field<DetachedValue>;
+    ): Field.Detachable<DetachedValue>;
 
     // Object
 
     <Value extends object, Key extends Enso.DetachableKeys<Value>>(
       field: Field<Value>,
       key: Key,
-    ): Field<DetachedValue>;
+    ): Field.Detachable<DetachedValue>;
 
     <Value extends object, Key extends Enso.DetachableKeys<Value>>(
       field: Enso.Tried<Field<Value>> | undefined | null,
       key: Key,
-    ): Field<DetachedValue>;
+    ): Field.Detachable<DetachedValue>;
 
     // Self
 
-    <Value>(field: Enso.Detachable<Field<Value>>): Field<DetachedValue>;
+    <Value>(
+      field: Enso.Detachable<Field<Value>>,
+    ): Field.Detachable<DetachedValue>;
 
     <Value>(
       field: Enso.Tried<Enso.Detachable<Field<Value>>> | undefined | null,
-    ): Field<DetachedValue>;
+    ): Field.Detachable<DetachedValue>;
   }
 }
 
@@ -1753,14 +1761,6 @@ export class ComputedField<Payload, Computed> extends Field<Computed> {
 }
 
 export namespace ComputedField {}
-
-//#endregion
-
-//#region BoundField
-
-export interface BoundField<Payload>
-  extends Field<Payload>,
-    Enso.InterfaceBound {}
 
 //#endregion
 
