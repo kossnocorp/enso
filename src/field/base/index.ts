@@ -1,4 +1,5 @@
 import type { Enso } from "../../types.ts";
+import { EnsoUtils as Utils } from "../../utils.ts";
 import type { Field } from "../index.tsx";
 
 export interface BaseField<Payload>
@@ -16,7 +17,7 @@ export namespace BaseField {
   export type Def<Payload> = {
     Payload: Payload;
     Unknown: Field<unknown>;
-    NonNullish: BaseField<NonNullish<Payload>>;
+    NonNullish: BaseField<Utils.NonNullish<Payload>>;
     Bound: Bound<Payload>;
   };
 

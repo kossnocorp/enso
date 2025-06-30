@@ -71,4 +71,29 @@ export namespace EnsoUtils {
 
   export type IsOptionalKey<Payload, Key extends keyof Payload> =
     Key extends OptionalKeys<Payload> ? true : false;
+
+  /**
+   * Nullish value type.
+   */
+  export type Nullish<Type = never> = Type | null | undefined;
+
+  /**
+   * Excludes nulish values from the given type.
+   */
+  export type NonNullish<Type> = Exclude<Type, Nullish>;
+
+  /**
+   * Excludes undefined values from the given type.
+   */
+  export type NonUndefined<Type> = Exclude<Type, undefined>;
+
+  /**
+   * Falsy value type.
+   */
+  export type Falsy = false | 0 | "" | Nullish;
+
+  export type Static<
+    Class extends Interface & { new (...args: any[]): any },
+    Interface,
+  > = InstanceType<Class>;
 }

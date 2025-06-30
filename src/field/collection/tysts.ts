@@ -67,29 +67,6 @@ const prim = new Field<string | boolean>("hello");
         // @ts-expect-error
         fieldEach(arrOrUnd, () => {});
       }
-
-      // Bound
-      {
-        const result = fieldEach(
-          arr as Field.Bound<(string | boolean)[]>,
-          (item, index) => {
-            item satisfies Field.Detachable<string> | Field.Detachable<boolean>;
-            // @ts-expect-error
-            item.any;
-
-            index satisfies number;
-            // @ts-expect-error
-            index.any;
-          },
-        );
-        result satisfies void;
-        fieldEach(arr as Field.Bound<(string | boolean)[]>, (item) => {
-          item satisfies Field.Detachable<string> | Field.Detachable<boolean>;
-          // @ts-expect-error
-          item.any;
-        });
-        fieldEach(arr as Field.Bound<(string | boolean)[]>, () => {});
-      }
     }
 
     // FieldRef

@@ -6,6 +6,7 @@ import { change, maskedChanges } from "../change/index.ts";
 import { ComputedField, Field } from "../field/index.tsx";
 import { useRerender } from "../hooks/rerender.ts";
 import { Enso } from "../types.ts";
+import { EnsoUtils as Utils } from "../utils.ts";
 
 //#region Form
 
@@ -162,13 +163,13 @@ export class Form<Payload> implements Enso.InterfaceSystem {
     return this.#field.useCompute(callback, deps);
   }
 
-  discriminate<Discriminator extends keyof NonUndefined<Payload>>(
+  discriminate<Discriminator extends keyof Utils.NonUndefined<Payload>>(
     discriminator: Discriminator,
   ): Field.Discriminated<Payload, Discriminator> {
     return this.#field.discriminate(discriminator);
   }
 
-  useDiscriminate<Discriminator extends keyof NonUndefined<Payload>>(
+  useDiscriminate<Discriminator extends keyof Utils.NonUndefined<Payload>>(
     discriminator: Discriminator,
   ) {
     return this.#field.useDiscriminate(discriminator);

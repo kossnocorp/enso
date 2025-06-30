@@ -1,8 +1,7 @@
 import { DependencyList } from "react";
 import { ChangesEvent, FieldChange } from "./change/index.ts";
 import { EventsTree } from "./events/index.ts";
-import { Field } from "./field/index.tsx";
-import { EnsoUtils } from "./utils.ts";
+import { EnsoUtils as Utils } from "./utils.ts";
 
 export namespace Enso {
   //#region Foundation
@@ -53,7 +52,7 @@ export namespace Enso {
 
     reset(): void;
 
-    pave(fallback: NonNullish<Def["Payload"]>): Def["NonNullish"];
+    pave(fallback: Utils.NonNullish<Def["Payload"]>): Def["NonNullish"];
   }
 
   export interface InterfaceMeta {
@@ -240,8 +239,8 @@ export namespace Enso {
 
   export type DetachableKeys<Value> = Exclude<
     {
-      [Key in keyof Value]: EnsoUtils.IsStaticKey<Value, Key> extends true
-        ? EnsoUtils.IsOptionalKey<Value, Key> extends true
+      [Key in keyof Value]: Utils.IsStaticKey<Value, Key> extends true
+        ? Utils.IsOptionalKey<Value, Key> extends true
           ? Key
           : never
         : Key;

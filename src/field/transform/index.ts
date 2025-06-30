@@ -17,6 +17,7 @@ export function fieldDecompose<FieldType>(
 }
 
 export namespace FieldDecompose {
+  // TODO: Move to `Field` when creating extensible `FieldDecompose` interface
   export type Decomposed<FieldType> =
     FieldType extends Field<infer Value>
       ? Value extends Value

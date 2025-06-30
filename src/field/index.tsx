@@ -390,10 +390,10 @@ export class Field<Payload>
    *
    * @returns Field without null or undefined value in the type.
    */
-  pave(fallback: NonNullish<Payload>): Field<NonNullish<Payload>> {
+  pave(fallback: Utils.NonNullish<Payload>): Field<Utils.NonNullish<Payload>> {
     const value = this.get();
     if (value === undefined || value === null) this.set(fallback);
-    return this as Field<NonNullish<Payload>>;
+    return this as Field<Utils.NonNullish<Payload>>;
   }
 
   //#endregion
@@ -466,7 +466,7 @@ export class Field<Payload>
 
   try(): Enso.TryUnion<Field.InterfaceDef<Payload>>;
 
-  try<Key extends keyof NonNullish<Payload>>(
+  try<Key extends keyof Utils.NonNullish<Payload>>(
     key: Key,
   ): Field.TryKey<Field.InterfaceDef<Payload>, Key>;
 
@@ -642,7 +642,7 @@ export class Field<Payload>
     }) as Computed;
   }
 
-  discriminate<Discriminator extends keyof NonUndefined<Payload>>(
+  discriminate<Discriminator extends keyof Utils.NonUndefined<Payload>>(
     discriminator: Discriminator,
   ): Field.Discriminated<Payload, Discriminator> {
     return {
@@ -721,7 +721,7 @@ export class Field<Payload>
    * @returns Fields tuple, first element - ensured field, second - dummy field
    */
   static useEnsure<Payload, Result = undefined>(
-    field: Field<Payload> | Falsy,
+    field: Field<Payload> | Utils.Falsy,
     map?: Field.MapField<Payload, Result>,
   ): Result extends undefined
     ? Field<Payload | undefined>
@@ -1081,7 +1081,7 @@ export namespace Field {
   export type InterfaceDef<Payload> = {
     Payload: Payload;
     Unknown: Field<unknown>;
-    NonNullish: Field<NonNullish<Payload>>;
+    NonNullish: Field<Utils.NonNullish<Payload>>;
     Bound: Bound<Payload>;
   };
 
@@ -1101,7 +1101,7 @@ export namespace Field {
 
     try(): Enso.TryUnion<Def>;
 
-    try<Key extends keyof NonNullish<Def["Payload"]>>(
+    try<Key extends keyof Utils.NonNullish<Def["Payload"]>>(
       key: Key,
     ): Field.TryKey<Field.InterfaceDef<Def["Payload"]>, Key>;
   }
@@ -1117,7 +1117,7 @@ export namespace Field {
     //   deps: DependencyList,
     // ): Decomposed<Def["Payload"]>;
     //
-    // discriminate<Discriminator extends keyof NonUndefined<Def["Payload"]>>(
+    // discriminate<Discriminator extends keyof Utils.NonUndefined<Def["Payload"]>>(
     //   discriminator: Discriminator,
     // ): Field.Discriminated<Def["Payload"], Discriminator>;
     //
@@ -1191,11 +1191,11 @@ export namespace Field {
 
   export type TryKey<
     Def extends Enso.InterfaceDef,
-    Key extends keyof NonNullish<Def["Payload"]>,
+    Key extends keyof Utils.NonNullish<Def["Payload"]>,
   > =
-    | Enso.TryUnion<InterfaceDef<NonNullish<Def["Payload"]>[Key]>>
+    | Enso.TryUnion<InterfaceDef<Utils.NonNullish<Def["Payload"]>[Key]>>
     // Add undefined if the key is not static (i.e. a record key).
-    | (Utils.IsStaticKey<NonNullish<Def["Payload"]>, Key> extends true
+    | (Utils.IsStaticKey<Utils.NonNullish<Def["Payload"]>, Key> extends true
         ? never
         : undefined);
 
@@ -1205,7 +1205,7 @@ export namespace Field {
 
   export type Discriminated<
     Payload,
-    Discriminator extends keyof NonUndefined<Payload>,
+    Discriminator extends keyof Utils.NonUndefined<Payload>,
   > = Payload extends Payload
     ? Discriminator extends keyof Payload
       ? Payload[Discriminator] extends infer DiscriminatorValue
@@ -1223,12 +1223,12 @@ export namespace Field {
         }
     : never;
 
-  export type DiscriminatorKey<Payload> = keyof NonUndefined<Payload>;
+  export type DiscriminatorKey<Payload> = keyof Utils.NonUndefined<Payload>;
 
   export type NarrowCallback<Payload, Narrowed> = (
     payload: Payload,
     wrap: NarrowWrap,
-  ) => NarrowWrapper<Narrowed> | Falsy;
+  ) => NarrowWrapper<Narrowed> | Utils.Falsy;
 
   export type NarrowWrap = <Payload>(
     payload: Payload,
@@ -1481,7 +1481,7 @@ declare module "./collection/index.ts" {
     // Array
 
     <Value extends unknown[]>(
-      field: Field<Value> | Nullish<Enso.Tried<Field<Value>>>,
+      field: Field<Value> | Utils.Nullish<Enso.Tried<Field<Value>>>,
       callback: Field.CollectionCallbackArray<Value>,
     ): void;
 
@@ -1494,12 +1494,12 @@ declare module "./collection/index.ts" {
     // argument (i.e. just the item field).
 
     <Value extends object>(
-      field: Field<Value> | Nullish<Enso.Tried<Field<Value>>>,
+      field: Field<Value> | Utils.Nullish<Enso.Tried<Field<Value>>>,
       callback: Field.CollectionCallbackObjectPair<Value>,
     ): void;
 
     <Value extends object>(
-      field: Field<Value> | Nullish<Enso.Tried<Field<Value>>>,
+      field: Field<Value> | Utils.Nullish<Enso.Tried<Field<Value>>>,
       callback: Field.CollectionCallbackObjectSingle<Value>,
     ): void;
   }
@@ -1510,19 +1510,19 @@ declare module "./collection/index.ts" {
     // Array
 
     <Value extends Array<unknown>, Result>(
-      field: Field<Value> | Nullish<Enso.Tried<Field<Value>>>,
+      field: Field<Value> | Utils.Nullish<Enso.Tried<Field<Value>>>,
       callback: Field.CollectionCallbackArray<Value, Result>,
     ): Result[];
 
     // Object
 
     <Value extends object, Result>(
-      field: Field<Value> | Nullish<Enso.Tried<Field<Value>>>,
+      field: Field<Value> | Utils.Nullish<Enso.Tried<Field<Value>>>,
       callback: Field.CollectionCallbackObjectPair<Value, Result>,
     ): Result[];
 
     <Value extends object, Result>(
-      field: Field<Value> | Nullish<Enso.Tried<Field<Value>>>,
+      field: Field<Value> | Utils.Nullish<Enso.Tried<Field<Value>>>,
       callback: Field.CollectionCallbackObjectSingle<Value, Result>,
     ): Result[];
   }
@@ -1541,19 +1541,19 @@ declare module "./collection/index.ts" {
     // Array
 
     <Value extends Array<unknown>, ItemValue extends Value[number]>(
-      field: Field<Value> | Nullish<Enso.Tried<Field<Value>>>,
+      field: Field<Value> | Utils.Nullish<Enso.Tried<Field<Value>>>,
       predicate: Field.Predicate<ItemValue>,
     ): Field.ItemResultArray<ItemValue> | undefined;
 
     // Object
 
     <Value extends object>(
-      field: Field<Value> | Nullish<Enso.Tried<Field<Value>>>,
+      field: Field<Value> | Utils.Nullish<Enso.Tried<Field<Value>>>,
       predicate: Field.CollectionCallbackObjectPair<Value, unknown>,
     ): Field.ItemResultObject<Value> | undefined;
 
     <Value extends object>(
-      field: Field<Value> | Nullish<Enso.Tried<Field<Value>>>,
+      field: Field<Value> | Utils.Nullish<Enso.Tried<Field<Value>>>,
       predicate: Field.CollectionCallbackObjectSingle<Value, unknown>,
     ): Field.ItemResultObject<Value> | undefined;
   }
@@ -1564,19 +1564,19 @@ declare module "./collection/index.ts" {
     // Array
 
     <Value extends Array<unknown>, ItemValue extends Value[number]>(
-      field: Field<Value> | Nullish<Enso.Tried<Field<Value>>>,
+      field: Field<Value> | Utils.Nullish<Enso.Tried<Field<Value>>>,
       callback: Field.Predicate<ItemValue>,
     ): Field.ItemResultArray<ItemValue>[];
 
     // Object
 
     <Value extends object>(
-      field: Field<Value> | Nullish<Enso.Tried<Field<Value>>>,
+      field: Field<Value> | Utils.Nullish<Enso.Tried<Field<Value>>>,
       predicate: Field.CollectionCallbackObjectPair<Value, unknown>,
     ): Field.ItemResultObject<Value>[];
 
     <Value extends object>(
-      field: Field<Value> | Nullish<Enso.Tried<Field<Value>>>,
+      field: Field<Value> | Utils.Nullish<Enso.Tried<Field<Value>>>,
       predicate: Field.CollectionCallbackObjectSingle<Value, unknown>,
     ): Field.ItemResultObject<Value>[];
   }
