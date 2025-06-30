@@ -8,99 +8,105 @@ const fieldUnionField = new Field({
 
 // `decompose`
 {
-  // Value union
+  // Field
   {
-    const decomposed = fieldDecompose(fieldUnionValue);
-    decomposed satisfies
-      | {
-          value: Hello;
-          field: Field<Hello>;
-        }
-      | {
-          value: Blah;
-          field: Field<Blah>;
-        };
-    // @ts-expect-error
-    decomposed.any;
-  }
+    // Value union
+    {
+      const decomposed = fieldDecompose(fieldUnionValue);
+      decomposed satisfies
+        | {
+            value: Hello;
+            field: Field<Hello>;
+          }
+        | {
+            value: Blah;
+            field: Field<Blah>;
+          };
+      // @ts-expect-error
+      decomposed.any;
+    }
 
-  // Field union
-  {
-    const decomposed = fieldDecompose(fieldUnionField);
-    decomposed satisfies
-      | {
-          value: Hello;
-          field: Field<Hello>;
-        }
-      | {
-          value: Blah;
-          field: Field<Blah>;
-        };
-    // @ts-expect-error
-    decomposed.any;
+    // Field union
+    {
+      const decomposed = fieldDecompose(fieldUnionField);
+      decomposed satisfies
+        | {
+            value: Hello;
+            field: Field<Hello>;
+          }
+        | {
+            value: Blah;
+            field: Field<Blah>;
+          };
+      // @ts-expect-error
+      decomposed.any;
+    }
   }
 }
 
 // `useDecompose`
 {
-  // Value union
+  // Field
   {
-    const decomposed = useFieldDecompose(
-      fieldUnionValue,
-      (newValue, prevValue) => {
-        newValue satisfies Hello | Blah;
-        // @ts-expect-error
-        newValue.any;
+    // Value union
+    {
+      const decomposed = useFieldDecompose(
+        fieldUnionValue,
+        (newValue, prevValue) => {
+          newValue satisfies Hello | Blah;
+          // @ts-expect-error
+          newValue.any;
 
-        prevValue satisfies Hello | Blah;
-        // @ts-expect-error
-        prevValue.any;
+          prevValue satisfies Hello | Blah;
+          // @ts-expect-error
+          prevValue.any;
 
-        return true;
-      },
-      [],
-    );
-    decomposed satisfies
-      | {
-          value: Hello;
-          field: Field<Hello>;
-        }
-      | {
-          value: Blah;
-          field: Field<Blah>;
-        };
-    // @ts-expect-error
-    decomposed.any;
-  }
+          return true;
+        },
+        [],
+      );
+      decomposed satisfies
+        | {
+            value: Hello;
+            field: Field<Hello>;
+          }
+        | {
+            value: Blah;
+            field: Field<Blah>;
+          };
+      // @ts-expect-error
+      decomposed.any;
+    }
 
-  // Field union
-  {
-    const decomposed = useFieldDecompose(
-      fieldUnionField,
-      (newValue, prevValue) => {
-        newValue satisfies Hello | Blah;
-        // @ts-expect-error
-        newValue.any;
+    // Field union
+    {
+      const decomposed = useFieldDecompose(
+        fieldUnionField,
+        (newValue, prevValue) => {
+          newValue satisfies Hello | Blah;
+          // @ts-expect-error
+          newValue.any;
 
-        prevValue satisfies Hello | Blah;
-        // @ts-expect-error
-        prevValue.any;
+          prevValue satisfies Hello | Blah;
+          // @ts-expect-error
+          prevValue.any;
 
-        return true;
-      },
-      [],
-    );
-    decomposed satisfies
-      | {
-          value: Hello;
-          field: Field<Hello>;
-        }
-      | {
-          value: Blah;
-          field: Field<Blah>;
-        };
-    // @ts-expect-error
-    decomposed.any;
+          return true;
+        },
+        [],
+      );
+      decomposed satisfies
+        | {
+            value: Hello;
+            field: Field<Hello>;
+          }
+        | {
+            value: Blah;
+            field: Field<Blah>;
+          };
+      // @ts-expect-error
+      decomposed.any;
+    }
   }
 }
 
