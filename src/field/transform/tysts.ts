@@ -1,3 +1,4 @@
+import { Enso } from "../../types.ts";
 import { Field } from "../index.tsx";
 import { fieldDecompose, useFieldDecompose } from "./index.ts";
 
@@ -37,6 +38,24 @@ const fieldUnionField = new Field({
         | {
             value: Blah;
             field: Field<Blah>;
+          };
+      // @ts-expect-error
+      decomposed.any;
+    }
+
+    // Detachable
+    {
+      const decomposed = fieldDecompose(
+        fieldUnionValue as Enso.Detachable<Field<Hello | Blah>>,
+      );
+      decomposed satisfies
+        | {
+            value: Hello;
+            field: Enso.Detachable<Field<Hello>>;
+          }
+        | {
+            value: Blah;
+            field: Enso.Detachable<Field<Blah>>;
           };
       // @ts-expect-error
       decomposed.any;
@@ -103,6 +122,36 @@ const fieldUnionField = new Field({
         | {
             value: Blah;
             field: Field<Blah>;
+          };
+      // @ts-expect-error
+      decomposed.any;
+    }
+
+    // Detachable
+    {
+      const decomposed = useFieldDecompose(
+        fieldUnionValue as Enso.Detachable<Field<Hello | Blah>>,
+        (newValue, prevValue) => {
+          newValue satisfies Hello | Blah;
+          // @ts-expect-error
+          newValue.any;
+
+          prevValue satisfies Hello | Blah;
+          // @ts-expect-error
+          prevValue.any;
+
+          return true;
+        },
+        [],
+      );
+      decomposed satisfies
+        | {
+            value: Hello;
+            field: Enso.Detachable<Field<Hello>>;
+          }
+        | {
+            value: Blah;
+            field: Enso.Detachable<Field<Blah>>;
           };
       // @ts-expect-error
       decomposed.any;

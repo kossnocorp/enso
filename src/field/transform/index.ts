@@ -5,6 +5,7 @@ import {
   useFieldHook,
   useTypedCallback as useCallback,
 } from "../hook/index.ts";
+import { Enso } from "../../types.ts";
 
 export function fieldDecompose<FieldType>(
   field: FieldType,
@@ -21,7 +22,7 @@ export namespace FieldDecompose {
       ? Value extends Value
         ? {
             value: Value;
-            field: Field<Value>;
+            field: Enso.TransferBrands<Field<Value>, FieldType>;
           }
         : never
       : never;

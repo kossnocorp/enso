@@ -220,11 +220,16 @@ export namespace Enso {
 
   //#endregion
 
-  //#region Map
+  //#region Transform
 
   export type ComputeCallback<Payload, Computed> = (
     payload: Payload,
   ) => Computed;
+
+  export type TransferBrands<Type, SourceType> = TransferDetachable<
+    Type,
+    SourceType
+  >;
 
   //#endregion
 
@@ -243,6 +248,9 @@ export namespace Enso {
     }[keyof Value],
     undefined
   >;
+
+  export type TransferDetachable<Type, SourceType> =
+    SourceType extends Detachable<any> ? Detachable<Type> : Type;
 
   //#endregion
 

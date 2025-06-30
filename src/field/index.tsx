@@ -1201,7 +1201,7 @@ export namespace Field {
 
   //#endregion
 
-  //#region Map
+  //#region Transform
 
   export type Discriminated<
     Payload,
