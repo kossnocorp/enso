@@ -121,23 +121,13 @@ describe("Form", () => {
       expect(spy).toHaveBeenCalledWith(computeCb, [1, 2, 3]);
     });
 
-    it("delegates discriminate", () => {
-      const discriminated = {};
-      const spy = vi
-        .spyOn(Field.prototype, "discriminate")
-        .mockReturnValue(discriminated as any);
-      const form = new Form(nanoid(), { type: "hello", value: 42 });
-      expect(form.discriminate("type")).toBe(discriminated);
-      expect(spy).toHaveBeenCalledWith("type");
-    });
-
     it("delegates useDiscriminate", () => {
       const discriminated = {};
       const spy = vi
-        .spyOn(Field.prototype, "discriminate")
+        .spyOn(Field.prototype, "useDiscriminate")
         .mockReturnValue(discriminated as any);
       const form = new Form(nanoid(), { type: "hello", value: 42 });
-      expect(form.discriminate("type")).toBe(discriminated);
+      expect(form.useDiscriminate("type")).toBe(discriminated);
       expect(spy).toHaveBeenCalledWith("type");
     });
 

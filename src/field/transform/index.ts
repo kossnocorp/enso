@@ -1,11 +1,13 @@
 import type { DependencyList } from "react";
-import type { Field } from "../index.tsx";
+import { Enso } from "../../types.ts";
 import {
+  useTypedCallback as useCallback,
   type UseFieldHook,
   useFieldHook,
-  useTypedCallback as useCallback,
 } from "../hook/index.ts";
-import { Enso } from "../../types.ts";
+import type { Field } from "../index.tsx";
+
+// export interface As
 
 export function fieldDecompose<FieldType>(
   field: FieldType,

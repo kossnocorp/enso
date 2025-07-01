@@ -1,3 +1,4 @@
+import { AsState } from "../../state/index.ts";
 import { Enso } from "../../types.ts";
 import { EnsoUtils as Utils } from "../../utils.ts";
 import { AsCollection, AsCollectionRead } from "../collection/index.ts";
@@ -12,6 +13,8 @@ import { staticImplements } from "../util.ts";
 // TODO: Test if reducing number of allocations is actually worth the memory hit.
 const fieldRefsStore = new WeakMap<Field<any>, FieldRef<any>>();
 
+const refHintSymbol = Symbol();
+
 /**
  * Reference to a field that protects the field's value from being changed. It
  * allows to change the metadata of the field, such as validation errors, but
@@ -20,7 +23,7 @@ const fieldRefsStore = new WeakMap<Field<any>, FieldRef<any>>();
 @staticImplements<AsCollectionRead>()
 // TODO: Try making this work or remove:
 // Static<typeof FieldRef<unknown>, AsCollectionRead>,
-export class FieldRef<Payload> {
+export class FieldRef<Payload> implements FieldRef.Hint {
   static get<Payload>(field: Field<Payload>): FieldRef<Payload> {
     // @ts-ignore: TODO:
     let ref: any = fieldRefsStore.get(field);
@@ -33,7 +36,18 @@ export class FieldRef<Payload> {
     return ref;
   }
 
+  [refHintSymbol] = true as const;
+
   #field: Field<Payload>;
+
+  static every<FieldType extends Field.Hint>(
+    field: FieldType,
+  ): Enso.TransferBrands<
+    FieldRef<Field.EveryValueUnion<FieldType>>,
+    FieldType
+  > {
+    return new FieldRef(field as any) as any;
+  }
 
   constructor(external: Field<Payload>) {
     this.#field = external;
@@ -119,14 +133,28 @@ export class FieldRef<Payload> {
     return Field.asArray(field.#field);
   }
 
+  static asObject<Value>(
+    field: FieldRef<Value>,
+  ): AsCollection.AsObjectResult<Value> {
+    return Field.asObject(field.#field);
+  }
+
   static asChild<Value>(
     field: FieldRef<Value>,
   ): AsCollection.AsChildResult<Value> {
     return Field.asChild(field.#field);
   }
 
-  static fromField<Value>(field: Field<Value>): FieldRef<Value> {
-    return FieldRef.get(field);
+  static asState<Value>(
+    field: FieldRef<Value>,
+  ): AsState.ReadWriteResult<Value> | undefined {
+    return Field.asState(field.#field);
+  }
+
+  static fromField<Value>(
+    field: Field<Value> | undefined,
+  ): FieldRef<Value> | undefined {
+    return field && FieldRef.get(field);
   }
 
   //#endregion
@@ -135,12 +163,31 @@ export class FieldRef<Payload> {
 export namespace FieldRef {
   //#region Interfaces
 
+  export interface Hint {
+    [refHintSymbol]: true;
+  }
+
   export type InterfaceDef<Payload> = {
     Payload: Payload;
     Unknown: FieldRef<unknown>;
     NonNullish: FieldRef<Utils.NonNullish<Payload>>;
     Bound: unknown;
   };
+
+  //#endregion
+
+  //#region Properties
+
+  export type Detachable<Value> = Enso.Detachable<FieldRef<Value>>;
+
+  export type Tried<Value> = Enso.Tried<FieldRef<Value>>;
+
+  export type Bound<Value> = Enso.Bound<FieldRef<Value>>;
+
+  export type Branded<Value, Flags extends Enso.Flags> = Enso.Branded<
+    FieldRef<Value>,
+    Flags
+  >;
 
   //#endregion
 
@@ -175,38 +222,7 @@ export namespace FieldRef {
 
   //#endregion
 
-  //#region Map
-
-  export type Decomposed<Payload> = Payload extends Payload
-    ? {
-        value: Payload;
-        field: FieldRef<Payload>;
-      }
-    : never;
-
-  export type Discriminated<
-    Payload,
-    Discriminator extends keyof Utils.NonUndefined<Payload>,
-  > = Payload extends Payload
-    ? Discriminator extends keyof Payload
-      ? Payload[Discriminator] extends infer DiscriminatorValue
-        ? DiscriminatorValue extends Payload[Discriminator]
-          ? {
-              discriminator: DiscriminatorValue;
-              field: FieldRef<Payload>;
-            }
-          : never
-        : never
-      : // Add the payload type without the discriminator (i.e. undefined)
-        {
-          discriminator: undefined;
-          field: FieldRef<Payload>;
-        }
-    : never;
-
-  //#endregion
-
-  //#region Collection
+  //#region Type
 
   export type Every<Value> =
     // Handle boolean separately, so it doesn't produce FieldRef<true> | FieldRef<false>
@@ -216,6 +232,59 @@ export namespace FieldRef {
           ? FieldRef<Value>
           : never
         : never);
+
+  export type EveryValueUnion<FieldType> =
+    FieldType extends FieldRef<infer Value> ? Value : never;
+
+  export type DiscriminateResult<
+    FieldType,
+    Discriminator extends keyof Utils.NonUndefined<EveryValueUnion<FieldType>>,
+  > = DiscriminatedInner<EveryValueUnion<FieldType>, FieldType, Discriminator>;
+
+  export type Discriminated<
+    Value,
+    Discriminator extends keyof Utils.NonUndefined<Value>,
+  > = DiscriminatedInner<Value, Value, Discriminator>;
+
+  export type DiscriminatedInner<
+    Payload,
+    BrandsSource,
+    Discriminator extends keyof Utils.NonUndefined<Payload>,
+  > = Payload extends Payload
+    ? Discriminator extends keyof Payload
+      ? Payload[Discriminator] extends infer DiscriminatorValue
+        ? DiscriminatorValue extends Payload[Discriminator]
+          ? {
+              discriminator: DiscriminatorValue;
+              field: Enso.TransferBrands<FieldRef<Payload>, BrandsSource>;
+            }
+          : never
+        : never
+      : // Add the payload type without the discriminator (i.e. undefined)
+        {
+          discriminator: undefined;
+          field: Enso.TransferBrands<FieldRef<Payload>, BrandsSource>;
+        }
+    : never;
+
+  export type DiscriminatorFor<FieldType> = keyof Utils.NonUndefined<
+    EveryValueUnion<FieldType>
+  >;
+
+  //#endregion
+
+  //#region Transform
+
+  export type Decomposed<Payload> = Payload extends Payload
+    ? {
+        value: Payload;
+        field: FieldRef<Payload>;
+      }
+    : never;
+
+  //#endregion
+
+  //#region Collection
 
   export type CollectionCallbackArray<
     Value extends Array<unknown>,
@@ -371,7 +440,25 @@ declare module "../collection/index.ts" {
   }
 }
 
+declare module "../type/index.ts" {
+  // `fieldDiscriminate`
+
+  interface FieldDiscriminate {
+    <
+      FieldType extends FieldRef.Hint,
+      Discriminator extends Utils.NonUndefined<
+        FieldRef.DiscriminatorFor<FieldType>
+      >,
+    >(
+      field: FieldType,
+      discriminator: Discriminator,
+    ): FieldRef.DiscriminateResult<FieldType, Discriminator>;
+  }
+}
+
 //#endregion
+
+const maybeRefHintSymbol = Symbol();
 
 /**
  * Class representing maybe fields references. Unlike `FieldRef` representing
@@ -383,8 +470,19 @@ declare module "../collection/index.ts" {
 @staticImplements<AsCollectionRead>()
 // TODO: Try making this work or remove:
 // Static<typeof MaybeFieldRef<unknown>, AsCollectionRead>,
-export class MaybeFieldRef<Payload> {
+export class MaybeFieldRef<Payload> implements MaybeFieldRef.Hint {
   #target: MaybeFieldRef.Target<Payload>;
+
+  [maybeRefHintSymbol] = true as const;
+
+  static every<FieldType extends Field.Hint>(
+    field: FieldType,
+  ): Enso.TransferBrands<
+    MaybeFieldRef<Field.EveryValueUnion<FieldType>>,
+    FieldType
+  > {
+    return new MaybeFieldRef({ type: "direct", field: field as any }) as any;
+  }
 
   constructor(target: MaybeFieldRef.Target<Payload>) {
     this.#target = target;
@@ -468,16 +566,6 @@ export class MaybeFieldRef<Payload> {
     } as unknown as MaybeFieldRef.Decomposed<Payload>;
   }
 
-  discriminate<Discriminator extends keyof Utils.NonNullish<Payload>>(
-    discriminator: Discriminator,
-  ): MaybeFieldRef.Discriminated<Payload, Discriminator> {
-    // @ts-ignore: TODO:
-    return {
-      discriminator: this.at(discriminator).get(),
-      field: this,
-    };
-  }
-
   //#endregion
 
   //#region Errors
@@ -514,6 +602,14 @@ export class MaybeFieldRef<Payload> {
     return Field.asArray(field.#target.field);
   }
 
+  static asObject<Value>(
+    field: MaybeFieldRef<Value>,
+  ): AsCollection.AsObjectResult<Value> {
+    // If it is a shadow field, there can't be anything to access.
+    if (field.#target.type !== "direct") return;
+    return Field.asObject(field.#target.field);
+  }
+
   static asChild<Value>(
     field: MaybeFieldRef<Value>,
   ): AsCollection.AsChildResult<Value> {
@@ -522,11 +618,24 @@ export class MaybeFieldRef<Payload> {
     return Field.asChild(field.#target.field);
   }
 
-  static fromField<Value>(field: Field<Value>): MaybeFieldRef<Value> {
-    return new MaybeFieldRef({
-      type: "direct",
-      field,
-    });
+  static asState<Value>(
+    field: MaybeFieldRef<Value>,
+  ): AsState.ReadWriteResult<Value> | undefined {
+    // If it is a shadow field, there can't be anything to access.
+    if (field.#target.type !== "direct") return;
+    return Field.asState(field.#target.field);
+  }
+
+  static fromField<Value>(
+    field: Field<Value> | undefined,
+  ): MaybeFieldRef<Value> | undefined {
+    return (
+      field &&
+      new MaybeFieldRef({
+        type: "direct",
+        field,
+      })
+    );
   }
 
   //#endregion
@@ -535,12 +644,31 @@ export class MaybeFieldRef<Payload> {
 export namespace MaybeFieldRef {
   //#region Interfaces
 
+  export interface Hint {
+    [maybeRefHintSymbol]: true;
+  }
+
   export type InterfaceDef<Payload> = {
     Payload: Payload;
     Unknown: MaybeFieldRef<unknown>;
     NonNullish: MaybeFieldRef<Utils.NonNullish<Payload>>;
     Bound: unknown;
   };
+
+  //#endregion
+
+  //#region Properties
+
+  export type Detachable<Value> = Enso.Detachable<MaybeFieldRef<Value>>;
+
+  export type Tried<Value> = Enso.Tried<MaybeFieldRef<Value>>;
+
+  export type Bound<Value> = Enso.Bound<MaybeFieldRef<Value>>;
+
+  export type Branded<Value, Flags extends Enso.Flags> = Enso.Branded<
+    MaybeFieldRef<Value>,
+    Flags
+  >;
 
   //#endregion
 
@@ -592,38 +720,7 @@ export namespace MaybeFieldRef {
 
   //#endregion
 
-  //#region Map
-
-  export type Decomposed<Payload> = Payload extends Payload
-    ? {
-        value: Payload;
-        field: MaybeFieldRef<Payload>;
-      }
-    : never;
-
-  export type Discriminated<
-    Payload,
-    Discriminator extends keyof Utils.NonNullish<Payload>,
-  > = Payload extends Payload
-    ? Discriminator extends keyof Payload
-      ? Payload[Discriminator] extends infer DiscriminatorValue
-        ? DiscriminatorValue extends Payload[Discriminator]
-          ? {
-              discriminator: DiscriminatorValue;
-              field: MaybeFieldRef<Payload>;
-            }
-          : never
-        : never
-      : // Add the payload type without the discriminator (i.e. undefined)
-        {
-          discriminator: undefined;
-          field: MaybeFieldRef<Payload>;
-        }
-    : never;
-
-  //#endregion
-
-  //#region Collection
+  //#region Type
 
   export type Every<Value> =
     // Handle boolean separately, so it doesn't produce FieldRef<true> | FieldRef<false>
@@ -633,6 +730,59 @@ export namespace MaybeFieldRef {
           ? MaybeFieldRef<Value>
           : never
         : never);
+
+  export type EveryValueUnion<FieldType> =
+    FieldType extends MaybeFieldRef<infer Value> ? Value : never;
+
+  //#endregion
+
+  //#region Map
+
+  export type Decomposed<Payload> = Payload extends Payload
+    ? {
+        value: Payload;
+        field: MaybeFieldRef<Payload>;
+      }
+    : never;
+
+  export type DiscriminateResult<
+    FieldType,
+    Discriminator extends keyof Utils.NonUndefined<EveryValueUnion<FieldType>>,
+  > = DiscriminatedInner<EveryValueUnion<FieldType>, FieldType, Discriminator>;
+
+  export type Discriminated<
+    Value,
+    Discriminator extends keyof Utils.NonUndefined<Value>,
+  > = DiscriminatedInner<Value, Value, Discriminator>;
+
+  export type DiscriminatedInner<
+    Payload,
+    BrandsSource,
+    Discriminator extends keyof Utils.NonUndefined<Payload>,
+  > = Payload extends Payload
+    ? Discriminator extends keyof Payload
+      ? Payload[Discriminator] extends infer DiscriminatorValue
+        ? DiscriminatorValue extends Payload[Discriminator]
+          ? {
+              discriminator: DiscriminatorValue;
+              field: Enso.TransferBrands<MaybeFieldRef<Payload>, BrandsSource>;
+            }
+          : never
+        : never
+      : // Add the payload type without the discriminator (i.e. undefined)
+        {
+          discriminator: undefined;
+          field: Enso.TransferBrands<MaybeFieldRef<Payload>, BrandsSource>;
+        }
+    : never;
+
+  export type DiscriminatorFor<FieldType> = keyof Utils.NonUndefined<
+    EveryValueUnion<FieldType>
+  >;
+
+  //#endregion
+
+  //#region Collection
 
   export type CollectionCallbackArray<
     Value extends Array<unknown>,
@@ -807,6 +957,22 @@ declare module "../collection/index.ts" {
         | Utils.Nullish<Enso.Tried<MaybeFieldRef<Value>>>,
       predicate: MaybeFieldRef.CollectionCallbackObjectSingle<Value, unknown>,
     ): MaybeFieldRef.ItemResultObject<Value>[];
+  }
+}
+
+declare module "../type/index.ts" {
+  // `fieldDiscriminate`
+
+  interface FieldDiscriminate {
+    <
+      FieldType extends MaybeFieldRef.Hint,
+      Discriminator extends Utils.NonUndefined<
+        MaybeFieldRef.DiscriminatorFor<FieldType>
+      >,
+    >(
+      field: FieldType,
+      discriminator: Discriminator,
+    ): MaybeFieldRef.DiscriminateResult<FieldType, Discriminator>;
   }
 }
 

@@ -1919,38 +1919,6 @@ describe(Field, () => {
   });
 
   describe("map", () => {
-    describe("discriminate", () => {
-      interface Cat {
-        type: "cat";
-        meow: true;
-      }
-
-      interface Dog {
-        type: "dog";
-        bark: true;
-      }
-
-      it("allows to discriminate the field type", () => {
-        const field = new Field<Cat | Dog>({ type: "cat", meow: true });
-        const discriminated = field.discriminate("type");
-        if (discriminated.discriminator === "cat") {
-          expect(discriminated.field.get().meow).toBe(true);
-          return;
-        }
-        assert(false, "Should not reach here");
-      });
-
-      it("handles undefineds", () => {
-        const field = new Field<Cat | Dog | undefined>(undefined);
-        const discriminated = field.discriminate("type");
-        if (!discriminated.discriminator) {
-          expect(discriminated.field.get()).toBe(undefined);
-          return;
-        }
-        assert(false, "Should not reach here");
-      });
-    });
-
     describe("narrow", () => {
       it("allows to narrow the field type", () => {
         const field = new Field<string | number>("Hello, world!");

@@ -22,33 +22,39 @@ import {
 } from "../change/index.ts";
 import { EventsTree } from "../events/index.ts";
 import { useRerender } from "../hooks/rerender.ts";
+import { AsState } from "../state/index.ts";
+import type { Enso } from "../types.ts";
 import type { EnsoUtils as Utils } from "../utils.ts";
 import { ValidationTree } from "../validation/index.ts";
-import { FieldRef } from "./ref/index.ts";
-import type { Enso } from "../types.ts";
+import { AsCollection } from "./collection/index.ts";
 import {
+  useTypedCallback as useCallback,
   useFieldHook,
   UseFieldHook,
-  useTypedCallback as useCallback,
   useTypedMemo as useMemo,
 } from "./hook/index.ts";
-import { AsCollection } from "./collection/index.ts";
+import { FieldRef } from "./ref/index.ts";
+import { fieldDiscriminate } from "./type/index.ts";
 import { staticImplements } from "./util.ts";
 
 export { FieldRef };
 
 export * from "./collection/index.ts";
 export * from "./transform/index.ts";
+export * from "./type/index.ts";
 
 //#region Field
 
 const externalSymbol = Symbol();
+
+const hintSymbol = Symbol();
 
 @staticImplements<AsCollection>()
 // TODO: Try making this work or remove:
 // Static<typeof Field<unknown>, AsCollection>,
 export class Field<Payload>
   implements
+    Field.Hint,
     Enso.InterfaceAttributes<Field.InterfaceDef<Payload>>,
     Enso.InterfaceValueRead<Payload>,
     Field.InterfaceValueWrite<Field.InterfaceDef<Payload>>,
@@ -113,6 +119,8 @@ export class Field<Payload>
   }
 
   //#endregion
+
+  [hintSymbol] = true as const;
 
   #id = nanoid();
   #parent?: Field.Parent<any> | undefined;
@@ -200,6 +208,14 @@ export class Field<Payload>
   get name(): string {
     return Field.nameFromPath(this.path);
   }
+
+  //#endregion
+
+  //#region Interface
+
+  // static asState<Value>(state: State<Value>): State.StateLike<Value> {
+  //   // return this;
+  // }
 
   //#endregion
 
@@ -642,21 +658,11 @@ export class Field<Payload>
     }) as Computed;
   }
 
-  discriminate<Discriminator extends keyof Utils.NonUndefined<Payload>>(
-    discriminator: Discriminator,
-  ): Field.Discriminated<Payload, Discriminator> {
-    return {
-      // @ts-ignore: TODO:
-      discriminator: this.$?.[discriminator]?.get(),
-      field: this,
-    } as unknown as Field.Discriminated<Payload, Discriminator>;
-  }
-
   useDiscriminate<Discriminator extends Field.DiscriminatorKey<Payload>>(
     discriminator: Discriminator,
   ): Field.Discriminated<Payload, Discriminator> {
     const getValue = useCallback(
-      () => this.discriminate(discriminator),
+      () => (fieldDiscriminate as any)(this, discriminator),
       [
         // eslint-disable-next-line react-hooks/exhaustive-deps -- It can't handle this
         this,
@@ -814,13 +820,28 @@ export class Field<Payload>
       return field.#internal as any;
   }
 
+  static asObject<Value>(
+    field: Field<Value>,
+  ): AsCollection.AsObjectResult<Value> {
+    if (field.#internal instanceof InternalObjectState)
+      return field.#internal as any;
+  }
+
   static asChild<Value>(
     field: Field<Value>,
   ): AsCollection.AsChildResult<Value> {
     return field.#internal as any;
   }
 
-  static fromField<Value>(field: Field<Value>): Field<Value> {
+  static asState<Value>(
+    field: Field<Value>,
+  ): AsState.ReadWriteResult<Value> | undefined {
+    return field as any;
+  }
+
+  static fromField<Value>(
+    field: Field<Value> | undefined,
+  ): Field<Value> | undefined {
     return field;
   }
 
@@ -1078,6 +1099,10 @@ export class Field<Payload>
 export namespace Field {
   //#region Interfaces
 
+  export interface Hint {
+    [hintSymbol]: true;
+  }
+
   export type InterfaceDef<Payload> = {
     Payload: Payload;
     Unknown: Field<unknown>;
@@ -1159,6 +1184,21 @@ export namespace Field {
 
   //#endregion
 
+  //#region Properties
+
+  export type Detachable<Value> = Enso.Detachable<Field<Value>>;
+
+  export type Tried<Value> = Enso.Tried<Field<Value>>;
+
+  export type Bound<Value> = Enso.Bound<Field<Value>>;
+
+  export type Branded<Value, Flags extends Enso.Flags> = Enso.Branded<
+    Field<Value>,
+    Flags
+  >;
+
+  //#endregion
+
   //#region Tree
 
   export type Parent<Payload> = ParentDirect<Payload> | ParentSource<Payload>;
@@ -1201,16 +1241,33 @@ export namespace Field {
 
   //#endregion
 
-  //#region Transform
+  //#region Type
+
+  export type Every<Value> =
+    // Handle boolean separately, so it doesn't produce Field<true> | Field<false>
+    | (boolean extends Value ? Field<boolean> : never)
+    | (Exclude<Value, boolean> extends infer Value
+        ? Value extends Value
+          ? Field<Value>
+          : never
+        : never);
+
+  export type EveryValueUnion<FieldType> =
+    FieldType extends Field<infer Value> ? Value : never;
+
+  export type DiscriminateResult<
+    FieldType,
+    Discriminator extends keyof Utils.NonUndefined<EveryValueUnion<FieldType>>,
+  > = DiscriminatedInner<EveryValueUnion<FieldType>, FieldType, Discriminator>;
 
   export type Discriminated<
-    Payload,
-    Discriminator extends keyof Utils.NonUndefined<Payload>,
-  > = DiscriminatedInner<Payload, Payload, Discriminator>;
+    Value,
+    Discriminator extends keyof Utils.NonUndefined<Value>,
+  > = DiscriminatedInner<Value, Value, Discriminator>;
 
   export type DiscriminatedInner<
     Payload,
-    PayloadSource,
+    BrandsSource,
     Discriminator extends keyof Utils.NonUndefined<Payload>,
   > = Payload extends Payload
     ? Discriminator extends keyof Payload
@@ -1218,18 +1275,26 @@ export namespace Field {
         ? DiscriminatorValue extends Payload[Discriminator]
           ? {
               discriminator: DiscriminatorValue;
-              field: Enso.TransferBrands<Field<Payload>, PayloadSource>;
+              field: Enso.TransferBrands<Field<Payload>, BrandsSource>;
             }
           : never
         : never
       : // Add the payload type without the discriminator (i.e. undefined)
         {
           discriminator: undefined;
-          field: Enso.TransferBrands<Field<Payload>, PayloadSource>;
+          field: Enso.TransferBrands<Field<Payload>, BrandsSource>;
         }
     : never;
 
+  export type DiscriminatorFor<FieldType> = keyof Utils.NonUndefined<
+    EveryValueUnion<FieldType>
+  >;
+
   export type DiscriminatorKey<Payload> = keyof Utils.NonUndefined<Payload>;
+
+  //#endregion
+
+  //#region Transform
 
   export type NarrowCallback<Payload, Narrowed> = (
     payload: Payload,
@@ -1310,19 +1375,6 @@ export namespace Field {
   //#endregion
 
   //#region Collection
-
-  export type Bound<Value> = Enso.Bound<Field<Value>>;
-
-  export type Detachable<Value> = Enso.Detachable<Field<Value>>;
-
-  export type Every<Value> =
-    // Handle boolean separately, so it doesn't produce Field<true> | Field<false>
-    | (boolean extends Value ? Field<boolean> : never)
-    | (Exclude<Value, boolean> extends infer Value
-        ? Value extends Value
-          ? Field<Value>
-          : never
-        : never);
 
   export type CollectionCallbackArray<
     Value extends Array<unknown>,
@@ -1656,6 +1708,22 @@ declare module "./collection/index.ts" {
   }
 }
 
+declare module "./type/index.ts" {
+  // `fieldDiscriminate`
+
+  interface FieldDiscriminate {
+    <
+      FieldType extends Field.Hint,
+      Discriminator extends Utils.NonUndefined<
+        Field.DiscriminatorFor<FieldType>
+      >,
+    >(
+      field: FieldType,
+      discriminator: Discriminator,
+    ): Field.DiscriminateResult<FieldType, Discriminator>;
+  }
+}
+
 //#endregion
 
 //#region ComputedField
@@ -1835,6 +1903,16 @@ export abstract class InternalState<Payload> {
 
   detached(): boolean {
     return false;
+  }
+
+  discriminate<Discriminator extends keyof Utils.NonUndefined<Payload>>(
+    discriminator: Discriminator,
+  ): Field.Discriminated<Payload, Discriminator> {
+    return {
+      // @ts-ignore: TODO:
+      discriminator: this.external.$?.[discriminator]?.get(),
+      field: this.external,
+    } as any;
   }
 }
 

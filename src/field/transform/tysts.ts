@@ -1,9 +1,8 @@
-import { Enso } from "../../types.ts";
 import { Field } from "../index.tsx";
 import { fieldDecompose, useFieldDecompose } from "./index.ts";
 
-const fieldUnionValue = new Field<Hello | Blah>({ hello: "world" });
-const fieldUnionField = new Field({
+const unionValue = new Field<Hello | Blah>({ hello: "world" });
+const unionField = new Field({
   hello: "world",
 }) as Field<Hello> | Field<Blah>;
 
@@ -13,7 +12,7 @@ const fieldUnionField = new Field({
   {
     // Value union
     {
-      const decomposed = fieldDecompose(fieldUnionValue);
+      const decomposed = fieldDecompose(unionValue);
       decomposed satisfies
         | {
             value: Hello;
@@ -29,7 +28,7 @@ const fieldUnionField = new Field({
 
     // Field union
     {
-      const decomposed = fieldDecompose(fieldUnionField);
+      const decomposed = fieldDecompose(unionField);
       decomposed satisfies
         | {
             value: Hello;
@@ -46,16 +45,16 @@ const fieldUnionField = new Field({
     // Detachable
     {
       const decomposed = fieldDecompose(
-        fieldUnionValue as Enso.Detachable<Field<Hello | Blah>>,
+        unionValue as Field.Detachable<Hello | Blah>,
       );
       decomposed satisfies
         | {
             value: Hello;
-            field: Enso.Detachable<Field<Hello>>;
+            field: Field.Detachable<Hello>;
           }
         | {
             value: Blah;
-            field: Enso.Detachable<Field<Blah>>;
+            field: Field.Detachable<Blah>;
           };
       // @ts-expect-error
       decomposed.any;
@@ -70,7 +69,7 @@ const fieldUnionField = new Field({
     // Value union
     {
       const decomposed = useFieldDecompose(
-        fieldUnionValue,
+        unionValue,
         (newValue, prevValue) => {
           newValue satisfies Hello | Blah;
           // @ts-expect-error
@@ -100,7 +99,7 @@ const fieldUnionField = new Field({
     // Field union
     {
       const decomposed = useFieldDecompose(
-        fieldUnionField,
+        unionField,
         (newValue, prevValue) => {
           newValue satisfies Hello | Blah;
           // @ts-expect-error
@@ -130,7 +129,7 @@ const fieldUnionField = new Field({
     // Detachable
     {
       const decomposed = useFieldDecompose(
-        fieldUnionValue as Enso.Detachable<Field<Hello | Blah>>,
+        unionValue as Field.Detachable<Hello | Blah>,
         (newValue, prevValue) => {
           newValue satisfies Hello | Blah;
           // @ts-expect-error
@@ -147,11 +146,11 @@ const fieldUnionField = new Field({
       decomposed satisfies
         | {
             value: Hello;
-            field: Enso.Detachable<Field<Hello>>;
+            field: Field.Detachable<Hello>;
           }
         | {
             value: Blah;
-            field: Enso.Detachable<Field<Blah>>;
+            field: Field.Detachable<Blah>;
           };
       // @ts-expect-error
       decomposed.any;

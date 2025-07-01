@@ -15,15 +15,19 @@ export interface AsCollectionRead {
 
   asArray<Value>(field: unknown): AsCollection.AsReadArrayResult<Value>;
 
+  asObject<Value>(field: unknown): AsCollection.AsReadObjectResult<Value>;
+
   asChild<Value>(field: unknown): AsCollection.AsReadAnyResult<Value>;
 
-  fromField<Value>(field: Field<Value>): unknown;
+  fromField<Value>(field: Field<Value> | undefined): unknown;
 }
 
 export interface AsCollection {
   asCollection<Value>(field: unknown): AsCollection.Result<Value>;
 
   asArray<Value>(field: unknown): AsCollection.AsArrayResult<Value>;
+
+  asObject<Value>(field: unknown): AsCollection.AsObjectResult<Value>;
 
   asChild<Value>(field: unknown): AsCollection.AsChildResult<Value>;
 
@@ -44,6 +48,10 @@ export namespace AsCollection {
   export type AsArrayResult<Value> = InternalArray<Value> | undefined;
 
   export type AsReadArrayResult<Value> = InternalReadArray<Value> | undefined;
+
+  export type AsObjectResult<Value> = InternalObject<Value> | undefined;
+
+  export type AsReadObjectResult<Value> = InternalReadObject<Value> | undefined;
 
   export type AsChildResult<Value> = InternalAny<Value> | undefined;
 
@@ -104,19 +112,25 @@ export namespace AsCollection {
 
 export const fieldEach = ((
   field: Utils.Nullish<StaticImplements<AsCollectionRead>>,
-  callback: () => void,
+  callback: (...args: any[]) => any,
 ) =>
   field?.constructor
     .asCollection(field)
-    ?.each(callback)) as unknown as FieldEach;
+    ?.each((item, key) =>
+      callback(field.constructor.fromField(item), key),
+    )) as unknown as FieldEach;
 
 export interface FieldEach {}
 
 export const fieldMap = ((
   field: Utils.Nullish<StaticImplements<AsCollectionRead>>,
-  callback: () => void,
+  callback: (...args: any[]) => any,
 ) =>
-  field?.constructor.asCollection(field)?.map(callback)) as unknown as FieldMap;
+  field?.constructor
+    .asCollection(field)
+    ?.map((item, key) =>
+      callback(field.constructor.fromField(item), key),
+    )) as unknown as FieldMap;
 
 export interface FieldMap {}
 
@@ -130,11 +144,24 @@ export const fieldFind = ((
   field: Utils.Nullish<StaticImplements<AsCollectionRead>>,
   predicate: any,
 ) =>
-  field?.constructor
-    .asCollection(field)
-    ?.find(predicate)) as unknown as FieldFind;
+  field?.constructor.fromField(
+    field.constructor.asCollection(field)?.find(predicate),
+  )) as unknown as FieldFind;
 
 export interface FieldFind {}
+
+export const fieldFilter = ((
+  field: Utils.Nullish<StaticImplements<AsCollectionRead>>,
+  predicate: any,
+) =>
+  field?.constructor
+    .asCollection(field)
+    ?.filter((item, key) => predicate(field.constructor.fromField(item), key))
+    .map((item) =>
+      field.constructor.fromField(item),
+    )) as unknown as FieldFilter;
+
+export interface FieldFilter {}
 
 export const fieldPush = ((
   field: Utils.Nullish<StaticImplements<AsCollection>>,
@@ -165,13 +192,3 @@ export const fieldRemove = ((
         ?.remove(key)) as unknown as FieldRemove;
 
 export interface FieldRemove {}
-
-export const fieldFilter = ((
-  field: Utils.Nullish<StaticImplements<AsCollectionRead>>,
-  predicate: any,
-) =>
-  field?.constructor
-    .asCollection(field)
-    ?.filter(predicate)) as unknown as FieldFilter;
-
-export interface FieldFilter {}

@@ -4,9 +4,73 @@ import { EventsTree } from "./events/index.ts";
 import { EnsoUtils as Utils } from "./utils.ts";
 
 export namespace Enso {
-  //#region Foundation
+  //#region Base
 
   export type Path = readonly (string | number)[];
+
+  //#endregion
+
+  // TODO: Brands and Flags are State properties, but I don't want to force
+  // State right now, until there is a good reason to do so.
+
+  //#region Brands
+
+  export type TransferBrands<Type, TypeSource> = Type &
+    (TypeSource extends DetachableBrand ? DetachableBrand : unknown) &
+    (TypeSource extends TriedBrand ? TriedBrand : unknown) &
+    (TypeSource extends BoundBrand ? BoundBrand : unknown);
+
+  export type TransferDetachable<Type, SourceType> =
+    SourceType extends Detachable<unknown> ? Detachable<Type> : Type;
+
+  export type Branded<Type, TypeFlags extends Flags> = Type &
+    (FlagDetachable extends TypeFlags ? DetachableBrand : unknown) &
+    (FlagTried extends TypeFlags ? TriedBrand : unknown) &
+    (FlagBound extends TypeFlags ? BoundBrand : unknown);
+
+  // Detachable
+
+  export type Detachable<Type> = Type & DetachableBrand;
+
+  export type DetachableBrand = { [detachableBrand]: true };
+  declare const detachableBrand: unique symbol;
+
+  export type DetachableKeys<Value> = Exclude<
+    {
+      [Key in keyof Value]: Utils.IsStaticKey<Value, Key> extends true
+        ? Utils.IsOptionalKey<Value, Key> extends true
+          ? Key
+          : never
+        : Key;
+    }[keyof Value],
+    undefined
+  >;
+
+  // Tried
+
+  export type Tried<Type> = Type & TriedBrand;
+
+  export type TriedBrand = { [triedBrand]: true };
+  declare const triedBrand: unique symbol;
+
+  // Bound
+
+  export type Bound<Type> = Type & BoundBrand;
+
+  export type BoundBrand = { [boundBrand]: true };
+  declare const boundBrand: unique symbol;
+
+  //#endregion
+
+  //#region Flags
+
+  export type Flags = FlagDetachable | FlagTried | FlagBound;
+
+  export type FlagDetachable = "detachable";
+
+  export type FlagTried = "tried";
+
+  export type FlagBound = "bound";
 
   //#endregion
 
@@ -203,9 +267,6 @@ export namespace Enso {
     // Resolve branded field without null or undefined
     | Tried<Def["NonNullish"]>;
 
-  export type Tried<Type> = Type & { [tryBrand]: true };
-  declare const tryBrand: unique symbol;
-
   //#endregion
 
   //#region Watch
@@ -225,37 +286,9 @@ export namespace Enso {
     payload: Payload,
   ) => Computed;
 
-  export type TransferBrands<Type, SourceType> = TransferDetachable<
-    Type,
-    SourceType
-  >;
-
   //#endregion
 
   //#region Collection
-
-  export type Detachable<Type> = Type & { [detachableBrand]: true };
-  declare const detachableBrand: unique symbol;
-
-  export type DetachableKeys<Value> = Exclude<
-    {
-      [Key in keyof Value]: Utils.IsStaticKey<Value, Key> extends true
-        ? Utils.IsOptionalKey<Value, Key> extends true
-          ? Key
-          : never
-        : Key;
-    }[keyof Value],
-    undefined
-  >;
-
-  export type TransferDetachable<Type, SourceType> =
-    SourceType extends Detachable<any> ? Detachable<Type> : Type;
-
-  export type Bound<Type> = Type & {
-    [boundBrand]: true;
-  };
-
-  declare const boundBrand: unique symbol;
 
   //#endregion
 

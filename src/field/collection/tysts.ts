@@ -3,13 +3,13 @@ import { DetachedValue, Field, FieldRef } from "../index.tsx";
 import { MaybeFieldRef } from "../ref/index.ts";
 import {
   fieldEach,
+  fieldFilter,
   fieldFind,
   fieldInsert,
   fieldMap,
   fieldPush,
   fieldRemove,
   fieldSize,
-  fieldFilter,
 } from "./index.ts";
 
 const arr = new Field<Array<string | boolean>>([]);

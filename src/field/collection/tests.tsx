@@ -5,13 +5,13 @@ import { Field, FieldRef } from "../index.tsx";
 import { MaybeFieldRef } from "../ref/index.ts";
 import {
   fieldEach,
+  fieldFilter,
   fieldFind,
   fieldInsert,
   fieldMap,
   fieldPush,
   fieldRemove,
   fieldSize,
-  fieldFilter,
 } from "./index.ts";
 
 describe(fieldEach, () => {
@@ -41,7 +41,10 @@ describe(fieldEach, () => {
       it("iterates items", () => {
         const ref = new FieldRef(field);
         const mapped: [number, number][] = [];
-        fieldEach(ref, (item, index) => mapped.push([index, item.get() * 2]));
+        fieldEach(ref, (item, index) => {
+          mapped.push([index, item.get() * 2]);
+          expect(item).toBeInstanceOf(FieldRef);
+        });
         expect(mapped).toEqual([
           [0, 2],
           [1, 4],
@@ -61,7 +64,10 @@ describe(fieldEach, () => {
       it("iterates items", () => {
         const ref = new MaybeFieldRef({ type: "direct", field });
         const mapped: [number, number][] = [];
-        fieldEach(ref, (item, index) => mapped.push([index, item.get() * 2]));
+        fieldEach(ref, (item, index) => {
+          mapped.push([index, item.get() * 2]);
+          expect(item).toBeInstanceOf(MaybeFieldRef);
+        });
         expect(mapped).toEqual([
           [0, 2],
           [1, 4],
@@ -104,7 +110,10 @@ describe(fieldEach, () => {
       it("iterates items and keys", () => {
         const ref = new FieldRef(field);
         const mapped: [string, number][] = [];
-        fieldEach(ref, (item, key) => mapped.push([key, item.get()]));
+        fieldEach(ref, (item, key) => {
+          mapped.push([key, item.get()]);
+          expect(item).toBeInstanceOf(FieldRef);
+        });
         expect(mapped).toEqual([
           ["a", 1],
           ["b", 2],
@@ -124,7 +133,10 @@ describe(fieldEach, () => {
       it("iterates items and keys", () => {
         const ref = new MaybeFieldRef({ type: "direct", field });
         const mapped: [string, number][] = [];
-        fieldEach(ref, (item, key) => mapped.push([key, item.get()]));
+        fieldEach(ref, (item, key) => {
+          mapped.push([key, item.get()]);
+          expect(item).toBeInstanceOf(MaybeFieldRef);
+        });
         expect(mapped).toEqual([
           ["a", 1],
           ["b", 2],
@@ -170,7 +182,10 @@ describe(fieldMap, () => {
     describe(FieldRef, () => {
       it("maps items", () => {
         const ref = new FieldRef(field);
-        const mapped = fieldMap(ref, (item, index) => [index, item.get() * 2]);
+        const mapped = fieldMap(ref, (item, index) => {
+          expect(item).toBeInstanceOf(FieldRef);
+          return [index, item.get() * 2];
+        });
         expect(mapped).toEqual([
           [0, 2],
           [1, 4],
@@ -189,7 +204,10 @@ describe(fieldMap, () => {
     describe(MaybeFieldRef, () => {
       it("maps items", () => {
         const ref = new MaybeFieldRef({ type: "direct", field });
-        const mapped = fieldMap(ref, (item, index) => [index, item.get() * 2]);
+        const mapped = fieldMap(ref, (item, index) => {
+          expect(item).toBeInstanceOf(MaybeFieldRef);
+          return [index, item.get() * 2];
+        });
         expect(mapped).toEqual([
           [0, 2],
           [1, 4],
@@ -230,7 +248,10 @@ describe(fieldMap, () => {
     describe(FieldRef, () => {
       it("maps items and keys", () => {
         const ref = new FieldRef(field);
-        const mapped = fieldMap(ref, (item, key) => [key, item.get()]);
+        const mapped = fieldMap(ref, (item, key) => {
+          expect(item).toBeInstanceOf(FieldRef);
+          return [key, item.get()];
+        });
         expect(mapped).toEqual([
           ["a", 1],
           ["b", 2],
@@ -249,7 +270,10 @@ describe(fieldMap, () => {
     describe(MaybeFieldRef, () => {
       it("maps items and keys", () => {
         const ref = new MaybeFieldRef({ type: "direct", field });
-        const mapped = fieldMap(ref, (item, key) => [key, item.get()]);
+        const mapped = fieldMap(ref, (item, key) => {
+          expect(item).toBeInstanceOf(MaybeFieldRef);
+          return [key, item.get()];
+        });
         expect(mapped).toEqual([
           ["a", 1],
           ["b", 2],
@@ -349,6 +373,7 @@ describe(fieldFind, () => {
         const field = new Field([1, 2, 3]);
         const ref = new FieldRef(field);
         const item = fieldFind(ref, (item) => item.get() === 2);
+        expect(item).toBeInstanceOf(FieldRef);
         expect(item?.get()).toBe(2);
       });
 
@@ -375,6 +400,7 @@ describe(fieldFind, () => {
         const field = new Field([1, 2, 3]);
         const ref = new MaybeFieldRef({ type: "direct", field });
         const item = fieldFind(ref, (item) => item.get() === 2);
+        expect(item).toBeInstanceOf(MaybeFieldRef);
         expect(item?.get()).toBe(2);
       });
 
@@ -426,6 +452,7 @@ describe(fieldFind, () => {
         const field = new Field({ a: 1, b: 2, c: 3 });
         const ref = new FieldRef(field);
         const item = fieldFind(ref, (item) => item.get() === 2);
+        expect(item).toBeInstanceOf(FieldRef);
         expect(item?.get()).toBe(2);
       });
 
@@ -452,6 +479,7 @@ describe(fieldFind, () => {
         const field = new Field({ a: 1, b: 2, c: 3 });
         const ref = new MaybeFieldRef({ type: "direct", field });
         const item = fieldFind(ref, (item) => item.get() === 2);
+        expect(item).toBeInstanceOf(MaybeFieldRef);
         expect(item?.get()).toBe(2);
       });
 
@@ -502,6 +530,7 @@ describe(fieldFilter, () => {
         const field = new Field([1, 2, 3, 4]);
         const ref = new FieldRef(field);
         const items = fieldFilter(ref, (item) => item.get() % 2 === 0);
+        items.forEach((item) => expect(item).toBeInstanceOf(FieldRef));
         expect(items.map((f) => f.get())).toEqual([2, 4]);
       });
 
@@ -525,6 +554,7 @@ describe(fieldFilter, () => {
         const field = new Field([1, 2, 3, 4]);
         const ref = new MaybeFieldRef({ type: "direct", field });
         const items = fieldFilter(ref, (item) => item.get() % 2 === 0);
+        items.forEach((item) => expect(item).toBeInstanceOf(MaybeFieldRef));
         expect(items.map((f) => f.get())).toEqual([2, 4]);
       });
 
@@ -570,6 +600,7 @@ describe(fieldFilter, () => {
         const field = new Field({ a: 1, b: 2, c: 3, d: 4 });
         const ref = new FieldRef(field);
         const items = fieldFilter(ref, (item) => item.get() % 2 === 0);
+        items.forEach((item) => expect(item).toBeInstanceOf(FieldRef));
         expect(items.map((f) => f.get())).toEqual([2, 4]);
       });
 
@@ -593,6 +624,7 @@ describe(fieldFilter, () => {
         const field = new Field({ a: 1, b: 2, c: 3, d: 4 });
         const ref = new MaybeFieldRef({ type: "direct", field });
         const items = fieldFilter(ref, (item) => item.get() % 2 === 0);
+        items.forEach((item) => expect(item).toBeInstanceOf(MaybeFieldRef));
         expect(items.map((f) => f.get())).toEqual([2, 4]);
       });
 
