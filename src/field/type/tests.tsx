@@ -1,19 +1,11 @@
-import { assert, describe, expect, it } from "vitest";
+import React from "react";
+import { act, cleanup, render, screen } from "@testing-library/react";
+import { afterEach, assert, describe, expect, it } from "vitest";
 import { Field, FieldRef } from "../index.tsx";
 import { MaybeFieldRef } from "../ref/index.ts";
-import { fieldDiscriminate } from "./index.ts";
+import { fieldDiscriminate, useFieldDiscriminate } from "./index.ts";
 
 describe(fieldDiscriminate, () => {
-  interface Cat {
-    type: "cat";
-    meow: true;
-  }
-
-  interface Dog {
-    type: "dog";
-    bark: true;
-  }
-
   describe(Field, () => {
     it("allows to discriminate by field", () => {
       const field = new Field<Cat | Dog>({ type: "cat", meow: true });
@@ -86,3 +78,63 @@ describe(fieldDiscriminate, () => {
     });
   });
 });
+
+describe(useFieldDiscriminate, () => {
+  afterEach(cleanup);
+
+  it("discriminates and updates on field change", async () => {
+    const field = new Field<Cat | Dog>({ type: "cat", meow: true });
+
+    function TestComponent() {
+      const discriminated = useFieldDiscriminate(field, "type");
+      return (
+        <div data-testid="type">
+          {discriminated.discriminator}:{" "}
+          {discriminated.discriminator === "cat"
+            ? String(discriminated.field.get().meow)
+            : discriminated.discriminator === "dog"
+              ? String(discriminated.field.get().bark)
+              : ""}
+        </div>
+      );
+    }
+
+    render(<TestComponent />);
+    expect(screen.getByTestId("type").textContent).toBe("cat: true");
+
+    await act(() => field.set({ type: "dog", bark: false }));
+
+    expect(screen.getByTestId("type").textContent).toBe("dog: false");
+  });
+
+  it("handles undefineds", async () => {
+    const field = new Field<Cat | Dog | undefined>(undefined);
+
+    function TestComponent() {
+      const discriminated = useFieldDiscriminate(field, "type");
+      return (
+        <div data-testid="type">
+          {String(discriminated.discriminator)}:{" "}
+          {String(discriminated.field.get()?.type)}
+        </div>
+      );
+    }
+
+    render(<TestComponent />);
+    expect(screen.getByTestId("type").textContent).toBe("undefined: undefined");
+
+    await act(() => field.set({ type: "cat", meow: true }));
+
+    expect(screen.getByTestId("type").textContent).toBe("cat: cat");
+  });
+});
+
+interface Cat {
+  type: "cat";
+  meow: boolean;
+}
+
+interface Dog {
+  type: "dog";
+  bark: boolean;
+}

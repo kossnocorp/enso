@@ -1,6 +1,6 @@
-import { act, render, screen } from "@testing-library/react";
+import { act, cleanup, render, screen } from "@testing-library/react";
 import React from "react";
-import { assert, describe, expect, it, vi } from "vitest";
+import { afterEach, assert, describe, expect, it, vi } from "vitest";
 import { Field } from "../index.tsx";
 import { fieldDecompose, useFieldDecompose } from "./index.ts";
 
@@ -19,6 +19,8 @@ describe(fieldDecompose, () => {
 });
 
 describe(useFieldDecompose, () => {
+  afterEach(cleanup);
+
   it("decomposes and updates on field change", async () => {
     type Payload = { data: string } | { data: number };
 

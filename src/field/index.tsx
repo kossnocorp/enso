@@ -658,29 +658,6 @@ export class Field<Payload>
     }) as Computed;
   }
 
-  useDiscriminate<Discriminator extends Field.DiscriminatorKey<Payload>>(
-    discriminator: Discriminator,
-  ): Field.Discriminated<Payload, Discriminator> {
-    const getValue = useCallback(
-      () => (fieldDiscriminate as any)(this, discriminator),
-      [
-        // eslint-disable-next-line react-hooks/exhaustive-deps -- It can't handle this
-        this,
-        discriminator,
-      ],
-    );
-
-    const shouldRender = useCallback<
-      UseFieldHook.ShouldRender<Field.Discriminated<Payload, Discriminator>>
-    >((prev, next) => prev?.discriminator !== next.discriminator, []);
-
-    return useFieldHook({
-      field: this as Field<any>,
-      getValue,
-      shouldRender,
-    }) as Field.Discriminated<Payload, Discriminator>;
-  }
-
   narrow<Narrowed extends Payload>(
     callback: Field.NarrowCallback<Payload, Narrowed>,
   ): Field<Narrowed> | undefined {
@@ -1712,6 +1689,20 @@ declare module "./type/index.ts" {
   // `fieldDiscriminate`
 
   interface FieldDiscriminate {
+    <
+      FieldType extends Field.Hint,
+      Discriminator extends Utils.NonUndefined<
+        Field.DiscriminatorFor<FieldType>
+      >,
+    >(
+      field: FieldType,
+      discriminator: Discriminator,
+    ): Field.DiscriminateResult<FieldType, Discriminator>;
+  }
+
+  // `useFieldDiscriminate`
+
+  interface UseFieldDiscriminate {
     <
       FieldType extends Field.Hint,
       Discriminator extends Utils.NonUndefined<

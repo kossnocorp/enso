@@ -4,7 +4,7 @@ import { describe, expect, it, vi } from "vitest";
 import { render } from "vitest-browser-react";
 import "../../tests/browser.js";
 import { change } from "../change/index.ts";
-import { Field } from "./index.tsx";
+import { Field, useFieldDiscriminate } from "./index.tsx";
 import { postpone } from "../../tests/utils.ts";
 import { fieldDecompose, useFieldDecompose } from "./transform/index.ts";
 import { fieldMap, fieldPush, fieldRemove } from "./collection/index.ts";
@@ -2466,7 +2466,7 @@ describe("Field", () => {
       });
     });
 
-    describe("useDiscriminate", () => {
+    describe(useFieldDiscriminate, () => {
       it("allows to discriminate union field", async () => {
         interface TestState {
           hello: Hello;
@@ -2480,7 +2480,7 @@ describe("Field", () => {
             },
             [],
           );
-          const hello = field.$.hello.useDiscriminate("lang");
+          const hello = useFieldDiscriminate(field.$.hello, "lang");
 
           return (
             <div>
@@ -2582,7 +2582,7 @@ describe("Field", () => {
             [],
           );
           const [index, setIndex] = useState(0);
-          const hello = field.at(index).useDiscriminate("lang");
+          const hello = useFieldDiscriminate(field.at(index), "lang");
 
           return (
             <div>
@@ -2627,7 +2627,7 @@ describe("Field", () => {
             [],
           );
           const [index, setIndex] = useState(0);
-          const hello = field.at(index).useDiscriminate("lang");
+          const hello = useFieldDiscriminate(field.at(index), "lang");
 
           return (
             <div>

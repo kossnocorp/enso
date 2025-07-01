@@ -163,12 +163,6 @@ export class Form<Payload> implements Enso.InterfaceSystem {
     return this.#field.useCompute(callback, deps);
   }
 
-  useDiscriminate<Discriminator extends keyof Utils.NonUndefined<Payload>>(
-    discriminator: Discriminator,
-  ) {
-    return this.#field.useDiscriminate(discriminator);
-  }
-
   into<Computed>(
     intoCallback: Field.IntoCallback<Payload, Computed>,
   ): Field.IntoObj<Payload, Computed> {
