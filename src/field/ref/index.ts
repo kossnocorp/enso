@@ -244,26 +244,34 @@ export namespace FieldRef {
   export type Discriminated<
     Value,
     Discriminator extends keyof Utils.NonUndefined<Value>,
-  > = DiscriminatedInner<Value, Value, Discriminator>;
+    Flags extends Enso.Flags | undefined = undefined,
+  > = DiscriminatedInner<Value, Value, Discriminator, Flags>;
 
   export type DiscriminatedInner<
     Payload,
     BrandsSource,
     Discriminator extends keyof Utils.NonUndefined<Payload>,
+    Flags extends Enso.Flags | undefined = undefined,
   > = Payload extends Payload
     ? Discriminator extends keyof Payload
       ? Payload[Discriminator] extends infer DiscriminatorValue
         ? DiscriminatorValue extends Payload[Discriminator]
           ? {
               discriminator: DiscriminatorValue;
-              field: Enso.TransferBrands<FieldRef<Payload>, BrandsSource>;
+              field: Enso.Branded<
+                Enso.TransferBrands<FieldRef<Payload>, BrandsSource>,
+                Flags
+              >;
             }
           : never
         : never
       : // Add the payload type without the discriminator (i.e. undefined)
         {
           discriminator: undefined;
-          field: Enso.TransferBrands<FieldRef<Payload>, BrandsSource>;
+          field: Enso.Branded<
+            Enso.TransferBrands<FieldRef<Payload>, BrandsSource>,
+            Flags
+          >;
         }
     : never;
 
@@ -848,26 +856,34 @@ export namespace MaybeFieldRef {
   export type Discriminated<
     Value,
     Discriminator extends keyof Utils.NonUndefined<Value>,
-  > = DiscriminatedInner<Value, Value, Discriminator>;
+    Flags extends Enso.Flags | undefined = undefined,
+  > = DiscriminatedInner<Value, Value, Discriminator, Flags>;
 
   export type DiscriminatedInner<
     Payload,
     BrandsSource,
     Discriminator extends keyof Utils.NonUndefined<Payload>,
+    Flags extends Enso.Flags | undefined = undefined,
   > = Payload extends Payload
     ? Discriminator extends keyof Payload
       ? Payload[Discriminator] extends infer DiscriminatorValue
         ? DiscriminatorValue extends Payload[Discriminator]
           ? {
               discriminator: DiscriminatorValue;
-              field: Enso.TransferBrands<MaybeFieldRef<Payload>, BrandsSource>;
+              field: Enso.Branded<
+                Enso.TransferBrands<MaybeFieldRef<Payload>, BrandsSource>,
+                Flags
+              >;
             }
           : never
         : never
       : // Add the payload type without the discriminator (i.e. undefined)
         {
           discriminator: undefined;
-          field: Enso.TransferBrands<MaybeFieldRef<Payload>, BrandsSource>;
+          field: Enso.Branded<
+            Enso.TransferBrands<MaybeFieldRef<Payload>, BrandsSource>,
+            Flags
+          >;
         }
     : never;
 

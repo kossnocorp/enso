@@ -57,6 +57,10 @@ import { fieldDiscriminate } from "./index.ts";
       // @ts-expect-error
       result.any;
 
+      const _manual: Field.Discriminated<User | Organization, "type"> = result;
+      // @ts-expect-error
+      const _manualWrong: Field.Discriminated<User, "type"> = result;
+
       // @ts-expect-error
       fieldDiscriminate(unionValue, "paid");
     }
@@ -97,6 +101,10 @@ import { fieldDiscriminate } from "./index.ts";
       // @ts-expect-error
       result.any;
 
+      const _manual: Field.Discriminated<User | Organization, "type"> = result;
+      // @ts-expect-error
+      const _manualWrong: Field.Discriminated<User, "type"> = result;
+
       // @ts-expect-error
       fieldDiscriminate(unionField, "paid");
     }
@@ -124,6 +132,11 @@ import { fieldDiscriminate } from "./index.ts";
             discriminator: "organization";
             field: Field.Detachable<Organization>;
           };
+
+      const _manual: Field.Discriminated<User | Organization, "type", "tried"> =
+        result;
+      // @ts-expect-error
+      const _manualWrong: Field.Discriminated<User, "type", "tried"> = result;
     }
 
     // Undefined value
@@ -177,6 +190,14 @@ import { fieldDiscriminate } from "./index.ts";
       // @ts-expect-error
       result.any;
 
+      const _manual: Field.Discriminated<
+        User | Organization | undefined,
+        "type"
+      > = result;
+      // @ts-expect-error
+      const _manualWrong: Field.Discriminated<User | Organization, "type"> =
+        result;
+
       // @ts-expect-error
       fieldDiscriminate(unionValue, "paid");
     }
@@ -209,6 +230,18 @@ import { fieldDiscriminate } from "./index.ts";
           };
       // @ts-expect-error
       result.any;
+
+      const _manual: Field.Discriminated<
+        User | Organization,
+        "type",
+        "detachable"
+      > = result;
+      // @ts-expect-error
+      const _manualWrong: Field.Discriminated<
+        User | Organization,
+        "type",
+        "tried"
+      > = result;
     }
 
     // Mixed
@@ -241,6 +274,18 @@ import { fieldDiscriminate } from "./index.ts";
           };
       // @ts-expect-error
       result.any;
+
+      const _manual: Field.Discriminated<
+        User | Organization,
+        "type",
+        "detachable" | "tried"
+      > = result;
+      // @ts-expect-error
+      const _manualWrong: Field.Discriminated<
+        User | Organization,
+        "type",
+        "bound"
+      > = result;
     }
   }
 
@@ -283,6 +328,11 @@ import { fieldDiscriminate } from "./index.ts";
       // @ts-expect-error
       result.any;
 
+      const _manual: FieldRef.Discriminated<User | Organization, "type"> =
+        result;
+      // @ts-expect-error
+      const _manualWrong: FieldRef.Discriminated<User, "type"> = result;
+
       // @ts-expect-error
       fieldDiscriminate(refValue, "paid");
     }
@@ -324,6 +374,11 @@ import { fieldDiscriminate } from "./index.ts";
       // @ts-expect-error
       result.any;
 
+      const _manual: FieldRef.Discriminated<User | Organization, "type"> =
+        result;
+      // @ts-expect-error
+      const _manualWrong: FieldRef.Discriminated<User, "type"> = result;
+
       // @ts-expect-error
       fieldDiscriminate(refUnion, "paid");
     }
@@ -352,6 +407,15 @@ import { fieldDiscriminate } from "./index.ts";
             discriminator: "organization";
             field: FieldRef.Detachable<Organization>;
           };
+
+      const _manual: FieldRef.Discriminated<
+        User | Organization,
+        "type",
+        "tried"
+      > = result;
+      // @ts-expect-error
+      const _manualWrong: FieldRef.Discriminated<User, "type", "tried"> =
+        result;
     }
 
     // Undefined value
@@ -405,6 +469,14 @@ import { fieldDiscriminate } from "./index.ts";
       // @ts-expect-error
       result.any;
 
+      const _manual: FieldRef.Discriminated<
+        User | Organization | undefined,
+        "type"
+      > = result;
+      // @ts-expect-error
+      const _manualWrong: FieldRef.Discriminated<User | Organization, "type"> =
+        result;
+
       // @ts-expect-error
       fieldDiscriminate(refValue, "paid");
     }
@@ -437,6 +509,18 @@ import { fieldDiscriminate } from "./index.ts";
           };
       // @ts-expect-error
       result.any;
+
+      const _manual: FieldRef.Discriminated<
+        User | Organization,
+        "type",
+        "detachable"
+      > = result;
+      // @ts-expect-error
+      const _manualWrong: FieldRef.Discriminated<
+        User | Organization,
+        "type",
+        "tried"
+      > = result;
     }
 
     // Mixed
@@ -469,6 +553,18 @@ import { fieldDiscriminate } from "./index.ts";
           };
       // @ts-expect-error
       result.any;
+
+      const _manual: FieldRef.Discriminated<
+        User | Organization,
+        "type",
+        "detachable" | "tried"
+      > = result;
+      // @ts-expect-error
+      const _manualWrong: FieldRef.Discriminated<
+        User | Organization,
+        "type",
+        "bound"
+      > = result;
     }
   }
 
@@ -514,6 +610,11 @@ import { fieldDiscriminate } from "./index.ts";
       // @ts-expect-error
       result.any;
 
+      const _manual: MaybeFieldRef.Discriminated<User | Organization, "type"> =
+        result;
+      // @ts-expect-error
+      const _manualWrong: MaybeFieldRef.Discriminated<User, "type"> = result;
+
       // @ts-expect-error
       fieldDiscriminate(maybeValue, "paid");
     }
@@ -555,6 +656,11 @@ import { fieldDiscriminate } from "./index.ts";
       // @ts-expect-error
       result.any;
 
+      const _manual: MaybeFieldRef.Discriminated<User | Organization, "type"> =
+        result;
+      // @ts-expect-error
+      const _manualWrong: MaybeFieldRef.Discriminated<User, "type"> = result;
+
       // @ts-expect-error
       fieldDiscriminate(maybeUnion, "paid");
     }
@@ -583,6 +689,15 @@ import { fieldDiscriminate } from "./index.ts";
             discriminator: "organization";
             field: MaybeFieldRef.Detachable<Organization>;
           };
+
+      const _manual: MaybeFieldRef.Discriminated<
+        User | Organization,
+        "type",
+        "tried"
+      > = result;
+      // @ts-expect-error
+      const _manualWrong: MaybeFieldRef.Discriminated<User, "type", "tried"> =
+        result;
     }
 
     // Undefined value
@@ -637,6 +752,16 @@ import { fieldDiscriminate } from "./index.ts";
       // @ts-expect-error
       result.any;
 
+      const _manual: MaybeFieldRef.Discriminated<
+        User | Organization | undefined,
+        "type"
+      > = result;
+      // @ts-expect-error
+      const _manualWrong: MaybeFieldRef.Discriminated<
+        User | Organization,
+        "type"
+      > = result;
+
       // @ts-expect-error
       fieldDiscriminate(maybeValue, "paid");
     }
@@ -669,6 +794,18 @@ import { fieldDiscriminate } from "./index.ts";
           };
       // @ts-expect-error
       result.any;
+
+      const _manual: MaybeFieldRef.Discriminated<
+        User | Organization,
+        "type",
+        "detachable"
+      > = result;
+      // @ts-expect-error
+      const _manualWrong: MaybeFieldRef.Discriminated<
+        User | Organization,
+        "type",
+        "tried"
+      > = result;
     }
 
     // Mixed
@@ -701,6 +838,18 @@ import { fieldDiscriminate } from "./index.ts";
           };
       // @ts-expect-error
       result.any;
+
+      const _manual: MaybeFieldRef.Discriminated<
+        User | Organization,
+        "type",
+        "detachable" | "tried"
+      > = result;
+      // @ts-expect-error
+      const _manualWrong: MaybeFieldRef.Discriminated<
+        User | Organization,
+        "type",
+        "bound"
+      > = result;
     }
   }
 }
