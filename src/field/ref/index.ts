@@ -286,13 +286,45 @@ export namespace FieldRef {
 
   //#region Collection
 
+  // Tuple
+
+  // NOTE: We have to have two separate overloads for tuples
+  // `CollectionCallbackTuplePair` and `CollectionCallbackTupleSingle` as with
+  // the current approach binding the key and value in the arguments on the type
+  // level, TypeScript fails to find the correct overload for when the callback
+  // accepts a single argument (i.e. just the item field).
+
+  export type CollectionCallbackTuplePair<
+    Value extends Utils.Tuple,
+    Result = void,
+  > = (
+    ...args: {
+      [Key in Utils.IndexOfTuple<Value>]: [FieldRef<Value[Key]>, Key];
+    }[Utils.IndexOfTuple<Value>]
+  ) => Result;
+
+  export type CollectionCallbackTupleSingle<
+    Value extends Utils.Tuple,
+    Result = void,
+  > = (item: Every<Value[Utils.IndexOfTuple<Value>]>) => Result;
+
+  // Array
+
   export type CollectionCallbackArray<
     Value extends Array<unknown>,
     Result = void,
   > = (item: CollectionCallbackArrayItem<Value>, index: number) => Result;
 
   export type CollectionCallbackArrayItem<Value extends Array<unknown>> =
-    Value extends Array<infer Item> ? Every<Item> : never;
+    Value extends Array<infer Item> ? Detachable<Item> : never;
+
+  // Object
+
+  // NOTE: We have to have two separate overloads for objects
+  // `CollectionCallbackObjectPair` and `CollectionCallbackObjectSingle` as with
+  // the current approach binding the key and value in the arguments on the type
+  // level, TypeScript fails to find the correct overload for when the callback
+  // accepts a single argument (i.e. just the item field).
 
   export type CollectionCallbackObjectPair<
     Value extends object,
@@ -317,6 +349,8 @@ export namespace FieldRef {
       undefined
     >,
   ) => Result;
+
+  //
 
   export type Predicate<ItemValue> = (
     item: Every<ItemValue>,
@@ -350,10 +384,26 @@ declare module "../collection/index.ts" {
   // `fieldEach`
 
   interface FieldEach {
-    <Value extends Array<unknown>>(
+    // Tuple
+
+    <Value extends Utils.Tuple>(
+      field: FieldRef<Value> | Utils.Nullish<Enso.Tried<FieldRef<Value>>>,
+      callback: FieldRef.CollectionCallbackTuplePair<Value>,
+    ): void;
+
+    <Value extends Utils.Tuple>(
+      field: FieldRef<Value> | Utils.Nullish<Enso.Tried<FieldRef<Value>>>,
+      callback: FieldRef.CollectionCallbackTupleSingle<Value>,
+    ): void;
+
+    // Array
+
+    <Value extends unknown[]>(
       field: FieldRef<Value> | Utils.Nullish<Enso.Tried<FieldRef<Value>>>,
       callback: FieldRef.CollectionCallbackArray<Value>,
     ): void;
+
+    // Object
 
     <Value extends object>(
       field: FieldRef<Value> | Utils.Nullish<Enso.Tried<FieldRef<Value>>>,
@@ -369,10 +419,14 @@ declare module "../collection/index.ts" {
   // `fieldMap`
 
   interface FieldMap {
+    // Array
+
     <Value extends Array<unknown>, Result>(
       field: FieldRef<Value> | Utils.Nullish<Enso.Tried<FieldRef<Value>>>,
       callback: FieldRef.CollectionCallbackArray<Value, Result>,
     ): Result[];
+
+    // Object
 
     <Value extends object, Result>(
       field: FieldRef<Value> | Utils.Nullish<Enso.Tried<FieldRef<Value>>>,
@@ -784,13 +838,45 @@ export namespace MaybeFieldRef {
 
   //#region Collection
 
+  // Tuple
+
+  // NOTE: We have to have two separate overloads for tuples
+  // `CollectionCallbackTuplePair` and `CollectionCallbackTupleSingle` as with
+  // the current approach binding the key and value in the arguments on the type
+  // level, TypeScript fails to find the correct overload for when the callback
+  // accepts a single argument (i.e. just the item field).
+
+  export type CollectionCallbackTuplePair<
+    Value extends Utils.Tuple,
+    Result = void,
+  > = (
+    ...args: {
+      [Key in Utils.IndexOfTuple<Value>]: [MaybeFieldRef<Value[Key]>, Key];
+    }[Utils.IndexOfTuple<Value>]
+  ) => Result;
+
+  export type CollectionCallbackTupleSingle<
+    Value extends Utils.Tuple,
+    Result = void,
+  > = (item: Every<Value[Utils.IndexOfTuple<Value>]>) => Result;
+
+  // Array
+
   export type CollectionCallbackArray<
     Value extends Array<unknown>,
     Result = void,
   > = (item: CollectionCallbackArrayItem<Value>, index: number) => Result;
 
   export type CollectionCallbackArrayItem<Value extends Array<unknown>> =
-    Value extends Array<infer ItemValue> ? Every<ItemValue> : never;
+    Value extends Array<infer ItemValue> ? Detachable<ItemValue> : never;
+
+  // Object
+
+  // NOTE: We have to have two separate overloads for objects
+  // `CollectionCallbackObjectPair` and `CollectionCallbackObjectSingle` as with
+  // the current approach binding the key and value in the arguments on the type
+  // level, TypeScript fails to find the correct overload for when the callback
+  // accepts a single argument (i.e. just the item field).
 
   export type CollectionCallbackObjectPair<
     Value extends object,
@@ -815,6 +901,8 @@ export namespace MaybeFieldRef {
       undefined
     >,
   ) => Result;
+
+  //
 
   export type Predicate<ItemValue> = (
     item: Every<ItemValue>,
@@ -846,12 +934,32 @@ declare module "../collection/index.ts" {
   // `fieldEach`
 
   interface FieldEach {
+    // Tuple
+
+    <Value extends Utils.Tuple>(
+      field:
+        | MaybeFieldRef<Value>
+        | Utils.Nullish<Enso.Tried<MaybeFieldRef<Value>>>,
+      callback: MaybeFieldRef.CollectionCallbackTuplePair<Value>,
+    ): void;
+
+    <Value extends Utils.Tuple>(
+      field:
+        | MaybeFieldRef<Value>
+        | Utils.Nullish<Enso.Tried<MaybeFieldRef<Value>>>,
+      callback: MaybeFieldRef.CollectionCallbackTupleSingle<Value>,
+    ): void;
+
+    // Array
+
     <Value extends Array<unknown>>(
       field:
         | MaybeFieldRef<Value>
         | Utils.Nullish<Enso.Tried<MaybeFieldRef<Value>>>,
       callback: MaybeFieldRef.CollectionCallbackArray<Value>,
     ): void;
+
+    // Object
 
     <Value extends object>(
       field:

@@ -1353,15 +1353,45 @@ export namespace Field {
 
   //#region Collection
 
+  // Tuple
+
+  // NOTE: We have to have two separate overloads for tuples
+  // `CollectionCallbackTuplePair` and `CollectionCallbackTupleSingle` as with
+  // the current approach binding the key and value in the arguments on the type
+  // level, TypeScript fails to find the correct overload for when the callback
+  // accepts a single argument (i.e. just the item field).
+
+  export type CollectionCallbackTuplePair<
+    Value extends Utils.Tuple,
+    Result = void,
+  > = (
+    ...args: {
+      [Key in Utils.IndexOfTuple<Value>]: [Field<Value[Key]>, Key];
+    }[Utils.IndexOfTuple<Value>]
+  ) => Result;
+
+  export type CollectionCallbackTupleSingle<
+    Value extends Utils.Tuple,
+    Result = void,
+  > = (item: Every<Value[Utils.IndexOfTuple<Value>]>) => Result;
+
+  // Array
+
   export type CollectionCallbackArray<
     Value extends Array<unknown>,
     Result = void,
   > = (item: CollectionCallbackArrayItem<Value>, index: number) => Result;
 
   export type CollectionCallbackArrayItem<Value extends Array<unknown>> =
-    Value extends Array<infer ItemValue>
-      ? Enso.Detachable<Every<ItemValue>>
-      : never;
+    Value extends Array<infer ItemValue> ? Detachable<ItemValue> : never;
+
+  // Object
+
+  // NOTE: We have to have two separate overloads for objects
+  // `CollectionCallbackObjectPair` and `CollectionCallbackObjectSingle` as with
+  // the current approach binding the key and value in the arguments on the type
+  // level, TypeScript fails to find the correct overload for when the callback
+  // accepts a single argument (i.e. just the item field).
 
   export type CollectionCallbackObjectPair<
     Value extends object,
@@ -1386,6 +1416,8 @@ export namespace Field {
       undefined
     >,
   ) => Result;
+
+  //
 
   export type AsCollection<Value> =
     Value extends Array<any>
@@ -1513,6 +1545,18 @@ declare module "./collection/index.ts" {
   // `fieldEach`
 
   interface FieldEach {
+    // Tuple
+
+    <Value extends Utils.Tuple>(
+      field: Field<Value> | Utils.Nullish<Enso.Tried<Field<Value>>>,
+      callback: Field.CollectionCallbackTuplePair<Value>,
+    ): void;
+
+    <Value extends Utils.Tuple>(
+      field: Field<Value> | Utils.Nullish<Enso.Tried<Field<Value>>>,
+      callback: Field.CollectionCallbackTupleSingle<Value>,
+    ): void;
+
     // Array
 
     <Value extends unknown[]>(
@@ -1521,12 +1565,6 @@ declare module "./collection/index.ts" {
     ): void;
 
     // Object
-
-    // NOTE: We have to have two separate overloads for objects (`CollectionCallbackObjectPair`
-    // and `CollectionCallbackObjectSingle`) as with the current approach
-    // binding the key and value in the arguments on the type level, TypeScript
-    // fails to find the correct overload for when the callback accepts a single
-    // argument (i.e. just the item field).
 
     <Value extends object>(
       field: Field<Value> | Utils.Nullish<Enso.Tried<Field<Value>>>,

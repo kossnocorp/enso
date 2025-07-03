@@ -96,4 +96,18 @@ export namespace EnsoUtils {
     Class extends Interface & { new (...args: any[]): any },
     Interface,
   > = InstanceType<Class>;
+
+  export type Tuple = [unknown, ...unknown[]];
+
+  export type KeyOfTuple<Type extends Tuple> = Exclude<
+    keyof Type,
+    keyof unknown[]
+  >;
+
+  export type IndexOfTuple<Type extends Tuple> =
+    Exclude<keyof Type, keyof any[]> extends infer Key
+      ? Key extends `${infer Index extends number}`
+        ? Index
+        : never
+      : never;
 }
