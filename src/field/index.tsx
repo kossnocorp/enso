@@ -1605,7 +1605,7 @@ declare module "./collection/index.ts" {
   interface FieldSize {
     // Tuple/Array
 
-    <Value extends unknown[]>(field: Field<Value>): Value["length"];;
+    <Value extends unknown[]>(field: Field<Value>): Value["length"];
 
     // Object
 
@@ -1661,13 +1661,13 @@ declare module "./collection/index.ts" {
   // `fieldPush`
 
   interface FieldPush {
-    <Value extends Array<unknown>, ItemValue extends Value[number]>(
-      field: Field<Value>,
+    <Value extends unknown[], ItemValue extends Value[number]>(
+      field: Field<Utils.NonTuple<Value>>,
       item: ItemValue,
     ): Field.Detachable<ItemValue>;
 
-    <Value extends Array<unknown>, ItemValue extends Value[number]>(
-      field: Enso.Tried<Field<Value>> | undefined | null,
+    <Value extends unknown[], ItemValue extends Value[number]>(
+      field: Enso.Tried<Field<Utils.NonTuple<Value>>> | undefined | null,
       item: ItemValue,
     ): Field.Detachable<ItemValue>;
   }
@@ -1675,14 +1675,14 @@ declare module "./collection/index.ts" {
   // `fieldInsert`
 
   interface FieldInsert {
-    <Value extends Array<unknown>, ItemValue extends Value[number]>(
-      field: Field<Value>,
+    <Value extends unknown[], ItemValue extends Value[number]>(
+      field: Field<Utils.NonTuple<Value>>,
       index: number,
       item: ItemValue,
     ): Field.Detachable<ItemValue>;
 
-    <Value extends Array<unknown>, ItemValue extends Value[number]>(
-      field: Enso.Tried<Field<Value>> | undefined | null,
+    <Value extends unknown[], ItemValue extends Value[number]>(
+      field: Enso.Tried<Field<Utils.NonTuple<Value>>> | undefined | null,
       index: number,
       item: ItemValue,
     ): Field.Detachable<ItemValue>;
@@ -1693,36 +1693,33 @@ declare module "./collection/index.ts" {
   interface FieldRemove {
     // Array
 
-    <Value extends Array<unknown>, ItemValue extends Value[number]>(
-      field: Field<Value>,
-      item: ItemValue,
-    ): Field.Detachable<DetachedValue>;
-
-    <Value extends Array<unknown>, ItemValue extends Value[number]>(
-      field: Enso.Tried<Field<Value>> | undefined | null,
-      item: ItemValue,
+    <Value extends unknown[]>(
+      field:
+        | Field<Utils.NonTuple<Value>>
+        | Utils.Nullish<Enso.Tried<Field<Utils.NonTuple<Value>>>>,
+      item: number,
     ): Field.Detachable<DetachedValue>;
 
     // Object
 
     <Value extends object, Key extends Enso.DetachableKeys<Value>>(
-      field: Field<Value>,
-      key: Key,
-    ): Field.Detachable<DetachedValue>;
-
-    <Value extends object, Key extends Enso.DetachableKeys<Value>>(
-      field: Enso.Tried<Field<Value>> | undefined | null,
+      field:
+        | Field<Utils.NonTuple<Value>>
+        | Utils.Nullish<Enso.Tried<Field<Utils.NonTuple<Value>>>>,
       key: Key,
     ): Field.Detachable<DetachedValue>;
 
     // Self
+
+    // NOTE: Two separate overloads are needed to prevent TypeScript from
+    // mixing in nullish types.
 
     <Value>(
       field: Enso.Detachable<Field<Value>>,
     ): Field.Detachable<DetachedValue>;
 
     <Value>(
-      field: Enso.Tried<Enso.Detachable<Field<Value>>> | undefined | null,
+      field: Utils.Nullish<Enso.Tried<Enso.Detachable<Field<Value>>>>,
     ): Field.Detachable<DetachedValue>;
   }
 }

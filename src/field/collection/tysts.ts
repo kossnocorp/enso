@@ -1,4 +1,5 @@
 import { Enso } from "../../types.ts";
+import { EnsoUtils as Utils } from "../../utils.ts";
 import { DetachedValue, Field, FieldRef } from "../index.tsx";
 import { MaybeFieldRef } from "../ref/index.ts";
 import {
@@ -2284,6 +2285,8 @@ const prim = new Field<string | boolean>("hello");
 
 //#region fieldPush
 {
+  // Array
+{
   // Regular
   {
     const result = fieldPush(arr, "new item");
@@ -2312,6 +2315,19 @@ const prim = new Field<string | boolean>("hello");
     fieldPush(arrOrNumOrUnd.try(), true);
     // @ts-expect-error
     fieldPush(arrOrUnd.try(), 123);
+    }
+  }
+
+  // Tuple
+  {
+    // @ts-expect-error
+    fieldPush(tuple, "new item");
+    // @ts-expect-error
+    fieldPush(tuple, false);
+    // @ts-expect-error
+    fieldPush(tuple, Symbol("test"));
+    // @ts-expect-error
+    fieldPush(tuple, {} as string | boolean | symbol);
   }
 }
 //#endregion
@@ -2346,6 +2362,18 @@ const prim = new Field<string | boolean>("hello");
     fieldInsert(arrOrNumOrUnd.try(), 0, true);
     // @ts-expect-error
     fieldInsert(arrOrUnd.try(), 0, 123);
+  }
+
+  // Tuple
+  {
+    // @ts-expect-error
+    fieldInsert(tuple, 0, "new item");
+    // @ts-expect-error
+    fieldInsert(tuple, 0, false);
+    // @ts-expect-error
+    fieldInsert(tuple, 0, Symbol("test"));
+    // @ts-expect-error
+    fieldInsert(tuple, 0, {} as string | boolean | symbol);
   }
 }
 //#endregion
@@ -2382,8 +2410,8 @@ const prim = new Field<string | boolean>("hello");
   {
     // Field
     {
-      const arrField = new Field<number[]>([1, 2, 3]);
-      fieldRemove(arrField, 1);
+      const arrField = new Field<string[]>(["a", "b", "c"]);
+      fieldRemove(arrField, 5);
       // @ts-expect-error
       fieldRemove(arrField, "a");
       // @ts-expect-error
@@ -2392,11 +2420,28 @@ const prim = new Field<string | boolean>("hello");
 
     // Undefined
     {
-      const arrUnd = new Field<number[] | undefined>([1, 2, 3]);
+      const arrUnd = new Field<string[] | undefined>(["a", "b", "c"]);
       fieldRemove(arrUnd.try(), 1);
+      // @ts-expect-error
+      fieldRemove(arrUnd.try(), "1");
       // @ts-expect-error
       fieldRemove(arrUnd, 1);
     }
+  }
+
+  // Tuple
+  {
+    // @ts-expect-error
+    fieldRemove(tuple, 1);
+    // @ts-expect-error
+    fieldRemove(tuple.try(), 3);
+    // @ts-expect-error
+    fieldRemove(tuple.try(), 1 as const);
+    fieldRemove(
+      // @ts-expect-error
+      tuple.try(),
+      0 as Utils.IndexOfTuple<[string, boolean, symbol]>,
+    );
   }
 
   // Self

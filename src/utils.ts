@@ -97,6 +97,8 @@ export namespace EnsoUtils {
     Interface,
   > = InstanceType<Class>;
 
+  export type NonTuple<Type> = Type extends Tuple ? never : Type;
+
   export type Tuple = [unknown, ...unknown[]];
 
   export type KeyOfTuple<Type extends Tuple> = Exclude<
