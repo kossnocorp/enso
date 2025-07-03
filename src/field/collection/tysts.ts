@@ -29,6 +29,11 @@ const tupleOrUnd = new Field<[string, boolean, symbol] | undefined>([
   true,
   Symbol("3"),
 ]);
+const tupleOrNum = new Field<[string, boolean, symbol] | number>([
+  "1",
+  true,
+  Symbol("3"),
+]);
 
 const rec = new Field<Record<string, string | boolean>>({});
 const prim = new Field<string | boolean>("hello");
@@ -1118,6 +1123,53 @@ const prim = new Field<string | boolean>("hello");
       fieldSize(new MaybeFieldRef({ type: "direct", field: objOrUnd.try() }));
       // @ts-expect-error
       fieldSize(new MaybeFieldRef({ type: "direct", field: objOrUnd }));
+    }
+  }
+
+  // Tuple
+  {
+    // Field
+    {
+      const size = fieldSize(tuple);
+      size satisfies 3;
+      // @ts-expect-error
+      size.any;
+
+      // @ts-expect-error
+      fieldSize(tupleOrUnd.try());
+      // @ts-expect-error
+      fieldSize(tupleOrNum);
+    }
+
+    // FieldRef
+    {
+      const ref = new FieldRef(tuple);
+      const size = fieldSize(ref);
+      size satisfies 3;
+      // @ts-expect-error
+      size.any;
+
+      // @ts-expect-error
+      fieldSize(new FieldRef(tupleOrUnd.try()));
+      // @ts-expect-error
+      fieldSize(new FieldRef(tupleOrNum));
+    }
+
+    // MaybeFieldRef
+    {
+      const maybe = new MaybeFieldRef({
+        type: "direct",
+        field: tuple,
+      });
+      const size = fieldSize(maybe);
+      size satisfies 3;
+      // @ts-expect-error
+      size.any;
+
+      // @ts-expect-error
+      fieldSize(new MaybeFieldRef({ type: "direct", field: tupleOrUnd.try() }));
+      // @ts-expect-error
+      fieldSize(new MaybeFieldRef({ type: "direct", field: tupleOrNum }));
     }
   }
 }

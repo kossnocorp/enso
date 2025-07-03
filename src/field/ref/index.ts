@@ -442,7 +442,11 @@ declare module "../collection/index.ts" {
   // `fieldSize`
 
   interface FieldSize {
-    <Value extends Array<unknown>>(field: FieldRef<Value>): number;
+    // Tuple/Array
+
+    <Value extends Array<unknown>>(field: FieldRef<Value>): Value["length"];
+
+    // Object
 
     <Value extends object>(field: FieldRef<Value>): number;
   }
@@ -1004,7 +1008,11 @@ declare module "../collection/index.ts" {
   // `fieldSize`
 
   interface FieldSize {
-    <Value extends Array<unknown>>(field: MaybeFieldRef<Value>): number;
+    // Tuple/Array
+
+    <Value extends unknown[]>(field: MaybeFieldRef<Value>): Value["length"];
+
+    // Object
 
     <Value extends object>(field: MaybeFieldRef<Value>): number;
   }

@@ -1603,7 +1603,11 @@ declare module "./collection/index.ts" {
   // `fieldSize`
 
   interface FieldSize {
-    <Value extends Array<unknown>>(field: Field<Value>): number;
+    // Tuple/Array
+
+    <Value extends unknown[]>(field: Field<Value>): Value["length"];;
+
+    // Object
 
     <Value extends object>(field: Field<Value>): number;
   }
