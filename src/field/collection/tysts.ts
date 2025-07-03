@@ -1369,24 +1369,23 @@ const prim = new Field<string | boolean>("hello");
       // Regular
       {
         const result = fieldFind(arr, (item, index) => {
-          item satisfies Field.Detachable<string> | Field.Detachable<boolean>;
+          item satisfies Field.Detachable<string | boolean>;
           index satisfies number;
           return item.get() === "hello";
         });
 
-        result satisfies
-          | Field.Detachable<string>
-          | Field.Detachable<boolean>
-          | undefined;
+        result satisfies Field.Detachable<string | boolean> | undefined;
         // @ts-expect-error
         result satisfies Field.Detachable<string> | Field.Detachable<boolean>;
+        // @ts-expect-error
+        result satisfies Field.Detachable<string | boolean>;
         // @ts-expect-error
         result satisfies undefined;
         // @ts-expect-error
         result.any;
 
         fieldFind(arr, (item) => {
-          item satisfies Field<string> | Field<boolean>;
+          item satisfies Field.Detachable<string | boolean>;
           return true;
         });
         fieldFind(arr, () => true);
@@ -1395,23 +1394,23 @@ const prim = new Field<string | boolean>("hello");
         fieldFind(arr, (_item) => "");
         fieldFind(arr, (_item) => null);
         // @ts-expect-error
-        fieldFind(arr, (item) => item.toExponential());
+        fieldFind(arr, (item) => item.get().toExponential());
       }
 
       // Undefined
       {
         const result = fieldFind(arrOrUnd.try(), (item, index) => {
-          item satisfies Field.Detachable<string> | Field.Detachable<boolean>;
+          item satisfies Field.Detachable<string | boolean>;
           index satisfies number;
           return item.get() === "hello";
         });
 
+        result satisfies Field.Detachable<string | boolean> | undefined;
+        // @ts-expect-error
         result satisfies
           | Field.Detachable<string>
           | Field.Detachable<boolean>
           | undefined;
-        // @ts-expect-error
-        result satisfies Field.Detachable<string> | Field.Detachable<boolean>;
         // @ts-expect-error
         result satisfies undefined;
         // @ts-expect-error
@@ -1429,7 +1428,7 @@ const prim = new Field<string | boolean>("hello");
         fieldFind(arrOrUnd.try(), (_item) => "");
         fieldFind(arrOrUnd.try(), (_item) => null);
         // @ts-expect-error
-        fieldFind(arrOrUnd.try(), (item) => item.toExponential());
+        fieldFind(arrOrUnd.try(), (item) => item.get().toExponential());
       }
     }
 
@@ -1439,14 +1438,16 @@ const prim = new Field<string | boolean>("hello");
       {
         const ref = new FieldRef(arr);
         const result = fieldFind(ref, (item, index) => {
-          item satisfies FieldRef<string> | FieldRef<boolean>;
+          item satisfies FieldRef<string | boolean>;
           index satisfies number;
           return item.get() === "hello";
         });
 
-        result satisfies FieldRef<string> | FieldRef<boolean> | undefined;
+        result satisfies FieldRef<string | boolean> | undefined;
         // @ts-expect-error
-        result satisfies FieldRef<string> | Field<boolean>;
+        result satisfies FieldRef<string> | Field<boolean> | undefined;
+        // @ts-expect-error
+        result satisfies FieldRef<string | boolean>;
         // @ts-expect-error
         result satisfies undefined;
         // @ts-expect-error
@@ -1459,19 +1460,21 @@ const prim = new Field<string | boolean>("hello");
         fieldFind(ref, (_item) => "");
         fieldFind(ref, (_item) => null);
         // @ts-expect-error
-        fieldFind(ref.try(), (item) => item.toExponential());
+        fieldFind(ref.try(), (item) => item.get().toExponential());
       }
 
       // Undefined
       {
         const refUnd = new FieldRef(arrOrUnd);
         const result = fieldFind(refUnd.try(), (item, index) => {
-          item satisfies FieldRef<string> | FieldRef<boolean>;
+          item satisfies FieldRef<string | boolean>;
           index satisfies number;
           return item.get() === "hello";
         });
 
-        result satisfies FieldRef<string> | FieldRef<boolean> | undefined;
+        result satisfies FieldRef<string | boolean> | undefined;
+        // @ts-expect-error
+        result satisfies FieldRef<string | boolean>;
         // @ts-expect-error
         result satisfies FieldRef<string> | Field<boolean>;
         // @ts-expect-error
@@ -1491,7 +1494,7 @@ const prim = new Field<string | boolean>("hello");
         fieldFind(refUnd.try(), (_item) => "");
         fieldFind(refUnd.try(), (_item) => null);
         // @ts-expect-error
-        fieldFind(refUnd.try(), (item) => item.toExponential());
+        fieldFind(refUnd.try(), (item) => item.get().toExponential());
       }
     }
 
@@ -1501,17 +1504,16 @@ const prim = new Field<string | boolean>("hello");
       {
         const maybe = new MaybeFieldRef({ type: "direct", field: arr });
         const result = fieldFind(maybe, (item, index) => {
-          item satisfies MaybeFieldRef<string> | MaybeFieldRef<boolean>;
+          item satisfies MaybeFieldRef<string | boolean>;
           index satisfies number;
           return item.get() === "hello";
         });
 
-        result satisfies
-          | MaybeFieldRef<string>
-          | MaybeFieldRef<boolean>
-          | undefined;
+        result satisfies MaybeFieldRef<string | boolean> | undefined;
         // @ts-expect-error
         result satisfies MaybeFieldRef<string> | Field<boolean>;
+        // @ts-expect-error
+        result satisfies MaybeFieldRef<string | boolean>;
         // @ts-expect-error
         result satisfies undefined;
         // @ts-expect-error
@@ -1524,24 +1526,23 @@ const prim = new Field<string | boolean>("hello");
         fieldFind(maybe, (_item) => "");
         fieldFind(maybe, (_item) => null);
         // @ts-expect-error
-        fieldFind(maybe, (item) => item.toExponential());
+        fieldFind(maybe, (item) => item.get().toExponential());
       }
 
       // Undefined
       {
         const maybeUnd = new MaybeFieldRef({ type: "direct", field: arrOrUnd });
         const result = fieldFind(maybeUnd.try(), (item, index) => {
-          item satisfies MaybeFieldRef<string> | MaybeFieldRef<boolean>;
+          item satisfies MaybeFieldRef<string | boolean>;
           index satisfies number;
           return item.get() === "hello";
         });
 
-        result satisfies
-          | MaybeFieldRef<string>
-          | MaybeFieldRef<boolean>
-          | undefined;
+        result satisfies MaybeFieldRef<string | boolean> | undefined;
         // @ts-expect-error
         result satisfies MaybeFieldRef<string> | Field<boolean>;
+        // @ts-expect-error
+        result satisfies MaybeFieldRef<string | boolean>;
         // @ts-expect-error
         resultOpt satisfies undefined;
         // @ts-expect-error
@@ -1559,7 +1560,7 @@ const prim = new Field<string | boolean>("hello");
         fieldFind(maybeUnd.try(), (_item) => "");
         fieldFind(maybeUnd.try(), (_item) => null);
         // @ts-expect-error
-        fieldFind(maybeUnd.try(), (item) => item.toExponential());
+        fieldFind(maybeUnd.try(), (item) => item.get().toExponential());
       }
     }
   }
@@ -1613,7 +1614,7 @@ const prim = new Field<string | boolean>("hello");
         fieldFind(obj, (_item) => "");
         fieldFind(obj, (_item) => null);
         // @ts-expect-error
-        fieldFind(obj, (item) => item.toExponential());
+        fieldFind(obj, (item) => item.get().toExponential());
       }
 
       // Optional
@@ -1702,7 +1703,7 @@ const prim = new Field<string | boolean>("hello");
         fieldFind(objOrUnd.try(), (_item) => "");
         fieldFind(objOrUnd.try(), (_item) => null);
         // @ts-expect-error
-        fieldFind(objOrUnd.try(), (item) => item.toExponential());
+        fieldFind(objOrUnd.try(), (item) => item.get().toExponential());
       }
     }
 
@@ -1740,7 +1741,7 @@ const prim = new Field<string | boolean>("hello");
         fieldFind(ref, (_item) => "");
         fieldFind(ref, (_item) => null);
         // @ts-expect-error
-        fieldFind(ref, (item) => item.toExponential());
+        fieldFind(ref, (item) => item.get().toExponential());
       }
 
       // Optional
@@ -1816,7 +1817,7 @@ const prim = new Field<string | boolean>("hello");
         fieldFind(refUnd.try(), (_item) => "");
         fieldFind(refUnd.try(), (_item) => null);
         // @ts-expect-error
-        fieldFind(refUnd.try(), (item) => item.toExponential());
+        fieldFind(refUnd.try(), (item) => item.get().toExponential());
       }
     }
 
@@ -1857,7 +1858,7 @@ const prim = new Field<string | boolean>("hello");
         fieldFind(maybe, (_item) => "");
         fieldFind(maybe, (_item) => null);
         // @ts-expect-error
-        fieldFind(maybe, (item) => item.toExponential());
+        fieldFind(maybe, (item) => item.get().toExponential());
       }
 
       // Optional
@@ -1899,7 +1900,7 @@ const prim = new Field<string | boolean>("hello");
         fieldFind(maybeOpt, (_item) => "");
         fieldFind(maybeOpt, (_item) => null);
         // @ts-expect-error
-        fieldFind(maybeOpt, (item) => item.toExponential());
+        fieldFind(maybeOpt, (item) => item.get().toExponential());
       }
 
       // Undefined
@@ -1941,7 +1942,277 @@ const prim = new Field<string | boolean>("hello");
         fieldFind(maybeUnd.try(), (_item) => "");
         fieldFind(maybeUnd.try(), (_item) => null);
         // @ts-expect-error
-        fieldFind(maybeUnd.try(), (item) => item.toExponential());
+        fieldFind(maybeUnd.try(), (item) => item.get().toExponential());
+      }
+    }
+  }
+
+  // Tuple
+  {
+    // Field
+    {
+      // Regular
+      {
+        const result = fieldFind(tuple, (item, index) => {
+          item satisfies Field<string> | Field<boolean> | Field<symbol>;
+          index satisfies 0 | 1 | 2;
+
+          if (index === 1) {
+            item.get() satisfies boolean;
+            // @ts-expect-error
+            item.get() satisfies string;
+            return true;
+          }
+
+          return false;
+        });
+
+        result satisfies
+          | Field<string>
+          | Field<boolean>
+          | Field<symbol>
+          | undefined;
+        // @ts-expect-error
+        result satisfies Field<string> | Field<boolean> | Field<symbol>;
+        // @ts-expect-error
+        result satisfies undefined;
+        // @ts-expect-error
+        result.any;
+
+        fieldFind(tuple, (item) => {
+          item satisfies Field<string> | Field<boolean> | Field<symbol>;
+          return true;
+        });
+        fieldFind(tuple, () => true);
+        fieldFind(tuple, (_item) => 0);
+        fieldFind(tuple, (_item) => "");
+        fieldFind(tuple, (_item) => null);
+        // @ts-expect-error
+        fieldFind(tuple, (item) => item.get().toExponential());
+      }
+
+      // Undefined
+      {
+        const result = fieldFind(tupleOrUnd.try(), (item, index) => {
+          item satisfies Field<string> | Field<boolean> | Field<symbol>;
+          index satisfies 0 | 1 | 2;
+
+          if (index === 1) {
+            item.get() satisfies boolean;
+            // @ts-expect-error
+            item.get() satisfies string;
+            return true;
+          }
+
+          return false;
+        });
+
+        result satisfies
+          | Field<string>
+          | Field<boolean>
+          | Field<symbol>
+          | undefined;
+        // @ts-expect-error
+        result satisfies Field<string> | Field<boolean> | Field<symbol>;
+        // @ts-expect-error
+        result satisfies undefined;
+        // @ts-expect-error
+        result.any;
+
+        fieldFind(tupleOrUnd.try(), (item) => item);
+        fieldFind(tupleOrUnd.try(), () => true);
+
+        // @ts-expect-error
+        fieldFind(tupleOrUnd, (item) => item);
+        // @ts-expect-error
+        fieldFind(tupleOrUnd, () => true);
+
+        fieldFind(tupleOrUnd.try(), (_item) => 0);
+        fieldFind(tupleOrUnd.try(), (_item) => "");
+        fieldFind(tupleOrUnd.try(), (_item) => null);
+        // @ts-expect-error
+        fieldFind(tupleOrUnd.try(), (item) => item.get().toExponential());
+      }
+    }
+
+    // FieldRef
+    {
+      // Regular
+      {
+        const ref = new FieldRef(tuple);
+        const result = fieldFind(ref, (item, index) => {
+          item satisfies
+            | FieldRef<string>
+            | FieldRef<boolean>
+            | FieldRef<symbol>;
+          index satisfies 0 | 1 | 2;
+
+          if (index === 1) {
+            item.get() satisfies boolean;
+            // @ts-expect-error
+            item.get() satisfies string;
+            return true;
+          }
+
+          return false;
+        });
+
+        result satisfies
+          | FieldRef<string>
+          | FieldRef<boolean>
+          | FieldRef<symbol>
+          | undefined;
+        // @ts-expect-error
+        result satisfies
+          | FieldRef<string>
+          | FieldRef<boolean>
+          | FieldRef<symbol>;
+        // @ts-expect-error
+        result satisfies undefined;
+        // @ts-expect-error
+        result.any;
+
+        fieldFind(ref, (item) => item);
+        fieldFind(ref, (_item) => 0);
+        fieldFind(ref, (_item) => "");
+        fieldFind(ref, (_item) => null);
+        // @ts-expect-error
+        fieldFind(ref, (item) => item.get().toExponential());
+      }
+
+      // Undefined
+      {
+        const refUnd = new FieldRef(tupleOrUnd);
+        const result = fieldFind(refUnd.try(), (item, index) => {
+          item satisfies
+            | FieldRef<string>
+            | FieldRef<boolean>
+            | FieldRef<symbol>;
+          index satisfies 0 | 1 | 2;
+
+          if (index === 1) {
+            item.get() satisfies boolean;
+            // @ts-expect-error
+            item.get() satisfies string;
+            return true;
+          }
+
+          return false;
+        });
+
+        result satisfies
+          | FieldRef<string>
+          | FieldRef<boolean>
+          | FieldRef<symbol>
+          | undefined;
+        // @ts-expect-error
+        result satisfies
+          | FieldRef<string>
+          | FieldRef<boolean>
+          | FieldRef<symbol>;
+        // @ts-expect-error
+        result satisfies undefined;
+        // @ts-expect-error
+        result.any;
+
+        fieldFind(refUnd.try(), (item) => item);
+        fieldFind(refUnd.try(), (_item) => 0);
+        fieldFind(refUnd.try(), (_item) => "");
+        fieldFind(refUnd.try(), (_item) => null);
+        // @ts-expect-error
+        fieldFind(refUnd.try(), (item) => item.get().toExponential());
+      }
+    }
+
+    // MaybeFieldRef
+    {
+      // Regular
+      {
+        const maybe = new MaybeFieldRef({ type: "direct", field: tuple });
+        const result = fieldFind(maybe, (item, index) => {
+          item satisfies
+            | MaybeFieldRef<string>
+            | MaybeFieldRef<boolean>
+            | MaybeFieldRef<symbol>;
+          index satisfies 0 | 1 | 2;
+
+          if (index === 1) {
+            item.get() satisfies boolean;
+            // @ts-expect-error
+            item.get() satisfies string;
+            return true;
+          }
+
+          return false;
+        });
+
+        result satisfies
+          | MaybeFieldRef<string>
+          | MaybeFieldRef<boolean>
+          | MaybeFieldRef<symbol>
+          | undefined;
+        // @ts-expect-error
+        result satisfies
+          | MaybeFieldRef<string>
+          | MaybeFieldRef<boolean>
+          | MaybeFieldRef<symbol>;
+        // @ts-expect-error
+        result satisfies undefined;
+        // @ts-expect-error
+        result.any;
+
+        fieldFind(maybe, (item) => item);
+        fieldFind(maybe, (_item) => 0);
+        fieldFind(maybe, (_item) => "");
+        fieldFind(maybe, (_item) => null);
+        // @ts-expect-error
+        fieldFind(maybe, (item) => item.get().toExponential());
+      }
+
+      // Undefined
+      {
+        const maybeUnd = new MaybeFieldRef({
+          type: "direct",
+          field: tupleOrUnd,
+        });
+        const result = fieldFind(maybeUnd.try(), (item, index) => {
+          item satisfies
+            | MaybeFieldRef<string>
+            | MaybeFieldRef<boolean>
+            | MaybeFieldRef<symbol>;
+          index satisfies 0 | 1 | 2;
+
+          if (index === 1) {
+            item.get() satisfies boolean;
+            // @ts-expect-error
+            item.get() satisfies string;
+            return true;
+          }
+
+          return false;
+        });
+
+        result satisfies
+          | MaybeFieldRef<string>
+          | MaybeFieldRef<boolean>
+          | MaybeFieldRef<symbol>
+          | undefined;
+        // @ts-expect-error
+        result satisfies
+          | MaybeFieldRef<string>
+          | MaybeFieldRef<boolean>
+          | MaybeFieldRef<symbol>;
+        // @ts-expect-error
+        result satisfies undefined;
+        // @ts-expect-error
+        result.any;
+
+        fieldFind(maybeUnd.try(), (item) => item);
+        fieldFind(maybeUnd.try(), (_item) => 0);
+        fieldFind(maybeUnd.try(), (_item) => "");
+        fieldFind(maybeUnd.try(), (_item) => null);
+        // @ts-expect-error
+        fieldFind(maybeUnd.try(), (item) => item.get().toExponential());
       }
     }
   }
@@ -1957,19 +2228,17 @@ const prim = new Field<string | boolean>("hello");
       // Regular
       {
         const result = fieldFilter(arr, (item, index) => {
-          item satisfies Field.Detachable<string> | Field.Detachable<boolean>;
+          item satisfies Field.Detachable<string | boolean>;
           index satisfies number;
           return true;
         });
 
-        result satisfies Array<
-          Field.Detachable<string> | Field.Detachable<boolean>
-        >;
+        result satisfies Array<Field.Detachable<string | boolean>>;
         // @ts-expect-error
         result.any;
 
         fieldFilter(arr, (item) => {
-          item satisfies Field.Detachable<string> | Field.Detachable<boolean>;
+          item satisfies Field.Detachable<string | boolean>;
           return true;
         });
         fieldFilter(arr, () => true);
@@ -1978,20 +2247,18 @@ const prim = new Field<string | boolean>("hello");
         fieldFilter(arr, (_item) => "");
         fieldFilter(arr, (_item) => null);
         // @ts-expect-error
-        fieldFilter(arr, (item) => item.toExponential());
+        fieldFilter(arr, (item) => item.get().toExponential());
       }
 
       // Undefined
       {
         const result = fieldFilter(arrOrUnd.try(), (item, index) => {
-          item satisfies Field.Detachable<string> | Field.Detachable<boolean>;
+          item satisfies Field.Detachable<string | boolean>;
           index satisfies number;
           return true;
         });
 
-        result satisfies Array<
-          Field.Detachable<string> | Field.Detachable<boolean>
-        >;
+        result satisfies Array<Field.Detachable<string | boolean>>;
         // @ts-expect-error
         result.any;
 
@@ -2007,7 +2274,7 @@ const prim = new Field<string | boolean>("hello");
         fieldFilter(arrOrUnd.try(), (_item) => "");
         fieldFilter(arrOrUnd.try(), (_item) => null);
         // @ts-expect-error
-        fieldFilter(arrOrUnd.try(), (item) => item.toExponential());
+        fieldFilter(arrOrUnd.try(), (item) => item.get().toExponential());
       }
     }
 
@@ -2017,17 +2284,17 @@ const prim = new Field<string | boolean>("hello");
       {
         const ref = new FieldRef(arr);
         const result = fieldFilter(ref, (item, index) => {
-          item satisfies FieldRef<string> | FieldRef<boolean>;
+          item satisfies FieldRef<string | boolean>;
           index satisfies number;
           return true;
         });
 
-        result satisfies Array<FieldRef<string> | FieldRef<boolean>>;
+        result satisfies Array<FieldRef<string | boolean>>;
         // @ts-expect-error
         result.any;
 
         fieldFilter(ref, (item) => {
-          item satisfies FieldRef<string> | FieldRef<boolean>;
+          item satisfies FieldRef<string | boolean>;
           return true;
         });
         fieldFilter(ref, () => true);
@@ -2036,19 +2303,19 @@ const prim = new Field<string | boolean>("hello");
         fieldFilter(ref, (_item) => "");
         fieldFilter(ref, (_item) => null);
         // @ts-expect-error
-        fieldFilter(ref, (item) => item.toExponential());
+        fieldFilter(ref, (item) => item.get().toExponential());
       }
 
       // Undefined
       {
         const refUnd = new FieldRef(arrOrUnd);
         const result = fieldFilter(refUnd.try(), (item, index) => {
-          item satisfies FieldRef<string> | FieldRef<boolean>;
+          item satisfies FieldRef<string | boolean>;
           index satisfies number;
           return true;
         });
 
-        result satisfies Array<FieldRef<string> | FieldRef<boolean>>;
+        result satisfies Array<FieldRef<string | boolean>>;
         // @ts-expect-error
         result.any;
 
@@ -2064,7 +2331,7 @@ const prim = new Field<string | boolean>("hello");
         fieldFilter(refUnd.try(), (_item) => "");
         fieldFilter(refUnd.try(), (_item) => null);
         // @ts-expect-error
-        fieldFilter(refUnd.try(), (item) => item.toExponential());
+        fieldFilter(refUnd.try(), (item) => item.get().toExponential());
       }
     }
 
@@ -2074,17 +2341,17 @@ const prim = new Field<string | boolean>("hello");
       {
         const maybe = new MaybeFieldRef({ type: "direct", field: arr });
         const result = fieldFilter(maybe, (item, index) => {
-          item satisfies MaybeFieldRef<string> | MaybeFieldRef<boolean>;
+          item satisfies MaybeFieldRef<string | boolean>;
           index satisfies number;
           return true;
         });
 
-        result satisfies Array<MaybeFieldRef<string> | MaybeFieldRef<boolean>>;
+        result satisfies Array<MaybeFieldRef<string | boolean>>;
         // @ts-expect-error
         result.any;
 
         fieldFilter(maybe, (item) => {
-          item satisfies MaybeFieldRef<string> | MaybeFieldRef<boolean>;
+          item satisfies MaybeFieldRef<string | boolean>;
           return true;
         });
         fieldFilter(maybe, () => true);
@@ -2093,19 +2360,19 @@ const prim = new Field<string | boolean>("hello");
         fieldFilter(maybe, (_item) => "");
         fieldFilter(maybe, (_item) => null);
         // @ts-expect-error
-        fieldFilter(maybe, (item) => item.toExponential());
+        fieldFilter(maybe, (item) => item.get().toExponential());
       }
 
       // Undefined
       {
         const maybeUnd = new MaybeFieldRef({ type: "direct", field: arrOrUnd });
         const result = fieldFilter(maybeUnd.try(), (item, index) => {
-          item satisfies MaybeFieldRef<string> | MaybeFieldRef<boolean>;
+          item satisfies MaybeFieldRef<string | boolean>;
           index satisfies number;
           return true;
         });
 
-        result satisfies Array<MaybeFieldRef<string> | MaybeFieldRef<boolean>>;
+        result satisfies Array<MaybeFieldRef<string | boolean>>;
         // @ts-expect-error
         result.any;
 
@@ -2121,7 +2388,7 @@ const prim = new Field<string | boolean>("hello");
         fieldFilter(maybeUnd.try(), (_item) => "");
         fieldFilter(maybeUnd.try(), (_item) => null);
         // @ts-expect-error
-        fieldFilter(maybeUnd.try(), (item) => item.toExponential());
+        fieldFilter(maybeUnd.try(), (item) => item.get().toExponential());
       }
     }
   }
@@ -2170,7 +2437,7 @@ const prim = new Field<string | boolean>("hello");
         fieldFilter(obj, (_item) => "");
         fieldFilter(obj, (_item) => null);
         // @ts-expect-error
-        fieldFilter(obj, (item) => item.toExponential());
+        fieldFilter(obj, (item) => item.get().toExponential());
       }
 
       // Optional
@@ -2250,7 +2517,7 @@ const prim = new Field<string | boolean>("hello");
         fieldFilter(objOrUnd.try(), (_item) => "");
         fieldFilter(objOrUnd.try(), (_item) => null);
         // @ts-expect-error
-        fieldFilter(objOrUnd.try(), (item) => item.toExponential());
+        fieldFilter(objOrUnd.try(), (item) => item.get().toExponential());
         // @ts-expect-error
         fieldFilter(objOrUnd, () => true);
       }
@@ -2286,7 +2553,7 @@ const prim = new Field<string | boolean>("hello");
         fieldFilter(ref, (_item) => "");
         fieldFilter(ref, (_item) => null);
         // @ts-expect-error
-        fieldFilter(ref, (item) => item.toExponential());
+        fieldFilter(ref, (item) => item.get().toExponential());
       }
 
       // Optional
@@ -2352,7 +2619,7 @@ const prim = new Field<string | boolean>("hello");
         fieldFilter(refUnd.try(), (_item) => "");
         fieldFilter(refUnd.try(), (_item) => null);
         // @ts-expect-error
-        fieldFilter(refUnd.try(), (item) => item.toExponential());
+        fieldFilter(refUnd.try(), (item) => item.get().toExponential());
         // @ts-expect-error
         fieldFilter(refUnd, () => true);
       }
@@ -2388,7 +2655,7 @@ const prim = new Field<string | boolean>("hello");
         fieldFilter(maybe, (_item) => "");
         fieldFilter(maybe, (_item) => null);
         // @ts-expect-error
-        fieldFilter(maybe, (item) => item.toExponential());
+        fieldFilter(maybe, (item) => item.get().toExponential());
       }
 
       // Optional
@@ -2423,7 +2690,7 @@ const prim = new Field<string | boolean>("hello");
         fieldFilter(maybeOpt, (_item) => "");
         fieldFilter(maybeOpt, (_item) => null);
         // @ts-expect-error
-        fieldFilter(maybeOpt, (item) => item.toExponential());
+        fieldFilter(maybeOpt, (item) => item.get().toExponential());
       }
 
       // Undefined
@@ -2458,7 +2725,221 @@ const prim = new Field<string | boolean>("hello");
         fieldFilter(maybeUnd.try(), (_item) => "");
         fieldFilter(maybeUnd.try(), (_item) => null);
         // @ts-expect-error
-        fieldFilter(maybeUnd.try(), (item) => item.toExponential());
+        fieldFilter(maybeUnd.try(), (item) => item.get().toExponential());
+      }
+    }
+  }
+
+  // Tuple
+  {
+    // Field
+    {
+      // Regular
+      {
+        const result = fieldFilter(tuple, (item, index) => {
+          item satisfies Field<string> | Field<boolean> | Field<symbol>;
+          index satisfies 0 | 1 | 2;
+
+          if (index === 1) {
+            item.get() satisfies boolean;
+            // @ts-expect-error
+            item.get().any;
+          }
+
+          return false;
+        });
+        result satisfies Array<Field<string> | Field<boolean> | Field<symbol>>;
+        // @ts-expect-error
+        result satisfies Array<Field<string | boolean | symbol>>;
+        // @ts-expect-error
+        result.any;
+
+        fieldFilter(tuple, (item) => {
+          item satisfies Field<string> | Field<boolean> | Field<symbol>;
+          return true;
+        });
+        fieldFilter(tuple, () => true);
+        fieldFilter(tuple, (_item) => 0);
+        fieldFilter(tuple, (_item) => "");
+        fieldFilter(tuple, (_item) => null);
+        // @ts-expect-error
+        fieldFilter(tuple, (item) => item.get().toExponential());
+      }
+
+      // Undefined
+      {
+        const result = fieldFilter(tupleOrUnd.try(), (item, index) => {
+          item satisfies Field<string> | Field<boolean> | Field<symbol>;
+          index satisfies 0 | 1 | 2;
+
+          if (index === 1) {
+            item.get() satisfies boolean;
+            // @ts-expect-error
+            item.get().any;
+          }
+
+          return false;
+        });
+        result satisfies Array<Field<string> | Field<boolean> | Field<symbol>>;
+        // @ts-expect-error
+        result.any;
+
+        fieldFilter(tupleOrUnd.try(), (item) => item);
+        fieldFilter(tupleOrUnd.try(), () => true);
+        // @ts-expect-error
+        fieldFilter(tupleOrUnd, (item) => item);
+        // @ts-expect-error
+        fieldFilter(tupleOrUnd, () => true);
+        fieldFilter(tupleOrUnd.try(), (_item) => 0);
+        fieldFilter(tupleOrUnd.try(), (_item) => "");
+        fieldFilter(tupleOrUnd.try(), (_item) => null);
+        // @ts-expect-error
+        fieldFilter(tupleOrUnd.try(), (item) => item.get().toExponential());
+      }
+    }
+
+    // FieldRef
+    {
+      // Regular
+      {
+        const ref = new FieldRef(tuple);
+        const result = fieldFilter(ref, (item, index) => {
+          item satisfies
+            | FieldRef<string>
+            | FieldRef<boolean>
+            | FieldRef<symbol>;
+          index satisfies 0 | 1 | 2;
+
+          if (index === 1) {
+            item.get() satisfies boolean;
+            // @ts-expect-error
+            item.get().any;
+          }
+
+          return false;
+        });
+        result satisfies Array<
+          FieldRef<string> | FieldRef<boolean> | FieldRef<symbol>
+        >;
+        // @ts-expect-error
+        result.any;
+
+        fieldFilter(ref, (item) => item);
+        fieldFilter(ref, () => true);
+        fieldFilter(ref, (_item) => 0);
+        fieldFilter(ref, (_item) => "");
+        fieldFilter(ref, (_item) => null);
+        // @ts-expect-error
+        fieldFilter(ref, (item) => item.get().toExponential());
+      }
+
+      // Undefined
+      {
+        const refUnd = new FieldRef(tupleOrUnd);
+        const result = fieldFilter(refUnd.try(), (item, index) => {
+          item satisfies
+            | FieldRef<string>
+            | FieldRef<boolean>
+            | FieldRef<symbol>;
+          index satisfies 0 | 1 | 2;
+
+          if (index === 1) {
+            item.get() satisfies boolean;
+            // @ts-expect-error
+            item.get().any;
+          }
+
+          return false;
+        });
+        result satisfies Array<
+          FieldRef<string> | FieldRef<boolean> | FieldRef<symbol>
+        >;
+        // @ts-expect-error
+        result.any;
+
+        fieldFilter(refUnd.try(), (item) => item);
+        fieldFilter(refUnd.try(), () => true);
+        // @ts-expect-error
+        fieldFilter(refUnd, (item) => item);
+        // @ts-expect-error
+        fieldFilter(refUnd, () => true);
+        fieldFilter(refUnd.try(), (_item) => 0);
+        fieldFilter(refUnd.try(), (_item) => "");
+        fieldFilter(refUnd.try(), (_item) => null);
+        // @ts-expect-error
+        fieldFilter(refUnd.try(), (item) => item.get().toExponential());
+      }
+    }
+
+    // MaybeFieldRef
+    {
+      // Regular
+      {
+        const maybe = new MaybeFieldRef({
+          type: "direct",
+          field: tuple,
+        });
+        const result = fieldFilter(maybe, (item, index) => {
+          item satisfies
+            | MaybeFieldRef<string>
+            | MaybeFieldRef<boolean>
+            | MaybeFieldRef<symbol>;
+          index satisfies 0 | 1 | 2;
+
+          if (index === 1) {
+            item.get() satisfies boolean;
+            // @ts-expect-error
+            item.get().any;
+          }
+
+          return false;
+        });
+        result satisfies Array<
+          MaybeFieldRef<string> | MaybeFieldRef<boolean> | MaybeFieldRef<symbol>
+        >;
+        // @ts-expect-error
+        result.any;
+
+        fieldFilter(maybe, (item) => item);
+        fieldFilter(maybe, () => true);
+        fieldFilter(maybe, (_item) => 0);
+        fieldFilter(maybe, (_item) => "");
+        fieldFilter(maybe, (_item) => null);
+        // @ts-expect-error
+        fieldFilter(maybe, (item) => item.get().toExponential());
+      }
+
+      // Undefined
+      {
+        const maybeUnd = new MaybeFieldRef({
+          type: "direct",
+          field: tupleOrUnd,
+        });
+        const result = fieldFilter(maybeUnd.try(), (item, index) => {
+          item satisfies
+            | MaybeFieldRef<string>
+            | MaybeFieldRef<boolean>
+            | MaybeFieldRef<symbol>;
+          index satisfies 0 | 1 | 2;
+
+          if (index === 1) {
+            item.get() satisfies boolean;
+            // @ts-expect-error
+            item.get().any;
+          }
+
+          return false;
+        });
+        result satisfies Array<
+          MaybeFieldRef<string> | MaybeFieldRef<boolean> | MaybeFieldRef<symbol>
+        >;
+        // @ts-expect-error
+        result.any;
+
+        fieldFilter(maybeUnd.try(), (item) => item);
+        fieldFilter(maybeUnd.try(), () => true);
+        // @ts-expect-error
+        fieldFilter(maybeUnd, (item) => item);
         // @ts-expect-error
         fieldFilter(maybeUnd, () => true);
       }
@@ -2468,8 +2949,6 @@ const prim = new Field<string | boolean>("hello");
 //#endregion
 
 //#region fieldPush
-{
-  // Array
 {
   // Regular
   {
@@ -2499,7 +2978,6 @@ const prim = new Field<string | boolean>("hello");
     fieldPush(arrOrNumOrUnd.try(), true);
     // @ts-expect-error
     fieldPush(arrOrUnd.try(), 123);
-    }
   }
 
   // Tuple

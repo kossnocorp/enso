@@ -1429,12 +1429,23 @@ export namespace Field {
   export type AsArray<Value> =
     Value extends Array<any> ? InternalArrayState<Value> : undefined;
 
-  export type Predicate<ItemValue> = (
+  export type PredicateEvery<ItemValue> = (
     item: Enso.Detachable<Every<ItemValue>>,
     index: number,
   ) => unknown;
 
-  export type ItemResultArray<ItemValue> = Enso.Detachable<Every<ItemValue>>;
+  export type PredicateArray<ItemValue> = (
+    item: Enso.Detachable<ItemValue>,
+    index: number,
+  ) => unknown;
+
+  export type ItemResultTuple<Value extends Utils.Tuple> = Every<
+    Value[Utils.IndexOfTuple<Value>]
+  >;
+
+  export type ItemResultArray<Value extends unknown[]> = Detachable<
+    Value[number]
+  >;
 
   export type ItemResultObject<Value extends object> =
     // Remove undefined that sneaks in
@@ -1627,12 +1638,24 @@ declare module "./collection/index.ts" {
   // `fieldFind`
 
   interface FieldFind {
+    // Tuple
+
+    <Value extends Utils.Tuple>(
+      field: Field<Value> | Utils.Nullish<Enso.Tried<Field<Value>>>,
+      predicate: Field.CollectionCallbackTuplePair<Value, unknown>,
+    ): Field.ItemResultTuple<Value> | undefined;
+
+    <Value extends Utils.Tuple>(
+      field: Field<Value> | Utils.Nullish<Enso.Tried<Field<Value>>>,
+      predicate: Field.CollectionCallbackTupleSingle<Value, unknown>,
+    ): Field.ItemResultTuple<Value> | undefined;
+
     // Array
 
-    <Value extends Array<unknown>, ItemValue extends Value[number]>(
+    <Value extends unknown[]>(
       field: Field<Value> | Utils.Nullish<Enso.Tried<Field<Value>>>,
-      predicate: Field.Predicate<ItemValue>,
-    ): Field.ItemResultArray<ItemValue> | undefined;
+      callback: Field.CollectionCallbackArray<Value, unknown>,
+    ): Field.ItemResultArray<Value> | undefined;
 
     // Object
 
@@ -1650,12 +1673,24 @@ declare module "./collection/index.ts" {
   // `fieldFilter`
 
   interface FieldFilter {
+    // Tuple
+
+    <Value extends Utils.Tuple>(
+      field: Field<Value> | Utils.Nullish<Enso.Tried<Field<Value>>>,
+      predicate: Field.CollectionCallbackTuplePair<Value, unknown>,
+    ): Field.ItemResultTuple<Value>[];
+
+    <Value extends Utils.Tuple>(
+      field: Field<Value> | Utils.Nullish<Enso.Tried<Field<Value>>>,
+      predicate: Field.CollectionCallbackTupleSingle<Value, unknown>,
+    ): Field.ItemResultTuple<Value>[];
+
     // Array
 
-    <Value extends Array<unknown>, ItemValue extends Value[number]>(
+    <Value extends unknown[]>(
       field: Field<Value> | Utils.Nullish<Enso.Tried<Field<Value>>>,
-      callback: Field.Predicate<ItemValue>,
-    ): Field.ItemResultArray<ItemValue>[];
+      callback: Field.CollectionCallbackArray<Value, unknown>,
+    ): Field.ItemResultArray<Value>[];
 
     // Object
 
@@ -2475,14 +2510,14 @@ export class InternalArrayState<
   }
 
   find(
-    predicate: Field.Predicate<Payload[number]>,
+    predicate: Field.PredicateEvery<Payload[number]>,
   ): Field<Payload[number]> | undefined {
     // @ts-ignore: This is fine
     return this.#children.find(predicate);
   }
 
   filter(
-    predicate: Field.Predicate<Payload[number]>,
+    predicate: Field.PredicateEvery<Payload[number]>,
   ): Field<Payload[number]>[] {
     // @ts-ignore: This is fine
     return this.#children.filter(predicate);

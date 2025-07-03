@@ -352,12 +352,13 @@ export namespace FieldRef {
 
   //
 
-  export type Predicate<ItemValue> = (
-    item: Every<ItemValue>,
-    index: number,
-  ) => unknown;
+  export type ItemResultTuple<Value extends Utils.Tuple> = Every<
+    Value[Utils.IndexOfTuple<Value>]
+  >;
 
-  export type ItemResultArray<ItemValue> = Every<ItemValue>;
+  export type ItemResultArray<Value extends unknown[]> = Detachable<
+    Value[number]
+  >;
 
   export type ItemResultObject<Value extends object> =
     // Remove undefined that sneaks in
@@ -466,12 +467,24 @@ declare module "../collection/index.ts" {
   // `fieldFind`
 
   interface FieldFind {
+    // Tuple
+
+    <Value extends Utils.Tuple>(
+      field: FieldRef<Value> | Utils.Nullish<Enso.Tried<FieldRef<Value>>>,
+      predicate: FieldRef.CollectionCallbackTuplePair<Value, unknown>,
+    ): FieldRef.ItemResultTuple<Value> | undefined;
+
+    <Value extends Utils.Tuple>(
+      field: FieldRef<Value> | Utils.Nullish<Enso.Tried<FieldRef<Value>>>,
+      predicate: FieldRef.CollectionCallbackTupleSingle<Value, unknown>,
+    ): FieldRef.ItemResultTuple<Value> | undefined;
+
     // Array
 
-    <Value extends Array<unknown>, ItemValue extends Value[number]>(
+    <Value extends unknown[]>(
       field: FieldRef<Value> | Utils.Nullish<Enso.Tried<FieldRef<Value>>>,
-      predicate: FieldRef.Predicate<ItemValue>,
-    ): FieldRef.ItemResultArray<ItemValue> | undefined;
+      callback: FieldRef.CollectionCallbackArray<Value, unknown>,
+    ): FieldRef.ItemResultArray<Value> | undefined;
 
     // Object
 
@@ -489,12 +502,24 @@ declare module "../collection/index.ts" {
   // `fieldFilter`
 
   interface FieldFilter {
+    // Tuple
+
+    <Value extends Utils.Tuple>(
+      field: FieldRef<Value> | Utils.Nullish<Enso.Tried<FieldRef<Value>>>,
+      predicate: FieldRef.CollectionCallbackTuplePair<Value, unknown>,
+    ): FieldRef.ItemResultTuple<Value>[];
+
+    <Value extends Utils.Tuple>(
+      field: FieldRef<Value> | Utils.Nullish<Enso.Tried<FieldRef<Value>>>,
+      predicate: FieldRef.CollectionCallbackTupleSingle<Value, unknown>,
+    ): FieldRef.ItemResultTuple<Value>[];
+
     // Array
 
-    <Value extends Array<unknown>, ItemValue extends Value[number]>(
+    <Value extends unknown[]>(
       field: FieldRef<Value> | Utils.Nullish<Enso.Tried<FieldRef<Value>>>,
-      callback: FieldRef.Predicate<ItemValue>,
-    ): FieldRef.ItemResultArray<ItemValue>[];
+      callback: FieldRef.CollectionCallbackArray<Value, unknown>,
+    ): FieldRef.ItemResultArray<Value>[];
 
     // Object
 
@@ -920,12 +945,13 @@ export namespace MaybeFieldRef {
 
   //
 
-  export type Predicate<ItemValue> = (
-    item: Every<ItemValue>,
-    index: number,
-  ) => unknown;
+  export type ItemResultTuple<Value extends Utils.Tuple> = Every<
+    Value[Utils.IndexOfTuple<Value>]
+  >;
 
-  export type ItemResultArray<ItemValue> = Every<ItemValue>;
+  export type ItemResultArray<Value extends unknown[]> = Detachable<
+    Value[number]
+  >;
 
   export type ItemResultObject<Value extends object> =
     // Remove undefined that sneaks in
@@ -1052,14 +1078,30 @@ declare module "../collection/index.ts" {
   // `fieldFind`
 
   interface FieldFind {
-    // Array
+    // Tuple
 
-    <Value extends Array<unknown>, ItemValue extends Value[number]>(
+    <Value extends Utils.Tuple>(
       field:
         | MaybeFieldRef<Value>
         | Utils.Nullish<Enso.Tried<MaybeFieldRef<Value>>>,
-      predicate: MaybeFieldRef.Predicate<ItemValue>,
-    ): MaybeFieldRef.ItemResultArray<ItemValue> | undefined;
+      predicate: MaybeFieldRef.CollectionCallbackTuplePair<Value, unknown>,
+    ): MaybeFieldRef.ItemResultTuple<Value> | undefined;
+
+    <Value extends Utils.Tuple>(
+      field:
+        | MaybeFieldRef<Value>
+        | Utils.Nullish<Enso.Tried<MaybeFieldRef<Value>>>,
+      predicate: MaybeFieldRef.CollectionCallbackTupleSingle<Value, unknown>,
+    ): MaybeFieldRef.ItemResultTuple<Value> | undefined;
+
+    // Array
+
+    <Value extends unknown[]>(
+      field:
+        | MaybeFieldRef<Value>
+        | Utils.Nullish<Enso.Tried<MaybeFieldRef<Value>>>,
+      callback: MaybeFieldRef.CollectionCallbackArray<Value, unknown>,
+    ): MaybeFieldRef.ItemResultArray<Value> | undefined;
 
     // Object
 
@@ -1081,14 +1123,30 @@ declare module "../collection/index.ts" {
   // `fieldFilter`
 
   interface FieldFilter {
-    // Array
+    // Tuple
 
-    <Value extends Array<unknown>, ItemValue extends Value[number]>(
+    <Value extends Utils.Tuple>(
       field:
         | MaybeFieldRef<Value>
         | Utils.Nullish<Enso.Tried<MaybeFieldRef<Value>>>,
-      callback: MaybeFieldRef.Predicate<ItemValue>,
-    ): MaybeFieldRef.ItemResultArray<ItemValue>[];
+      predicate: MaybeFieldRef.CollectionCallbackTuplePair<Value, unknown>,
+    ): MaybeFieldRef.ItemResultTuple<Value>[];
+
+    <Value extends Utils.Tuple>(
+      field:
+        | MaybeFieldRef<Value>
+        | Utils.Nullish<Enso.Tried<MaybeFieldRef<Value>>>,
+      predicate: MaybeFieldRef.CollectionCallbackTupleSingle<Value, unknown>,
+    ): MaybeFieldRef.ItemResultTuple<Value>[];
+
+    // Array
+
+    <Value extends unknown[]>(
+      field:
+        | MaybeFieldRef<Value>
+        | Utils.Nullish<Enso.Tried<MaybeFieldRef<Value>>>,
+      callback: MaybeFieldRef.CollectionCallbackArray<Value, unknown>,
+    ): MaybeFieldRef.ItemResultArray<Value>[];
 
     // Object
 
