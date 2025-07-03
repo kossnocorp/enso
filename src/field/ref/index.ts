@@ -419,9 +419,21 @@ declare module "../collection/index.ts" {
   // `fieldMap`
 
   interface FieldMap {
+    // Tuple
+
+    <Value extends Utils.Tuple, Result>(
+      field: FieldRef<Value> | Utils.Nullish<Enso.Tried<FieldRef<Value>>>,
+      callback: FieldRef.CollectionCallbackTuplePair<Value, Result>,
+    ): Result[];
+
+    <Value extends Utils.Tuple, Result>(
+      field: FieldRef<Value> | Utils.Nullish<Enso.Tried<FieldRef<Value>>>,
+      callback: FieldRef.CollectionCallbackTupleSingle<Value, Result>,
+    ): Result[];
+
     // Array
 
-    <Value extends Array<unknown>, Result>(
+    <Value extends unknown[], Result>(
       field: FieldRef<Value> | Utils.Nullish<Enso.Tried<FieldRef<Value>>>,
       callback: FieldRef.CollectionCallbackArray<Value, Result>,
     ): Result[];
@@ -983,12 +995,32 @@ declare module "../collection/index.ts" {
   // `fieldMap`
 
   interface FieldMap {
+    // Tuple
+
+    <Value extends Utils.Tuple, Result>(
+      field:
+        | MaybeFieldRef<Value>
+        | Utils.Nullish<Enso.Tried<MaybeFieldRef<Value>>>,
+      callback: MaybeFieldRef.CollectionCallbackTuplePair<Value, Result>,
+    ): Result[];
+
+    <Value extends Utils.Tuple, Result>(
+      field:
+        | MaybeFieldRef<Value>
+        | Utils.Nullish<Enso.Tried<MaybeFieldRef<Value>>>,
+      callback: MaybeFieldRef.CollectionCallbackTupleSingle<Value, Result>,
+    ): Result[];
+
+    // Array
+
     <Value extends Array<unknown>, Result>(
       field:
         | MaybeFieldRef<Value>
         | Utils.Nullish<Enso.Tried<MaybeFieldRef<Value>>>,
       callback: MaybeFieldRef.CollectionCallbackArray<Value, Result>,
     ): Result[];
+
+    // Object
 
     <Value extends object, Result>(
       field:

@@ -1580,9 +1580,21 @@ declare module "./collection/index.ts" {
   // `fieldMap`
 
   interface FieldMap {
+    // Tuple
+
+    <Value extends Utils.Tuple, Result>(
+      field: Field<Value> | Utils.Nullish<Enso.Tried<Field<Value>>>,
+      callback: Field.CollectionCallbackTuplePair<Value, Result>,
+    ): Result[];
+
+    <Value extends Utils.Tuple, Result>(
+      field: Field<Value> | Utils.Nullish<Enso.Tried<Field<Value>>>,
+      callback: Field.CollectionCallbackTupleSingle<Value, Result>,
+    ): Result[];
+
     // Array
 
-    <Value extends Array<unknown>, Result>(
+    <Value extends unknown[], Result>(
       field: Field<Value> | Utils.Nullish<Enso.Tried<Field<Value>>>,
       callback: Field.CollectionCallbackArray<Value, Result>,
     ): Result[];

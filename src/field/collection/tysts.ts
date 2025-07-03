@@ -602,7 +602,7 @@ const prim = new Field<string | boolean>("hello");
           // @ts-expect-error
           item.any;
 
-          index satisfies number;
+          index satisfies 0 | 1 | 2;
           // @ts-expect-error
           index.any;
         });
@@ -1025,6 +1025,190 @@ const prim = new Field<string | boolean>("hello");
         });
         // @ts-expect-error
         fieldMap(maybeUnd, () => {});
+      }
+    }
+  }
+
+  // Tuple
+  {
+    // Field
+    {
+      // Regular
+      {
+        const result = fieldMap(tuple, (item, index) => {
+          item satisfies Field<string> | Field<boolean> | Field<symbol>;
+          // @ts-expect-error
+          item.any;
+
+          index satisfies 0 | 1 | 2;
+          // @ts-expect-error
+          index.any;
+
+          if (index === 1) {
+            item.get() satisfies boolean;
+            // @ts-expect-error
+            item.get() satisfies string;
+          }
+
+          return 0;
+        });
+        result satisfies number[];
+
+        fieldMap(tuple, (item) => {
+          item satisfies Field<string> | Field<boolean> | Field<symbol>;
+          // @ts-expect-error
+          item.any;
+        });
+        fieldMap(arr, () => {});
+      }
+
+      // Undefined
+      {
+        fieldMap(tupleOrUnd.try(), (item, index) => {
+          item satisfies Field<string> | Field<boolean> | Field<symbol>;
+          // @ts-expect-error
+          item.any;
+
+          index satisfies 0 | 1 | 2;
+          // @ts-expect-error
+          index.any;
+        });
+
+        fieldMap(tupleOrUnd.try(), (_item) => {});
+        fieldMap(tupleOrUnd.try(), () => {});
+        // @ts-expect-error
+        fieldMap(tupleOrUnd, () => {});
+      }
+    }
+
+    // FieldRef
+    {
+      // Regular
+      {
+        const ref = new FieldRef(tuple);
+        const result = fieldMap(ref, (item, index) => {
+          item satisfies
+            | FieldRef<string>
+            | FieldRef<boolean>
+            | FieldRef<symbol>;
+          // @ts-expect-error
+          item.any;
+
+          index satisfies 0 | 1 | 2;
+          // @ts-expect-error
+          index.any;
+
+          if (index === 1) {
+            item.get() satisfies boolean;
+            // @ts-expect-error
+            item.get() satisfies string;
+          }
+
+          return 0;
+        });
+        result satisfies number[];
+
+        fieldMap(ref, (item) => {
+          item satisfies
+            | FieldRef<string>
+            | FieldRef<boolean>
+            | FieldRef<symbol>;
+          // @ts-expect-error
+          item.any;
+        });
+        fieldMap(ref, () => {});
+      }
+
+      // Undefined
+      {
+        const refUnd = new FieldRef(tupleOrUnd);
+        fieldMap(refUnd.try(), (item, index) => {
+          item satisfies
+            | FieldRef<string>
+            | FieldRef<boolean>
+            | FieldRef<symbol>;
+          // @ts-expect-error
+          item.any;
+
+          index satisfies 0 | 1 | 2;
+          // @ts-expect-error
+          index.any;
+        });
+
+        fieldMap(refUnd.try(), (_item) => {});
+        fieldMap(refUnd.try(), () => {});
+        // @ts-expect-error
+        fieldMap(refUnd, () => {});
+      }
+    }
+
+    // MaybeFieldRef
+    {
+      // Regular
+      {
+        const maybe = new MaybeFieldRef({
+          type: "direct",
+          field: tuple,
+        });
+        const result = fieldMap(maybe, (item, index) => {
+          item satisfies
+            | MaybeFieldRef<string>
+            | MaybeFieldRef<boolean>
+            | MaybeFieldRef<symbol>;
+          // @ts-expect-error
+          item.any;
+
+          index satisfies 0 | 1 | 2;
+          // @ts-expect-error
+          index.any;
+
+          if (index === 1) {
+            item.get() satisfies boolean;
+            // @ts-expect-error
+            item.get() satisfies string;
+          }
+
+          return 0;
+        });
+        result satisfies number[];
+
+        fieldMap(maybe, (item) => {
+          item satisfies
+            | MaybeFieldRef<string>
+            | MaybeFieldRef<boolean>
+            | MaybeFieldRef<symbol>;
+          // @ts-expect-error
+          item.any;
+        });
+        fieldMap(maybe, () => {});
+      }
+
+      // Undefined
+      {
+        const maybeUnd = new MaybeFieldRef({
+          type: "direct",
+          field: tupleOrUnd,
+        });
+        fieldMap(maybeUnd.try(), (item, index) => {
+          item satisfies
+            | MaybeFieldRef<string>
+            | MaybeFieldRef<boolean>
+            | MaybeFieldRef<symbol>;
+          // @ts-expect-error
+          item.any;
+
+          index satisfies 0 | 1 | 2;
+          // @ts-expect-error
+          index.any;
+        });
+
+        fieldMap(maybeUnd.try(), (_item) => {});
+        fieldMap(maybeUnd.try(), () => {});
+        fieldMap(
+          // @ts-expect-error
+          new MaybeFieldRef({ type: "direct", field: maybeUnd }),
+          () => {},
+        );
       }
     }
   }
