@@ -24,6 +24,10 @@ const unionField = new Field({
           };
       // @ts-expect-error
       decomposed.any;
+
+      const _manual: Field.Decomposed<Hello | Blah> = decomposed;
+      // @ts-expect-error
+      const _manualWrong: Field.Decomposed<Hello> = decomposed;
     }
 
     // Field union
@@ -40,6 +44,10 @@ const unionField = new Field({
           };
       // @ts-expect-error
       decomposed.any;
+
+      const _manual: Field.Decomposed<Hello | Blah> = decomposed;
+      // @ts-expect-error
+      const _manualWrong: Field.Decomposed<Hello> = decomposed;
     }
 
     // Detachable
@@ -58,6 +66,17 @@ const unionField = new Field({
           };
       // @ts-expect-error
       decomposed.any;
+
+      const _manual: Field.Decomposed<Hello | Blah, "detachable"> = decomposed;
+      // @ts-expect-error
+      const _manualWrong1: Field.Decomposed<Hello> = decomposed;
+      // @ts-expect-error
+      const _manualWrong2: Field.Decomposed<Hello | Blah, "bound"> = decomposed;
+      // @ts-expect-error
+      const _manualWrong3: Field.Decomposed<
+        Hello | Blah,
+        "detachable" | "bound"
+      > = decomposed;
     }
   }
 }
@@ -94,6 +113,10 @@ const unionField = new Field({
           };
       // @ts-expect-error
       decomposed.any;
+
+      const _manual: Field.Decomposed<Hello | Blah> = decomposed;
+      // @ts-expect-error
+      const _manualWrong: Field.Decomposed<Hello> = decomposed;
     }
 
     // Field union
@@ -124,6 +147,10 @@ const unionField = new Field({
           };
       // @ts-expect-error
       decomposed.any;
+
+      const _manual: Field.Decomposed<Hello | Blah> = decomposed;
+      // @ts-expect-error
+      const _manualWrong: Field.Decomposed<Hello> = decomposed;
     }
 
     // Detachable
@@ -154,6 +181,17 @@ const unionField = new Field({
           };
       // @ts-expect-error
       decomposed.any;
+
+      const _manual: Field.Decomposed<Hello | Blah, "detachable"> = decomposed;
+      // @ts-expect-error
+      const _manualWrong1: Field.Decomposed<Hello> = decomposed;
+      // @ts-expect-error
+      const _manualWrong2: Field.Decomposed<Hello | Blah, "bound"> = decomposed;
+      // @ts-expect-error
+      const _manualWrong3: Field.Decomposed<
+        Hello | Blah,
+        "detachable" | "bound"
+      > = decomposed;
     }
   }
 }

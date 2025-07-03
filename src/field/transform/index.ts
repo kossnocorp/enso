@@ -6,43 +6,30 @@ import {
   useFieldHook,
 } from "../hook/index.ts";
 import type { Field } from "../index.tsx";
+import { EnsoUtils as Utils } from "../../utils.ts";
+import { StaticImplements } from "../util.ts";
+import { AsState } from "../../state/index.ts";
 
 // export interface As
 
-export function fieldDecompose<FieldType>(
-  field: FieldType,
-): FieldDecompose.Decomposed<FieldType> {
-  return {
-    value: (field as any).get(),
-    field,
-  } as any;
-}
+export const fieldDecompose = ((
+  field: Utils.Nullish<StaticImplements<AsState.Read>>,
+) => ({
+  value: field?.constructor.asState(field).get(),
+  field,
+})) as unknown as FieldDecompose;
 
-export namespace FieldDecompose {
-  // TODO: Move to `Field` when creating extensible `FieldDecompose` interface
-  export type Decomposed<FieldType> =
-    FieldType extends Field<infer Value>
-      ? Value extends Value
-        ? {
-            value: Value;
-            field: Enso.TransferBrands<Field<Value>, FieldType>;
-          }
-        : never
-      : never;
-}
+export interface FieldDecompose {}
 
-export function useFieldDecompose<FieldType>(
-  field: FieldType,
-  callback: UseFieldDecompose.Callback<FieldType>,
+export const useFieldDecompose = ((
+  field: Utils.Nullish<StaticImplements<AsState.Read>>,
+  callback: any,
   deps: DependencyList,
-): FieldDecompose.Decomposed<FieldType> {
+) => {
   const getValue = useCallback(() => fieldDecompose(field), [field]);
 
-  const shouldRender = useCallback<
-    UseFieldHook.ShouldRender<FieldDecompose.Decomposed<FieldType>>
-  >(
-    (prev, next) => !!prev && (callback as any)(next.value, prev.value),
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- It can't handle this
+  const shouldRender = useCallback(
+    (prev: any, next: any) => !!prev && callback(next.value, prev.value),
     deps,
   );
 
@@ -50,15 +37,7 @@ export function useFieldDecompose<FieldType>(
     field: field as any,
     getValue,
     shouldRender,
-  }) as FieldDecompose.Decomposed<FieldType>;
-}
+  });
+}) as unknown as UseFieldDecompose;
 
-export namespace UseFieldDecompose {
-  export type Callback<FieldType> = (
-    newValue: CallbackValue<FieldType>,
-    prevValue: CallbackValue<FieldType>,
-  ) => boolean;
-
-  export type CallbackValue<FieldType> =
-    FieldType extends Field<infer Value> ? Value : never;
-}
+export interface UseFieldDecompose {}

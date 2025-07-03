@@ -1,12 +1,11 @@
 import { useCallback } from "react";
 import { AsState } from "../../state/index.ts";
-import { EnsoUtils } from "../../utils.ts";
+import { EnsoUtils as Utils } from "../../utils.ts";
+import { useFieldHook } from "../hook/index.ts";
 import { StaticImplements } from "../util.ts";
-import { useFieldHook, UseFieldHook } from "../hook/index.ts";
-import { Field } from "../index.tsx";
 
 export const fieldDiscriminate = ((
-  field: EnsoUtils.Nullish<StaticImplements<AsState.Read>>,
+  field: Utils.Nullish<StaticImplements<AsState.Read>>,
   discriminator: any,
 ) =>
   field && {
@@ -19,7 +18,7 @@ export const fieldDiscriminate = ((
 export interface FieldDiscriminate {}
 
 export const useFieldDiscriminate = ((
-  field: EnsoUtils.Nullish<StaticImplements<AsState.Read>>,
+  field: Utils.Nullish<StaticImplements<AsState.Read>>,
   discriminator: any,
 ) => {
   const getValue = useCallback(

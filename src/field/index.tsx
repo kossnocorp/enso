@@ -1273,6 +1273,40 @@ export namespace Field {
 
   //#region Transform
 
+  // Decompose
+
+  export type Decomposed<
+    Value,
+    Flags extends Enso.Flags | undefined = undefined,
+  > = Value extends Value
+    ? {
+        value: Value;
+        field: Enso.Branded<Field<Value>, Flags>;
+      }
+    : never;
+
+  export type DecomposeResult<FieldType> = DecomposedInner<FieldType>;
+
+  export type DecomposedInner<FieldType> =
+    FieldType extends Field<infer Value>
+      ? Value extends Value
+        ? {
+            value: Value;
+            field: Enso.TransferBrands<Field<Value>, FieldType>;
+          }
+        : never
+      : never;
+
+  export type DecomposeHookCallback<FieldType> = (
+    newValue: DecomposeHookCallbackValue<FieldType>,
+    prevValue: DecomposeHookCallbackValue<FieldType>,
+  ) => boolean;
+
+  export type DecomposeHookCallbackValue<FieldType> =
+    FieldType extends Field<infer Value> ? Value : never;
+
+  //
+
   export type NarrowCallback<Payload, Narrowed> = (
     payload: Payload,
     wrap: NarrowWrap,
@@ -1801,6 +1835,23 @@ declare module "./type/index.ts" {
   }
 }
 
+declare module "./transform/index.ts" {
+  // `fieldDecompose`
+
+  interface FieldDecompose {
+    <FieldType>(field: FieldType): Field.DecomposeResult<FieldType>;
+  }
+
+  // `useFieldDecompose`
+
+  interface UseFieldDecompose {
+    <FieldType>(
+      field: FieldType,
+      callback: Field.DecomposeHookCallback<FieldType>,
+      deps: DependencyList,
+    ): Field.DecomposeResult<FieldType>;
+  }
+}
 //#endregion
 
 //#region ComputedField

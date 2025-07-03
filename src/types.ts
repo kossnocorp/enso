@@ -23,7 +23,7 @@ export namespace Enso {
   export type TransferDetachable<Type, SourceType> =
     SourceType extends Detachable<unknown> ? Detachable<Type> : Type;
 
-  export type Branded<Type, TypeFlags extends Flags> = Type &
+  export type Branded<Type, TypeFlags extends Flags | undefined> = Type &
     (FlagDetachable extends TypeFlags ? DetachableBrand : unknown) &
     (FlagTried extends TypeFlags ? TriedBrand : unknown) &
     (FlagBound extends TypeFlags ? BoundBrand : unknown);
