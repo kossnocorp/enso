@@ -19,6 +19,7 @@ export default defineConfig([
   pluginReact.configs.flat["jsx-uses-react"],
   // NOTE: Uncomment after the PR is merged:
   // https://github.com/facebook/react/pull/33455
+  // import reactHooks from "eslint-plugin-react-hooks";
   // reactHooks.configs["recommended-latest"],
   {
     files: ["**/*.{js,mjs,cjs,ts,mts,cts,jsx,tsx}"],
