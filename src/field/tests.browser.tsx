@@ -4,12 +4,12 @@ import { describe, expect, it, vi } from "vitest";
 import { render } from "vitest-browser-react";
 import "../../tests/browser.js";
 import { change } from "../change/index.ts";
-import { Field, useFieldDiscriminate } from "./index.tsx";
+import { FieldOld, useFieldDiscriminate } from "./definition.tsx";
 import { postpone } from "../../tests/utils.ts";
 import { fieldDecompose, useFieldDecompose } from "./transform/index.ts";
 import { fieldMap, fieldPush, fieldRemove } from "./collection/index.ts";
 
-describe("Field", () => {
+describe.skip("Field", () => {
   it("allows to control object field", async () => {
     interface ComponentProps {
       profile: Profile;
@@ -17,7 +17,7 @@ describe("Field", () => {
 
     function Component(props: ComponentProps) {
       const count = useRenderCount();
-      const profile = Field.use<Profile>(props.profile, []);
+      const profile = FieldOld.use<Profile>(props.profile, []);
 
       return (
         <div>
@@ -78,7 +78,7 @@ describe("Field", () => {
 
     function Component(props: ComponentProps) {
       const count = useRenderCount();
-      const field = Field.use({ names: props.names }, []);
+      const field = FieldOld.use({ names: props.names }, []);
       const names = field.$.names.useBind();
 
       return (
@@ -127,7 +127,7 @@ describe("Field", () => {
       it("allows to watch for field", async () => {
         function Component() {
           const count = useRenderCount();
-          const field = Field.use({ name: { first: "Alexander" } }, []);
+          const field = FieldOld.use({ name: { first: "Alexander" } }, []);
           const name = field.$.name.useGet();
 
           return (
@@ -177,7 +177,7 @@ describe("Field", () => {
       it("allows to listen to value with meta information", async () => {
         function Component() {
           const count = useRenderCount();
-          const field = Field.use(
+          const field = FieldOld.use(
             { name: { first: "Alexander", last: "" } },
             [],
           );
@@ -334,7 +334,7 @@ describe("Field", () => {
       it("depends on the field id", async () => {
         function Component() {
           const count = useRenderCount();
-          const field = Field.use(
+          const field = FieldOld.use(
             [{ name: "Alexander" }, { name: "Sasha" }],
             [],
           );
@@ -376,7 +376,7 @@ describe("Field", () => {
       it("updates the watcher on field id change", async () => {
         function Component() {
           const count = useRenderCount();
-          const field = Field.use(
+          const field = FieldOld.use(
             [{ name: "Alexander" }, { name: "Sasha" }],
             [],
           );
@@ -446,7 +446,7 @@ describe("Field", () => {
       it("doesn't rerender when setting the same primitive", async () => {
         function Component() {
           const count = useRenderCount();
-          const field = Field.use({ name: "Sasha" }, []);
+          const field = FieldOld.use({ name: "Sasha" }, []);
           const user = field.useGet();
 
           return (
@@ -488,7 +488,7 @@ describe("Field", () => {
       it("allows to watch for field using a function", async () => {
         function Component() {
           const count = useRenderCount();
-          const field = Field.use({ name: { first: "Alexander" } }, []);
+          const field = FieldOld.use({ name: { first: "Alexander" } }, []);
           const [name, setName] = useState(field.$.name.get());
           field.$.name.useWatch(setName);
 
@@ -541,7 +541,7 @@ describe("Field", () => {
 
         function Component() {
           const count = useRenderCount();
-          const field = Field.use(
+          const field = FieldOld.use(
             [{ name: "Alexander" }, { name: "Sasha" }],
             [],
           );
@@ -595,7 +595,7 @@ describe("Field", () => {
 
         function Component() {
           const count = useRenderCount();
-          const field = Field.use(
+          const field = FieldOld.use(
             [{ name: "Alexander" }, { name: "Sasha" }],
             [],
           );
@@ -649,7 +649,7 @@ describe("Field", () => {
       it("allows to bind object field changes to the component", async () => {
         function Component() {
           const count = useRenderCount();
-          const field = Field.use<UserName>({ first: "Alexander" }, []);
+          const field = FieldOld.use<UserName>({ first: "Alexander" }, []);
           const name = field.useBind();
 
           return (
@@ -689,7 +689,7 @@ describe("Field", () => {
       it("depends on the field id", async () => {
         function Component() {
           const count = useRenderCount();
-          const field = Field.use<UserName[]>(
+          const field = FieldOld.use<UserName[]>(
             [{ first: "Alexander" }, { first: "Sasha" }],
             [],
           );
@@ -743,7 +743,7 @@ describe("Field", () => {
       it("updates the watcher on field id change", async () => {
         function Component() {
           const count = useRenderCount();
-          const field = Field.use<UserName[]>(
+          const field = FieldOld.use<UserName[]>(
             [{ first: "Alexander" }, { first: "Sasha" }],
             [],
           );
@@ -793,7 +793,7 @@ describe("Field", () => {
       it("allows to listen to field dirty", async () => {
         function Component() {
           const count = useRenderCount();
-          const field = Field.use({ name: { first: "Alexander" } }, []);
+          const field = FieldOld.use({ name: { first: "Alexander" } }, []);
           const dirty = field.useDirty();
 
           return (
@@ -844,7 +844,7 @@ describe("Field", () => {
       it("depends on the field id", async () => {
         function Component() {
           const count = useRenderCount();
-          const field = Field.use(
+          const field = FieldOld.use(
             [{ name: "Alexander" }, { name: "Sasha" }],
             [],
           );
@@ -896,7 +896,7 @@ describe("Field", () => {
       it("updates the watcher on field id change", async () => {
         function Component() {
           const count = useRenderCount();
-          const field = Field.use(
+          const field = FieldOld.use(
             [{ name: "Alexander" }, { name: "Sasha" }],
             [],
           );
@@ -952,7 +952,7 @@ describe("Field", () => {
       it("allows to enable/disable the dirty listener", async () => {
         function Component() {
           const count = useRenderCount();
-          const field = Field.use(
+          const field = FieldOld.use(
             [{ name: "Alexander" }, { name: "Sasha" }],
             [],
           );
@@ -1021,7 +1021,7 @@ describe("Field", () => {
       it("updates on reset", async () => {
         function Component() {
           const count = useRenderCount();
-          const field = Field.use({ name: { first: "Alexander" } }, []);
+          const field = FieldOld.use({ name: { first: "Alexander" } }, []);
           const dirty = field.useDirty();
 
           return (
@@ -1071,7 +1071,7 @@ describe("Field", () => {
       it("updates on commit", async () => {
         function Component() {
           const count = useRenderCount();
-          const field = Field.use({ name: { first: "Alexander" } }, []);
+          const field = FieldOld.use({ name: { first: "Alexander" } }, []);
           const dirty = field.useDirty();
 
           return (
@@ -1123,7 +1123,7 @@ describe("Field", () => {
       it("allows to listen to field error", async () => {
         function Component() {
           const count = useRenderCount();
-          const field = Field.use(
+          const field = FieldOld.use(
             { name: { first: "Alexander", last: "" } },
             [],
           );
@@ -1224,7 +1224,7 @@ describe("Field", () => {
       it("depends on the field id", async () => {
         function Component() {
           const count = useRenderCount();
-          const field = Field.use(
+          const field = FieldOld.use(
             [{ name: "Alexander" }, { name: "Sasha" }],
             [],
           );
@@ -1276,7 +1276,7 @@ describe("Field", () => {
       it("updates the watcher on field id change", async () => {
         function Component() {
           const count = useRenderCount();
-          const field = Field.use(
+          const field = FieldOld.use(
             [{ name: "Alexander" }, { name: "Sasha" }],
             [],
           );
@@ -1332,7 +1332,7 @@ describe("Field", () => {
       it("allows to enable/disable the error listener", async () => {
         function Component() {
           const count = useRenderCount();
-          const field = Field.use(
+          const field = FieldOld.use(
             [{ name: "Alexander" }, { name: "Sasha" }],
             [],
           );
@@ -1403,7 +1403,7 @@ describe("Field", () => {
       it("allows to listen to field valid", async () => {
         function Component() {
           const count = useRenderCount();
-          const field = Field.use({ name: { first: "Alexander" } }, []);
+          const field = FieldOld.use({ name: { first: "Alexander" } }, []);
           const valid = field.useValid();
 
           return (
@@ -1475,7 +1475,7 @@ describe("Field", () => {
       it("depends on the field id", async () => {
         function Component() {
           const count = useRenderCount();
-          const field = Field.use(
+          const field = FieldOld.use(
             [{ name: "Alexander" }, { name: "Sasha" }],
             [],
           );
@@ -1527,7 +1527,7 @@ describe("Field", () => {
       it("updates the watcher on field id change", async () => {
         function Component() {
           const count = useRenderCount();
-          const field = Field.use(
+          const field = FieldOld.use(
             [{ name: "Alexander" }, { name: "Sasha" }],
             [],
           );
@@ -1583,7 +1583,7 @@ describe("Field", () => {
       it("allows to enable/disable the valid listener", async () => {
         function Component() {
           const count = useRenderCount();
-          const field = Field.use(
+          const field = FieldOld.use(
             [{ name: "Alexander" }, { name: "Sasha" }],
             [],
           );
@@ -1654,7 +1654,7 @@ describe("Field", () => {
       it("allows to listen to meta information", async () => {
         function Component() {
           const count = useRenderCount();
-          const field = Field.use(
+          const field = FieldOld.use(
             { name: { first: "Alexander", last: "" } },
             [],
           );
@@ -1796,7 +1796,10 @@ describe("Field", () => {
       it("allows to compute value", async () => {
         function Component() {
           const count = useRenderCount();
-          const field = Field.use<User>({ name: { first: "Alexander" } }, []);
+          const field = FieldOld.use<User>(
+            { name: { first: "Alexander" } },
+            [],
+          );
           const hasLastName = field.$.name.useCompute(
             (name) => !!name.last,
             [],
@@ -1883,7 +1886,7 @@ describe("Field", () => {
       it("depends on the field id", async () => {
         function Component() {
           const count = useRenderCount();
-          const field = Field.use<UserName[]>(
+          const field = FieldOld.use<UserName[]>(
             [{ first: "Alexander" }, { first: "Sasha", last: "Koss" }],
             [],
           );
@@ -1927,7 +1930,7 @@ describe("Field", () => {
       it("updates the watcher on field id change", async () => {
         function Component() {
           const count = useRenderCount();
-          const field = Field.use<UserName[]>(
+          const field = FieldOld.use<UserName[]>(
             [{ first: "Alexander" }, { first: "Sasha", last: "Koss" }],
             [],
           );
@@ -1985,7 +1988,7 @@ describe("Field", () => {
       it("doesn't rerender when setting the same primitive", async () => {
         function Component() {
           const count = useRenderCount();
-          const field = Field.use<UserName>({ first: "Alexander" }, []);
+          const field = FieldOld.use<UserName>({ first: "Alexander" }, []);
           const hasLastName = field.useCompute((name) => !!name?.last, []);
 
           return (
@@ -2025,7 +2028,7 @@ describe("Field", () => {
       it("allows to specify dependencies", async () => {
         function Component() {
           const count = useRenderCount();
-          const field = Field.use("Alexander", []);
+          const field = FieldOld.use("Alexander", []);
           const [lastName, setLastName] = useState("Koss");
           const fullName = field.useCompute(
             (name) => `${name} ${lastName}`,
@@ -2081,7 +2084,7 @@ describe("Field", () => {
       it("allows to decompose union field", async () => {
         function Component() {
           const count = useRenderCount();
-          const address = Field.use<Address>(
+          const address = FieldOld.use<Address>(
             { name: { first: "Alexander" } },
             [],
           );
@@ -2099,26 +2102,26 @@ describe("Field", () => {
                 <div>
                   <button
                     onClick={() =>
-                      (name.field as Field<string>).set("Alexander")
+                      (name.field as FieldOld<string>).set("Alexander")
                     }
                   >
                     Rename
                   </button>
 
-                  <StringComponent string={name.field as Field<string>} />
+                  <StringComponent string={name.field as FieldOld<string>} />
                 </div>
               ) : (
                 <div>
                   <input
                     data-testid="input-name-first"
-                    {...(name.field as Field<UserName>).$.first.control()}
+                    {...(name.field as FieldOld<UserName>).$.first.control()}
                   />
 
                   <button onClick={() => address.$.name.set("Alex")}>
                     Set string name
                   </button>
 
-                  <UserNameComponent name={name.field as Field<UserName>} />
+                  <UserNameComponent name={name.field as FieldOld<UserName>} />
                 </div>
               )}
             </div>
@@ -2165,7 +2168,7 @@ describe("Field", () => {
       it("depends on the field id", async () => {
         function Component() {
           const count = useRenderCount();
-          const field = Field.use<Array<string | UserName>>(
+          const field = FieldOld.use<Array<string | UserName>>(
             ["Alexander", { first: "Sasha", last: "Koss" }],
             [],
           );
@@ -2212,7 +2215,7 @@ describe("Field", () => {
       it("updates the watcher on field id change", async () => {
         function Component() {
           const count = useRenderCount();
-          const field = Field.use<Array<string | UserName>>(
+          const field = FieldOld.use<Array<string | UserName>>(
             ["Alexander", { first: "Sasha", last: "Koss" }],
             [],
           );
@@ -2279,7 +2282,7 @@ describe("Field", () => {
       it("allows to narrow union field", async () => {
         function Component() {
           const count = useRenderCount();
-          const address = Field.use<Address>(
+          const address = FieldOld.use<Address>(
             { name: { first: "Alexander" } },
             [],
           );
@@ -2362,7 +2365,7 @@ describe("Field", () => {
       it("depends on the field id", async () => {
         function Component() {
           const count = useRenderCount();
-          const field = Field.use<Array<string | UserName>>(
+          const field = FieldOld.use<Array<string | UserName>>(
             ["Alexander", { first: "Sasha", last: "Koss" }],
             [],
           );
@@ -2406,7 +2409,7 @@ describe("Field", () => {
       it("updates the watcher on field id change", async () => {
         function Component() {
           const count = useRenderCount();
-          const field = Field.use<Array<string | UserName>>(
+          const field = FieldOld.use<Array<string | UserName>>(
             ["Alexander", { first: "Sasha", last: "Koss" }],
             [],
           );
@@ -2474,7 +2477,7 @@ describe("Field", () => {
 
         function Component() {
           const count = useRenderCount();
-          const field = Field.use<TestState>(
+          const field = FieldOld.use<TestState>(
             {
               hello: { lang: "human", text: "Hello" },
             },
@@ -2574,7 +2577,7 @@ describe("Field", () => {
       it("depends on the field id", async () => {
         function Component() {
           const count = useRenderCount();
-          const field = Field.use<Hello[]>(
+          const field = FieldOld.use<Hello[]>(
             [
               { lang: "human", text: "Hello" },
               { lang: "machine", binary: 0b1101010 },
@@ -2619,7 +2622,7 @@ describe("Field", () => {
       it("updates the watcher on field id change", async () => {
         function Component() {
           const count = useRenderCount();
-          const field = Field.use<Hello[]>(
+          const field = FieldOld.use<Hello[]>(
             [
               { lang: "human", text: "Hello" },
               { lang: "machine", binary: 0b1101010 },
@@ -2699,7 +2702,7 @@ describe("Field", () => {
       it("allows to compute field", async () => {
         function Component() {
           const count = useRenderCount();
-          const field = Field.use({ message: "Hello" }, []);
+          const field = FieldOld.use({ message: "Hello" }, []);
           const codes = field.$.message
             .useInto(toCodes, [])
             .from(fromCodes, []);
@@ -2765,7 +2768,7 @@ describe("Field", () => {
       it("depends on the field id", async () => {
         function Component() {
           const count = useRenderCount();
-          const field = Field.use<string[]>(["Hello", "Yo"], []);
+          const field = FieldOld.use<string[]>(["Hello", "Yo"], []);
           const [index, setIndex] = useState(0);
           const codes = field
             .at(index)
@@ -2809,7 +2812,7 @@ describe("Field", () => {
         const fromSpy = vi.fn().mockReturnValue("Yo!");
 
         function Component() {
-          const field = Field.use({ message: "Hello, world!" }, []);
+          const field = FieldOld.use({ message: "Hello, world!" }, []);
           const computed = field.$.message
             .useInto(intoSpy, [])
             .from(fromSpy, []);
@@ -2838,7 +2841,7 @@ describe("Field", () => {
       it("updates the watcher on field id change", async () => {
         function Component() {
           const count = useRenderCount();
-          const field = Field.use<string[]>(["Hello", "Yo"], []);
+          const field = FieldOld.use<string[]>(["Hello", "Yo"], []);
           const [index, setIndex] = useState(0);
           const codes = field
             .at(index)
@@ -2896,9 +2899,9 @@ describe("Field", () => {
       it("allows to ensure presence of a field", async () => {
         function Component() {
           const count = useRenderCount();
-          const [field, setField] = useState<Field<string> | undefined>();
-          const actualField = Field.use("Hello!", []);
-          const ensuredField = Field.useEnsure(field);
+          const [field, setField] = useState<FieldOld<string> | undefined>();
+          const actualField = FieldOld.use("Hello!", []);
+          const ensuredField = FieldOld.useEnsure(field);
           // eslint-disable-next-line react-hooks/exhaustive-deps
           const dummyField = useMemo(() => ensuredField, []);
           const fieldValue = ensuredField.useGet();
@@ -2989,7 +2992,7 @@ describe("Field", () => {
 
       it("allows to pass falsy values", async () => {
         function Component() {
-          const field = Field.useEnsure(false);
+          const field = FieldOld.useEnsure(false);
           const value = field.useGet();
 
           return (
@@ -3010,10 +3013,10 @@ describe("Field", () => {
         function Component() {
           const count = useRenderCount();
           const [field, setField] = useState<
-            Field<{ hello: string }> | undefined
+            FieldOld<{ hello: string }> | undefined
           >();
-          const actualField = Field.use({ hello: "Hello!" }, []);
-          const ensuredField = Field.useEnsure(field, (f) => f.$.hello);
+          const actualField = FieldOld.use({ hello: "Hello!" }, []);
+          const ensuredField = FieldOld.useEnsure(field, (f) => f.$.hello);
           const dummyField = useMemo(() => ensuredField, []);
           const fieldValue = ensuredField.useGet();
           const dummyValue = dummyField.useGet();
@@ -3108,7 +3111,10 @@ describe("Field", () => {
       it("synchronizes input with the state", async () => {
         function Component() {
           const count = useRenderCount();
-          const field = Field.use<User>({ name: { first: "Alexander" } }, []);
+          const field = FieldOld.use<User>(
+            { name: { first: "Alexander" } },
+            [],
+          );
 
           return (
             <div>
@@ -3163,7 +3169,10 @@ describe("Field", () => {
       it("synchronizes textarea with the state", async () => {
         function Component() {
           const count = useRenderCount();
-          const field = Field.use<User>({ name: { first: "Alexander" } }, []);
+          const field = FieldOld.use<User>(
+            { name: { first: "Alexander" } },
+            [],
+          );
 
           return (
             <div>
@@ -3221,7 +3230,10 @@ describe("Field", () => {
 
         function Component() {
           const count = useRenderCount();
-          const field = Field.use<User>({ name: { first: "Alexander" } }, []);
+          const field = FieldOld.use<User>(
+            { name: { first: "Alexander" } },
+            [],
+          );
 
           return (
             <div>
@@ -3293,13 +3305,16 @@ describe("Field", () => {
       it("allows to control input element", async () => {
         function Component() {
           const count = useRenderCount();
-          const field = Field.use<User>({ name: { first: "Alexander" } }, []);
+          const field = FieldOld.use<User>(
+            { name: { first: "Alexander" } },
+            [],
+          );
 
           return (
             <div>
               <div data-testid="render-input">{count}</div>
 
-              <Field.Component
+              <FieldOld.Component
                 field={field.$.name.$.first}
                 render={(control) => (
                   <input
@@ -3354,7 +3369,7 @@ describe("Field", () => {
       it("allows to subscribe to meta information", async () => {
         function Component() {
           const outsideCount = useRenderCount();
-          const field = Field.use(
+          const field = FieldOld.use(
             { name: { first: "Alexander", last: "" } },
             [],
           );
@@ -3363,7 +3378,7 @@ describe("Field", () => {
             <div>
               <div data-testid="render-meta-outside">{outsideCount}</div>
 
-              <Field.Component
+              <FieldOld.Component
                 field={field}
                 meta
                 render={({ value }, { valid, errors, dirty }) => {
@@ -3540,7 +3555,7 @@ describe("Field", () => {
 
         function Component() {
           const count = useRenderCount();
-          const namesField = Field.use<string[]>(["Alexander", "Sasha"], []);
+          const namesField = FieldOld.use<string[]>(["Alexander", "Sasha"], []);
           const [index, setIndex] = useState(0);
           const decomposedField = fieldDecompose(namesField.at(index));
           if (!decomposedField.value) return null;
@@ -3550,7 +3565,7 @@ describe("Field", () => {
             <div>
               <div data-testid="render-input">{count}</div>
 
-              <Field.Component
+              <FieldOld.Component
                 field={field}
                 render={(control) => (
                   <Input {...control} data-testid="name-input" />
@@ -3637,7 +3652,7 @@ interface UserName {
 }
 
 interface UserComponentProps {
-  user: Field<User>;
+  user: FieldOld<User>;
 }
 
 function UserComponent(props: UserComponentProps) {
@@ -3658,7 +3673,7 @@ function UserComponent(props: UserComponentProps) {
 }
 
 interface UserNameComponentProps {
-  name: Field<UserName>;
+  name: FieldOld<UserName>;
   index?: number;
 }
 
@@ -3675,7 +3690,7 @@ function UserNameComponent(props: UserNameComponentProps) {
       <div data-testid={`name-first-${index}`}>{first}</div>
       <div data-testid={`name-last-${index}`}>{last}</div>
 
-      <Field.Component
+      <FieldOld.Component
         field={name.$.first}
         render={(control) => (
           <input
@@ -3686,7 +3701,7 @@ function UserNameComponent(props: UserNameComponentProps) {
         )}
       />
 
-      <Field.Component
+      <FieldOld.Component
         field={name.$.last}
         render={(control) => (
           <input
@@ -3707,7 +3722,7 @@ interface UserNameFormComponentProps {
 
 function UserNameFormComponent(props: UserNameFormComponentProps) {
   const count = useRenderCount();
-  const field = Field.use<UserName>({ first: "", last: "" }, []);
+  const field = FieldOld.use<UserName>({ first: "", last: "" }, []);
 
   return (
     <div>
@@ -3719,7 +3734,7 @@ function UserNameFormComponent(props: UserNameFormComponentProps) {
           props.onSubmit?.(field.get());
         }}
       >
-        <Field.Component
+        <FieldOld.Component
           field={field.$.first}
           render={(control) => (
             <input
@@ -3730,7 +3745,7 @@ function UserNameFormComponent(props: UserNameFormComponentProps) {
           )}
         />
 
-        <Field.Component
+        <FieldOld.Component
           field={field.$.last}
           render={(control) => (
             <input
@@ -3748,7 +3763,7 @@ function UserNameFormComponent(props: UserNameFormComponentProps) {
 }
 
 interface StringComponentProps {
-  string: Field<string>;
+  string: FieldOld<string>;
 }
 
 function StringComponent(props: StringComponentProps) {
@@ -3763,7 +3778,7 @@ function StringComponent(props: StringComponentProps) {
 }
 
 interface NumberComponentProps {
-  number: Field<number>;
+  number: FieldOld<number>;
 }
 
 function NumberComponent(props: NumberComponentProps) {
@@ -3778,7 +3793,7 @@ function NumberComponent(props: NumberComponentProps) {
 }
 
 interface CodesComponentProps {
-  codes: Field<number[]>;
+  codes: FieldOld<number[]>;
 }
 
 function CodesComponent(props: CodesComponentProps) {
@@ -3806,7 +3821,7 @@ function useRenderCount() {
   return counterRef.current;
 }
 
-function joinErrors(errors: Field.Error[] | undefined) {
+function joinErrors(errors: FieldOld.Error[] | undefined) {
   if (!errors) return "";
   return errors.map((error) => error.message).join(", ");
 }

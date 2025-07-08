@@ -1,5 +1,5 @@
 import { EnsoUtils as Utils } from "../../utils.ts";
-import { Field } from "../index.tsx";
+import { FieldOld } from "../definition.tsx";
 import type { StaticImplements } from "../util.ts";
 
 // NOTE: Following interfaces roughly define shape of classes that expose
@@ -19,7 +19,7 @@ export interface AsCollectionRead {
 
   asChild<Value>(field: unknown): AsCollection.AsReadAnyResult<Value>;
 
-  fromField<Value>(field: Field<Value> | undefined): unknown;
+  fromField<Value>(field: FieldOld<Value> | undefined): unknown;
 }
 
 export interface AsCollection {
@@ -31,7 +31,7 @@ export interface AsCollection {
 
   asChild<Value>(field: unknown): AsCollection.AsChildResult<Value>;
 
-  fromField<Value>(field: Field<Value>): unknown;
+  fromField<Value>(field: FieldOld<Value>): unknown;
 }
 
 export namespace AsCollection {
@@ -65,12 +65,18 @@ export namespace AsCollection {
     size(): number;
 
     find(
-      predicate: (item: Field<Value[keyof Value]>, key: keyof Value) => boolean,
-    ): Field<Value[keyof Value]> | undefined;
+      predicate: (
+        item: FieldOld<Value[keyof Value]>,
+        key: keyof Value,
+      ) => boolean,
+    ): FieldOld<Value[keyof Value]> | undefined;
 
     filter(
-      predicate: (item: Field<Value[keyof Value]>, key: keyof Value) => boolean,
-    ): Field<Value[keyof Value]>[];
+      predicate: (
+        item: FieldOld<Value[keyof Value]>,
+        key: keyof Value,
+      ) => boolean,
+    ): FieldOld<Value[keyof Value]>[];
   }
 
   export interface InternalCollection<Value>
@@ -105,7 +111,7 @@ export namespace AsCollection {
   export type InternalCollectionCallback<Value, Result = void> = <
     Key extends keyof Value,
   >(
-    item: Field<Value[Key]>,
+    item: FieldOld<Value[Key]>,
     key: Key,
   ) => Result;
 }

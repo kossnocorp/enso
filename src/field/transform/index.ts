@@ -1,14 +1,11 @@
 import type { DependencyList } from "react";
 import { Enso } from "../../types.ts";
-import {
-  useTypedCallback as useCallback,
-  type UseFieldHook,
-  useFieldHook,
-} from "../hook/index.ts";
-import type { Field } from "../index.tsx";
+import { type UseFieldHook, useAtomHook } from "../../atom/hooks/index.ts";
+import type { FieldOld } from "../definition.tsx";
 import { EnsoUtils as Utils } from "../../utils.ts";
 import { StaticImplements } from "../util.ts";
 import { AsState } from "../../state/index.ts";
+import { useCallback } from "../../hooks/index.ts";
 
 // export interface As
 
@@ -33,8 +30,8 @@ export const useFieldDecompose = ((
     deps,
   );
 
-  return useFieldHook({
-    field: field as any,
+  return useAtomHook({
+    atom: field as any,
     getValue,
     shouldRender,
   });

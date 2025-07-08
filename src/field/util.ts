@@ -7,3 +7,8 @@ export function staticImplements<Type>() {
 export type StaticImplements<Type> = {
   constructor: Type;
 };
+
+export type Static<
+  Class extends Interface & { new (...args: any[]): any },
+  Interface,
+> = InstanceType<Class>;

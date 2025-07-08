@@ -6,7 +6,7 @@ import { render } from "vitest-browser-react";
 // https://github.com/vitest-dev/vitest/issues/6965
 import { userEvent } from "@vitest/browser/context";
 import "@vitest/browser/matchers.d.ts";
-import { Field } from "../field/index.tsx";
+import { FieldOld } from "../field/definition.tsx";
 import { FieldRef } from "../field/ref/index.ts";
 import { Form } from "./index.tsx";
 
@@ -506,7 +506,7 @@ describe("Form", () => {
             <button onClick={() => form.$.hello.set("Sasha")}>Set hello</button>
 
             <Form.Component form={form} onSubmit={spy}>
-              <Field.Component
+              <FieldOld.Component
                 field={form.$.hello}
                 errors
                 render={(control, { errors }) => {
@@ -586,7 +586,7 @@ describe("Form", () => {
             <div data-testid="render-validate">{count}</div>
 
             <Form.Component form={form} onSubmit={spy}>
-              <Field.Component
+              <FieldOld.Component
                 field={form.$.hello}
                 errors
                 render={(control, { errors }) => (
@@ -645,7 +645,7 @@ function validateHello(ref: FieldRef<Hello>) {
   if (!ref.$.hello.get().trim()) ref.$.hello.addError("Hello is required");
 }
 
-function joinErrors(errors: Field.Error[] | undefined) {
+function joinErrors(errors: FieldOld.Error[] | undefined) {
   if (!errors) return "";
   return errors.map((error) => error.message).join(", ");
 }

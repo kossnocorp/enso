@@ -146,7 +146,7 @@ export namespace Enso {
   }
 
   export interface InterfaceEvents {
-    get eventsTree(): EventsTree;
+    get eventsTree(): EventsTree<any>;
 
     trigger(changes: FieldChange, notifyParents?: boolean): void;
 
