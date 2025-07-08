@@ -1,14 +1,14 @@
 import React from "react";
 import { act, cleanup, render, screen } from "@testing-library/react";
 import { afterEach, assert, describe, expect, it } from "vitest";
-import { Field, FieldRef } from "../index.tsx";
+import { FieldOld, FieldRef } from "../definition.tsx";
 import { MaybeFieldRef } from "../ref/index.ts";
 import { fieldDiscriminate, useFieldDiscriminate } from "./index.ts";
 
 describe(fieldDiscriminate, () => {
-  describe(Field, () => {
+  describe(FieldOld, () => {
     it("allows to discriminate by field", () => {
-      const field = new Field<Cat | Dog>({ type: "cat", meow: true });
+      const field = new FieldOld<Cat | Dog>({ type: "cat", meow: true });
       const discriminated = fieldDiscriminate(field, "type");
       if (discriminated.discriminator === "cat") {
         expect(discriminated.field.get().meow).toBe(true);
@@ -18,7 +18,7 @@ describe(fieldDiscriminate, () => {
     });
 
     it("handles undefineds", () => {
-      const field = new Field<Cat | Dog | undefined>(undefined);
+      const field = new FieldOld<Cat | Dog | undefined>(undefined);
       const discriminated = fieldDiscriminate(field, "type");
       if (!discriminated.discriminator) {
         expect(discriminated.field.get()).toBe(undefined);
@@ -30,7 +30,7 @@ describe(fieldDiscriminate, () => {
 
   describe(FieldRef, () => {
     it("allows to discriminate by field", () => {
-      const field = new Field<Cat | Dog>({ type: "cat", meow: true });
+      const field = new FieldOld<Cat | Dog>({ type: "cat", meow: true });
       const ref = new FieldRef(field);
       const discriminated = fieldDiscriminate(ref, "type");
       if (discriminated.discriminator === "cat") {
@@ -42,7 +42,7 @@ describe(fieldDiscriminate, () => {
     });
 
     it("handles undefineds", () => {
-      const field = new Field<Cat | Dog | undefined>(undefined);
+      const field = new FieldOld<Cat | Dog | undefined>(undefined);
       const ref = new FieldRef(field);
       const discriminated = fieldDiscriminate(ref, "type");
       if (!discriminated.discriminator) {
@@ -55,7 +55,7 @@ describe(fieldDiscriminate, () => {
 
   describe(MaybeFieldRef, () => {
     it("allows to discriminate by field", () => {
-      const field = new Field<Cat | Dog>({ type: "cat", meow: true });
+      const field = new FieldOld<Cat | Dog>({ type: "cat", meow: true });
       const ref = new MaybeFieldRef({ type: "direct", field });
       const discriminated = fieldDiscriminate(ref, "type");
       if (discriminated.discriminator === "cat") {
@@ -67,7 +67,7 @@ describe(fieldDiscriminate, () => {
     });
 
     it("handles undefineds", () => {
-      const field = new Field<Cat | Dog | undefined>(undefined);
+      const field = new FieldOld<Cat | Dog | undefined>(undefined);
       const ref = new MaybeFieldRef({ type: "direct", field });
       const discriminated = fieldDiscriminate(ref, "type");
       if (!discriminated.discriminator) {
@@ -83,7 +83,7 @@ describe(useFieldDiscriminate, () => {
   afterEach(cleanup);
 
   it("discriminates and updates on field change", async () => {
-    const field = new Field<Cat | Dog>({ type: "cat", meow: true });
+    const field = new FieldOld<Cat | Dog>({ type: "cat", meow: true });
 
     function TestComponent() {
       const discriminated = useFieldDiscriminate(field, "type");
@@ -108,7 +108,7 @@ describe(useFieldDiscriminate, () => {
   });
 
   it("handles undefineds", async () => {
-    const field = new Field<Cat | Dog | undefined>(undefined);
+    const field = new FieldOld<Cat | Dog | undefined>(undefined);
 
     function TestComponent() {
       const discriminated = useFieldDiscriminate(field, "type");

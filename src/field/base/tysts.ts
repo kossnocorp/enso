@@ -2,33 +2,38 @@
 
 import { ChangesEvent, fieldChange } from "../../change/index.ts";
 import { type EventsTree } from "../../events/index.ts";
-import { Field } from "../index.tsx";
+import { FieldOld } from "../definition.tsx";
 import type { BaseField } from "./index.ts";
 
 // It accepts any payload extensions
 {
   // @ts-expect-error
-  const _test1: Field<Hello> = new Field({ hello: "hi" }) as BaseField<Hello>;
+  const _test1: FieldOld<Hello> = new FieldOld({
+    hello: "hi",
+  }) as BaseField<Hello>;
 
   // Function argument
 
-  testHello(new Field({ hello: "hi" }));
-  testHello(new Field({ hello: "hello", who: "world" }));
+  testHello(new FieldOld({ hello: "hi" }));
+  testHello(new FieldOld({ hello: "hello", who: "world" }));
 
   // @ts-expect-error
-  testHello(new Field({ nope: false }));
+  testHello(new FieldOld({ nope: false }));
   // @ts-expect-error
-  testHello(new Field(1));
+  testHello(new FieldOld(1));
 
   // Variable declaration
 
-  const _test2: BaseField<Hello> = new Field({ hello: "hi" });
-  const _test3: BaseField<Hello> = new Field({ hello: "hello", who: "world" });
+  const _test2: BaseField<Hello> = new FieldOld({ hello: "hi" });
+  const _test3: BaseField<Hello> = new FieldOld({
+    hello: "hello",
+    who: "world",
+  });
 
   // @ts-expect-error
-  const _test4: BaseField<Hello> = new Field({ nope: false });
+  const _test4: BaseField<Hello> = new FieldOld({ nope: false });
   // @ts-expect-error
-  const _test5: BaseField<Hello> = new Field(1);
+  const _test5: BaseField<Hello> = new FieldOld(1);
 }
 
 // It allows to read common fields
@@ -68,7 +73,7 @@ import type { BaseField } from "./index.ts";
 
     // `parent`
     field.parent satisfies BaseField<unknown> | undefined;
-    field.parent satisfies Field<unknown> | undefined;
+    field.parent satisfies FieldOld<unknown> | undefined;
     // @ts-expect-error
     field.parent.any;
 
@@ -100,7 +105,7 @@ import type { BaseField } from "./index.ts";
       Hello,
       {
         valid: boolean;
-        errors: Field.Error[];
+        errors: FieldOld.Error[];
         dirty: boolean;
       },
     ];
@@ -131,7 +136,7 @@ import type { BaseField } from "./index.ts";
     // `useMeta`
     field.useMeta() satisfies {
       valid: boolean;
-      errors: Field.Error[];
+      errors: FieldOld.Error[];
       dirty: boolean;
     };
     field.useMeta({ valid: false, errors: false }) satisfies {
@@ -140,7 +145,7 @@ import type { BaseField } from "./index.ts";
     // @ts-expect-error
     field.useMeta({ valid: false, errors: false }) satisfies {
       valid: boolean;
-      errors: Field.Error[];
+      errors: FieldOld.Error[];
       dirty: boolean;
     };
     // @ts-expect-error
@@ -152,13 +157,13 @@ import type { BaseField } from "./index.ts";
 
     // `root`
     field.root satisfies BaseField<unknown>;
-    field.root satisfies Field<unknown>;
+    field.root satisfies FieldOld<unknown>;
     // @ts-expect-error
     field.root.any;
 
     // `$`
     field.$.hello satisfies BaseField<string>;
-    field.$.hello satisfies Field<string>;
+    field.$.hello satisfies FieldOld<string>;
     // @ts-expect-error
     field.$.hello.any;
     // @ts-expect-error
@@ -166,7 +171,7 @@ import type { BaseField } from "./index.ts";
 
     // `at`
     field.at("hello") satisfies BaseField<string>;
-    field.at("hello") satisfies Field<string>;
+    field.at("hello") satisfies FieldOld<string>;
     // @ts-expect-error
     field.at.any;
     // @ts-expect-error

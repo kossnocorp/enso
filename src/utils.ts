@@ -112,4 +112,12 @@ export namespace EnsoUtils {
         ? Index
         : never
       : never;
+
+  export type IsUnknown<Type> = [Type] extends [unknown]
+    ? unknown extends Type
+      ? true
+      : false
+    : false;
+
+  export type IsNever<Type> = [Type] extends [never] ? true : false;
 }

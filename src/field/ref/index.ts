@@ -2,7 +2,7 @@ import { AsState } from "../../state/index.ts";
 import { Enso } from "../../types.ts";
 import { EnsoUtils as Utils } from "../../utils.ts";
 import { AsCollection, AsCollectionRead } from "../collection/index.ts";
-import { Field } from "../index.tsx";
+import { FieldOld } from "../definition.tsx";
 import { staticImplements } from "../util.ts";
 
 /**
@@ -11,7 +11,7 @@ import { staticImplements } from "../util.ts";
  * `FieldRef` instances for the same fields.
  */
 // TODO: Test if reducing number of allocations is actually worth the memory hit.
-const fieldRefsStore = new WeakMap<Field<any>, FieldRef<any>>();
+const fieldRefsStore = new WeakMap<FieldOld<any>, FieldRef<any>>();
 
 const refHintSymbol = Symbol();
 
@@ -24,7 +24,7 @@ const refHintSymbol = Symbol();
 // TODO: Try making this work or remove:
 // Static<typeof FieldRef<unknown>, AsCollectionRead>,
 export class FieldRef<Payload> implements FieldRef.Hint {
-  static get<Payload>(field: Field<Payload>): FieldRef<Payload> {
+  static get<Payload>(field: FieldOld<Payload>): FieldRef<Payload> {
     // @ts-ignore: TODO:
     let ref: any = fieldRefsStore.get(field);
     if (!ref) {
@@ -38,18 +38,18 @@ export class FieldRef<Payload> implements FieldRef.Hint {
 
   [refHintSymbol] = true as const;
 
-  #field: Field<Payload>;
+  #field: FieldOld<Payload>;
 
-  static every<FieldType extends Field.Hint>(
+  static every<FieldType extends FieldOld.Hint>(
     field: FieldType,
   ): Enso.TransferBrands<
-    FieldRef<Field.EveryValueUnion<FieldType>>,
+    FieldRef<FieldOld.EveryValueUnion<FieldType>>,
     FieldType
   > {
     return new FieldRef(field as any) as any;
   }
 
-  constructor(external: Field<Payload>) {
+  constructor(external: FieldOld<Payload>) {
     this.#field = external;
   }
 
@@ -76,7 +76,7 @@ export class FieldRef<Payload> implements FieldRef.Hint {
 
   try<Key extends keyof Utils.NonNullish<Payload>>(
     key: Key,
-  ): FieldRef.TryKey<Field.InterfaceDef<Payload>, Key>;
+  ): FieldRef.TryKey<FieldOld.InterfaceDef<Payload>, Key>;
 
   try(...[key]: any[]): any {
     const field = this.#field.try(key);
@@ -113,7 +113,7 @@ export class FieldRef<Payload> implements FieldRef.Hint {
 
   //#region Errors
 
-  addError(error: Field.Error | string): void {
+  addError(error: FieldOld.Error | string): void {
     this.#field.addError(error);
   }
 
@@ -124,35 +124,35 @@ export class FieldRef<Payload> implements FieldRef.Hint {
   static asCollection<Value>(
     field: FieldRef<Value>,
   ): AsCollection.Result<Value> {
-    return Field.asCollection(field.#field);
+    return FieldOld.asCollection(field.#field);
   }
 
   static asArray<Value>(
     field: FieldRef<Value>,
   ): AsCollection.AsArrayResult<Value> {
-    return Field.asArray(field.#field);
+    return FieldOld.asArray(field.#field);
   }
 
   static asObject<Value>(
     field: FieldRef<Value>,
   ): AsCollection.AsObjectResult<Value> {
-    return Field.asObject(field.#field);
+    return FieldOld.asObject(field.#field);
   }
 
   static asChild<Value>(
     field: FieldRef<Value>,
   ): AsCollection.AsChildResult<Value> {
-    return Field.asChild(field.#field);
+    return FieldOld.asChild(field.#field);
   }
 
   static asState<Value>(
     field: FieldRef<Value>,
   ): AsState.ReadWriteResult<Value> | undefined {
-    return Field.asState(field.#field);
+    return FieldOld.asState(field.#field);
   }
 
   static fromField<Value>(
-    field: Field<Value> | undefined,
+    field: FieldOld<Value> | undefined,
   ): FieldRef<Value> | undefined {
     return field && FieldRef.get(field);
   }
@@ -578,10 +578,10 @@ export class MaybeFieldRef<Payload> implements MaybeFieldRef.Hint {
 
   [maybeRefHintSymbol] = true as const;
 
-  static every<FieldType extends Field.Hint>(
+  static every<FieldType extends FieldOld.Hint>(
     field: FieldType,
   ): Enso.TransferBrands<
-    MaybeFieldRef<Field.EveryValueUnion<FieldType>>,
+    MaybeFieldRef<FieldOld.EveryValueUnion<FieldType>>,
     FieldType
   > {
     return new MaybeFieldRef({ type: "direct", field: field as any }) as any;
@@ -599,7 +599,7 @@ export class MaybeFieldRef<Payload> implements MaybeFieldRef.Hint {
       : [...this.#target.closest.path, ...this.#target.path];
   }
 
-  #targetRoot(): Field<any> {
+  #targetRoot(): FieldOld<any> {
     return this.#target.type === "direct"
       ? (this.#target.field.root as any)
       : (this.#target.closest.root as any);
@@ -649,7 +649,7 @@ export class MaybeFieldRef<Payload> implements MaybeFieldRef.Hint {
 
   try<Key extends keyof Utils.NonNullish<Payload>>(
     key: Key,
-  ): Field.TryKey<MaybeFieldRef.InterfaceDef<Payload>, Key>;
+  ): FieldOld.TryKey<MaybeFieldRef.InterfaceDef<Payload>, Key>;
 
   try(...[key]: any[]): any {
     // If it is a shadow field, there can't be anything to try.
@@ -673,15 +673,15 @@ export class MaybeFieldRef<Payload> implements MaybeFieldRef.Hint {
 
   //#region Errors
 
-  addError(error: Field.Error | string): void {
+  addError(error: FieldOld.Error | string): void {
     const path = this.#targetPath();
     const root = this.#targetRoot();
 
     // If there are any nested errors at this path, field is not valid.
     const wasValid = !root.validationTree.nested(path).length;
-    const changes = Field.errorChangesFor(wasValid);
+    const changes = FieldOld.errorChangesFor(wasValid);
 
-    root.validationTree.add(path, Field.normalizeError(error));
+    root.validationTree.add(path, FieldOld.normalizeError(error));
     root.eventsTree.trigger(path, changes);
   }
 
@@ -694,7 +694,7 @@ export class MaybeFieldRef<Payload> implements MaybeFieldRef.Hint {
   ): AsCollection.Result<Value> {
     // If it is a shadow field, there can't be anything to iterate.
     if (field.#target.type !== "direct") return;
-    return Field.asCollection(field.#target.field);
+    return FieldOld.asCollection(field.#target.field);
   }
 
   static asArray<Value>(
@@ -702,7 +702,7 @@ export class MaybeFieldRef<Payload> implements MaybeFieldRef.Hint {
   ): AsCollection.AsArrayResult<Value> {
     // If it is a shadow field, there can't be anything to iterate.
     if (field.#target.type !== "direct") return;
-    return Field.asArray(field.#target.field);
+    return FieldOld.asArray(field.#target.field);
   }
 
   static asObject<Value>(
@@ -710,7 +710,7 @@ export class MaybeFieldRef<Payload> implements MaybeFieldRef.Hint {
   ): AsCollection.AsObjectResult<Value> {
     // If it is a shadow field, there can't be anything to access.
     if (field.#target.type !== "direct") return;
-    return Field.asObject(field.#target.field);
+    return FieldOld.asObject(field.#target.field);
   }
 
   static asChild<Value>(
@@ -718,7 +718,7 @@ export class MaybeFieldRef<Payload> implements MaybeFieldRef.Hint {
   ): AsCollection.AsChildResult<Value> {
     // If it is a shadow field, there can't be anything to access.
     if (field.#target.type !== "direct") return;
-    return Field.asChild(field.#target.field);
+    return FieldOld.asChild(field.#target.field);
   }
 
   static asState<Value>(
@@ -726,11 +726,11 @@ export class MaybeFieldRef<Payload> implements MaybeFieldRef.Hint {
   ): AsState.ReadWriteResult<Value> | undefined {
     // If it is a shadow field, there can't be anything to access.
     if (field.#target.type !== "direct") return;
-    return Field.asState(field.#target.field);
+    return FieldOld.asState(field.#target.field);
   }
 
   static fromField<Value>(
-    field: Field<Value> | undefined,
+    field: FieldOld<Value> | undefined,
   ): MaybeFieldRef<Value> | undefined {
     return (
       field &&
@@ -784,12 +784,12 @@ export namespace MaybeFieldRef {
 
   export interface TargetDirect<Payload> {
     type: "direct";
-    field: Field<Payload>;
+    field: FieldOld<Payload>;
   }
 
   export interface TargetShadow {
     type: "shadow";
-    closest: Field<unknown>;
+    closest: FieldOld<unknown>;
     /** Path relative to the closest field. */
     path: readonly string[];
   }

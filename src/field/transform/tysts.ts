@@ -1,10 +1,10 @@
-import { Field } from "../index.tsx";
+import { FieldOld } from "../definition.tsx";
 import { fieldDecompose, useFieldDecompose } from "./index.ts";
 
-const unionValue = new Field<Hello | Blah>({ hello: "world" });
-const unionField = new Field({
+const unionValue = new FieldOld<Hello | Blah>({ hello: "world" });
+const unionField = new FieldOld({
   hello: "world",
-}) as Field<Hello> | Field<Blah>;
+}) as FieldOld<Hello> | FieldOld<Blah>;
 
 // `decompose`
 {
@@ -16,18 +16,18 @@ const unionField = new Field({
       decomposed satisfies
         | {
             value: Hello;
-            field: Field<Hello>;
+            field: FieldOld<Hello>;
           }
         | {
             value: Blah;
-            field: Field<Blah>;
+            field: FieldOld<Blah>;
           };
       // @ts-expect-error
       decomposed.any;
 
-      const _manual: Field.Decomposed<Hello | Blah> = decomposed;
+      const _manual: FieldOld.Decomposed<Hello | Blah> = decomposed;
       // @ts-expect-error
-      const _manualWrong: Field.Decomposed<Hello> = decomposed;
+      const _manualWrong: FieldOld.Decomposed<Hello> = decomposed;
     }
 
     // Field union
@@ -36,44 +36,46 @@ const unionField = new Field({
       decomposed satisfies
         | {
             value: Hello;
-            field: Field<Hello>;
+            field: FieldOld<Hello>;
           }
         | {
             value: Blah;
-            field: Field<Blah>;
+            field: FieldOld<Blah>;
           };
       // @ts-expect-error
       decomposed.any;
 
-      const _manual: Field.Decomposed<Hello | Blah> = decomposed;
+      const _manual: FieldOld.Decomposed<Hello | Blah> = decomposed;
       // @ts-expect-error
-      const _manualWrong: Field.Decomposed<Hello> = decomposed;
+      const _manualWrong: FieldOld.Decomposed<Hello> = decomposed;
     }
 
     // Detachable
     {
       const decomposed = fieldDecompose(
-        unionValue as Field.Detachable<Hello | Blah>,
+        unionValue as FieldOld.Detachable<Hello | Blah>,
       );
       decomposed satisfies
         | {
             value: Hello;
-            field: Field.Detachable<Hello>;
+            field: FieldOld.Detachable<Hello>;
           }
         | {
             value: Blah;
-            field: Field.Detachable<Blah>;
+            field: FieldOld.Detachable<Blah>;
           };
       // @ts-expect-error
       decomposed.any;
 
-      const _manual: Field.Decomposed<Hello | Blah, "detachable"> = decomposed;
+      const _manual: FieldOld.Decomposed<Hello | Blah, "detachable"> =
+        decomposed;
       // @ts-expect-error
-      const _manualWrong1: Field.Decomposed<Hello> = decomposed;
+      const _manualWrong1: FieldOld.Decomposed<Hello> = decomposed;
       // @ts-expect-error
-      const _manualWrong2: Field.Decomposed<Hello | Blah, "bound"> = decomposed;
+      const _manualWrong2: FieldOld.Decomposed<Hello | Blah, "bound"> =
+        decomposed;
       // @ts-expect-error
-      const _manualWrong3: Field.Decomposed<
+      const _manualWrong3: FieldOld.Decomposed<
         Hello | Blah,
         "detachable" | "bound"
       > = decomposed;
@@ -105,18 +107,18 @@ const unionField = new Field({
       decomposed satisfies
         | {
             value: Hello;
-            field: Field<Hello>;
+            field: FieldOld<Hello>;
           }
         | {
             value: Blah;
-            field: Field<Blah>;
+            field: FieldOld<Blah>;
           };
       // @ts-expect-error
       decomposed.any;
 
-      const _manual: Field.Decomposed<Hello | Blah> = decomposed;
+      const _manual: FieldOld.Decomposed<Hello | Blah> = decomposed;
       // @ts-expect-error
-      const _manualWrong: Field.Decomposed<Hello> = decomposed;
+      const _manualWrong: FieldOld.Decomposed<Hello> = decomposed;
     }
 
     // Field union
@@ -139,24 +141,24 @@ const unionField = new Field({
       decomposed satisfies
         | {
             value: Hello;
-            field: Field<Hello>;
+            field: FieldOld<Hello>;
           }
         | {
             value: Blah;
-            field: Field<Blah>;
+            field: FieldOld<Blah>;
           };
       // @ts-expect-error
       decomposed.any;
 
-      const _manual: Field.Decomposed<Hello | Blah> = decomposed;
+      const _manual: FieldOld.Decomposed<Hello | Blah> = decomposed;
       // @ts-expect-error
-      const _manualWrong: Field.Decomposed<Hello> = decomposed;
+      const _manualWrong: FieldOld.Decomposed<Hello> = decomposed;
     }
 
     // Detachable
     {
       const decomposed = useFieldDecompose(
-        unionValue as Field.Detachable<Hello | Blah>,
+        unionValue as FieldOld.Detachable<Hello | Blah>,
         (newValue, prevValue) => {
           newValue satisfies Hello | Blah;
           // @ts-expect-error
@@ -173,22 +175,24 @@ const unionField = new Field({
       decomposed satisfies
         | {
             value: Hello;
-            field: Field.Detachable<Hello>;
+            field: FieldOld.Detachable<Hello>;
           }
         | {
             value: Blah;
-            field: Field.Detachable<Blah>;
+            field: FieldOld.Detachable<Blah>;
           };
       // @ts-expect-error
       decomposed.any;
 
-      const _manual: Field.Decomposed<Hello | Blah, "detachable"> = decomposed;
+      const _manual: FieldOld.Decomposed<Hello | Blah, "detachable"> =
+        decomposed;
       // @ts-expect-error
-      const _manualWrong1: Field.Decomposed<Hello> = decomposed;
+      const _manualWrong1: FieldOld.Decomposed<Hello> = decomposed;
       // @ts-expect-error
-      const _manualWrong2: Field.Decomposed<Hello | Blah, "bound"> = decomposed;
+      const _manualWrong2: FieldOld.Decomposed<Hello | Blah, "bound"> =
+        decomposed;
       // @ts-expect-error
-      const _manualWrong3: Field.Decomposed<
+      const _manualWrong3: FieldOld.Decomposed<
         Hello | Blah,
         "detachable" | "bound"
       > = decomposed;

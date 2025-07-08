@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 import { postpone } from "../../../tests/utils.ts";
 import { change } from "../../change/index.ts";
-import { Field, FieldRef } from "../index.tsx";
+import { FieldOld, FieldRef } from "../definition.tsx";
 import { MaybeFieldRef } from "../ref/index.ts";
 import {
   fieldEach,
@@ -16,10 +16,10 @@ import {
 
 describe(fieldEach, () => {
   describe(Array, () => {
-    const field = new Field([1, 2, 3]);
-    const fieldUnd = new Field<number[] | undefined>(undefined);
+    const field = new FieldOld([1, 2, 3]);
+    const fieldUnd = new FieldOld<number[] | undefined>(undefined);
 
-    describe(Field, () => {
+    describe(FieldOld, () => {
       it("iterates items", () => {
         const mapped: [number, number][] = [];
         fieldEach(field, (item, index) => mapped.push([index, item.get() * 2]));
@@ -85,10 +85,12 @@ describe(fieldEach, () => {
   });
 
   describe(Object, () => {
-    const field = new Field({ a: 1, b: 2, c: 3 });
-    const fieldUnd = new Field<{ [k: string]: number } | undefined>(undefined);
+    const field = new FieldOld({ a: 1, b: 2, c: 3 });
+    const fieldUnd = new FieldOld<{ [k: string]: number } | undefined>(
+      undefined,
+    );
 
-    describe(Field, () => {
+    describe(FieldOld, () => {
       it("iterates items and keys", () => {
         const mapped: [string, number][] = [];
         fieldEach(field, (item, key) => mapped.push([key, item.get()]));
@@ -156,10 +158,10 @@ describe(fieldEach, () => {
 
 describe(fieldMap, () => {
   describe(Array, () => {
-    const field = new Field([1, 2, 3]);
-    const fieldUnd = new Field<number[] | undefined>(undefined);
+    const field = new FieldOld([1, 2, 3]);
+    const fieldUnd = new FieldOld<number[] | undefined>(undefined);
 
-    describe(Field, () => {
+    describe(FieldOld, () => {
       it("maps items", () => {
         const mapped = fieldMap(field, (item, index) => [
           index,
@@ -225,10 +227,12 @@ describe(fieldMap, () => {
   });
 
   describe(Object, () => {
-    const field = new Field({ a: 1, b: 2, c: 3 });
-    const fieldUnd = new Field<{ [k: string]: number } | undefined>(undefined);
+    const field = new FieldOld({ a: 1, b: 2, c: 3 });
+    const fieldUnd = new FieldOld<{ [k: string]: number } | undefined>(
+      undefined,
+    );
 
-    describe(Field, () => {
+    describe(FieldOld, () => {
       it("maps items and keys", () => {
         const mapped = fieldMap(field, (item, key) => [key, item.get()]);
         expect(mapped).toEqual([
@@ -293,16 +297,16 @@ describe(fieldMap, () => {
 
 describe(fieldSize, () => {
   describe(Array, () => {
-    describe(Field, () => {
+    describe(FieldOld, () => {
       it("returns size", () => {
-        const field = new Field([1, 2, 3]);
+        const field = new FieldOld([1, 2, 3]);
         expect(fieldSize(field)).toBe(3);
       });
     });
 
     describe(FieldRef, () => {
       it("returns size", () => {
-        const field = new Field([1, 2, 3]);
+        const field = new FieldOld([1, 2, 3]);
         const ref = new FieldRef(field);
         expect(fieldSize(ref)).toBe(3);
       });
@@ -310,7 +314,7 @@ describe(fieldSize, () => {
 
     describe(MaybeFieldRef, () => {
       it("returns size", () => {
-        const field = new Field([1, 2, 3]);
+        const field = new FieldOld([1, 2, 3]);
         const ref = new MaybeFieldRef({ type: "direct", field });
         expect(fieldSize(ref)).toBe(3);
       });
@@ -318,16 +322,16 @@ describe(fieldSize, () => {
   });
 
   describe(Object, () => {
-    describe(Field, () => {
+    describe(FieldOld, () => {
       it("returns size", () => {
-        const field = new Field({ a: 1, b: 2, c: 3 });
+        const field = new FieldOld({ a: 1, b: 2, c: 3 });
         expect(fieldSize(field)).toBe(3);
       });
     });
 
     describe(FieldRef, () => {
       it("returns size", () => {
-        const field = new Field({ a: 1, b: 2, c: 3 });
+        const field = new FieldOld({ a: 1, b: 2, c: 3 });
         const ref = new FieldRef(field);
         expect(fieldSize(ref)).toBe(3);
       });
@@ -335,7 +339,7 @@ describe(fieldSize, () => {
 
     describe(MaybeFieldRef, () => {
       it("returns size", () => {
-        const field = new Field({ a: 1, b: 2, c: 3 });
+        const field = new FieldOld({ a: 1, b: 2, c: 3 });
         const ref = new MaybeFieldRef({ type: "direct", field });
         expect(fieldSize(ref)).toBe(3);
       });
@@ -345,21 +349,21 @@ describe(fieldSize, () => {
 
 describe(fieldFind, () => {
   describe(Array, () => {
-    describe(Field, () => {
+    describe(FieldOld, () => {
       it("finds an item in the array", () => {
-        const field = new Field([1, 2, 3]);
+        const field = new FieldOld([1, 2, 3]);
         const item = fieldFind(field, (item) => item.get() === 2);
         expect(item?.get()).toBe(2);
       });
 
       it("returns undefined if item not found", () => {
-        const field = new Field([1, 2, 3]);
+        const field = new FieldOld([1, 2, 3]);
         const item = fieldFind(field, (item) => item.get() === 4);
         expect(item).toBe(undefined);
       });
 
       it("passes index to the predicate", () => {
-        const field = new Field([1, 2, 3]);
+        const field = new FieldOld([1, 2, 3]);
         const item = fieldFind(
           field,
           (item, index) => item.get() === 2 && index === 1,
@@ -370,7 +374,7 @@ describe(fieldFind, () => {
 
     describe(FieldRef, () => {
       it("finds an item in the array", () => {
-        const field = new Field([1, 2, 3]);
+        const field = new FieldOld([1, 2, 3]);
         const ref = new FieldRef(field);
         const item = fieldFind(ref, (item) => item.get() === 2);
         expect(item).toBeInstanceOf(FieldRef);
@@ -378,14 +382,14 @@ describe(fieldFind, () => {
       });
 
       it("returns undefined if item not found", () => {
-        const field = new Field([1, 2, 3]);
+        const field = new FieldOld([1, 2, 3]);
         const ref = new FieldRef(field);
         const item = fieldFind(ref, (item) => item.get() === 4);
         expect(item).toBe(undefined);
       });
 
       it("passes index to the predicate", () => {
-        const field = new Field([1, 2, 3]);
+        const field = new FieldOld([1, 2, 3]);
         const ref = new FieldRef(field);
         const item = fieldFind(
           ref,
@@ -397,7 +401,7 @@ describe(fieldFind, () => {
 
     describe(MaybeFieldRef, () => {
       it("finds an item in the array", () => {
-        const field = new Field([1, 2, 3]);
+        const field = new FieldOld([1, 2, 3]);
         const ref = new MaybeFieldRef({ type: "direct", field });
         const item = fieldFind(ref, (item) => item.get() === 2);
         expect(item).toBeInstanceOf(MaybeFieldRef);
@@ -405,14 +409,14 @@ describe(fieldFind, () => {
       });
 
       it("returns undefined if item not found", () => {
-        const field = new Field([1, 2, 3]);
+        const field = new FieldOld([1, 2, 3]);
         const ref = new MaybeFieldRef({ type: "direct", field });
         const item = fieldFind(ref, (item) => item.get() === 4);
         expect(item).toBe(undefined);
       });
 
       it("passes index to the predicate", () => {
-        const field = new Field([1, 2, 3]);
+        const field = new FieldOld([1, 2, 3]);
         const ref = new MaybeFieldRef({ type: "direct", field });
         const item = fieldFind(
           ref,
@@ -424,21 +428,21 @@ describe(fieldFind, () => {
   });
 
   describe(Object, () => {
-    describe(Field, () => {
+    describe(FieldOld, () => {
       it("finds an item in the object", () => {
-        const field = new Field({ a: 1, b: 2, c: 3 });
+        const field = new FieldOld({ a: 1, b: 2, c: 3 });
         const item = fieldFind(field, (item) => item.get() === 2);
         expect(item?.get()).toBe(2);
       });
 
       it("returns undefined if item not found", () => {
-        const field = new Field({ a: 1, b: 2, c: 3 });
+        const field = new FieldOld({ a: 1, b: 2, c: 3 });
         const item = fieldFind(field, (item) => item.get() === 4);
         expect(item).toBe(undefined);
       });
 
       it("passes key to the predicate", () => {
-        const field = new Field({ a: 1, b: 2, c: 3 });
+        const field = new FieldOld({ a: 1, b: 2, c: 3 });
         const item = fieldFind(
           field,
           (item, key) => item.get() === 2 && key === "b",
@@ -449,7 +453,7 @@ describe(fieldFind, () => {
 
     describe(FieldRef, () => {
       it("finds an item in the object", () => {
-        const field = new Field({ a: 1, b: 2, c: 3 });
+        const field = new FieldOld({ a: 1, b: 2, c: 3 });
         const ref = new FieldRef(field);
         const item = fieldFind(ref, (item) => item.get() === 2);
         expect(item).toBeInstanceOf(FieldRef);
@@ -457,14 +461,14 @@ describe(fieldFind, () => {
       });
 
       it("returns undefined if item not found", () => {
-        const field = new Field({ a: 1, b: 2, c: 3 });
+        const field = new FieldOld({ a: 1, b: 2, c: 3 });
         const ref = new FieldRef(field);
         const item = fieldFind(ref, (item) => item.get() === 4);
         expect(item).toBe(undefined);
       });
 
       it("passes key to the predicate", () => {
-        const field = new Field({ a: 1, b: 2, c: 3 });
+        const field = new FieldOld({ a: 1, b: 2, c: 3 });
         const ref = new FieldRef(field);
         const item = fieldFind(
           ref,
@@ -476,7 +480,7 @@ describe(fieldFind, () => {
 
     describe(MaybeFieldRef, () => {
       it("finds an item in the object", () => {
-        const field = new Field({ a: 1, b: 2, c: 3 });
+        const field = new FieldOld({ a: 1, b: 2, c: 3 });
         const ref = new MaybeFieldRef({ type: "direct", field });
         const item = fieldFind(ref, (item) => item.get() === 2);
         expect(item).toBeInstanceOf(MaybeFieldRef);
@@ -484,14 +488,14 @@ describe(fieldFind, () => {
       });
 
       it("returns undefined if item not found", () => {
-        const field = new Field({ a: 1, b: 2, c: 3 });
+        const field = new FieldOld({ a: 1, b: 2, c: 3 });
         const ref = new MaybeFieldRef({ type: "direct", field });
         const item = fieldFind(ref, (item) => item.get() === 4);
         expect(item).toBe(undefined);
       });
 
       it("passes key to the predicate", () => {
-        const field = new Field({ a: 1, b: 2, c: 3 });
+        const field = new FieldOld({ a: 1, b: 2, c: 3 });
         const ref = new MaybeFieldRef({ type: "direct", field });
         const item = fieldFind(
           ref,
@@ -505,21 +509,21 @@ describe(fieldFind, () => {
 
 describe(fieldFilter, () => {
   describe(Array, () => {
-    describe(Field, () => {
+    describe(FieldOld, () => {
       it("filters items in the array", () => {
-        const field = new Field([1, 2, 3, 4]);
+        const field = new FieldOld([1, 2, 3, 4]);
         const items = fieldFilter(field, (item) => item.get() % 2 === 0);
         expect(items.map((f) => f.get())).toEqual([2, 4]);
       });
 
       it("returns empty array if none match", () => {
-        const field = new Field([1, 3, 5]);
+        const field = new FieldOld([1, 3, 5]);
         const items = fieldFilter(field, (item) => item.get() === 2);
         expect(items).toEqual([]);
       });
 
       it("passes index to the predicate", () => {
-        const field = new Field([1, 2, 3]);
+        const field = new FieldOld([1, 2, 3]);
         const items = fieldFilter(field, (item, index) => index === 1);
         expect(items.map((f) => f.get())).toEqual([2]);
       });
@@ -527,7 +531,7 @@ describe(fieldFilter, () => {
 
     describe(FieldRef, () => {
       it("filters items in the array", () => {
-        const field = new Field([1, 2, 3, 4]);
+        const field = new FieldOld([1, 2, 3, 4]);
         const ref = new FieldRef(field);
         const items = fieldFilter(ref, (item) => item.get() % 2 === 0);
         items.forEach((item) => expect(item).toBeInstanceOf(FieldRef));
@@ -535,14 +539,14 @@ describe(fieldFilter, () => {
       });
 
       it("returns empty array if none match", () => {
-        const field = new Field([1, 3, 5]);
+        const field = new FieldOld([1, 3, 5]);
         const ref = new FieldRef(field);
         const items = fieldFilter(ref, (item) => item.get() === 2);
         expect(items).toEqual([]);
       });
 
       it("passes index to the predicate", () => {
-        const field = new Field([1, 2, 3]);
+        const field = new FieldOld([1, 2, 3]);
         const ref = new FieldRef(field);
         const items = fieldFilter(ref, (item, index) => index === 1);
         expect(items.map((f) => f.get())).toEqual([2]);
@@ -551,7 +555,7 @@ describe(fieldFilter, () => {
 
     describe(MaybeFieldRef, () => {
       it("filters items in the array", () => {
-        const field = new Field([1, 2, 3, 4]);
+        const field = new FieldOld([1, 2, 3, 4]);
         const ref = new MaybeFieldRef({ type: "direct", field });
         const items = fieldFilter(ref, (item) => item.get() % 2 === 0);
         items.forEach((item) => expect(item).toBeInstanceOf(MaybeFieldRef));
@@ -559,14 +563,14 @@ describe(fieldFilter, () => {
       });
 
       it("returns empty array if none match", () => {
-        const field = new Field([1, 3, 5]);
+        const field = new FieldOld([1, 3, 5]);
         const ref = new MaybeFieldRef({ type: "direct", field });
         const items = fieldFilter(ref, (item) => item.get() === 2);
         expect(items).toEqual([]);
       });
 
       it("passes index to the predicate", () => {
-        const field = new Field([1, 2, 3]);
+        const field = new FieldOld([1, 2, 3]);
         const ref = new MaybeFieldRef({ type: "direct", field });
         const items = fieldFilter(ref, (item, index) => index === 1);
         expect(items.map((f) => f.get())).toEqual([2]);
@@ -575,21 +579,21 @@ describe(fieldFilter, () => {
   });
 
   describe(Object, () => {
-    describe(Field, () => {
+    describe(FieldOld, () => {
       it("filters items in the object", () => {
-        const field = new Field({ a: 1, b: 2, c: 3, d: 4 });
+        const field = new FieldOld({ a: 1, b: 2, c: 3, d: 4 });
         const items = fieldFilter(field, (item) => item.get() % 2 === 0);
         expect(items.map((f) => f.get())).toEqual([2, 4]);
       });
 
       it("returns empty array if none match", () => {
-        const field = new Field({ a: 1, b: 3 });
+        const field = new FieldOld({ a: 1, b: 3 });
         const items = fieldFilter(field, (item) => item.get() === 2);
         expect(items).toEqual([]);
       });
 
       it("passes key to the predicate", () => {
-        const field = new Field({ a: 1, b: 2, c: 3 });
+        const field = new FieldOld({ a: 1, b: 2, c: 3 });
         const items = fieldFilter(field, (item, key) => key === "b");
         expect(items.map((f) => f.get())).toEqual([2]);
       });
@@ -597,7 +601,7 @@ describe(fieldFilter, () => {
 
     describe(FieldRef, () => {
       it("filters items in the object", () => {
-        const field = new Field({ a: 1, b: 2, c: 3, d: 4 });
+        const field = new FieldOld({ a: 1, b: 2, c: 3, d: 4 });
         const ref = new FieldRef(field);
         const items = fieldFilter(ref, (item) => item.get() % 2 === 0);
         items.forEach((item) => expect(item).toBeInstanceOf(FieldRef));
@@ -605,14 +609,14 @@ describe(fieldFilter, () => {
       });
 
       it("returns empty array if none match", () => {
-        const field = new Field({ a: 1, b: 3 });
+        const field = new FieldOld({ a: 1, b: 3 });
         const ref = new FieldRef(field);
         const items = fieldFilter(ref, (item) => item.get() === 2);
         expect(items).toEqual([]);
       });
 
       it("passes key to the predicate", () => {
-        const field = new Field({ a: 1, b: 2, c: 3 });
+        const field = new FieldOld({ a: 1, b: 2, c: 3 });
         const ref = new FieldRef(field);
         const items = fieldFilter(ref, (item, key) => key === "b");
         expect(items.map((f) => f.get())).toEqual([2]);
@@ -621,7 +625,7 @@ describe(fieldFilter, () => {
 
     describe(MaybeFieldRef, () => {
       it("filters items in the object", () => {
-        const field = new Field({ a: 1, b: 2, c: 3, d: 4 });
+        const field = new FieldOld({ a: 1, b: 2, c: 3, d: 4 });
         const ref = new MaybeFieldRef({ type: "direct", field });
         const items = fieldFilter(ref, (item) => item.get() % 2 === 0);
         items.forEach((item) => expect(item).toBeInstanceOf(MaybeFieldRef));
@@ -629,14 +633,14 @@ describe(fieldFilter, () => {
       });
 
       it("returns empty array if none match", () => {
-        const field = new Field({ a: 1, b: 3 });
+        const field = new FieldOld({ a: 1, b: 3 });
         const ref = new MaybeFieldRef({ type: "direct", field });
         const items = fieldFilter(ref, (item) => item.get() === 2);
         expect(items).toEqual([]);
       });
 
       it("passes key to the predicate", () => {
-        const field = new Field({ a: 1, b: 2, c: 3 });
+        const field = new FieldOld({ a: 1, b: 2, c: 3 });
         const ref = new MaybeFieldRef({ type: "direct", field });
         const items = fieldFilter(ref, (item, key) => key === "b");
         expect(items.map((f) => f.get())).toEqual([2]);
@@ -647,22 +651,22 @@ describe(fieldFilter, () => {
 
 describe(fieldPush, () => {
   it("pushes items to array fields", () => {
-    const field = new Field([1, 2, 3]);
+    const field = new FieldOld([1, 2, 3]);
     fieldPush(field, 4);
     expect(field.get()).toEqual([1, 2, 3, 4]);
   });
 
   it("returns new field", () => {
-    const field = new Field([1, 2, 3]);
+    const field = new FieldOld([1, 2, 3]);
     const result = fieldPush(field, 4);
-    expect(result).toBeInstanceOf(Field);
+    expect(result).toBeInstanceOf(FieldOld);
     expect(result.get()).toEqual(4);
   });
 
   describe("changes", () => {
     describe("field", () => {
       it("triggers updates", async () => {
-        const field = new Field([1, 2, 3]);
+        const field = new FieldOld([1, 2, 3]);
         const spy = vi.fn();
         field.watch(spy);
         fieldPush(field, 4);
@@ -677,7 +681,7 @@ describe(fieldPush, () => {
 
     describe("child", () => {
       it("triggers updates", async () => {
-        const field = new Field([[1, 2, 3]]);
+        const field = new FieldOld([[1, 2, 3]]);
         const spy = vi.fn();
         field.watch(spy);
         fieldPush(field.at(0).try(), 4);
@@ -692,7 +696,7 @@ describe(fieldPush, () => {
 
     describe("subtree", () => {
       it("triggers updates", async () => {
-        const field = new Field([[[1, 2, 3]]]);
+        const field = new FieldOld([[[1, 2, 3]]]);
         const spy = vi.fn();
         field.watch(spy);
         fieldPush(field.at(0).try()?.at(0).try(), 4);
@@ -709,7 +713,7 @@ describe(fieldPush, () => {
 
 describe(fieldInsert, () => {
   it("inserts an item at given index", () => {
-    const field = new Field([1, 2, 3]);
+    const field = new FieldOld([1, 2, 3]);
     fieldInsert(field, 0, 4);
     expect(field.get()).toEqual([4, 1, 2, 3]);
     fieldInsert(field, 2, 5);
@@ -717,16 +721,16 @@ describe(fieldInsert, () => {
   });
 
   it("returns new field", () => {
-    const field = new Field([1, 2, 3]);
+    const field = new FieldOld([1, 2, 3]);
     const newField = fieldInsert(field, 0, 4);
-    expect(newField).toBeInstanceOf(Field);
+    expect(newField).toBeInstanceOf(FieldOld);
     expect(newField.get()).toEqual(4);
   });
 
   describe("changes", () => {
     describe("field", () => {
       it("triggers updates", async () => {
-        const field = new Field([1, 2, 3]);
+        const field = new FieldOld([1, 2, 3]);
         const spy = vi.fn();
         field.watch(spy);
         fieldInsert(field, 0, 4);
@@ -741,7 +745,7 @@ describe(fieldInsert, () => {
 
     describe("child", () => {
       it("triggers updates", async () => {
-        const field = new Field([[1, 2, 3]]);
+        const field = new FieldOld([[1, 2, 3]]);
         const spy = vi.fn();
         field.watch(spy);
         fieldInsert(field.at(0).try(), 0, 4);
@@ -756,7 +760,7 @@ describe(fieldInsert, () => {
 
     describe("subtree", () => {
       it("triggers updates", async () => {
-        const field = new Field([[[1, 2, 3]]]);
+        const field = new FieldOld([[[1, 2, 3]]]);
         const spy = vi.fn();
         field.watch(spy);
         fieldInsert(field.at(0).try()?.at(0).try(), 0, 4);
@@ -774,7 +778,7 @@ describe(fieldInsert, () => {
 describe(fieldRemove, () => {
   describe(Object, () => {
     it("removes a record field by key", () => {
-      const field = new Field<Record<string, number>>({
+      const field = new FieldOld<Record<string, number>>({
         one: 1,
         two: 2,
         three: 3,
@@ -784,7 +788,7 @@ describe(fieldRemove, () => {
     });
 
     it("returns the removed field", () => {
-      const field = new Field<Record<string, number>>({
+      const field = new FieldOld<Record<string, number>>({
         one: 1,
         two: 2,
         three: 3,
@@ -796,7 +800,7 @@ describe(fieldRemove, () => {
     });
 
     it("removes child", () => {
-      const parent = new Field<Record<string, number>>({
+      const parent = new FieldOld<Record<string, number>>({
         one: 1,
         two: 2,
         three: 3,
@@ -808,7 +812,7 @@ describe(fieldRemove, () => {
     });
 
     it("removes a optional field by key", () => {
-      const field = new Field<{ one: 1; two: 2 | undefined; three?: 3 }>({
+      const field = new FieldOld<{ one: 1; two: 2 | undefined; three?: 3 }>({
         one: 1,
         two: 2,
         three: 3,
@@ -818,7 +822,7 @@ describe(fieldRemove, () => {
     });
 
     it("doesn't throw on removing non-existing field", () => {
-      const field = new Field<Record<string, number>>({ one: 1 });
+      const field = new FieldOld<Record<string, number>>({ one: 1 });
       expect(() => fieldRemove(field, "two")).not.toThrow();
     });
 
@@ -826,7 +830,7 @@ describe(fieldRemove, () => {
       describe("child", () => {
         it("triggers updates", async () => {
           const spy = vi.fn();
-          const field = new Field<Record<string, number>>({
+          const field = new FieldOld<Record<string, number>>({
             one: 1,
             two: 2,
             three: 3,
@@ -845,7 +849,7 @@ describe(fieldRemove, () => {
       describe("subtree", () => {
         it("triggers updates", async () => {
           const spy = vi.fn();
-          const field = new Field<{ qwe: Record<string, number> }>({
+          const field = new FieldOld<{ qwe: Record<string, number> }>({
             qwe: {
               one: 1,
               two: 2,
@@ -867,13 +871,13 @@ describe(fieldRemove, () => {
 
   describe(Array, () => {
     it("removes a field by index", () => {
-      const field = new Field([1, 2, 3]);
+      const field = new FieldOld([1, 2, 3]);
       fieldRemove(field, 1);
       expect(field.get()).toEqual([1, 3]);
     });
 
     it("returns the removed field", () => {
-      const field = new Field([1, 2, 3]);
+      const field = new FieldOld([1, 2, 3]);
       const oneField = field.at(1);
       const removedField = fieldRemove(field, 1);
       expect(removedField).toBe(oneField);
@@ -881,7 +885,7 @@ describe(fieldRemove, () => {
     });
 
     it("removes child", () => {
-      const parent = new Field([1, 2, 3]);
+      const parent = new FieldOld([1, 2, 3]);
       const field = parent.at(1);
       fieldRemove(field);
       expect(parent.get()).toEqual([1, 3]);
@@ -889,12 +893,12 @@ describe(fieldRemove, () => {
     });
 
     it("doesn't throw on removing non-existing item", () => {
-      const field = new Field([1, 2, 3]);
+      const field = new FieldOld([1, 2, 3]);
       expect(() => fieldRemove(field, 6)).not.toThrow();
     });
 
     it("updates the children indices", () => {
-      const field = new Field([1, 2, 3, 4]);
+      const field = new FieldOld([1, 2, 3, 4]);
       fieldRemove(field, 1);
       expect(field.at(0).key).toBe("0");
       expect(field.at(1).key).toBe("1");
@@ -905,7 +909,7 @@ describe(fieldRemove, () => {
       describe("child", () => {
         it("triggers updates", async () => {
           const spy = vi.fn();
-          const field = new Field([1, 2, 3, 4]);
+          const field = new FieldOld([1, 2, 3, 4]);
           field.watch(spy);
           fieldRemove(field, 1);
           await postpone();
@@ -920,7 +924,7 @@ describe(fieldRemove, () => {
       describe("subtree", () => {
         it("triggers updates", async () => {
           const spy = vi.fn();
-          const field = new Field([[1, 2, 3, 4]]);
+          const field = new FieldOld([[1, 2, 3, 4]]);
           field.watch(spy);
           fieldRemove(field.at(0).try(), 1);
           await postpone();

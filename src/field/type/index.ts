@@ -1,7 +1,7 @@
 import { useCallback } from "react";
 import { AsState } from "../../state/index.ts";
 import { EnsoUtils as Utils } from "../../utils.ts";
-import { useFieldHook } from "../hook/index.ts";
+import { useAtomHook } from "../../atom/hooks/index.ts";
 import { StaticImplements } from "../util.ts";
 
 export const fieldDiscriminate = ((
@@ -12,6 +12,7 @@ export const fieldDiscriminate = ((
     discriminator: (field.constructor.asState(field).get() as any)?.[
       discriminator
     ],
+    // @ts-expect-error -- WIP: Types revamp
     field: field.constructor.fromField(field),
   }) as unknown as FieldDiscriminate;
 
@@ -32,7 +33,7 @@ export const useFieldDiscriminate = ((
   );
 
   // @ts-ignore -- TODO
-  return useFieldHook({ field, getValue, shouldRender });
+  return useAtomHook({ atom: field, getValue, shouldRender });
 }) as unknown as UseFieldDiscriminate;
 
 export interface UseFieldDiscriminate {}

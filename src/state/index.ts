@@ -1,14 +1,79 @@
-export interface State<Value> {}
+import { Atom } from "../atom/index.ts";
+import type { EnsoUtils as Utils } from "../utils.ts";
+
+export class State<
+    Value,
+    Qualifier extends Atom.Qualifier = never,
+    Parent extends Atom.Parent.Constraint<"state", Value> = unknown,
+  >
+  extends Atom<"state", Value, Qualifier, Parent>
+  implements State.Invariant<Value, Qualifier, Parent> {}
+
+// ^^^^^^^^^^^^^^^^^^^ PROCESSED ^^^^^^^^^^^^^^^^^^^
+
+// vvvvvvvvvvvvvvvvvvv  PENDING  vvvvvvvvvvvvvvvvvvv
 
 export namespace State {
-  //#region Interfaces
+  export type Envelop<
+    Type extends Atom.Type,
+    Value,
+    Qualifier extends Atom.Qualifier = never,
+    Parent extends Atom.Parent.Constraint<Type, Value> = unknown,
+  > = "immutable" extends Type
+    ? Immutable<Value, Qualifier, Parent>
+    : "common" extends Type
+      ? Common<Value, Qualifier, Parent>
+      : "invariant" extends Type
+        ? Invariant<Value, Qualifier, Parent>
+        : never;
 
-  export interface AsState {
-    asState<Value>(state: State<Value>): StateLike<Value> | undefined;
-  }
+  export interface Invariant<
+    Value,
+    Qualifier extends Atom.Qualifier = never,
+    Parent extends Atom.Parent.Constraint<"state", Value> = unknown,
+  > extends Atom.Invariant<"state" | "invariant", Value, Qualifier, Parent> {}
 
-  export interface StateLike<Value> {
-    discriminate(key: any): any;
+  export interface Common<
+    Value,
+    Qualifier extends Atom.Qualifier = never,
+    Parent extends Atom.Parent.Constraint<"state", Value> = unknown,
+  > extends Atom.Common<"state" | "common", Value, Qualifier, Parent> {}
+
+  export interface Immutable<
+    Value,
+    Qualifier extends Atom.Qualifier = never,
+    Parent extends Atom.Parent.Constraint<"state", Value> = unknown,
+  > extends Atom.Immutable<"state" | "immutable", Value, Qualifier, Parent> {}
+
+  export type Parent<Value, Key extends keyof Value> = Atom.Parent<
+    "state",
+    Value,
+    Key
+  >;
+
+  //#region Value
+
+  export namespace Value {
+    export type Variable<Value> = Value extends Utils.Tuple
+      ? Tuple<Value>
+      : Value extends unknown[]
+        ? Array<Value>
+        : Value extends object
+          ? Object<Value>
+          : Primitive<Value>;
+
+    export interface Primitive<Value>
+      extends Atom.Value.Primitive<"state", Value> {}
+
+    export interface Collection<Value>
+      extends Atom.Value.Collection<"state", Value> {}
+
+    export interface Array<Value extends unknown[]>
+      extends Atom.Value.Array<"state", Value> {}
+
+    export interface Tuple<Value> extends Atom.Value.Tuple<"state", Value> {}
+
+    export interface Object<Value> extends Atom.Value.Object<"state", Value> {}
   }
 
   //#endregion

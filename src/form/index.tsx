@@ -3,7 +3,7 @@
 import { nanoid } from "nanoid";
 import React, { DependencyList, useEffect, useId, useMemo } from "react";
 import { change, maskedChanges } from "../change/index.ts";
-import { ComputedField, Field } from "../field/index.tsx";
+import { ComputedField, FieldOld } from "../field/definition.tsx";
 import { useRerender } from "../hooks/rerender.ts";
 import { Enso } from "../types.ts";
 import { EnsoUtils as Utils } from "../utils.ts";
@@ -64,11 +64,11 @@ export class Form<Payload> implements Enso.InterfaceSystem {
   }
 
   #id: string;
-  #field: Field<Payload>;
+  #field: FieldOld<Payload>;
 
   constructor(id: string, initial: Payload, options?: Form.Options<Payload>) {
     this.#id = id;
-    this.#field = new Field(initial);
+    this.#field = new FieldOld(initial);
     this.#validator = options?.validate;
 
     this.#field.watch((_, event) => {
@@ -164,28 +164,28 @@ export class Form<Payload> implements Enso.InterfaceSystem {
   }
 
   into<Computed>(
-    intoCallback: Field.IntoCallback<Payload, Computed>,
-  ): Field.IntoObj<Payload, Computed> {
+    intoCallback: FieldOld.IntoCallback<Payload, Computed>,
+  ): FieldOld.IntoObj<Payload, Computed> {
     return this.#field.into(intoCallback);
   }
 
   useInto<Computed>(
-    intoCallback: Field.IntoCallback<Payload, Computed>,
+    intoCallback: FieldOld.IntoCallback<Payload, Computed>,
     deps: DependencyList,
-  ): Field.IntoHook<Payload, Computed> {
+  ): FieldOld.IntoHook<Payload, Computed> {
     return this.#field.useInto(intoCallback, deps);
   }
 
   narrow<Narrowed extends Payload>(
-    callback: Field.NarrowCallback<Payload, Narrowed>,
-  ): Field<Narrowed> | undefined {
+    callback: FieldOld.NarrowCallback<Payload, Narrowed>,
+  ): FieldOld<Narrowed> | undefined {
     return this.#field.narrow(callback);
   }
 
   useNarrow<Narrowed extends Payload>(
-    callback: Field.NarrowCallback<Payload, Narrowed>,
+    callback: FieldOld.NarrowCallback<Payload, Narrowed>,
     deps: DependencyList,
-  ): Field<Narrowed> | undefined {
+  ): FieldOld<Narrowed> | undefined {
     return this.#field.useNarrow(callback, deps);
   }
 
@@ -206,7 +206,7 @@ export class Form<Payload> implements Enso.InterfaceSystem {
    * The validation function provided to the form. It gets called when the form
    * is submitted. If the validation fails, the form does not submit.
    */
-  #validator: Field.Validator<Payload, undefined> | undefined;
+  #validator: FieldOld.Validator<Payload, undefined> | undefined;
 
   /**
    * @private
@@ -303,7 +303,7 @@ export class Form<Payload> implements Enso.InterfaceSystem {
 
   at<Key extends keyof Payload>(
     key: Payload extends object ? Key : never,
-  ): Payload extends object ? Field.At<Payload, Key> : void {
+  ): Payload extends object ? FieldOld.At<Payload, Key> : void {
     // @ts-ignore
     return this.#field.at(key);
   }
@@ -311,7 +311,7 @@ export class Form<Payload> implements Enso.InterfaceSystem {
 
 export namespace Form {
   export interface Options<Payload> {
-    validate?: Field.Validator<Payload, undefined>;
+    validate?: FieldOld.Validator<Payload, undefined>;
   }
 
   export interface ControlProps<Payload, IsServer extends boolean | undefined> {

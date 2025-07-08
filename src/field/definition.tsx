@@ -10,6 +10,8 @@ import React, {
   useEffect,
   useRef,
 } from "react";
+import { useAtomHook, UseFieldHook } from "../atom/hooks/index.ts";
+import { Atom } from "../atom/index.js";
 import {
   change,
   ChangesEvent,
@@ -20,22 +22,21 @@ import {
   shiftChildChanges,
   structuralChanges,
 } from "../change/index.ts";
+import { detachedValue, DetachedValue } from "../detached/index.ts";
 import { EventsTree } from "../events/index.ts";
+import {
+  useTypedCallback as useCallback,
+  useTypedMemo as useMemo,
+} from "../hooks/index.ts";
 import { useRerender } from "../hooks/rerender.ts";
 import { AsState } from "../state/index.ts";
 import type { Enso } from "../types.ts";
 import type { EnsoUtils as Utils } from "../utils.ts";
 import { ValidationTree } from "../validation/index.ts";
 import { AsCollection } from "./collection/index.ts";
-import {
-  useTypedCallback as useCallback,
-  useFieldHook,
-  UseFieldHook,
-  useTypedMemo as useMemo,
-} from "./hook/index.ts";
 import { FieldRef } from "./ref/index.ts";
 import { fieldDiscriminate } from "./type/index.ts";
-import { staticImplements } from "./util.ts";
+import { Static, staticImplements } from "./util.ts";
 
 export { FieldRef };
 
@@ -45,28 +46,149 @@ export * from "./type/index.ts";
 
 //#region Field
 
-const externalSymbol = Symbol();
+// vvvvvvvvvvvvvvvvvvv  PENDING  vvvvvvvvvvvvvvvvvvv
 
 const hintSymbol = Symbol();
+
+// ^^^^^^^^^^^^^^^^^^^  PENDING  ^^^^^^^^^^^^^^^^^^^
+
+const externalSymbol = Symbol();
+
+export declare class Field<
+    Value,
+    Qualifier extends Atom.Qualifier = never,
+    Parent extends Atom.Parent.Constraint<"field", Value> = unknown,
+  >
+  extends Atom<"field", Value, Qualifier, Parent>
+  implements
+    Static<
+      typeof Field<Value, Qualifier, Parent>,
+      Atom.StaticSubclass<"field">
+    >,
+    Field.Invariant<Value, Qualifier, Parent>
+{
+  //#region Static
+
+  static create<
+    Value,
+    Qualifier extends Atom.Qualifier = never,
+    Parent extends Atom.Parent.Constraint<"field", Value> = undefined,
+  >(value: Value, parent?: Parent): Field<Value, Qualifier, Parent>;
+
+  static use<Value>(
+    initialValue: Value,
+    deps: DependencyList,
+  ): Field.Invariant<Value>;
+
+  static Component<
+    Payload,
+    MetaEnable extends boolean | undefined = undefined,
+    DirtyEnable extends boolean = false,
+    ErrorsEnable extends boolean = false,
+    ValidEnable extends boolean = false,
+  >(
+    props: FieldOld.ComponentProps<
+      Payload,
+      MetaEnable,
+      DirtyEnable,
+      ErrorsEnable,
+      ValidEnable
+    >,
+  ): React.ReactNode;
+
+  //#endregion
+}
+
+export namespace Field {
+  export type Envelop<
+    Type extends Atom.Type,
+    Value,
+    Qualifier extends Atom.Qualifier = never,
+    Parent extends Atom.Parent.Constraint<Type, Value> = unknown,
+  > = "immutable" extends Type
+    ? Immutable<Value, Qualifier, Parent>
+    : "common" extends Type
+      ? Common<Value, Qualifier, Parent>
+      : "invariant" extends Type
+        ? Invariant<Value, Qualifier, Parent>
+        : never;
+
+  export interface Invariant<
+    Value,
+    Qualifier extends Atom.Qualifier = never,
+    Parent extends Atom.Parent.Constraint<"field", Value> = unknown,
+  > extends Atom.Invariant<"field" | "invariant", Value, Qualifier, Parent> {}
+
+  export interface Common<
+    Value,
+    Qualifier extends Atom.Qualifier = never,
+    Parent extends Atom.Parent.Constraint<"field", Value> = unknown,
+  > extends Atom.Common<"field" | "common", Value, Qualifier, Parent> {}
+
+  export interface Immutable<
+    Value,
+    Qualifier extends Atom.Qualifier = never,
+    Parent extends Atom.Parent.Constraint<"field", Value> = unknown,
+  > extends Atom.Immutable<"field" | "immutable", Value, Qualifier, Parent> {}
+
+  export type Parent<Value, Key extends keyof Value> = Atom.Parent<
+    "field",
+    Value,
+    Key
+  >;
+
+  //#region Value
+
+  export namespace Value {
+    export type Variable<Value> = Value extends Utils.Tuple
+      ? Tuple<Value>
+      : Value extends unknown[]
+        ? Array<Value>
+        : Value extends object
+          ? Object<Value>
+          : Primitive<Value>;
+
+    export interface Primitive<Value>
+      extends Atom.Value.Primitive<"field", Value> {}
+
+    export interface Collection<Value>
+      extends Atom.Value.Collection<"field", Value> {}
+
+    export interface Array<Value extends unknown[]>
+      extends Atom.Value.Array<"field", Value> {}
+
+    export interface Tuple<Value> extends Atom.Value.Tuple<"field", Value> {}
+
+    export interface Object<Value> extends Atom.Value.Object<"field", Value> {}
+  }
+
+  //#endregion
+}
+
+// vvvvvvvvvvvvvvvvvvv  PENDING  vvvvvvvvvvvvvvvvvvv
 
 @staticImplements<AsCollection>()
 // TODO: Try making this work or remove:
 // Static<typeof Field<unknown>, AsCollection>,
-export class Field<Payload>
+export class FieldOld<Payload>
   implements
-    Field.Hint,
-    Enso.InterfaceAttributes<Field.InterfaceDef<Payload>>,
+    FieldOld.Hint,
+    Enso.InterfaceAttributes<FieldOld.InterfaceDef<Payload>>,
     Enso.InterfaceValueRead<Payload>,
-    Field.InterfaceValueWrite<Field.InterfaceDef<Payload>>,
-    Field.InterfaceTree<Field.InterfaceDef<Payload>>,
+    FieldOld.InterfaceValueWrite<FieldOld.InterfaceDef<Payload>>,
+    FieldOld.InterfaceTree<FieldOld.InterfaceDef<Payload>>,
     Enso.InterfaceEvents,
-    Enso.InterfaceWatch<Field.InterfaceDef<Payload>>,
-    Enso.InterfaceMap<Field.InterfaceDef<Payload>>,
-    Field.InterfaceComputed<Field.InterfaceDef<Payload>>,
-    Field.InterfaceCollection<Field.InterfaceDef<Payload>>,
+    Enso.InterfaceWatch<FieldOld.InterfaceDef<Payload>>,
+    Enso.InterfaceMap<FieldOld.InterfaceDef<Payload>>,
+    FieldOld.InterfaceComputed<FieldOld.InterfaceDef<Payload>>,
+    FieldOld.InterfaceCollection<FieldOld.InterfaceDef<Payload>>,
     Enso.InterfaceSystem
 {
   //#region Static
+
+  // ^^^^^^^^^^^^^^^^^^^  PENDING  ^^^^^^^^^^^^^^^^^^^
+
+  // vvvvvvvvvvvvvvvvvvv PROCESSED vvvvvvvvvvvvvvvvvvv
 
   /**
    * Creates and memoizes a new field instance from the provided initial value.
@@ -79,11 +201,15 @@ export class Field<Payload>
     initialValue: Value,
     // TODO: Add tests
     deps: DependencyList,
-  ): Field<Value> {
-    const field = useMemo(() => new Field(initialValue), deps);
+  ): FieldOld<Value> {
+    const field = useMemo(() => new FieldOld(initialValue), deps);
     useEffect(() => () => field.deconstruct(), [field]);
     return field;
   }
+
+  // ^^^^^^^^^^^^^^^^^^^ PROCESSED ^^^^^^^^^^^^^^^^^^^
+
+  // vvvvvvvvvvvvvvvvvvv  PENDING  vvvvvvvvvvvvvvvvvvv
 
   static Component<
     Payload,
@@ -92,7 +218,7 @@ export class Field<Payload>
     ErrorsEnable extends boolean = false,
     ValidEnable extends boolean = false,
   >(
-    props: Field.ComponentProps<
+    props: FieldOld.ComponentProps<
       Payload,
       MetaEnable,
       DirtyEnable,
@@ -123,7 +249,7 @@ export class Field<Payload>
   [hintSymbol] = true as const;
 
   #id = nanoid();
-  #parent?: Field.Parent<any> | undefined;
+  #parent?: FieldOld.Parent<any> | undefined;
   #onInput;
 
   #internal: InternalState<Payload> = new InternalValueState(
@@ -133,7 +259,7 @@ export class Field<Payload>
 
   #initial: Payload;
 
-  constructor(value: Payload, parent?: Field.Parent<any>) {
+  constructor(value: Payload, parent?: FieldOld.Parent<any>) {
     this.#initial = value;
     this.#parent = parent;
 
@@ -180,10 +306,10 @@ export class Field<Payload>
     return this.#id;
   }
 
-  get parent(): Field<unknown> | undefined {
+  get parent(): FieldOld<unknown> | undefined {
     return this.#parent && "source" in this.#parent
       ? this.#parent.source.parent
-      : (this.#parent?.field as Field<unknown> | undefined);
+      : (this.#parent?.field as FieldOld<unknown> | undefined);
   }
 
   get key(): string | undefined {
@@ -206,7 +332,7 @@ export class Field<Payload>
   }
 
   get name(): string {
-    return Field.nameFromPath(this.path);
+    return FieldOld.nameFromPath(this.path);
   }
 
   //#endregion
@@ -276,8 +402,8 @@ export class Field<Payload>
       [meta, watchMeta],
     );
 
-    return useFieldHook({
-      field: this as Field<any>,
+    return useAtomHook({
+      atom: this as FieldOld<any>,
       getValue,
       watch,
       toResult,
@@ -292,11 +418,11 @@ export class Field<Payload>
   // running operations such as `set` albeit with no effect, we need to ensure
   // that `lastChanges` is still assigned correctly, so we must use a static
   // map instead of changing the field instance directly.
-  static lastChanges: WeakMap<Field<unknown>, FieldChange> = new WeakMap();
+  static lastChanges: WeakMap<FieldOld<unknown>, FieldChange> = new WeakMap();
 
   get lastChanges(): FieldChange {
     // @ts-ignore
-    return Field.lastChanges.get(this) || 0n;
+    return FieldOld.lastChanges.get(this) || 0n;
   }
 
   // TODO: Exposing the notify parents flag might be dangerous
@@ -304,12 +430,12 @@ export class Field<Payload>
   set<SetValue extends Payload | DetachedValue>(
     value: SetValue,
     notifyParents = true,
-  ): Field<SetValue> {
+  ): FieldOld<SetValue> {
     const changes = this.#set(value);
     if (changes) this.trigger(changes, notifyParents);
 
     // @ts-ignore
-    Field.lastChanges.set(this, changes);
+    FieldOld.lastChanges.set(this, changes);
     return this as any;
   }
 
@@ -406,10 +532,12 @@ export class Field<Payload>
    *
    * @returns Field without null or undefined value in the type.
    */
-  pave(fallback: Utils.NonNullish<Payload>): Field<Utils.NonNullish<Payload>> {
+  pave(
+    fallback: Utils.NonNullish<Payload>,
+  ): FieldOld<Utils.NonNullish<Payload>> {
     const value = this.get();
     if (value === undefined || value === null) this.set(fallback);
-    return this as Field<Utils.NonNullish<Payload>>;
+    return this as FieldOld<Utils.NonNullish<Payload>>;
   }
 
   //#endregion
@@ -436,9 +564,9 @@ export class Field<Payload>
       ],
     );
 
-    return useFieldHook({
+    return useAtomHook({
       enable,
-      field: this as Field<any>,
+      atom: this as FieldOld<any>,
       getValue,
     }) as Enso.ToggleableResult<Enable, boolean>;
   }
@@ -456,18 +584,18 @@ export class Field<Payload>
 
   //#region Tree
 
-  get root(): Field<unknown> {
+  get root(): FieldOld<unknown> {
     return this.#parent && "source" in this.#parent
       ? this.#parent.source.root
-      : this.#parent?.field.root || (this as any as Field<unknown>);
+      : this.#parent?.field.root || (this as any as FieldOld<unknown>);
   }
 
-  get $(): Field.$<Payload> {
+  get $(): FieldOld.$<Payload> {
     return this.#internal.$();
   }
 
   // @ts-ignore: DO
-  at<Key extends keyof Payload>(key: Key): Field.At<Payload, Key> {
+  at<Key extends keyof Payload>(key: Key): FieldOld.At<Payload, Key> {
     if (
       this.#internal instanceof InternalObjectState ||
       this.#internal instanceof InternalArrayState
@@ -480,17 +608,17 @@ export class Field<Payload>
     // );
   }
 
-  try(): Enso.TryUnion<Field.InterfaceDef<Payload>>;
+  try(): Enso.TryUnion<FieldOld.InterfaceDef<Payload>>;
 
   try<Key extends keyof Utils.NonNullish<Payload>>(
     key: Key,
-  ): Field.TryKey<Field.InterfaceDef<Payload>, Key>;
+  ): FieldOld.TryKey<FieldOld.InterfaceDef<Payload>, Key>;
 
   try(key?: any): any {
     return this.#internal.try(key);
   }
 
-  lookup(path: Enso.Path): Field<unknown> | undefined {
+  lookup(path: Enso.Path): FieldOld<unknown> | undefined {
     return this.#internal.lookup(path);
   }
 
@@ -501,10 +629,9 @@ export class Field<Payload>
   #batchTarget = new EventTarget();
   #syncTarget = new EventTarget();
   #subs = new Set<(event: Event) => void>();
+  #eventsTree: EventsTree<any> | undefined;
 
-  #eventsTree: EventsTree | undefined;
-
-  get eventsTree(): EventsTree {
+  get eventsTree(): EventsTree<any> {
     return (this.root.#eventsTree ??= new EventsTree());
   }
 
@@ -624,7 +751,7 @@ export class Field<Payload>
     this.#internal.unwatch();
   }
 
-  useBind(): Field.Bound<Payload> {
+  useBind(): FieldOld.Bound<Payload> {
     const rerender = useRerender();
 
     useEffect(
@@ -635,7 +762,7 @@ export class Field<Payload>
       [this.id, rerender],
     );
 
-    return this as unknown as Field.Bound<Payload>;
+    return this as unknown as FieldOld.Bound<Payload>;
   }
 
   //#endregion
@@ -652,15 +779,15 @@ export class Field<Payload>
       [this, ...deps],
     );
 
-    return useFieldHook({
-      field: this as Field<any>,
+    return useAtomHook({
+      atom: this as FieldOld<any>,
       getValue,
     }) as Computed;
   }
 
   narrow<Narrowed extends Payload>(
-    callback: Field.NarrowCallback<Payload, Narrowed>,
-  ): Field<Narrowed> | undefined {
+    callback: FieldOld.NarrowCallback<Payload, Narrowed>,
+  ): FieldOld<Narrowed> | undefined {
     let matching = false;
     const payload = this.get();
     // @ts-ignore: TODO:
@@ -674,18 +801,18 @@ export class Field<Payload>
   }
 
   useNarrow<Narrowed extends Payload>(
-    callback: Field.NarrowCallback<Payload, Narrowed>,
+    callback: FieldOld.NarrowCallback<Payload, Narrowed>,
     // TODO: Add tests
     deps: DependencyList,
-  ): Field<Narrowed> | undefined {
+  ): FieldOld<Narrowed> | undefined {
     const getValue = useCallback(
       () => this.narrow(callback),
       // eslint-disable-next-line react-hooks/exhaustive-deps -- It can't handle this
       [this, ...deps],
     );
 
-    return useFieldHook({
-      field: this as Field<any>,
+    return useAtomHook({
+      atom: this as FieldOld<any>,
       getValue,
     });
   }
@@ -704,16 +831,16 @@ export class Field<Payload>
    * @returns Fields tuple, first element - ensured field, second - dummy field
    */
   static useEnsure<Payload, Result = undefined>(
-    field: Field<Payload> | Utils.Falsy,
-    map?: Field.MapField<Payload, Result>,
+    field: FieldOld<Payload> | Utils.Falsy,
+    map?: FieldOld.MapField<Payload, Result>,
   ): Result extends undefined
-    ? Field<Payload | undefined>
-    : Field<Result | undefined> {
-    const dummy = Field.use(undefined, []);
+    ? FieldOld<Payload | undefined>
+    : FieldOld<Result | undefined> {
+    const dummy = FieldOld.use(undefined, []);
     const frozenDummy = useMemo(() => Object.freeze(dummy), [dummy]);
     const mappedField = (map && field && map(field)) || field;
     // @ts-ignore: TODO:
-    return (mappedField || frozenDummy) as Field<Payload | undefined>;
+    return (mappedField || frozenDummy) as FieldOld<Payload | undefined>;
   }
 
   /**
@@ -729,8 +856,8 @@ export class Field<Payload>
    * @returns The same field instance with `Widening` added to the payload type.
    */
   // TODO: Research if it's possible to make TypeScript accept wider paths.
-  widen<Wide>(): Field<Payload | Wide> {
-    return this as Field<Payload | Wide>;
+  widen<Wide>(): FieldOld<Payload | Wide> {
+    return this as FieldOld<Payload | Wide>;
   }
 
   //#endregion
@@ -750,8 +877,8 @@ export class Field<Payload>
    * @returns Builder object with `from` method
    */
   into<ComputedValue>(
-    intoMapper: Field.IntoCallback<Payload, ComputedValue>,
-  ): Field.IntoObj<Payload, ComputedValue> {
+    intoMapper: FieldOld.IntoCallback<Payload, ComputedValue>,
+  ): FieldOld.IntoObj<Payload, ComputedValue> {
     return {
       from: (fromMapper) => new ComputedField(this, intoMapper, fromMapper),
     };
@@ -759,10 +886,10 @@ export class Field<Payload>
 
   // TODO: Add tests
   useInto<Computed>(
-    intoCallback: Field.IntoCallback<Payload, Computed>,
+    intoCallback: FieldOld.IntoCallback<Payload, Computed>,
     intoDeps: DependencyList,
-  ): Field.IntoHook<Payload, Computed> {
-    const from = useCallback<Field.FromHook<Payload, Computed>>(
+  ): FieldOld.IntoHook<Payload, Computed> {
+    const from = useCallback<FieldOld.FromHook<Payload, Computed>>(
       (fromCallback, fromDeps) => {
         const computed = useMemo(
           () => new ComputedField(this, intoCallback, fromCallback),
@@ -782,7 +909,9 @@ export class Field<Payload>
 
   //#region Collection
 
-  static asCollection<Value>(field: Field<Value>): AsCollection.Result<Value> {
+  static asCollection<Value>(
+    field: FieldOld<Value>,
+  ): AsCollection.Result<Value> {
     if (
       field.#internal instanceof InternalObjectState ||
       field.#internal instanceof InternalArrayState
@@ -791,43 +920,43 @@ export class Field<Payload>
   }
 
   static asArray<Value>(
-    field: Field<Value>,
+    field: FieldOld<Value>,
   ): AsCollection.AsArrayResult<Value> {
     if (field.#internal instanceof InternalArrayState)
       return field.#internal as any;
   }
 
   static asObject<Value>(
-    field: Field<Value>,
+    field: FieldOld<Value>,
   ): AsCollection.AsObjectResult<Value> {
     if (field.#internal instanceof InternalObjectState)
       return field.#internal as any;
   }
 
   static asChild<Value>(
-    field: Field<Value>,
+    field: FieldOld<Value>,
   ): AsCollection.AsChildResult<Value> {
     return field.#internal as any;
   }
 
   static asState<Value>(
-    field: Field<Value>,
+    field: FieldOld<Value>,
   ): AsState.ReadWriteResult<Value> | undefined {
     return field as any;
   }
 
   static fromField<Value>(
-    field: Field<Value> | undefined,
-  ): Field<Value> | undefined {
+    field: FieldOld<Value> | undefined,
+  ): FieldOld<Value> | undefined {
     return field;
   }
 
   static remove<Value>(
-    field: Field<Value>,
+    field: FieldOld<Value>,
     key?: keyof Value | undefined,
-  ): Field<DetachedValue> {
+  ): FieldOld<DetachedValue> {
     if (key === undefined) return field.set(detachedValue, true);
-    return Field.remove(field.at(key as any) as any);
+    return FieldOld.remove(field.at(key as any) as any);
   }
 
   //#endregion
@@ -835,8 +964,8 @@ export class Field<Payload>
   //#region Control
 
   control<Element extends HTMLElement>(
-    props?: Field.InputProps<Element>,
-  ): Field.Registration<Element> {
+    props?: FieldOld.InputProps<Element>,
+  ): FieldOld.Registration<Element> {
     this.#customRef = props?.ref;
     this.#customOnBlur = props?.onBlur;
 
@@ -901,7 +1030,7 @@ export class Field<Payload>
   // TODO: Consider caching errors.
   // #cachedErrors: Field.Error[] | undefined = undefined;
 
-  get errors(): Field.Error[] {
+  get errors(): FieldOld.Error[] {
     // if (this.#cachedErrors)return this.#cachedErrors;
     // return (this.#cachedErrors = this.validation.at(this.path));
     return this.validationTree.at(this.path);
@@ -909,7 +1038,9 @@ export class Field<Payload>
 
   useErrors<Enable extends boolean | undefined = undefined>(
     enable?: Enable,
-  ): Enable extends true | undefined ? Field.Error[] | undefined : undefined {
+  ): Enable extends true | undefined
+    ? FieldOld.Error[] | undefined
+    : undefined {
     const getValue = useCallback(
       () => this.errors,
       [
@@ -918,7 +1049,9 @@ export class Field<Payload>
       ],
     );
 
-    const shouldRender = useCallback<UseFieldHook.ShouldRender<Field.Error[]>>(
+    const shouldRender = useCallback<
+      UseFieldHook.ShouldRender<FieldOld.Error[]>
+    >(
       (prev, next) =>
         !(
           next === prev ||
@@ -928,9 +1061,9 @@ export class Field<Payload>
       [],
     );
 
-    return useFieldHook({
+    return useAtomHook({
       enable,
-      field: this as Field<any>,
+      atom: this as FieldOld<any>,
       getValue,
       shouldRender,
     });
@@ -942,13 +1075,13 @@ export class Field<Payload>
     return changes;
   }
 
-  static normalizeError(error: string | Field.Error): Field.Error {
+  static normalizeError(error: string | FieldOld.Error): FieldOld.Error {
     return typeof error === "string" ? { message: error } : error;
   }
 
-  addError(error: string | Field.Error) {
-    const changes = Field.errorChangesFor(this.valid);
-    this.validationTree.add(this.path, Field.normalizeError(error));
+  addError(error: string | FieldOld.Error) {
+    const changes = FieldOld.errorChangesFor(this.valid);
+    this.validationTree.add(this.path, FieldOld.normalizeError(error));
     this.eventsTree.trigger(this.path, changes);
   }
 
@@ -962,7 +1095,7 @@ export class Field<Payload>
     this.validationTree.clear(this.path);
 
     const errorsByPaths = Object.groupBy(errors, ([path]) =>
-      Field.nameFromPath(path),
+      FieldOld.nameFromPath(path),
     );
 
     const clearChanges = change.field.errors | change.field.valid;
@@ -993,9 +1126,9 @@ export class Field<Payload>
       ],
     );
 
-    return useFieldHook({
+    return useAtomHook({
       enable,
-      field: this as Field<any>,
+      atom: this as FieldOld<any>,
       getValue,
     });
   }
@@ -1011,12 +1144,12 @@ export class Field<Payload>
   }
 
   validate<Context>(
-    validator: Field.Validator<Payload, Context>,
+    validator: FieldOld.Validator<Payload, Context>,
     context: Context,
   ): Promise<void>;
 
   validate(
-    validator: Field.Validator<Payload, undefined>,
+    validator: FieldOld.Validator<Payload, undefined>,
     context?: undefined,
   ): Promise<void>;
 
@@ -1026,7 +1159,7 @@ export class Field<Payload>
    * the validation is resolved.
    */
   async validate<Context>(
-    validator: Field.Validator<Payload, undefined>,
+    validator: FieldOld.Validator<Payload, undefined>,
     context?: Context | undefined,
   ) {
     this.clearErrors();
@@ -1073,7 +1206,7 @@ export class Field<Payload>
   //#endregion
 }
 
-export namespace Field {
+export namespace FieldOld {
   //#region Interfaces
 
   export interface Hint {
@@ -1082,8 +1215,8 @@ export namespace Field {
 
   export type InterfaceDef<Payload> = {
     Payload: Payload;
-    Unknown: Field<unknown>;
-    NonNullish: Field<Utils.NonNullish<Payload>>;
+    Unknown: FieldOld<unknown>;
+    NonNullish: FieldOld<Utils.NonNullish<Payload>>;
     Bound: Bound<Payload>;
   };
 
@@ -1092,7 +1225,7 @@ export namespace Field {
     set<SetValue extends Def["Payload"] | DetachedValue>(
       value: SetValue,
       notifyParents?: boolean,
-    ): Field<SetValue>;
+    ): FieldOld<SetValue>;
   }
 
   export interface InterfaceTree<Def extends Enso.InterfaceDef>
@@ -1105,7 +1238,7 @@ export namespace Field {
 
     try<Key extends keyof Utils.NonNullish<Def["Payload"]>>(
       key: Key,
-    ): Field.TryKey<Field.InterfaceDef<Def["Payload"]>, Key>;
+    ): FieldOld.TryKey<FieldOld.InterfaceDef<Def["Payload"]>, Key>;
   }
 
   export interface InterfaceMap<Def extends Enso.InterfaceDef>
@@ -1146,12 +1279,12 @@ export namespace Field {
     extends Enso.InterfaceComputed {
     into<ComputedValue>(
       intoMapper: IntoCallback<Def["Payload"], ComputedValue>,
-    ): Field.IntoObj<Def["Payload"], ComputedValue>;
+    ): FieldOld.IntoObj<Def["Payload"], ComputedValue>;
 
     useInto<Computed>(
       intoMapper: IntoCallback<Def["Payload"], Computed>,
       intoDeps: DependencyList,
-    ): Field.IntoHook<Def["Payload"], Computed>;
+    ): FieldOld.IntoHook<Def["Payload"], Computed>;
   }
 
   export interface InterfaceCollection<Def extends Enso.InterfaceDef>
@@ -1163,14 +1296,14 @@ export namespace Field {
 
   //#region Properties
 
-  export type Detachable<Value> = Enso.Detachable<Field<Value>>;
+  export type Detachable<Value> = Enso.Detachable<FieldOld<Value>>;
 
-  export type Tried<Value> = Enso.Tried<Field<Value>>;
+  export type Tried<Value> = Enso.Tried<FieldOld<Value>>;
 
-  export type Bound<Value> = Enso.Bound<Field<Value>>;
+  export type Bound<Value> = Enso.Bound<FieldOld<Value>>;
 
   export type Branded<Value, Flags extends Enso.Flags> = Enso.Branded<
-    Field<Value>,
+    FieldOld<Value>,
     Flags
   >;
 
@@ -1182,11 +1315,11 @@ export namespace Field {
 
   export interface ParentDirect<Payload> {
     key: string;
-    field: Field<Payload>;
+    field: FieldOld<Payload>;
   }
 
   export interface ParentSource<Payload> {
-    source: Field<Payload>;
+    source: FieldOld<Payload>;
   }
 
   export type $<Payload> = Payload extends object ? $Object<Payload> : never;
@@ -1194,17 +1327,17 @@ export namespace Field {
   export type $Object<Payload> = {
     [Key in keyof Payload]-?: Utils.IsStaticKey<Payload, Key> extends true
       ? Utils.IsOptionalKey<Payload, Key> extends true
-        ? Enso.Detachable<Field<Payload[Key]>>
-        : Field<Payload[Key]>
-      : Enso.Detachable<Field<Payload[Key] | undefined>>;
+        ? Enso.Detachable<FieldOld<Payload[Key]>>
+        : FieldOld<Payload[Key]>
+      : Enso.Detachable<FieldOld<Payload[Key] | undefined>>;
   };
 
   export type At<Payload, Key extends keyof Payload> =
     Utils.IsStaticKey<Payload, Key> extends true
       ? Utils.IsOptionalKey<Payload, Key> extends true
-        ? Enso.Detachable<Field<Payload[Key]>>
-        : Field<Payload[Key]>
-      : Enso.Detachable<Field<Payload[Key] | undefined>>;
+        ? Enso.Detachable<FieldOld<Payload[Key]>>
+        : FieldOld<Payload[Key]>
+      : Enso.Detachable<FieldOld<Payload[Key] | undefined>>;
 
   export type TryKey<
     Def extends Enso.InterfaceDef,
@@ -1222,15 +1355,15 @@ export namespace Field {
 
   export type Every<Value> =
     // Handle boolean separately, so it doesn't produce Field<true> | Field<false>
-    | (boolean extends Value ? Field<boolean> : never)
+    | (boolean extends Value ? FieldOld<boolean> : never)
     | (Exclude<Value, boolean> extends infer Value
         ? Value extends Value
-          ? Field<Value>
+          ? FieldOld<Value>
           : never
         : never);
 
   export type EveryValueUnion<FieldType> =
-    FieldType extends Field<infer Value> ? Value : never;
+    FieldType extends FieldOld<infer Value> ? Value : never;
 
   export type DiscriminateResult<
     FieldType,
@@ -1255,7 +1388,7 @@ export namespace Field {
           ? {
               discriminator: DiscriminatorValue;
               field: Enso.Branded<
-                Enso.TransferBrands<Field<Payload>, BrandsSource>,
+                Enso.TransferBrands<FieldOld<Payload>, BrandsSource>,
                 Flags
               >;
             }
@@ -1265,7 +1398,7 @@ export namespace Field {
         {
           discriminator: undefined;
           field: Enso.Branded<
-            Enso.TransferBrands<Field<Payload>, BrandsSource>,
+            Enso.TransferBrands<FieldOld<Payload>, BrandsSource>,
             Flags
           >;
         }
@@ -1289,18 +1422,18 @@ export namespace Field {
   > = Value extends Value
     ? {
         value: Value;
-        field: Enso.Branded<Field<Value>, Flags>;
+        field: Enso.Branded<FieldOld<Value>, Flags>;
       }
     : never;
 
   export type DecomposeResult<FieldType> = DecomposedInner<FieldType>;
 
   export type DecomposedInner<FieldType> =
-    FieldType extends Field<infer Value>
+    FieldType extends FieldOld<infer Value>
       ? Value extends Value
         ? {
             value: Value;
-            field: Enso.TransferBrands<Field<Value>, FieldType>;
+            field: Enso.TransferBrands<FieldOld<Value>, FieldType>;
           }
         : never
       : never;
@@ -1311,7 +1444,7 @@ export namespace Field {
   ) => boolean;
 
   export type DecomposeHookCallbackValue<FieldType> =
-    FieldType extends Field<infer Value> ? Value : never;
+    FieldType extends FieldOld<infer Value> ? Value : never;
 
   //
 
@@ -1331,13 +1464,13 @@ export namespace Field {
   declare const narrowBrapperBrand: unique symbol;
 
   export type Ensured<Payload> = [
-    Field<Payload | undefined>,
-    Readonly<Field<undefined>>,
+    FieldOld<Payload | undefined>,
+    Readonly<FieldOld<undefined>>,
   ];
 
   export type MapField<Payload, Return> = (
-    field: Field<Payload>,
-  ) => Field<Return>;
+    field: FieldOld<Payload>,
+  ) => FieldOld<Return>;
 
   //#endregion
 
@@ -1408,7 +1541,7 @@ export namespace Field {
     Result = void,
   > = (
     ...args: {
-      [Key in Utils.IndexOfTuple<Value>]: [Field<Value[Key]>, Key];
+      [Key in Utils.IndexOfTuple<Value>]: [FieldOld<Value[Key]>, Key];
     }[Utils.IndexOfTuple<Value>]
   ) => Result;
 
@@ -1442,7 +1575,7 @@ export namespace Field {
     // Exclude is needed to remove undefined that appears when there're optional
     // fields in the object.
     ...args: Exclude<
-      { [Key in keyof Value]: [Field<Value[Key]>, Key] }[keyof Value],
+      { [Key in keyof Value]: [FieldOld<Value[Key]>, Key] }[keyof Value],
       undefined
     >
   ) => Result;
@@ -1454,7 +1587,7 @@ export namespace Field {
     // Exclude is needed to remove undefined that appears when there're optional
     // fields in the object.
     item: Exclude<
-      { [Key in keyof Value]: Field<Value[Key]> }[keyof Value],
+      { [Key in keyof Value]: FieldOld<Value[Key]> }[keyof Value],
       undefined
     >,
   ) => Result;
@@ -1493,7 +1626,7 @@ export namespace Field {
     // Remove undefined that sneaks in
     Exclude<
       // Use mapped type to preserve Type | undefined for optional fields
-      { [Key in keyof Value]: Field<Value[Key]> }[keyof Value],
+      { [Key in keyof Value]: FieldOld<Value[Key]> }[keyof Value],
       undefined
     >;
 
@@ -1508,7 +1641,7 @@ export namespace Field {
     ErrorsEnable extends boolean = false,
     ValidEnable extends boolean = false,
   > = {
-    field: Field<Payload>;
+    field: FieldOld<Payload>;
     render: InputRender<
       Payload,
       MetaEnable extends true
@@ -1601,32 +1734,32 @@ declare module "./collection/index.ts" {
     // Tuple
 
     <Value extends Utils.Tuple>(
-      field: Field<Value> | Utils.Nullish<Enso.Tried<Field<Value>>>,
-      callback: Field.CollectionCallbackTuplePair<Value>,
+      field: FieldOld<Value> | Utils.Nullish<Enso.Tried<FieldOld<Value>>>,
+      callback: FieldOld.CollectionCallbackTuplePair<Value>,
     ): void;
 
     <Value extends Utils.Tuple>(
-      field: Field<Value> | Utils.Nullish<Enso.Tried<Field<Value>>>,
-      callback: Field.CollectionCallbackTupleSingle<Value>,
+      field: FieldOld<Value> | Utils.Nullish<Enso.Tried<FieldOld<Value>>>,
+      callback: FieldOld.CollectionCallbackTupleSingle<Value>,
     ): void;
 
     // Array
 
     <Value extends unknown[]>(
-      field: Field<Value> | Utils.Nullish<Enso.Tried<Field<Value>>>,
-      callback: Field.CollectionCallbackArray<Value>,
+      field: FieldOld<Value> | Utils.Nullish<Enso.Tried<FieldOld<Value>>>,
+      callback: FieldOld.CollectionCallbackArray<Value>,
     ): void;
 
     // Object
 
     <Value extends object>(
-      field: Field<Value> | Utils.Nullish<Enso.Tried<Field<Value>>>,
-      callback: Field.CollectionCallbackObjectPair<Value>,
+      field: FieldOld<Value> | Utils.Nullish<Enso.Tried<FieldOld<Value>>>,
+      callback: FieldOld.CollectionCallbackObjectPair<Value>,
     ): void;
 
     <Value extends object>(
-      field: Field<Value> | Utils.Nullish<Enso.Tried<Field<Value>>>,
-      callback: Field.CollectionCallbackObjectSingle<Value>,
+      field: FieldOld<Value> | Utils.Nullish<Enso.Tried<FieldOld<Value>>>,
+      callback: FieldOld.CollectionCallbackObjectSingle<Value>,
     ): void;
   }
 
@@ -1636,32 +1769,32 @@ declare module "./collection/index.ts" {
     // Tuple
 
     <Value extends Utils.Tuple, Result>(
-      field: Field<Value> | Utils.Nullish<Enso.Tried<Field<Value>>>,
-      callback: Field.CollectionCallbackTuplePair<Value, Result>,
+      field: FieldOld<Value> | Utils.Nullish<Enso.Tried<FieldOld<Value>>>,
+      callback: FieldOld.CollectionCallbackTuplePair<Value, Result>,
     ): Result[];
 
     <Value extends Utils.Tuple, Result>(
-      field: Field<Value> | Utils.Nullish<Enso.Tried<Field<Value>>>,
-      callback: Field.CollectionCallbackTupleSingle<Value, Result>,
+      field: FieldOld<Value> | Utils.Nullish<Enso.Tried<FieldOld<Value>>>,
+      callback: FieldOld.CollectionCallbackTupleSingle<Value, Result>,
     ): Result[];
 
     // Array
 
     <Value extends unknown[], Result>(
-      field: Field<Value> | Utils.Nullish<Enso.Tried<Field<Value>>>,
-      callback: Field.CollectionCallbackArray<Value, Result>,
+      field: FieldOld<Value> | Utils.Nullish<Enso.Tried<FieldOld<Value>>>,
+      callback: FieldOld.CollectionCallbackArray<Value, Result>,
     ): Result[];
 
     // Object
 
     <Value extends object, Result>(
-      field: Field<Value> | Utils.Nullish<Enso.Tried<Field<Value>>>,
-      callback: Field.CollectionCallbackObjectPair<Value, Result>,
+      field: FieldOld<Value> | Utils.Nullish<Enso.Tried<FieldOld<Value>>>,
+      callback: FieldOld.CollectionCallbackObjectPair<Value, Result>,
     ): Result[];
 
     <Value extends object, Result>(
-      field: Field<Value> | Utils.Nullish<Enso.Tried<Field<Value>>>,
-      callback: Field.CollectionCallbackObjectSingle<Value, Result>,
+      field: FieldOld<Value> | Utils.Nullish<Enso.Tried<FieldOld<Value>>>,
+      callback: FieldOld.CollectionCallbackObjectSingle<Value, Result>,
     ): Result[];
   }
 
@@ -1670,11 +1803,11 @@ declare module "./collection/index.ts" {
   interface FieldSize {
     // Tuple/Array
 
-    <Value extends unknown[]>(field: Field<Value>): Value["length"];
+    <Value extends unknown[]>(field: FieldOld<Value>): Value["length"];
 
     // Object
 
-    <Value extends object>(field: Field<Value>): number;
+    <Value extends object>(field: FieldOld<Value>): number;
   }
 
   // `fieldFind`
@@ -1683,33 +1816,33 @@ declare module "./collection/index.ts" {
     // Tuple
 
     <Value extends Utils.Tuple>(
-      field: Field<Value> | Utils.Nullish<Enso.Tried<Field<Value>>>,
-      predicate: Field.CollectionCallbackTuplePair<Value, unknown>,
-    ): Field.ItemResultTuple<Value> | undefined;
+      field: FieldOld<Value> | Utils.Nullish<Enso.Tried<FieldOld<Value>>>,
+      predicate: FieldOld.CollectionCallbackTuplePair<Value, unknown>,
+    ): FieldOld.ItemResultTuple<Value> | undefined;
 
     <Value extends Utils.Tuple>(
-      field: Field<Value> | Utils.Nullish<Enso.Tried<Field<Value>>>,
-      predicate: Field.CollectionCallbackTupleSingle<Value, unknown>,
-    ): Field.ItemResultTuple<Value> | undefined;
+      field: FieldOld<Value> | Utils.Nullish<Enso.Tried<FieldOld<Value>>>,
+      predicate: FieldOld.CollectionCallbackTupleSingle<Value, unknown>,
+    ): FieldOld.ItemResultTuple<Value> | undefined;
 
     // Array
 
     <Value extends unknown[]>(
-      field: Field<Value> | Utils.Nullish<Enso.Tried<Field<Value>>>,
-      callback: Field.CollectionCallbackArray<Value, unknown>,
-    ): Field.ItemResultArray<Value> | undefined;
+      field: FieldOld<Value> | Utils.Nullish<Enso.Tried<FieldOld<Value>>>,
+      callback: FieldOld.CollectionCallbackArray<Value, unknown>,
+    ): FieldOld.ItemResultArray<Value> | undefined;
 
     // Object
 
     <Value extends object>(
-      field: Field<Value> | Utils.Nullish<Enso.Tried<Field<Value>>>,
-      predicate: Field.CollectionCallbackObjectPair<Value, unknown>,
-    ): Field.ItemResultObject<Value> | undefined;
+      field: FieldOld<Value> | Utils.Nullish<Enso.Tried<FieldOld<Value>>>,
+      predicate: FieldOld.CollectionCallbackObjectPair<Value, unknown>,
+    ): FieldOld.ItemResultObject<Value> | undefined;
 
     <Value extends object>(
-      field: Field<Value> | Utils.Nullish<Enso.Tried<Field<Value>>>,
-      predicate: Field.CollectionCallbackObjectSingle<Value, unknown>,
-    ): Field.ItemResultObject<Value> | undefined;
+      field: FieldOld<Value> | Utils.Nullish<Enso.Tried<FieldOld<Value>>>,
+      predicate: FieldOld.CollectionCallbackObjectSingle<Value, unknown>,
+    ): FieldOld.ItemResultObject<Value> | undefined;
   }
 
   // `fieldFilter`
@@ -1718,63 +1851,63 @@ declare module "./collection/index.ts" {
     // Tuple
 
     <Value extends Utils.Tuple>(
-      field: Field<Value> | Utils.Nullish<Enso.Tried<Field<Value>>>,
-      predicate: Field.CollectionCallbackTuplePair<Value, unknown>,
-    ): Field.ItemResultTuple<Value>[];
+      field: FieldOld<Value> | Utils.Nullish<Enso.Tried<FieldOld<Value>>>,
+      predicate: FieldOld.CollectionCallbackTuplePair<Value, unknown>,
+    ): FieldOld.ItemResultTuple<Value>[];
 
     <Value extends Utils.Tuple>(
-      field: Field<Value> | Utils.Nullish<Enso.Tried<Field<Value>>>,
-      predicate: Field.CollectionCallbackTupleSingle<Value, unknown>,
-    ): Field.ItemResultTuple<Value>[];
+      field: FieldOld<Value> | Utils.Nullish<Enso.Tried<FieldOld<Value>>>,
+      predicate: FieldOld.CollectionCallbackTupleSingle<Value, unknown>,
+    ): FieldOld.ItemResultTuple<Value>[];
 
     // Array
 
     <Value extends unknown[]>(
-      field: Field<Value> | Utils.Nullish<Enso.Tried<Field<Value>>>,
-      callback: Field.CollectionCallbackArray<Value, unknown>,
-    ): Field.ItemResultArray<Value>[];
+      field: FieldOld<Value> | Utils.Nullish<Enso.Tried<FieldOld<Value>>>,
+      callback: FieldOld.CollectionCallbackArray<Value, unknown>,
+    ): FieldOld.ItemResultArray<Value>[];
 
     // Object
 
     <Value extends object>(
-      field: Field<Value> | Utils.Nullish<Enso.Tried<Field<Value>>>,
-      predicate: Field.CollectionCallbackObjectPair<Value, unknown>,
-    ): Field.ItemResultObject<Value>[];
+      field: FieldOld<Value> | Utils.Nullish<Enso.Tried<FieldOld<Value>>>,
+      predicate: FieldOld.CollectionCallbackObjectPair<Value, unknown>,
+    ): FieldOld.ItemResultObject<Value>[];
 
     <Value extends object>(
-      field: Field<Value> | Utils.Nullish<Enso.Tried<Field<Value>>>,
-      predicate: Field.CollectionCallbackObjectSingle<Value, unknown>,
-    ): Field.ItemResultObject<Value>[];
+      field: FieldOld<Value> | Utils.Nullish<Enso.Tried<FieldOld<Value>>>,
+      predicate: FieldOld.CollectionCallbackObjectSingle<Value, unknown>,
+    ): FieldOld.ItemResultObject<Value>[];
   }
 
   // `fieldPush`
 
   interface FieldPush {
     <Value extends unknown[], ItemValue extends Value[number]>(
-      field: Field<Utils.NonTuple<Value>>,
+      field: FieldOld<Utils.NonTuple<Value>>,
       item: ItemValue,
-    ): Field.Detachable<ItemValue>;
+    ): FieldOld.Detachable<ItemValue>;
 
     <Value extends unknown[], ItemValue extends Value[number]>(
-      field: Enso.Tried<Field<Utils.NonTuple<Value>>> | undefined | null,
+      field: Enso.Tried<FieldOld<Utils.NonTuple<Value>>> | undefined | null,
       item: ItemValue,
-    ): Field.Detachable<ItemValue>;
+    ): FieldOld.Detachable<ItemValue>;
   }
 
   // `fieldInsert`
 
   interface FieldInsert {
     <Value extends unknown[], ItemValue extends Value[number]>(
-      field: Field<Utils.NonTuple<Value>>,
+      field: FieldOld<Utils.NonTuple<Value>>,
       index: number,
       item: ItemValue,
-    ): Field.Detachable<ItemValue>;
+    ): FieldOld.Detachable<ItemValue>;
 
     <Value extends unknown[], ItemValue extends Value[number]>(
-      field: Enso.Tried<Field<Utils.NonTuple<Value>>> | undefined | null,
+      field: Enso.Tried<FieldOld<Utils.NonTuple<Value>>> | undefined | null,
       index: number,
       item: ItemValue,
-    ): Field.Detachable<ItemValue>;
+    ): FieldOld.Detachable<ItemValue>;
   }
 
   // `fieldRemove`
@@ -1784,19 +1917,19 @@ declare module "./collection/index.ts" {
 
     <Value extends unknown[]>(
       field:
-        | Field<Utils.NonTuple<Value>>
-        | Utils.Nullish<Enso.Tried<Field<Utils.NonTuple<Value>>>>,
+        | FieldOld<Utils.NonTuple<Value>>
+        | Utils.Nullish<Enso.Tried<FieldOld<Utils.NonTuple<Value>>>>,
       item: number,
-    ): Field.Detachable<DetachedValue>;
+    ): FieldOld.Detachable<DetachedValue>;
 
     // Object
 
     <Value extends object, Key extends Enso.DetachableKeys<Value>>(
       field:
-        | Field<Utils.NonTuple<Value>>
-        | Utils.Nullish<Enso.Tried<Field<Utils.NonTuple<Value>>>>,
+        | FieldOld<Utils.NonTuple<Value>>
+        | Utils.Nullish<Enso.Tried<FieldOld<Utils.NonTuple<Value>>>>,
       key: Key,
-    ): Field.Detachable<DetachedValue>;
+    ): FieldOld.Detachable<DetachedValue>;
 
     // Self
 
@@ -1804,12 +1937,12 @@ declare module "./collection/index.ts" {
     // mixing in nullish types.
 
     <Value>(
-      field: Enso.Detachable<Field<Value>>,
-    ): Field.Detachable<DetachedValue>;
+      field: Enso.Detachable<FieldOld<Value>>,
+    ): FieldOld.Detachable<DetachedValue>;
 
     <Value>(
-      field: Utils.Nullish<Enso.Tried<Enso.Detachable<Field<Value>>>>,
-    ): Field.Detachable<DetachedValue>;
+      field: Utils.Nullish<Enso.Tried<Enso.Detachable<FieldOld<Value>>>>,
+    ): FieldOld.Detachable<DetachedValue>;
   }
 }
 
@@ -1818,28 +1951,28 @@ declare module "./type/index.ts" {
 
   interface FieldDiscriminate {
     <
-      FieldType extends Field.Hint,
+      FieldType extends FieldOld.Hint,
       Discriminator extends Utils.NonUndefined<
-        Field.DiscriminatorFor<FieldType>
+        FieldOld.DiscriminatorFor<FieldType>
       >,
     >(
       field: FieldType,
       discriminator: Discriminator,
-    ): Field.DiscriminateResult<FieldType, Discriminator>;
+    ): FieldOld.DiscriminateResult<FieldType, Discriminator>;
   }
 
   // `useFieldDiscriminate`
 
   interface UseFieldDiscriminate {
     <
-      FieldType extends Field.Hint,
+      FieldType extends FieldOld.Hint,
       Discriminator extends Utils.NonUndefined<
-        Field.DiscriminatorFor<FieldType>
+        FieldOld.DiscriminatorFor<FieldType>
       >,
     >(
       field: FieldType,
       discriminator: Discriminator,
-    ): Field.DiscriminateResult<FieldType, Discriminator>;
+    ): FieldOld.DiscriminateResult<FieldType, Discriminator>;
   }
 }
 
@@ -1847,7 +1980,7 @@ declare module "./transform/index.ts" {
   // `fieldDecompose`
 
   interface FieldDecompose {
-    <FieldType>(field: FieldType): Field.DecomposeResult<FieldType>;
+    <FieldType>(field: FieldType): FieldOld.DecomposeResult<FieldType>;
   }
 
   // `useFieldDecompose`
@@ -1855,9 +1988,9 @@ declare module "./transform/index.ts" {
   interface UseFieldDecompose {
     <FieldType>(
       field: FieldType,
-      callback: Field.DecomposeHookCallback<FieldType>,
+      callback: FieldOld.DecomposeHookCallback<FieldType>,
       deps: DependencyList,
-    ): Field.DecomposeResult<FieldType>;
+    ): FieldOld.DecomposeResult<FieldType>;
   }
 }
 //#endregion
@@ -1868,17 +2001,17 @@ declare module "./transform/index.ts" {
 // circular dependencies, as it extends `Field` and `Field` uses it in its
 // `into` method.
 
-export class ComputedField<Payload, Computed> extends Field<Computed> {
-  #source: Field<Payload>;
+export class ComputedField<Payload, Computed> extends FieldOld<Computed> {
+  #source: FieldOld<Payload>;
   #brand: symbol = Symbol();
-  #into: Field.IntoCallback<Payload, Computed>;
-  #from: Field.FromCallback<Payload, Computed>;
+  #into: FieldOld.IntoCallback<Payload, Computed>;
+  #from: FieldOld.FromCallback<Payload, Computed>;
   #unsubs: Enso.Unwatch[] = [];
 
   constructor(
-    source: Field<Payload>,
-    into: Field.IntoCallback<Payload, Computed>,
-    from: Field.FromCallback<Payload, Computed>,
+    source: FieldOld<Payload>,
+    into: FieldOld.IntoCallback<Payload, Computed>,
+    from: FieldOld.FromCallback<Payload, Computed>,
   ) {
     const payload = into(source.get(), undefined);
     super(payload, { source: source as any });
@@ -1956,14 +2089,14 @@ export class ComputedField<Payload, Computed> extends Field<Computed> {
   }
 
   override deconstruct() {
-    Field.prototype.deconstruct.call(this);
+    FieldOld.prototype.deconstruct.call(this);
     this.#unsubs.forEach((unsub) => unsub());
     this.#unsubs = [];
   }
 
   //#region Computed
 
-  connect(source: Field<Payload>): void {
+  connect(source: FieldOld<Payload>): void {
     this.#source = source;
   }
 
@@ -1992,9 +2125,9 @@ export abstract class InternalState<Payload> {
     return InternalValueState;
   }
 
-  #external: Field<Payload>;
+  #external: FieldOld<Payload>;
 
-  constructor(field: Field<Payload>, _value: Payload | DetachedValue) {
+  constructor(field: FieldOld<Payload>, _value: Payload | DetachedValue) {
     this.#external = field;
   }
 
@@ -2006,13 +2139,13 @@ export abstract class InternalState<Payload> {
 
   //#region Tree
 
-  abstract $(): Field.$<Payload>;
+  abstract $(): FieldOld.$<Payload>;
 
-  try(): Enso.TryUnion<Field.InterfaceDef<Payload>>;
+  try(): Enso.TryUnion<FieldOld.InterfaceDef<Payload>>;
 
   try<Key extends keyof Payload>(
     key: Key,
-  ): Field.TryKey<Field.InterfaceDef<Payload>, Key>;
+  ): FieldOld.TryKey<FieldOld.InterfaceDef<Payload>, Key>;
 
   try(): any {
     const value = this.get();
@@ -2020,7 +2153,7 @@ export abstract class InternalState<Payload> {
     return this.external;
   }
 
-  abstract lookup(path: Enso.Path): Field<unknown> | undefined;
+  abstract lookup(path: Enso.Path): FieldOld<unknown> | undefined;
 
   //#endregion
 
@@ -2043,7 +2176,7 @@ export abstract class InternalState<Payload> {
 
   discriminate<Discriminator extends keyof Utils.NonUndefined<Payload>>(
     discriminator: Discriminator,
-  ): Field.Discriminated<Payload, Discriminator> {
+  ): FieldOld.Discriminated<Payload, Discriminator> {
     return {
       // @ts-ignore: TODO:
       discriminator: this.external.$?.[discriminator]?.get(),
@@ -2059,7 +2192,7 @@ export abstract class InternalState<Payload> {
 export class InternalValueState<Payload> extends InternalState<Payload> {
   #value: Payload | DetachedValue;
 
-  constructor(field: Field<Payload>, value: Payload | DetachedValue) {
+  constructor(field: FieldOld<Payload>, value: Payload | DetachedValue) {
     super(field, value);
     this.#value = value;
   }
@@ -2088,17 +2221,17 @@ export class InternalValueState<Payload> extends InternalState<Payload> {
     return this.#value === detachedValue ? (undefined as Payload) : this.#value;
   }
 
-  remove(): Field<DetachedValue> {
-    return Field.remove(this.external);
+  remove(): FieldOld<DetachedValue> {
+    return FieldOld.remove(this.external);
   }
 
   //#region Tree
 
-  $(): Field.$<Payload> {
-    return undefined as unknown as Field.$<Payload>;
+  $(): FieldOld.$<Payload> {
+    return undefined as unknown as FieldOld.$<Payload>;
   }
 
-  lookup(path: Enso.Path): Field<unknown> | undefined {
+  lookup(path: Enso.Path): FieldOld<unknown> | undefined {
     if (path.length === 0) return this.external as any;
     return undefined;
   }
@@ -2127,10 +2260,10 @@ export class InternalValueState<Payload> extends InternalState<Payload> {
 export class InternalObjectState<
   Payload extends object,
 > extends InternalState<Payload> {
-  #children: Map<string, Field<any>> = new Map();
+  #children: Map<string, FieldOld<any>> = new Map();
   #undefined;
 
-  constructor(external: Field<Payload>, value: Payload) {
+  constructor(external: FieldOld<Payload>, value: Payload) {
     super(external, value);
     // @ts-ignore: TODO:
     this.#undefined = new UndefinedStateRegistry(external);
@@ -2160,8 +2293,8 @@ export class InternalObjectState<
 
         const newChild =
           undefinedState ||
-          new Field(value, { key, field: this.external as Field<any> });
-        this.#children.set(key, newChild as Field<any>);
+          new FieldOld(value, { key, field: this.external as FieldOld<any> });
+        this.#children.set(key, newChild as FieldOld<any>);
         changes |= change.child.attach;
       }
     }
@@ -2180,19 +2313,19 @@ export class InternalObjectState<
 
   //#region Tree
 
-  $(): Field.$<Payload> {
+  $(): FieldOld.$<Payload> {
     return this.#$;
   }
 
-  #$ = new Proxy({} as Field.$<Payload>, {
+  #$ = new Proxy({} as FieldOld.$<Payload>, {
     get: (_, key: string) => this.#$field(key),
   });
 
-  at<Key extends keyof Payload>(key: Key): Field.At<Payload, Key> {
-    return this.#$field(String(key)) as Field.At<Payload, Key>;
+  at<Key extends keyof Payload>(key: Key): FieldOld.At<Payload, Key> {
+    return this.#$field(String(key)) as FieldOld.At<Payload, Key>;
   }
 
-  lookup(path: Enso.Path): Field<unknown> | undefined {
+  lookup(path: Enso.Path): FieldOld<unknown> | undefined {
     if (path.length === 0) return this.external as any;
     const [key, ...restPath] = path;
     return this.#$field(String(key))?.lookup(restPath);
@@ -2296,7 +2429,7 @@ export class InternalObjectState<
 
   find(
     predicate: InternalObjectState.CollectionCallback<Payload, any>,
-  ): Field<Payload[keyof Payload]> | undefined {
+  ): FieldOld<Payload[keyof Payload]> | undefined {
     for (const [key, value] of this.#children.entries() as any) {
       if (predicate(value, key)) return value;
     }
@@ -2304,7 +2437,7 @@ export class InternalObjectState<
 
   filter(
     predicate: InternalObjectState.CollectionCallback<Payload, unknown>,
-  ): Field<Payload[keyof Payload]>[] {
+  ): FieldOld<Payload[keyof Payload]>[] {
     return Array.from(this.#children.entries()).reduce<any[]>(
       (acc, [key, value]: any) =>
         predicate(value, key) ? (acc.push(value), acc) : acc,
@@ -2312,8 +2445,8 @@ export class InternalObjectState<
     );
   }
 
-  remove(key?: keyof Payload): Field<DetachedValue> {
-    return Field.remove(this.external, key);
+  remove(key?: keyof Payload): FieldOld<DetachedValue> {
+    return FieldOld.remove(this.external, key);
   }
 
   //#endregion
@@ -2323,7 +2456,7 @@ export namespace InternalObjectState {
   export type CollectionCallback<Value extends object, Result = void> = <
     Key extends keyof Value,
   >(
-    item: Field<Value[Key]>,
+    item: FieldOld<Value[Key]>,
     key: Key,
   ) => Result;
 }
@@ -2335,10 +2468,10 @@ export namespace InternalObjectState {
 export class InternalArrayState<
   Payload extends Array<any>,
 > extends InternalState<Payload> {
-  #children: Field<any>[] = [];
+  #children: FieldOld<any>[] = [];
   #undefined;
 
-  constructor(external: Field<Payload>, value: Payload) {
+  constructor(external: FieldOld<Payload>, value: Payload) {
     super(external, value);
 
     // @ts-ignore: This is fine
@@ -2375,7 +2508,7 @@ export class InternalArrayState<
 
         const newChild =
           undefinedState ||
-          new Field(value, {
+          new FieldOld(value, {
             key: String(index),
             // @ts-ignore: This is fine
             field: this.external,
@@ -2393,16 +2526,16 @@ export class InternalArrayState<
 
   //#region Tree
 
-  $(): Field.$<Payload> {
+  $(): FieldOld.$<Payload> {
     return this.#$;
   }
 
-  #$ = new Proxy({} as Field.$<Payload>, {
+  #$ = new Proxy({} as FieldOld.$<Payload>, {
     get: (_, index: string) => this.#item(Number(index)),
   });
 
-  at<Key extends keyof Payload>(key: Key): Field.At<Payload, Key> {
-    return this.#item(Number(key)) as Field.At<Payload, Key>;
+  at<Key extends keyof Payload>(key: Key): FieldOld.At<Payload, Key> {
+    return this.#item(Number(key)) as FieldOld.At<Payload, Key>;
   }
 
   #item(index: number) {
@@ -2421,7 +2554,7 @@ export class InternalArrayState<
     }
   }
 
-  lookup(path: Enso.Path): Field<unknown> | undefined {
+  lookup(path: Enso.Path): FieldOld<unknown> | undefined {
     if (path.length === 0) return this.external as any;
     const [index, ...restPath] = path;
     return this.#item(Number(index))?.lookup(restPath);
@@ -2532,9 +2665,11 @@ export class InternalArrayState<
     return this.#children.length;
   }
 
-  push<ItemValue extends Payload[number]>(item: ItemValue): Field<ItemValue> {
+  push<ItemValue extends Payload[number]>(
+    item: ItemValue,
+  ): FieldOld<ItemValue> {
     const length = this.#children.length;
-    const field = new Field(item, {
+    const field = new FieldOld(item, {
       key: String(length),
       // @ts-ignore: This is fine
       field: this.external,
@@ -2548,7 +2683,11 @@ export class InternalArrayState<
 
   insert(index: number, item: Payload[number]) {
     // @ts-ignore: TODO
-    const field = new Field(item, { key: String(index), field: this.external });
+    const field = new FieldOld(item, {
+      key: String(index),
+      // @ts-ignore: TODO
+      field: this.external,
+    });
     this.#children.splice(
       index,
       0,
@@ -2564,20 +2703,20 @@ export class InternalArrayState<
     return field;
   }
 
-  remove(key?: keyof Payload): Field<DetachedValue> {
-    return Field.remove(this.external, key);
+  remove(key?: keyof Payload): FieldOld<DetachedValue> {
+    return FieldOld.remove(this.external, key);
   }
 
   find(
-    predicate: Field.PredicateEvery<Payload[number]>,
-  ): Field<Payload[number]> | undefined {
+    predicate: FieldOld.PredicateEvery<Payload[number]>,
+  ): FieldOld<Payload[number]> | undefined {
     // @ts-ignore: This is fine
     return this.#children.find(predicate);
   }
 
   filter(
-    predicate: Field.PredicateEvery<Payload[number]>,
-  ): Field<Payload[number]>[] {
+    predicate: FieldOld.PredicateEvery<Payload[number]>,
+  ): FieldOld<Payload[number]>[] {
     // @ts-ignore: This is fine
     return this.#children.filter(predicate);
   }
@@ -2587,7 +2726,7 @@ export class InternalArrayState<
 
 export namespace InternalArrayState {
   export type CollectionCallback<Value extends Array<any>, Result = void> = (
-    item: Field<Value[number]>,
+    item: FieldOld<Value[number]>,
     index: number,
   ) => Result;
 }
@@ -2598,24 +2737,24 @@ export namespace InternalArrayState {
 
 export class UndefinedStateRegistry {
   #external;
-  #refsMap = new Map<string, WeakRef<Field<any>>>();
+  #refsMap = new Map<string, WeakRef<FieldOld<any>>>();
   #registry;
 
-  constructor(external: Field<any>) {
+  constructor(external: FieldOld<any>) {
     this.#external = external;
     this.#registry = new FinalizationRegistry<string>((key) =>
       this.#refsMap.delete(key),
     );
   }
 
-  register(key: string, field: Field<DetachedValue>) {
+  register(key: string, field: FieldOld<DetachedValue>) {
     const fieldRef = new WeakRef(field);
     // @ts-ignore: TODO:
     this.#refsMap.set(key, fieldRef);
     this.#registry.register(fieldRef, key);
   }
 
-  claim(key: string): Field<undefined> | undefined {
+  claim(key: string): FieldOld<undefined> | undefined {
     // Look up if the undefined field exists
     const ref = this.#refsMap.get(key);
     const registered = ref?.deref();
@@ -2628,14 +2767,14 @@ export class UndefinedStateRegistry {
     return registered;
   }
 
-  ensure(key: string): Field<DetachedValue> {
+  ensure(key: string): FieldOld<DetachedValue> {
     // Try to look up registered undefined item
     const registered = this.#refsMap.get(key)?.deref();
     // @ts-ignore: This is fine
     if (registered) return registered;
 
     // Or create and register a new one
-    const field = new Field(detachedValue, {
+    const field = new FieldOld(detachedValue, {
       key,
       field: this.#external,
     });
@@ -2646,22 +2785,14 @@ export class UndefinedStateRegistry {
 
 //#endregion
 
-//#region Detached value
-
-export const detachedValue = Symbol();
-
-export type DetachedValue = typeof detachedValue;
-
-//#endregion
-
 //#region PoC
 
 // TODO: Move into some kind of helpers module
 // TODO: Add tests
 
 export function useUndefinedStringField<Type extends string>(
-  field: Field<Type | undefined>,
-): Field<Type> {
+  field: FieldOld<Type | undefined>,
+): FieldOld<Type> {
   return field
     .useInto((value) => value ?? ("" as Type), [])
     .from((value) => value || undefined, []);
