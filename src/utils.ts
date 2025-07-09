@@ -113,11 +113,100 @@ export namespace EnsoUtils {
         : never
       : never;
 
-  export type IsUnknown<Type> = [Type] extends [unknown]
-    ? unknown extends Type
-      ? true
-      : false
+  //#region Conditions
+
+  export type Not<Type> = Type extends true ? false : true;
+
+  export type And<
+    Type1,
+    Type2,
+    Type3 = Type2,
+    Type4 = Type3,
+    Type5 = Type4,
+    Type6 = Type5,
+    Type7 = Type6,
+    Type8 = Type7,
+    Type9 = Type8,
+    Type10 = Type9,
+  > = true extends Type1 &
+    Type2 &
+    Type3 &
+    Type4 &
+    Type5 &
+    Type6 &
+    Type7 &
+    Type8 &
+    Type9 &
+    Type10
+    ? true
     : false;
 
+  export type Or<
+    Type1,
+    Type2,
+    Type3 = Type2,
+    Type4 = Type3,
+    Type5 = Type4,
+    Type6 = Type5,
+    Type7 = Type6,
+    Type8 = Type7,
+    Type9 = Type8,
+    Type10 = Type9,
+  > = true extends
+    | Type1
+    | Type2
+    | Type3
+    | Type4
+    | Type5
+    | Type6
+    | Type7
+    | Type8
+    | Type9
+    | Type10
+    ? true
+    : false;
+
+  //#endregion
+
+  //#region Any
+
+  export type IfAnyOr<Type, IfType, OrType> = 0 extends 1 & Type
+    ? IfType
+    : OrType;
+
+  export type AnyOr<Type, OrType> = IfAnyOr<Type, any, OrType>;
+
+  export type IsAny<Type> = IfAnyOr<Type, true, false>;
+
+  //#endregion
+
+  //#region Unknown
+
+  export type IfUnknownOr<Type, IfType, OrType> = IfAnyOr<
+    Type,
+    OrType,
+    [Type] extends [unknown] ? (unknown extends Type ? IfType : OrType) : OrType
+  >;
+
+  export type UnknownOr<Type, OrType> = IfUnknownOr<Type, unknown, OrType>;
+
+  export type IsUnknown<Type> = IfUnknownOr<Type, true, false>;
+
+  //#endregion
+
+  //#region Top (any & unknown)
+
+  export type IsTop<Type> = Type extends {} ? true : false;
+
+  export type IsNotTop<Type> = Type extends {} ? true : false;
+
+  export type ResolveTop<Type> = IsUnknown<Type> extends true ? never : any;
+
+  //#endregion
+
+  //#region Never
+
   export type IsNever<Type> = [Type] extends [never] ? true : false;
+
+  //#endregion
 }

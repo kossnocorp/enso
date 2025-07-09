@@ -57,7 +57,7 @@ export declare class Atom<
 
   //#region Value
 
-  get value(): Value;
+  get value(): Atom.ValueProp<Value>;
 
   useValue(): Atom.ValueProp<Value>;
 
@@ -345,9 +345,13 @@ export namespace Atom {
 
   //#region Value
 
-  export type ValueProp<Value> = {
-    [Key in keyof Value]: Value[Key];
-  };
+  export type ValueProp<Value> =
+    // Mapped unknown and any are resolved to `{}` and `Record<string, any>`
+    // respectively, so we have to have special case for them to account for
+    // invariance.
+    Utils.IsNotTop<Value> extends true
+      ? { [Key in keyof Value]: Value[Key] }
+      : Utils.ResolveTop<Value>;
 
   export type Set<
     Type extends Atom.Type,
@@ -431,13 +435,21 @@ export namespace Atom {
 
   //#endregion
 
-  export type $Prop<Type extends Atom.Type, Value> = {
-    [Key in keyof Value]-?: Envelop<
-      ChildType<Type>,
-      ChildValue<Value, Key>,
-      ChildQualifier<Value, Key>
-    >;
-  };
+  //#region $
+
+  export type $Prop<Type extends Atom.Type, Value> =
+    // Mapped unknown and any are resolved to `{}` and `Record<string, any>`
+    // respectively, so we have to have special case for them to account for
+    // invariance.
+    Utils.IsNotTop<Value> extends true
+      ? {
+          [Key in keyof Value]-?: Envelop<
+            ChildType<Type>,
+            ChildValue<Value, Key>,
+            ChildQualifier<Value, Key>
+          >;
+        }
+      : Utils.ResolveTop<Value>;
 
   export type ChildType<Type extends Atom.Type> =
     | Extract<Type, Shell>
@@ -457,6 +469,8 @@ export namespace Atom {
         ? "detachable"
         : never
       : "detachable";
+
+  //#endregion
 
   //#endregion
 
