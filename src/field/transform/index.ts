@@ -7,8 +7,6 @@ import { StaticImplements } from "../util.ts";
 import { AsState } from "../../state/index.ts";
 import { useCallback } from "../../hooks/index.ts";
 
-// export interface As
-
 export const fieldDecompose = ((
   field: Utils.Nullish<StaticImplements<AsState.Read>>,
 ) => ({

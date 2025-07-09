@@ -74,6 +74,10 @@ export declare class Field<
     Parent extends Atom.Parent.Constraint<"field", Value> = undefined,
   >(value: Value, parent?: Parent): Field<Value, Qualifier, Parent>;
 
+  static common<Envelop extends Field.Common<any>>(
+    atom: Envelop,
+  ): Atom.Common.Join<"field", Envelop>;
+
   static use<Value>(
     initialValue: Value,
     deps: DependencyList,
