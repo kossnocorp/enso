@@ -5,256 +5,317 @@ import { Field } from "./definition.tsx";
 {
   // `Field.Common` as `Field.Common`
   {
-    // Basic
-
     let _entity: Field.Common<Entity>;
-    _entity = {} as Field.Common<Account | User>;
-    _entity = {} as Field.Common<Account>;
-    _entity = {} as Field.Common<User>;
 
-    let _account: Field.Common<Account>;
-    // @ts-expect-error
-    _account = {} as Field.Common<Account | User>;
-    _account = {} as Field.Common<Account>;
-    // @ts-expect-error
-    _account = {} as Field.Common<User>;
+    // Basic
+    {
+      _entity = {} as Field.Common<Account | User>;
+      _entity = {} as Field.Common<Account>;
+      _entity = {} as Field.Common<User>;
+
+      let _account: Field.Common<Account>;
+      // @ts-expect-error
+      _account = {} as Field.Common<Account | User>;
+      _account = {} as Field.Common<Account>;
+      // @ts-expect-error
+      _account = {} as Field.Common<User>;
+    }
 
     // Qualifiers
+    {
+      let _common: Field.Common<Entity>;
+      _common = {} as Field.Common<Account | User, "detachable">;
+      _common = {} as Field.Common<Account | User, "detachable" | "tried">;
 
-    let _detachable: Field.Common<Entity, "detachable">;
-    _detachable = {} as Field.Common<Account | User, "detachable">;
-    _detachable = {} as Field.Common<Account, "detachable">;
-    // @ts-expect-error
-    _detachable = {} as Field.Common<Entity>;
+      let _detachable: Field.Common<Entity, "detachable">;
+      _detachable = {} as Field.Common<Account | User, "detachable">;
+      _detachable = {} as Field.Common<Account, "detachable">;
+      _detachable = {} as Field.Common<Account, "detachable" | "tried">;
+      // @ts-expect-error
+      _detachable = {} as Field.Common<Entity>;
 
-    let _mixed: Field.Common<Entity, "detachable" | "tried">;
-    _mixed = {} as Field.Common<Account | User, "detachable" | "tried">;
-    _mixed = {} as Field.Common<Account, "detachable" | "tried">;
-    // @ts-expect-error
-    _mixed = {} as Field.Common<Entity, "detachable">;
-    // @ts-expect-error
-    _mixed = {} as Field.Common<Entity, "tried">;
+      let _mixed: Field.Common<Entity, "detachable" | "tried">;
+      _mixed = {} as Field.Common<Account | User, "detachable" | "tried">;
+      _mixed = {} as Field.Common<Account, "detachable" | "tried">;
+      _mixed = {} as Field.Common<Account, "detachable" | "tried" | "bound">;
+      // @ts-expect-error
+      _mixed = {} as Field.Common<Entity, "detachable">;
+      // @ts-expect-error
+      _mixed = {} as Field.Common<Entity, "tried">;
+    }
 
     // Parent
+    {
+      _entity = {} as Field.Common<Entity, never, ContainerParent>;
+      _entity = {} as Field.Common<Entity, never, OrganizationParent>;
 
-    _entity = {} as Field.Common<Entity, never, ContainerParent>;
-    _entity = {} as Field.Common<Entity, never, OrganizationParent>;
+      let _container: Field.Common<Entity, never, ContainerParent>;
+      _container = {} as Field.Common<Entity, never, ContainerParent>;
+      _container = {} as Field.Common<Account | User, never, ContainerParent>;
+      _container = {} as Field.Common<Account, never, ContainerParent>;
+      // @ts-expect-error
+      _container = {} as Field.Common<Account>;
+      // @ts-expect-error
+      _container = {} as Field.Common<Entity, never, OrganizationParent>;
 
-    let _container: Field.Common<Entity, never, ContainerParent>;
-    _container = {} as Field.Common<Entity, never, ContainerParent>;
-    _container = {} as Field.Common<Account | User, never, ContainerParent>;
-    _container = {} as Field.Common<Account, never, ContainerParent>;
-    // @ts-expect-error
-    _container = {} as Field.Common<Account>;
-    // @ts-expect-error
-    _container = {} as Field.Common<Entity, never, OrganizationParent>;
-
-    let _organization: Field.Common<User, never, OrganizationParent>;
-    // @ts-expect-error
-    _organization = {} as Field.Common<Entity, never, OrganizationParent>;
-    // @ts-expect-error
-    _organization = {} as Field.Common<
-      Account | User,
-      never,
-      OrganizationParent
-    >;
-    // @ts-expect-error
-    _organization = {} as Field.Common<User, never, ContainerParent>;
+      let _organization: Field.Common<User, never, OrganizationParent>;
+      // @ts-expect-error
+      _organization = {} as Field.Common<Entity, never, OrganizationParent>;
+      // @ts-expect-error
+      _organization = {} as Field.Common<
+        Account | User,
+        never,
+        OrganizationParent
+      >;
+      // @ts-expect-error
+      _organization = {} as Field.Common<User, never, ContainerParent>;
+    }
   }
 
-  // `State` as `Field.Common`
+  // `Field` as `Field.Common`
   {
-    // Basic
-
     let _entity: Field.Common<Entity>;
-    _entity = {} as Field<Account | User>;
-    _entity = {} as Field<Account>;
-    _entity = {} as Field<User>;
 
-    let _account: Field.Common<Account>;
-    // @ts-expect-error
-    _account = {} as Field<Account | User>;
-    _account = {} as Field<Account>;
-    // @ts-expect-error
-    _account = {} as Field<User>;
-
-    // Qualifiers
-
-    let _detachable: Field.Common<Entity, "detachable">;
-    _detachable = {} as Field<Account | User, "detachable">;
-    _detachable = {} as Field<Account, "detachable">;
-    // @ts-expect-error
-    _detachable = {} as Field<Entity>;
-
-    let _mixed: Field.Common<Entity, "detachable" | "tried">;
-    _mixed = {} as Field<Account | User, "detachable" | "tried">;
-    _mixed = {} as Field<Account, "detachable" | "tried">;
-    // @ts-expect-error
-    _mixed = {} as Field<Entity, "detachable">;
-    // @ts-expect-error
-    _mixed = {} as Field<Entity, "tried">;
-
-    // Parent
-
-    _entity = {} as Field<Entity, never, ContainerParent>;
-    _entity = {} as Field<Entity, never, OrganizationParent>;
-
-    let _container: Field.Common<Entity, never, ContainerParent>;
-    _container = {} as Field<Account | User, never, ContainerParent>;
-    _container = {} as Field<Account, never, ContainerParent>;
-    _container = {} as Field<User, never, ContainerParent>;
-    // @ts-expect-error
-    _container = {} as Field<Account>;
-    // @ts-expect-error
-    _container = {} as Field<Entity, never, OrganizationParent>;
-
-    let _organization: Field.Common<User, never, OrganizationParent>;
-    _organization = {} as Field<User, never, OrganizationParent>;
-    // @ts-expect-error
-    _organization = {} as Field<Entity, never, OrganizationParent>;
-    // @ts-expect-error
-    _organization = {} as Field<Account | User, never, OrganizationParent>;
-    // @ts-expect-error
-    _organization = {} as Field<User, never, ContainerParent>;
-  }
-
-  // `State` as `State`
-  {
     // Basic
+    {
+      _entity = {} as Field<Account | User>;
+      _entity = {} as Field<Account>;
+      _entity = {} as Field<User>;
 
-    let _entity: Field<Entity>;
-    // @ts-expect-error
-    _entity = {} as Field<Account | User>;
-    // @ts-expect-error
-    _entity = {} as Field<Account>;
-    // @ts-expect-error
-    _entity = {} as Field<User>;
-
-    let _account: Field<Account>;
-    // @ts-expect-error
-    _account = {} as Field<Account | User>;
-    // @ts-expect-error
-    _account = {} as Field<User>;
+      let _account: Field.Common<Account>;
+      // @ts-expect-error
+      _account = {} as Field<Account | User>;
+      _account = {} as Field<Account>;
+      // @ts-expect-error
+      _account = {} as Field<User>;
+    }
 
     // Qualifiers
+    {
+      let _common: Field.Common<Entity>;
+      _common = {} as Field<Account | User, "detachable">;
+      _common = {} as Field<Account | User, "detachable" | "tried">;
 
-    let _detachable: Field<Entity, "detachable">;
-    // @ts-expect-error
-    _detachable = {} as Field<Account | User, "detachable">;
-    // @ts-expect-error
-    _detachable = {} as Field<Account, "detachable">;
-    // @ts-expect-error
-    _detachable = {} as Field<User, "detachable">;
+      let _detachable: Field.Common<Entity, "detachable">;
+      _detachable = {} as Field<Account | User, "detachable">;
+      _detachable = {} as Field<Account, "detachable">;
+      _detachable = {} as Field<Account, "detachable" | "tried">;
+      // @ts-expect-error
+      _detachable = {} as Field<Entity>;
 
-    let _mixed: Field<Entity, "detachable" | "tried">;
-    // @ts-expect-error
-    _mixed = {} as Field<Account | User, "detachable" | "tried">;
-    // @ts-expect-error
-    _mixed = {} as Field<Account, "detachable" | "tried">;
-    // @ts-expect-error
-    _mixed = {} as Field<Entity, "detachable">;
-    // @ts-expect-error
-    _mixed = {} as Field<Entity, "tried">;
+      let _mixed: Field.Common<Entity, "detachable" | "tried">;
+      _mixed = {} as Field<Account | User, "detachable" | "tried">;
+      _mixed = {} as Field<Account, "detachable" | "tried">;
+      _mixed = {} as Field<Account, "detachable" | "tried" | "bound">;
+      // @ts-expect-error
+      _mixed = {} as Field<Entity, "detachable">;
+      // @ts-expect-error
+      _mixed = {} as Field<Entity, "tried">;
+    }
 
     // Parent
+    {
+      _entity = {} as Field<Entity, never, ContainerParent>;
+      _entity = {} as Field<Entity, never, OrganizationParent>;
 
-    _entity = {} as Field<Entity, never, ContainerParent>;
-    _entity = {} as Field<Entity, never, OrganizationParent>;
+      let _container: Field.Common<Entity, never, ContainerParent>;
+      _container = {} as Field<Account | User, never, ContainerParent>;
+      _container = {} as Field<Account, never, ContainerParent>;
+      _container = {} as Field<User, never, ContainerParent>;
+      // @ts-expect-error
+      _container = {} as Field<Account>;
+      // @ts-expect-error
+      _container = {} as Field<Entity, never, OrganizationParent>;
 
-    let _container: Field<Entity, never, ContainerParent>;
-    _container = {} as Field<Entity, never, ContainerParent>;
-    // @ts-expect-error
-    _container = {} as Field<Account | User, never, ContainerParent>;
-    // @ts-expect-error
-    _container = {} as Field<Account, never, ContainerParent>;
-    // @ts-expect-error
-    _container = {} as Field<Account>;
-    // @ts-expect-error
-    _container = {} as Field<Entity, never, OrganizationParent>;
-
-    let _organization: Field<User, never, OrganizationParent>;
-    _organization = {} as Field<User, never, OrganizationParent>;
-    // @ts-expect-error
-    _organization = {} as Field<Entity, never, OrganizationParent>;
-    // @ts-expect-error
-    _organization = {} as Field<Account | User, never, OrganizationParent>;
-    // @ts-expect-error
-    _organization = {} as Field<User, never, ContainerParent>;
+      let _organization: Field.Common<User, never, OrganizationParent>;
+      _organization = {} as Field<User, never, OrganizationParent>;
+      // @ts-expect-error
+      _organization = {} as Field<Entity, never, OrganizationParent>;
+      // @ts-expect-error
+      _organization = {} as Field<Account | User, never, OrganizationParent>;
+      // @ts-expect-error
+      _organization = {} as Field<User, never, ContainerParent>;
+    }
   }
 
-  // `Field.Common` as `State`
+  // `Field` as `Field`
   {
-    // Basic
-
     let _entity: Field<Entity>;
-    // @ts-expect-error
-    _entity = {} as Field.Common<Account | User>;
-    // @ts-expect-error
-    _entity = {} as Field.Common<Account>;
-    // @ts-expect-error
-    _entity = {} as Field.Common<User>;
 
-    let _account: Field<Account>;
-    // @ts-expect-error
-    _account = {} as Field.Common<Account | User>;
-    // @ts-expect-error
-    _account = {} as Field.Common<Account>;
-    // @ts-expect-error
-    _account = {} as Field.Common<User>;
+    // Basic
+    {
+      // @ts-expect-error
+      _entity = {} as Field<Account | User>;
+      // @ts-expect-error
+      _entity = {} as Field<Account>;
+      // @ts-expect-error
+      _entity = {} as Field<User>;
+
+      let _account: Field<Account>;
+      // @ts-expect-error
+      _account = {} as Field<Account | User>;
+      // @ts-expect-error
+      _account = {} as Field<User>;
+    }
 
     // Qualifiers
+    {
+      let _common: Field<Entity>;
+      _common = {} as Field<Entity, "detachable">;
+      _common = {} as Field<Entity, "detachable" | "tried">;
 
-    let _detachable: Field<Entity, "detachable">;
-    // @ts-expect-error
-    _detachable = {} as Field.Common<Account | User, "detachable">;
-    // @ts-expect-error
-    _detachable = {} as Field.Common<Account, "detachable">;
-    // @ts-expect-error
-    _detachable = {} as Field.Common<User, "detachable">;
+      let _detachable: Field<Entity, "detachable">;
+      // @ts-expect-error
+      _detachable = {} as Field<Account | User, "detachable">;
+      // @ts-expect-error
+      _detachable = {} as Field<Account, "detachable">;
+      // @ts-expect-error
+      _detachable = {} as Field<Account, "detachable" | "tried">;
+      // @ts-expect-error
+      _detachable = {} as Field<User, "detachable">;
 
-    let _mixed: Field<Entity, "detachable" | "tried">;
-    // @ts-expect-error
-    _mixed = {} as Field.Common<Account | User, "detachable" | "tried">;
-    // @ts-expect-error
-    _mixed = {} as Field.Common<Account, "detachable" | "tried">;
-    // @ts-expect-error
-    _mixed = {} as Field.Common<Entity, "detachable">;
-    // @ts-expect-error
-    _mixed = {} as Field.Common<Entity, "tried">;
+      let _mixed: Field<Entity, "detachable" | "tried">;
+      // @ts-expect-error
+      _mixed = {} as Field<Account | User, "detachable" | "tried">;
+      // @ts-expect-error
+      _mixed = {} as Field<Account, "detachable" | "tried">;
+      // @ts-expect-error
+      _mixed = {} as Field<Account, "detachable" | "tried" | "bound">;
+      // @ts-expect-error
+      _mixed = {} as Field<Entity, "detachable">;
+      // @ts-expect-error
+      _mixed = {} as Field<Entity, "tried">;
+    }
 
     // Parent
+    {
+      _entity = {} as Field<Entity, never, ContainerParent>;
+      _entity = {} as Field<Entity, never, OrganizationParent>;
 
-    // @ts-expect-error
-    _entity = {} as Field.Common<Entity, never, ContainerParent>;
-    // @ts-expect-error
-    _entity = {} as Field.Common<Entity, never, OrganizationParent>;
+      let _container: Field<Entity, never, ContainerParent>;
+      _container = {} as Field<Entity, never, ContainerParent>;
+      // @ts-expect-error
+      _container = {} as Field<Account | User, never, ContainerParent>;
+      // @ts-expect-error
+      _container = {} as Field<Account, never, ContainerParent>;
+      // @ts-expect-error
+      _container = {} as Field<Account>;
+      // @ts-expect-error
+      _container = {} as Field<Entity, never, OrganizationParent>;
 
-    let _container: Field<Entity, never, ContainerParent>;
-    // @ts-expect-error
-    _container = {} as Field.Common<Entity, never, ContainerParent>;
-    // @ts-expect-error
-    _container = {} as Field.Common<Account | User, never, ContainerParent>;
-    // @ts-expect-error
-    _container = {} as Field.Common<Account, never, ContainerParent>;
-    // @ts-expect-error
-    _container = {} as Field.Common<Account>;
-    // @ts-expect-error
-    _container = {} as Field.Common<Entity, never, OrganizationParent>;
-
-    let _organization: Field<User, never, OrganizationParent>;
-    // @ts-expect-error
-    _organization = {} as Field.Common<User, never, OrganizationParent>;
-    // @ts-expect-error
-    _organization = {} as Field.Common<Entity, never, OrganizationParent>;
-    // @ts-expect-error
-    _organization = {} as Field.Common<
-      Account | User,
-      never,
-      OrganizationParent
-    >;
-    // @ts-expect-error
-    _organization = {} as Field.Common<User, never, ContainerParent>;
+      let _organization: Field<User, never, OrganizationParent>;
+      _organization = {} as Field<User, never, OrganizationParent>;
+      // @ts-expect-error
+      _organization = {} as Field<Entity, never, OrganizationParent>;
+      // @ts-expect-error
+      _organization = {} as Field<Account | User, never, OrganizationParent>;
+      // @ts-expect-error
+      _organization = {} as Field<User, never, ContainerParent>;
+    }
   }
+
+  // `Field.Common` as `Field`
+  {
+    let _entity: Field<Entity>;
+
+    // Basic
+    {
+      // @ts-expect-error
+      _entity = {} as Field.Common<Account | User>;
+      // @ts-expect-error
+      _entity = {} as Field.Common<Account>;
+      // @ts-expect-error
+      _entity = {} as Field.Common<User>;
+
+      let _account: Field<Account>;
+      // @ts-expect-error
+      _account = {} as Field.Common<Account | User>;
+      // @ts-expect-error
+      _account = {} as Field.Common<Account>;
+      // @ts-expect-error
+      _account = {} as Field.Common<User>;
+    }
+
+    // Qualifiers
+    {
+      let _common: Field<Entity>;
+      // @ts-expect-error
+      _common = {} as Field.Common<Entity, "detachable">;
+      // @ts-expect-error
+      _common = {} as Field.Common<Entity, "detachable" | "tried">;
+
+      let _detachable: Field<Entity, "detachable">;
+      // @ts-expect-error
+      _detachable = {} as Field.Common<Account | User, "detachable">;
+      // @ts-expect-error
+      _detachable = {} as Field.Common<Account, "detachable">;
+      // @ts-expect-error
+      _detachable = {} as Field.Common<Account, "detachable" | "tried">;
+      // @ts-expect-error
+      _detachable = {} as Field.Common<User, "detachable">;
+
+      let _mixed: Field<Entity, "detachable" | "tried">;
+      // @ts-expect-error
+      _mixed = {} as Field.Common<Account | User, "detachable" | "tried">;
+      // @ts-expect-error
+      _mixed = {} as Field.Common<Account, "detachable" | "tried">;
+      // @ts-expect-error
+      _mixed = {} as Field.Common<Account, "detachable" | "tried" | "bound">;
+      // @ts-expect-error
+      _mixed = {} as Field.Common<Entity, "detachable">;
+      // @ts-expect-error
+      _mixed = {} as Field.Common<Entity, "tried">;
+    }
+
+    // Parent
+    {
+      // @ts-expect-error
+      _entity = {} as Field.Common<Entity, never, ContainerParent>;
+      // @ts-expect-error
+      _entity = {} as Field.Common<Entity, never, OrganizationParent>;
+
+      let _container: Field<Entity, never, ContainerParent>;
+      // @ts-expect-error
+      _container = {} as Field.Common<Entity, never, ContainerParent>;
+      // @ts-expect-error
+      _container = {} as Field.Common<Account | User, never, ContainerParent>;
+      // @ts-expect-error
+      _container = {} as Field.Common<Account, never, ContainerParent>;
+      // @ts-expect-error
+      _container = {} as Field.Common<Account>;
+      // @ts-expect-error
+      _container = {} as Field.Common<Entity, never, OrganizationParent>;
+
+      let _organization: Field<User, never, OrganizationParent>;
+      // @ts-expect-error
+      _organization = {} as Field.Common<User, never, OrganizationParent>;
+      // @ts-expect-error
+      _organization = {} as Field.Common<Entity, never, OrganizationParent>;
+      // @ts-expect-error
+      _organization = {} as Field.Common<
+        Account | User,
+        never,
+        OrganizationParent
+      >;
+      // @ts-expect-error
+      _organization = {} as Field.Common<User, never, ContainerParent>;
+    }
+  }
+}
+
+// Field.common
+{
+  const entity = {} as Field<User> | Field<Account>;
+
+  Field.common(entity) satisfies Field.Common<User | Account>;
+  // @ts-expect-error
+  Field.common(entity) satisfies Field<User | Account>;
+  // @ts-expect-error
+  Field.common(entity) satisfies Field.Common<Hello>;
+
+  Field.common(entity).value satisfies User | Account;
+  // @ts-expect-error
+  Field.common(entity).value satisfies Hello;
 }
 
 // `Field["value"]`
@@ -347,7 +408,7 @@ import { Field } from "./definition.tsx";
     }
   }
 
-  // `State`
+  // `Field`
   {
     // Primitive
     {
@@ -466,7 +527,87 @@ import { Field } from "./definition.tsx";
   }
 }
 
+// `Field["$"]`
+{
+  // Basic
+  {
+    const user = {} as Field<User>;
+
+    user.$.age satisfies Field<number>;
+    // @ts-expect-error
+    entity.$.name satisfies State<number>;
+    // @ts-expect-error
+    user.$.age satisfies Field<string>;
+
+    user.$.email satisfies Field<string | undefined> | undefined;
+    // @ts-expect-error
+    entity.$.name satisfies State<string> | undefined;
+    // @ts-expect-error
+    user.$.email satisfies Field<string>;
+  }
+
+  // Union value
+  {
+    const entity = {} as Field<User | Account>;
+
+    entity.$.name satisfies Field<string>;
+    // @ts-expect-error
+    entity.$.name satisfies State<string>;
+    // @ts-expect-error
+    entity.$.name satisfies Field<number>;
+  }
+
+  // Union field
+  {
+    const entity = {} as Field<User> | Field<Account>;
+
+    entity.$.name satisfies Field<string>;
+    // @ts-expect-error
+    entity.$.name satisfies State<string>;
+    // @ts-expect-error
+    entity.$.name satisfies Field<number>;
+  }
+}
+
+// `Field["at"]`
+{
+  // Basic
+  {
+    const user = {} as Field<User>;
+
+    user.at("age") satisfies Field<number>;
+    // @ts-expect-error
+    user.at("age") satisfies Field<string>;
+
+    user.at("email") satisfies Field<string | undefined>;
+    // @ts-expect-error
+    user.at("email") satisfies Field<string>;
+  }
+
+  // Union value
+  {
+    const entity = {} as Field<User | Account>;
+
+    entity.at("name") satisfies Field<string>;
+    // @ts-expect-error
+    entity.at("name") satisfies Field<number>;
+  }
+
+  // Union field
+  {
+    const entity = {} as Field<User> | Field<Account>;
+
+    Field.common(entity).at("name") satisfies Field.Common<string>;
+    // @ts-expect-error
+    Field.common(entity).at("name") satisfies Stat.Commone<string>;
+    // @ts-expect-error
+    Field.common(entity).at("name") satisfies Field.Common<number>;
+  }
+}
+
 //#region Helpers
+
+function tyst<Type>(_arg: Type): void {}
 
 interface Hello {
   hello: string;

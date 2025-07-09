@@ -113,7 +113,7 @@ import { Atom } from "./index.js";
 
 //#region Helpers
 
-function tyst<Type>(arg: Type): void {}
+function tyst<Type>(_arg: Type): void {}
 
 interface Hello {
   hello: string;

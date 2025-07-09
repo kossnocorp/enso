@@ -6,6 +6,7 @@ import { State } from "../state/index.ts";
 import { Enso } from "../types.ts";
 import type { EnsoUtils as Utils } from "../utils.ts";
 import { Static } from "../field/util.ts";
+import { EventsTree } from "../events/index.ts";
 
 export declare class Atom<
     Type extends Atom.Type,
@@ -36,16 +37,7 @@ export declare class Atom<
 
   //#region Qualifiers
 
-  [AtomPrivate.rootQualifier]: Atom.QualifierProp<Qualifier, "root">;
-
-  [AtomPrivate.detachableQualifier]: Atom.QualifierProp<
-    Qualifier,
-    "detachable"
-  >;
-
-  [AtomPrivate.triedQualifier]: Atom.QualifierProp<Qualifier, "tried">;
-
-  [AtomPrivate.boundQualifier]: Atom.QualifierProp<Qualifier, "bound">;
+  [AtomPrivate.qualifiersPhantom](): Atom.Qualifier.Map<Qualifier>;
 
   //#endregion
 
@@ -87,6 +79,8 @@ export declare class Atom<
 
   get $(): Atom.$Prop<Type, Value>;
 
+  at: Atom.AtProp<Type, Value>;
+
   get path(): string[];
 
   get name(): string;
@@ -94,6 +88,8 @@ export declare class Atom<
   //#endregion
 
   //#region Events
+
+  eventsTree: EventsTree<Extract<Type, Atom.Shell>>;
 
   watch(callback: Atom.WatchCallback<Value>, sync?: boolean): Atom.Unwatch;
 
@@ -121,6 +117,10 @@ export namespace Atom {
       value: Value,
       parent?: Parent,
     ): Envelop<Type, Value, Qualifier, Parent>;
+
+    common<Envelop extends Atom.Envelop<Type, any>>(
+      atom: Envelop,
+    ): Atom.Common.Join<Type, Envelop>;
   }
 
   //#endregion
@@ -232,6 +232,14 @@ export namespace Atom {
         : ExtractShell<Type> extends "field"
           ? Field.Common<Value, Qualifier, Parent>
           : never;
+
+    export type Join<
+      Type extends Atom.Type,
+      Envelop extends Atom.Common.Envelop<Type, any>,
+    > = Atom.Common.Envelop<Type, Common.Value<Envelop>>;
+
+    export type Value<Envelop extends Atom.Envelop<any, any>> =
+      Envelop extends Atom.Envelop<any, infer Value> ? Value : never;
   }
 
   //#endregion
@@ -243,7 +251,13 @@ export namespace Atom {
     Value,
     Qualifier extends Atom.Qualifier = never,
     Parent extends Atom.Parent.Constraint<Type, Value> = unknown,
-  > extends Qualified<Qualifier> {
+  > {
+    //#region Qualifiers
+
+    [AtomPrivate.qualifiersPhantom](): Atom.Qualifier.Map<Qualifier>;
+
+    //#endregion
+
     //#region Instance
 
     deconstruct(): void;
@@ -280,11 +294,11 @@ export namespace Atom {
 
     $: $Prop<Type, Value>;
 
+    at: AtProp<Type, Value>;
+
     // try: {
     //   [Key in keyof Value]: TryKey<Type, Value, Key>;
     // };
-
-    // at: <Key extends keyof Value>(key: Key) => AtKey<Type, Value, Key>;
 
     //#endregion
 
@@ -298,7 +312,11 @@ export namespace Atom {
 
     //#region Watch
 
+    eventsTree: EventsTree<Extract<Type, Atom.Shell>>;
+
     watch(callback: WatchCallback<Value>, sync?: boolean): Unwatch;
+
+    trigger(changes: FieldChange, notifyParents?: boolean): void;
 
     //#endregion
   }
@@ -323,22 +341,19 @@ export namespace Atom {
 
   export type Qualifier = "root" | "detachable" | "tried" | "bound";
 
-  export type QualifierProp<
-    Qualifier extends Atom.Qualifier,
-    TestQualifier extends Atom.Qualifier,
-  > = TestQualifier extends Qualifier ? true : false;
-
-  export interface Qualified<Qualifier extends Atom.Qualifier = never> {
-    [AtomPrivate.rootQualifier]: Atom.QualifierProp<Qualifier, "root">;
-
-    [AtomPrivate.detachableQualifier]: Atom.QualifierProp<
+  export namespace Qualifier {
+    export type Map<Qualifier extends Atom.Qualifier = never> = MapChunk<
       Qualifier,
-      "detachable"
-    >;
+      "root"
+    > &
+      MapChunk<Qualifier, "detachable"> &
+      MapChunk<Qualifier, "tried"> &
+      MapChunk<Qualifier, "bound">;
 
-    [AtomPrivate.triedQualifier]: Atom.QualifierProp<Qualifier, "tried">;
-
-    [AtomPrivate.boundQualifier]: Atom.QualifierProp<Qualifier, "bound">;
+    export type MapChunk<
+      Qualifier extends Atom.Qualifier,
+      TestQualifier extends Atom.Qualifier,
+    > = TestQualifier extends Qualifier ? { [Key in TestQualifier]: true } : {};
   }
 
   //#endregion
@@ -472,12 +487,40 @@ export namespace Atom {
 
   //#endregion
 
+  //#region At
+
+  export type AtProp1<Type extends Atom.Type, Value> = {
+    [Key in keyof Value]: [Key, Value];
+  }[keyof Value] extends infer Pair
+    ? Pair extends Pair
+      ? Pair extends [infer Key, infer Value]
+        ? (key: Key) => Value
+        : any
+      : 123
+    : 456;
+
+  export type AtProp<
+    Type extends Atom.Type,
+    Value,
+  > = keyof Value extends infer Key extends keyof Value
+    ? <K extends Key>(key: K) => AtKey<Type, Value, K>
+    : never;
+
+  export type AtKey<Type extends Atom.Type, Value, Key extends keyof Value> =
+    Utils.IsStaticKey<Value, Key> extends true
+      ? Utils.IsOptionalKey<Value, Key> extends true
+        ? Enso.Detachable<Envelop<Type, Value[Key]>>
+        : Envelop<Type, Value[Key]>
+      : Enso.Detachable<Envelop<Type, Value[Key] | undefined>>;
+
+  //#endregion
+
   //#endregion
 
   //#region Events
 
-  export type WatchCallback<Payload> = (
-    payload: Payload,
+  export type WatchCallback<Value> = (
+    payload: Value,
     event: ChangesEvent,
   ) => void;
 
@@ -503,13 +546,6 @@ export namespace Atom {
     | (undefined extends Value ? undefined : never)
     // Resolve branded field without null or undefined
     | Enso.Tried<Envelop<Type, Utils.NonNullish<Value>>>;
-
-  export type AtKey<S extends Shell, Payload, Key extends keyof Payload> =
-    Utils.IsStaticKey<Payload, Key> extends true
-      ? Utils.IsOptionalKey<Payload, Key> extends true
-        ? Enso.Detachable<Envelop<S, Payload[Key]>>
-        : Envelop<S, Payload[Key]>
-      : Enso.Detachable<Envelop<S, Payload[Key] | undefined>>;
 
   export namespace Value {
     //#region Subtypes
@@ -642,9 +678,6 @@ export namespace Atom {
 }
 
 namespace AtomPrivate {
-  export declare const rootQualifier: unique symbol;
-  export declare const detachableQualifier: unique symbol;
-  export declare const triedQualifier: unique symbol;
-  export declare const boundQualifier: unique symbol;
+  export declare const qualifiersPhantom: unique symbol;
   export declare const invariantPhantom: unique symbol;
 }
