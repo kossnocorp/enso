@@ -681,7 +681,7 @@ export class AtomValueObject extends AtomValue {
 //#region AtomValueArray
 
 export class AtomValueArray extends AtomValue {
-  #children;
+  #children = [];
   #undefined;
 
   constructor(external, value) {
