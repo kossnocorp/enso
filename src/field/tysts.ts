@@ -535,13 +535,13 @@ import { Field } from "./definition.tsx";
 
     user.$.age satisfies Field<number>;
     // @ts-expect-error
-    entity.$.name satisfies State<number>;
+    user.$.age satisfies State<number>;
     // @ts-expect-error
     user.$.age satisfies Field<string>;
 
     user.$.email satisfies Field<string | undefined> | undefined;
     // @ts-expect-error
-    entity.$.name satisfies State<string> | undefined;
+    user.$.name satisfies State<string | undefined> | undefined;
     // @ts-expect-error
     user.$.email satisfies Field<string>;
   }
@@ -577,11 +577,38 @@ import { Field } from "./definition.tsx";
 
     user.at("age") satisfies Field<number>;
     // @ts-expect-error
+    user.at("age") satisfies State<number>;
+    // @ts-expect-error
     user.at("age") satisfies Field<string>;
 
-    user.at("email") satisfies Field<string | undefined>;
+    user.at("email") satisfies Field<string | undefined, "detachable">;
     // @ts-expect-error
-    user.at("email") satisfies Field<string>;
+    user.at("email") satisfies State<string | undefined, "detachable">;
+    // @ts-expect-error
+    user.at("email") satisfies Field<string, "detachable">;
+  }
+
+  // Immutable
+  {
+    const user = {} as Field.Immutable<User>;
+
+    user.at("age") satisfies Field.Immutable<number>;
+    // @ts-expect-error
+    user.at("age") satisfies State.Immutable<number>;
+    // @ts-expect-error
+    user.at("age") satisfies Field.Immutable<string>;
+
+    user.at("email") satisfies Field.Immutable<
+      string | undefined,
+      "detachable"
+    >;
+    // @ts-expect-error
+    user.at("email") satisfies State.Immutable<
+      string | undefined,
+      "detachable"
+    >;
+    // @ts-expect-error
+    user.at("email") satisfies Field.Immutable<string, "detachable">;
   }
 
   // Union value
@@ -590,6 +617,8 @@ import { Field } from "./definition.tsx";
 
     entity.at("name") satisfies Field<string>;
     // @ts-expect-error
+    entity.at("name") satisfies State<string>;
+    // @ts-expect-error
     entity.at("name") satisfies Field<number>;
   }
 
@@ -597,11 +626,246 @@ import { Field } from "./definition.tsx";
   {
     const entity = {} as Field<User> | Field<Account>;
 
-    Field.common(entity).at("name") satisfies Field.Common<string>;
+    Field.common(entity).at("name") satisfies Field<string>;
     // @ts-expect-error
-    Field.common(entity).at("name") satisfies Stat.Commone<string>;
+    Field.common(entity).at("name") satisfies State<string>;
     // @ts-expect-error
-    Field.common(entity).at("name") satisfies Field.Common<number>;
+    Field.common(entity).at("name") satisfies Field<number>;
+  }
+}
+
+// `Field["try"]`
+{
+  // Basic
+  {
+    const user = {} as Field<User>;
+
+    user.try("age") satisfies Field<number, "tried">;
+    user.try("age").id;
+    // @ts-expect-error
+    user.try("age") satisfies State<number, "tried">;
+
+    user.try("email") satisfies
+      | Field<string, "detachable" | "tried">
+      | undefined;
+    // @ts-expect-error
+    user.try("email").id;
+    // @ts-expect-error
+    user.try("email") satisfies
+      | State<string, "detachable" | "tried">
+      | undefined;
+  }
+
+  // Immutable
+  {
+    const user = {} as Field.Immutable<User>;
+
+    user.try("age") satisfies Field.Immutable<number, "tried">;
+    user.try("age").id;
+    // @ts-expect-error
+    user.try("age") satisfies State.Immutable<number, "tried">;
+
+    user.try("email") satisfies
+      | Field.Immutable<string, "detachable" | "tried">
+      | undefined;
+    // @ts-expect-error
+    user.try("email").id;
+    // @ts-expect-error
+    user.try("email") satisfies
+      | State.Immutable<string, "detachable" | "tried">
+      | undefined;
+  }
+
+  // Union value
+  {
+    const entity = {} as Field<User | Account>;
+
+    entity.try("name") satisfies Field<string, "tried">;
+    entity.try("name").id;
+    // @ts-expect-error
+    entity.try("name") satisfies State<string, "tried">;
+
+    entity.try("flag") satisfies
+      | Field<boolean, "detachable" | "tried">
+      | undefined;
+    // @ts-expect-error
+    entity.try("flag").id;
+    // @ts-expect-error
+    entity.try("flag") satisfies
+      | State<boolean, "detachable" | "tried">
+      | undefined;
+  }
+
+  // Union field
+  {
+    const entity = {} as Field<User> | Field<Account>;
+
+    Field.common(entity).try("name") satisfies Field<string, "tried">;
+    Field.common(entity).try("name").id;
+    // @ts-expect-error
+    Field.common(entity).try("name") satisfies State<string, "tried">;
+    // @ts-expect-error
+    Field.common(entity).try("name") satisfies Field<number, "tried">;
+
+    Field.common(entity).try("flag") satisfies
+      | Field<boolean, "detachable" | "tried">
+      | undefined;
+    // @ts-expect-error
+    Field.common(entity).try("flag").id;
+    // @ts-expect-error
+    Field.common(entity).try("flag") satisfies
+      | State<boolean, "detachable" | "tried">
+      | undefined;
+    // @ts-expect-error
+    Field.common(entity).try("flag") satisfies Field<
+      number,
+      "detachable" | "tried"
+    >;
+  }
+}
+
+// `Field["opt"]`
+{
+  // Basic
+  {
+    const user = {} as Field<User>;
+
+    user.opt() satisfies Field<User>;
+    user.opt().id;
+    // @ts-expect-error
+    user.opt() satisfies State<User>;
+
+    user.at("age").opt() satisfies Field<number, "tried">;
+    user.at("age").opt().id;
+    // @ts-expect-error
+    user.at("age").opt() satisfies State<number, "tried">;
+
+    user.at("email").opt() satisfies Field<string, "tried"> | undefined;
+    // @ts-expect-error
+    user.at("email").opt().id;
+    // @ts-expect-error
+    user.at("email").opt() satisfies State<string, "tried"> | undefined;
+  }
+
+  // Qualifiers
+  {
+    const user = {} as Field<User, "detachable">;
+
+    user.opt() satisfies Field<User>;
+    user.opt() satisfies Field<User, "detachable" | "tried">;
+    user.opt().id;
+    // @ts-expect-error
+    user.opt() satisfies Field<User, "bound">;
+    // @ts-expect-error
+    user.opt() satisfies State<User, "detachable" | "tried">;
+
+    user.at("age").opt() satisfies Field<number>;
+    user.at("age").opt() satisfies Field<number, "tried">;
+    user.at("age").opt().id;
+    // @ts-expect-error
+    user.at("age").opt() satisfies Field<number, "detachable">;
+    // @ts-expect-error
+    user.at("age").opt() satisfies State<number, "tried">;
+
+    user.at("email").opt() satisfies Field<string> | undefined;
+    user.at("email").opt() satisfies
+      | Field<string, "detachable" | "tried">
+      | undefined;
+    // @ts-expect-error
+    user.at("email").opt() satisfies Field<string, "bound"> | undefined;
+    // @ts-expect-error
+    user.at("email").opt().id;
+    // @ts-expect-error
+    user.at("email").opt() satisfies
+      | State<string, "detachable" | "tried">
+      | undefined;
+  }
+
+  // Immutable
+  {
+    const user = {} as Field.Immutable<User>;
+
+    user.opt() satisfies Field.Immutable<User, "tried">;
+    user.opt().id;
+    // @ts-expect-error
+    user.opt() satisfies State.Immutable<User, "tried">;
+
+    user.at("age").opt() satisfies Field.Immutable<number, "tried">;
+    user.at("age").opt().id;
+    // @ts-expect-error
+    user.at("age").opt() satisfies State.Immutable<number, "tried">;
+
+    user.at("email").opt() satisfies
+      | Field.Immutable<string, "tried">
+      | undefined;
+    // @ts-expect-error
+    user.at("email").opt().id;
+    // @ts-expect-error
+    user.at("email").opt() satisfies
+      | State.Immutable<string, "tried">
+      | undefined;
+  }
+
+  // Union value
+  {
+    const entity = {} as Field<User | Account>;
+
+    entity.opt() satisfies Field<User | Account>;
+    entity.opt().id;
+    // @ts-expect-error
+    entity.opt() satisfies State<User | Account>;
+
+    entity.at("name").opt() satisfies Field<string, "tried">;
+    entity.at("name").opt().id;
+    // @ts-expect-error
+    entity.at("name").opt() satisfies State<string, "tried">;
+
+    entity.at("flag").opt() satisfies Field<boolean, "tried"> | undefined;
+    // @ts-expect-error
+    entity.at("flag").opt().id;
+    // @ts-expect-error
+    entity.at("flag").opt() satisfies State<boolean, "tried"> | undefined;
+  }
+
+  // Union field
+  {
+    const entity = {} as Field<User> | Field<Account>;
+
+    Field.common(entity).opt() satisfies Field.Common<User | Account, "tried">;
+    Field.common(entity).opt().id;
+    // @ts-expect-error
+    Field.common(entity).opt() satisfies State.Common<User | Account, "tried">;
+
+    Field.common(entity).at("name").opt() satisfies Field.Common<
+      string,
+      "tried"
+    >;
+    Field.common(entity).at("name").opt().id;
+    // @ts-expect-error
+    Field.common(entity).at("name").opt() satisfies State.Common<
+      string,
+      "tried"
+    >;
+    // @ts-expect-error
+    Field.common(entity).at("name").opt() satisfies Field.Common<
+      number,
+      "tried"
+    >;
+
+    Field.common(entity).at("flag").opt() satisfies
+      | Field.Common<boolean, "tried">
+      | undefined;
+    // @ts-expect-error
+    Field.common(entity).at("flag").opt().id;
+    // @ts-expect-error
+    Field.common(entity).at("flag").opt() satisfies
+      | State.Common<boolean, "tried">
+      | undefined;
+    // @ts-expect-error
+    Field.common(entity).at("flag").opt() satisfies Field.Common<
+      number,
+      "tried"
+    >;
   }
 }
 
@@ -615,6 +879,7 @@ interface Hello {
 
 interface Entity {
   name: string;
+  flag?: boolean;
 }
 
 interface Account extends Entity {

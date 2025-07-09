@@ -46,8 +46,8 @@ export namespace EnsoUtils {
   /**
    * Resolves true if the given key is statically defined in the given type.
    */
-  export type IsStaticKey<Payload, Key extends keyof Payload> =
-    Key extends StaticKeys<Payload> ? true : false;
+  export type IsStaticKey<Type, Key extends keyof NonNullish<Type>> =
+    Key extends StaticKeys<Type> ? true : false;
 
   /**
    * Resolves true if the passed key is a required field of the passed model.
@@ -69,8 +69,8 @@ export namespace EnsoUtils {
 
   export type OptionalKeys<Payload> = keyof PickOptional<Payload>;
 
-  export type IsOptionalKey<Payload, Key extends keyof Payload> =
-    Key extends OptionalKeys<Payload> ? true : false;
+  export type IsOptionalKey<Type, Key extends keyof NonNullish<Type>> =
+    Key extends OptionalKeys<Type> ? true : false;
 
   /**
    * Nullish value type.
