@@ -1,3 +1,4 @@
+import { State } from "../state/index.ts";
 import { Field } from "./definition.tsx";
 
 // Variance
@@ -320,6 +321,8 @@ import { Field } from "./definition.tsx";
       const entity = {} as Field.Common<Account | User>;
 
       entity.$.name satisfies Field<string>;
+      // @ts-expect-error
+      entity.$.name satisfies State<string>;
       entity.$.name.value satisfies string;
       // @ts-expect-error
       entity.$.name.any;
@@ -333,6 +336,8 @@ import { Field } from "./definition.tsx";
       const entity = {} as Field.Common<Account> | Field.Common<User>;
 
       entity.$.name satisfies Field<string>;
+      // @ts-expect-error
+      entity.$.name satisfies State<string>;
       entity.$.name.value satisfies string;
       // @ts-expect-error
       entity.$.name.any;
@@ -404,6 +409,8 @@ import { Field } from "./definition.tsx";
       const entity = {} as Field<Account | User>;
 
       entity.$.name satisfies Field<string>;
+      // @ts-expect-error
+      entity.$.name satisfies State<string>;
       entity.$.name.value satisfies string;
       // @ts-expect-error
       entity.$.name.any;
@@ -417,6 +424,8 @@ import { Field } from "./definition.tsx";
       const entity = {} as Field<Account> | Field<User>;
 
       entity.$.name satisfies Field<string>;
+      // @ts-expect-error
+      entity.$.name satisfies State<string>;
       entity.$.name.value satisfies string;
       // @ts-expect-error
       entity.$.name.any;
