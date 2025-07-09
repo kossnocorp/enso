@@ -139,15 +139,16 @@ export namespace Field {
   > extends Hint,
       Atom.Immutable<"field" | "immutable", Value, Qualifier, Parent> {}
 
+  export interface Hint {
+    [hintSymbol]: true;
+  }
+
   export type Parent<Value, Key extends keyof Value> = Atom.Parent<
     "field",
     Value,
     Key
   >;
 
-  export interface Hint {
-    [hintSymbol]: true;
-  }
   //#region Value
 
   export namespace Value {

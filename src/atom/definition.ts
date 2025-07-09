@@ -81,6 +81,10 @@ export declare class Atom<
 
   at: Atom.AtProp<Type, Value>;
 
+  try: Atom.TryProp<Type, Value>;
+
+  opt(): Atom.Opt<Type, Value, Qualifier>;
+
   get path(): string[];
 
   get name(): string;
@@ -296,9 +300,9 @@ export namespace Atom {
 
     at: AtProp<Type, Value>;
 
-    // try: {
-    //   [Key in keyof Value]: TryKey<Type, Value, Key>;
-    // };
+    try: Atom.TryProp<Type, Value>;
+
+    opt(): Atom.Opt<Type, Value, Qualifier>;
 
     //#endregion
 
@@ -466,6 +470,63 @@ export namespace Atom {
         }
       : Utils.ResolveTop<Value>;
 
+  //#endregion
+
+  //#region At
+
+  export type AtProp<
+    Type extends Atom.Type,
+    Value,
+  > = keyof Value extends infer Key extends keyof Value
+    ? <ArgKey extends Key>(
+        key: ArgKey,
+      ) => Envelop<
+        ChildType<Type>,
+        ChildValue<Value, ArgKey>,
+        ChildQualifier<Value, ArgKey>
+      >
+    : never;
+
+  //#endregion
+
+  //#region Try
+
+  export type TryProp<
+    Type extends Atom.Type,
+    Value,
+  > = keyof Value extends infer Key extends keyof Value
+    ? <ArgKey extends Key>(key: ArgKey) => TryKey<Type, Value, ArgKey>
+    : never;
+
+  export type TryKey<
+    Type extends Atom.Type,
+    Value,
+    Key extends keyof Utils.NonNullish<Value>,
+  > =
+    | TryAtom<Type, Utils.NonNullish<Value>[Key], ChildQualifier<Value, Key>>
+    // Add undefined if the key is not static (i.e. a record key).
+    | (Utils.IsStaticKey<Utils.NonNullish<Value>, Key> extends true
+        ? never
+        : undefined);
+
+  export type TryAtom<
+    Type extends Atom.Type,
+    Value,
+    ChildQualifier extends Atom.Qualifier,
+  > =
+    // Add null to the union
+    | (null extends Value ? null : never)
+    // Add undefined to the union
+    | (undefined extends Value ? undefined : never)
+    // Resolve branded field without null or undefined
+    | Envelop<
+        ChildType<Type>,
+        Utils.NonNullish<Value>,
+        ChildQualifier | "tried"
+      >;
+
+  //#endregion
+
   export type ChildType<Type extends Atom.Type> =
     | Extract<Type, Shell>
     | (ExtractVariant<Type> extends infer Variant extends Atom.Variant
@@ -478,40 +539,26 @@ export namespace Atom {
     | Value[Key]
     | (Utils.IsStaticKey<Value, Key> extends true ? never : undefined);
 
-  export type ChildQualifier<Value, Key extends keyof Value> =
+  export type ChildQualifier<Value, Key extends keyof Utils.NonNullish<Value>> =
     Utils.IsStaticKey<Value, Key> extends true
       ? Utils.IsOptionalKey<Value, Key> extends true
         ? "detachable"
         : never
       : "detachable";
 
-  //#endregion
+  //#region Opt
 
-  //#region At
-
-  export type AtProp1<Type extends Atom.Type, Value> = {
-    [Key in keyof Value]: [Key, Value];
-  }[keyof Value] extends infer Pair
-    ? Pair extends Pair
-      ? Pair extends [infer Key, infer Value]
-        ? (key: Key) => Value
-        : any
-      : 123
-    : 456;
-
-  export type AtProp<
+  export type Opt<
     Type extends Atom.Type,
     Value,
-  > = keyof Value extends infer Key extends keyof Value
-    ? <K extends Key>(key: K) => AtKey<Type, Value, K>
-    : never;
-
-  export type AtKey<Type extends Atom.Type, Value, Key extends keyof Value> =
-    Utils.IsStaticKey<Value, Key> extends true
-      ? Utils.IsOptionalKey<Value, Key> extends true
-        ? Enso.Detachable<Envelop<Type, Value[Key]>>
-        : Envelop<Type, Value[Key]>
-      : Enso.Detachable<Envelop<Type, Value[Key] | undefined>>;
+    Qualifier extends Atom.Qualifier,
+  > =
+    // Add null to the union
+    | (null extends Value ? null : never)
+    // Add undefined to the union
+    | (undefined extends Value ? undefined : never)
+    // Resolve branded field without null or undefined
+    | Envelop<Type, Utils.NonNullish<Value>, "tried" | Qualifier>;
 
   //#endregion
 
@@ -527,25 +574,6 @@ export namespace Atom {
   export type Unwatch = () => void;
 
   //#endregion
-
-  export type TryKey<
-    Type extends Shell,
-    Value,
-    Key extends keyof Utils.NonNullish<Value>,
-  > =
-    | TryAtom<Type, Utils.NonNullish<Value>[Key]>
-    // Add undefined if the key is not static (i.e. a record key).
-    | (Utils.IsStaticKey<Utils.NonNullish<Value>, Key> extends true
-        ? never
-        : undefined);
-
-  export type TryAtom<Type extends Shell, Value> =
-    // Add null to the union
-    | (null extends Value ? null : never)
-    // Add undefined to the union
-    | (undefined extends Value ? undefined : never)
-    // Resolve branded field without null or undefined
-    | Enso.Tried<Envelop<Type, Utils.NonNullish<Value>>>;
 
   export namespace Value {
     //#region Subtypes

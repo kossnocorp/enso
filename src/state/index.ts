@@ -1,5 +1,7 @@
+import { DependencyList } from "react";
 import { Atom } from "../atom/index.ts";
 import type { EnsoUtils as Utils } from "../utils.ts";
+import { Static } from "../field/util.ts";
 
 const hintSymbol = Symbol();
 
@@ -9,8 +11,38 @@ export class State<
     Parent extends Atom.Parent.Constraint<"state", Value> = unknown,
   >
   extends Atom<"state", Value, Qualifier, Parent>
-  implements State.Invariant<Value, Qualifier, Parent>
+  implements
+    Static<
+      typeof State<Value, Qualifier, Parent>,
+      Atom.StaticSubclass<"state">
+    >,
+    State.Invariant<Value, Qualifier, Parent>
 {
+  //#region Static
+
+  static create<
+    Value,
+    Qualifier extends Atom.Qualifier = never,
+    Parent extends Atom.Parent.Constraint<"state", Value> = undefined,
+  >(value: Value, parent?: Parent): State<Value, Qualifier, Parent> {
+    return void 0 as any;
+  }
+
+  static common<Envelop extends State.Common<any>>(
+    atom: Envelop,
+  ): Atom.Common.Join<"state", Envelop> {
+    return void 0 as any;
+  }
+
+  static override use<Value>(
+    initialValue: Value,
+    deps: DependencyList,
+  ): State.Invariant<Value> {
+    return void 0 as any;
+  }
+
+  //#endregion
+
   [hintSymbol]: true = true;
 }
 
