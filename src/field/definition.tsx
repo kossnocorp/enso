@@ -35,7 +35,6 @@ import type { EnsoUtils as Utils } from "../utils.ts";
 import { ValidationTree } from "../validation/index.ts";
 import { AsCollection } from "./collection/index.ts";
 import { FieldRef } from "./ref/index.ts";
-import { fieldDiscriminate } from "./type/index.ts";
 import { Static, staticImplements } from "./util.ts";
 
 export { FieldRef };
@@ -97,6 +96,8 @@ export declare class Field<
   ): React.ReactNode;
 
   //#endregion
+
+  [hintSymbol]: true;
 }
 
 export namespace Field {
@@ -117,19 +118,22 @@ export namespace Field {
     Value,
     Qualifier extends Atom.Qualifier = never,
     Parent extends Atom.Parent.Constraint<"field", Value> = unknown,
-  > extends Atom.Invariant<"field" | "invariant", Value, Qualifier, Parent> {}
+  > extends Hint,
+      Atom.Invariant<"field" | "invariant", Value, Qualifier, Parent> {}
 
   export interface Common<
     Value,
     Qualifier extends Atom.Qualifier = never,
     Parent extends Atom.Parent.Constraint<"field", Value> = unknown,
-  > extends Atom.Common<"field" | "common", Value, Qualifier, Parent> {}
+  > extends Hint,
+      Atom.Common<"field" | "common", Value, Qualifier, Parent> {}
 
   export interface Immutable<
     Value,
     Qualifier extends Atom.Qualifier = never,
     Parent extends Atom.Parent.Constraint<"field", Value> = unknown,
-  > extends Atom.Immutable<"field" | "immutable", Value, Qualifier, Parent> {}
+  > extends Hint,
+      Atom.Immutable<"field" | "immutable", Value, Qualifier, Parent> {}
 
   export type Parent<Value, Key extends keyof Value> = Atom.Parent<
     "field",
@@ -137,6 +141,9 @@ export namespace Field {
     Key
   >;
 
+  export interface Hint {
+    [hintSymbol]: true;
+  }
   //#region Value
 
   export namespace Value {

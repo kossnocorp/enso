@@ -1,13 +1,18 @@
 import { Atom } from "../atom/index.ts";
 import type { EnsoUtils as Utils } from "../utils.ts";
 
+const hintSymbol = Symbol();
+
 export class State<
     Value,
     Qualifier extends Atom.Qualifier = never,
     Parent extends Atom.Parent.Constraint<"state", Value> = unknown,
   >
   extends Atom<"state", Value, Qualifier, Parent>
-  implements State.Invariant<Value, Qualifier, Parent> {}
+  implements State.Invariant<Value, Qualifier, Parent>
+{
+  [hintSymbol]: true = true;
+}
 
 // ^^^^^^^^^^^^^^^^^^^ PROCESSED ^^^^^^^^^^^^^^^^^^^
 
@@ -31,19 +36,26 @@ export namespace State {
     Value,
     Qualifier extends Atom.Qualifier = never,
     Parent extends Atom.Parent.Constraint<"state", Value> = unknown,
-  > extends Atom.Invariant<"state" | "invariant", Value, Qualifier, Parent> {}
+  > extends Hint,
+      Atom.Invariant<"state" | "invariant", Value, Qualifier, Parent> {}
 
   export interface Common<
     Value,
     Qualifier extends Atom.Qualifier = never,
     Parent extends Atom.Parent.Constraint<"state", Value> = unknown,
-  > extends Atom.Common<"state" | "common", Value, Qualifier, Parent> {}
+  > extends Hint,
+      Atom.Common<"state" | "common", Value, Qualifier, Parent> {}
 
   export interface Immutable<
     Value,
     Qualifier extends Atom.Qualifier = never,
     Parent extends Atom.Parent.Constraint<"state", Value> = unknown,
-  > extends Atom.Immutable<"state" | "immutable", Value, Qualifier, Parent> {}
+  > extends Hint,
+      Atom.Immutable<"state" | "immutable", Value, Qualifier, Parent> {}
+
+  export interface Hint {
+    [hintSymbol]: true;
+  }
 
   export type Parent<Value, Key extends keyof Value> = Atom.Parent<
     "state",
