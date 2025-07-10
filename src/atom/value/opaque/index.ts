@@ -47,7 +47,7 @@ export class AtomValuePrimitive<
 
   remove() {
     // @ts-expect-error
-    return Atom.remove(this.external);
+    return this.external.self.remove();
   }
 
   //#region Tree

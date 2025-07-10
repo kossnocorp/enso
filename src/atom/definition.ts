@@ -67,6 +67,8 @@ export declare class Atom<
 
   get _(): Atom.Value.Variable<Type, Value>;
 
+  remove: Atom.RemoveProp<Type, Value>;
+
   //#endregion
 
   //#region Tree
@@ -83,11 +85,13 @@ export declare class Atom<
 
   try: Atom.TryProp<Type, Value>;
 
-  opt(): Atom.Opt<Type, Value, Qualifier>;
-
   get path(): string[];
 
   get name(): string;
+
+  self: Utils.CovariantifyProperty<
+    Atom.Invariant.Self<Type, Value, Qualifier, Parent>
+  >;
 
   //#endregion
 
@@ -168,6 +172,17 @@ export namespace Atom {
         ? Type
         : never;
 
+  export type SelfEnvelop<
+    Type extends Atom.Type,
+    Value,
+    Qualifier extends Atom.Qualifier = never,
+    Parent extends Atom.Parent.Constraint<Type, Value> = unknown,
+  > = "invariant" extends Type
+    ? Invariant.Self<Type, Value, Qualifier, Parent>
+    : "common" extends Type
+      ? Common.Self<Type, Value, Qualifier, Parent>
+      : Immutable.Self<Type, Value, Qualifier, Parent>;
+
   //#endregion
 
   //#region Invariant
@@ -192,6 +207,12 @@ export namespace Atom {
 
     //#endregion
 
+    //#region Type
+
+    remove: RemoveProp<Type, Value>;
+
+    //#endregion
+
     //#region Events
 
     trigger(changes: FieldChange, notifyParents?: boolean): void;
@@ -211,6 +232,15 @@ export namespace Atom {
         : ExtractShell<Type> extends "field"
           ? Field.Invariant<Value, Qualifier, Parent>
           : never;
+
+    export interface Self<
+      Type extends Atom.Type,
+      Value,
+      Qualifier extends Atom.Qualifier = never,
+      Parent extends Atom.Parent.Constraint<Type, Value> = unknown,
+    > extends Common.Self<Type, Value, Qualifier> {
+      remove: Atom.Self.RemoveProp<Type, Value, Qualifier, Parent>;
+    }
   }
 
   //#endregion
@@ -236,6 +266,13 @@ export namespace Atom {
         : ExtractShell<Type> extends "field"
           ? Field.Common<Value, Qualifier, Parent>
           : never;
+
+    export interface Self<
+      Type extends Atom.Type,
+      Value,
+      Qualifier extends Atom.Qualifier = never,
+      Parent extends Atom.Parent.Constraint<Type, Value> = unknown,
+    > extends Immutable.Self<Type, Value, Qualifier, Parent> {}
 
     export type Join<
       Type extends Atom.Type,
@@ -302,7 +339,7 @@ export namespace Atom {
 
     try: Atom.TryProp<Type, Value>;
 
-    opt(): Atom.Opt<Type, Value, Qualifier>;
+    self: Utils.CovariantifyProperty<SelfEnvelop<Type, Value, Qualifier>>;
 
     //#endregion
 
@@ -337,6 +374,27 @@ export namespace Atom {
         : ExtractShell<Type> extends "field"
           ? Field.Immutable<Value, Qualifier, Parent>
           : never;
+
+    export interface Self<
+      Type extends Atom.Type,
+      Value,
+      Qualifier extends Atom.Qualifier = never,
+      Parent extends Atom.Parent.Constraint<Type, Value> = unknown,
+    > {
+      try(): Remove<Type, Value, Qualifier>;
+    }
+
+    export type Remove<
+      Type extends Atom.Type,
+      Value,
+      Qualifier extends Atom.Qualifier,
+    > =
+      // Add null to the union
+      | (null extends Value ? null : never)
+      // Add undefined to the union
+      | (undefined extends Value ? undefined : never)
+      // Resolve branded field without null or undefined
+      | Atom.Envelop<Type, Utils.NonNullish<Value>, "tried" | Qualifier>;
   }
 
   //#endregion
@@ -400,6 +458,60 @@ export namespace Atom {
   > extends SetCommon<Type, Value, Qualifier, Parent> {
     (value: DetachedValue): Envelop<Type, DetachedValue, Qualifier, Parent>;
   }
+
+  //#endregion
+
+  //#region Type
+
+  //#region Self
+
+  export namespace Self {
+    export type RemoveProp<
+      Type extends Atom.Type,
+      Value,
+      Qualifier extends Atom.Qualifier = never,
+      Parent extends Atom.Parent.Constraint<Type, Value> = unknown,
+    > = Qualifier extends "detachable"
+      ? RemoveFn<Type, Value, Qualifier, Parent>
+      : never;
+
+    export interface RemoveFn<
+      Type extends Atom.Type,
+      Value,
+      Qualifier extends Atom.Qualifier = never,
+      Parent extends Atom.Parent.Constraint<Type, Value> = unknown,
+    > {
+      (): Envelop<Type, DetachedValue, Qualifier, Parent>;
+    }
+  }
+
+  //#endregion
+
+  //#region Collection
+
+  export type RemoveProp<
+    Type extends Atom.Type,
+    Value,
+  > = Value extends unknown[]
+    ? RemoveArray<Type, Value>
+    : Value extends object
+      ? RemoveObject<Type, Value>
+      : never;
+
+  export interface RemoveArray<
+    Type extends Atom.Type,
+    Value extends unknown[],
+  > {
+    (item: number): Envelop<Type, Value[number], "detachable">;
+  }
+
+  export interface RemoveObject<Type extends Atom.Type, Value extends object> {
+    <Key extends Enso.DetachableKeys<Value>>(
+      key: Key,
+    ): Envelop<Type, Value[Key], "detachable">;
+  }
+
+  //#endregion
 
   //#endregion
 
@@ -478,14 +590,18 @@ export namespace Atom {
     Type extends Atom.Type,
     Value,
   > = keyof Value extends infer Key extends keyof Value
-    ? <ArgKey extends Key>(
-        key: ArgKey,
-      ) => Envelop<
-        ChildType<Type>,
-        ChildValue<Value, ArgKey>,
-        ChildQualifier<Value, ArgKey>
-      >
+    ? At<Type, Value, Key>
     : never;
+
+  export interface At<Type extends Atom.Type, Value, Key extends keyof Value> {
+    <ArgKey extends Key>(
+      key: ArgKey,
+    ): Envelop<
+      ChildType<Type>,
+      ChildValue<Value, ArgKey>,
+      ChildQualifier<Value, ArgKey>
+    >;
+  }
 
   //#endregion
 
@@ -545,22 +661,6 @@ export namespace Atom {
         ? "detachable"
         : never
       : "detachable";
-
-  //#region Opt
-
-  export type Opt<
-    Type extends Atom.Type,
-    Value,
-    Qualifier extends Atom.Qualifier,
-  > =
-    // Add null to the union
-    | (null extends Value ? null : never)
-    // Add undefined to the union
-    | (undefined extends Value ? undefined : never)
-    // Resolve branded field without null or undefined
-    | Envelop<Type, Utils.NonNullish<Value>, "tried" | Qualifier>;
-
-  //#endregion
 
   //#endregion
 

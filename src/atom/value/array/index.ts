@@ -257,10 +257,8 @@ export class AtomValueArray<Shell extends Atom.Shell, Value> extends AtomValue<
     return field;
   }
 
-  // @ts-expect-error
-  remove(key) {
-    // @ts-expect-error
-    return Field.remove(this.external, key);
+  remove(key: number) {
+    return this.at(key).remove();
   }
 
   // @ts-expect-error

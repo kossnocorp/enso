@@ -3,6 +3,7 @@ import { useCallback, useEffect, useMemo } from "react";
 import {
   change,
   ChangesEvent,
+  fieldChange,
   shapeChanges,
   shiftChildChanges,
   structuralChanges,
@@ -11,6 +12,7 @@ import {
 import { detachedValue } from "../detached/index.ts";
 import { EventsTree } from "../events/index.ts";
 import { useAtomHook } from "./hooks/index.ts";
+import { externalSymbol } from "./value/base/index.ts";
 import { detectValueConstructor } from "./value/index.ts";
 import { AtomValuePrimitive } from "./value/opaque/index.ts";
 
@@ -113,8 +115,6 @@ export class Atom {
           },
     );
 
-    console.log("!!!!!!!!!!!!!!!", typeof this.constructor);
-
     const getValue = useCallback(
       () => this.value,
       [
@@ -204,6 +204,44 @@ export class Atom {
     return {};
   }
 
+  remove(key) {
+    return this.#internal.remove(key);
+  }
+
+  self = {
+    remove: () => {
+      return this.set(detachedValue, true);
+    },
+  };
+
+  //#endregion
+
+  //#region External
+
+  #external = {
+    move: (newKey) => {
+      always(this.#parent && "field" in this.#parent);
+      const prevPath = this.path;
+      this.#parent.key = newKey;
+      this.eventsTree.move(prevPath, this.path, this);
+      return this.trigger(fieldChange.key);
+    },
+
+    create: (value) => {
+      const changes = this.#set(value) | change.field.attach;
+      this.trigger(changes, false);
+      return changes;
+    },
+
+    clear: () => {
+      this.#set(undefined);
+    },
+  };
+
+  get [externalSymbol]() {
+    return this.#external;
+  }
+
   //#endregion
 
   //#region Tree
@@ -247,6 +285,10 @@ export class Atom {
     // // throw new Error(
     // //   `Field at ${this.path.join(".")} is not an object or array`,
     // // );
+  }
+
+  try(key) {
+    return this.#internal.try(key);
   }
 
   get path() {
@@ -298,6 +340,16 @@ export class Atom {
       this.#subs.delete(handler);
       target.removeEventListener("change", handler);
     };
+  }
+
+  unwatch() {
+    // TODO: Add tests for this
+    this.#subs.forEach((sub) => {
+      this.#batchTarget.removeEventListener("change", sub);
+      this.#syncTarget.removeEventListener("change", sub);
+    });
+    this.#subs.clear();
+    this.#internal.unwatch();
   }
 
   //#endregion
@@ -376,4 +428,8 @@ export class Atom {
   }
 
   //#endregion
+}
+
+function always(condition) {
+  if (!condition) throw new Error("Assertion failed");
 }
