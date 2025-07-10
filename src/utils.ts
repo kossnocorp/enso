@@ -1,3 +1,5 @@
+import { K } from "vitest/dist/chunks/reporters.d.DL9pg5DB.js";
+
 export namespace EnsoUtils {
   /**
    * Any brand type that can be mixed with string number or symbol to create
@@ -207,6 +209,14 @@ export namespace EnsoUtils {
   //#region Never
 
   export type IsNever<Type> = [Type] extends [never] ? true : false;
+
+  //#endregion
+
+  //#region Variance
+
+  export type CovariantifyProperty<Type> = {
+    [Key in keyof Type]: Type[Key];
+  };
 
   //#endregion
 }
