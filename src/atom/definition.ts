@@ -122,7 +122,7 @@ export namespace Atom {
       parent?: Parent,
     ): Envelop<Type, Value, Qualifier, Parent>;
 
-    common<Envelop extends Atom.Envelop<Type, any>>(
+    common<Envelop extends Atom.Common.Envelop<Type, unknown>>(
       atom: Envelop,
     ): Atom.Common.Join<Type, Envelop>;
   }

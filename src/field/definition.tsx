@@ -606,7 +606,7 @@ export class FieldOld<Payload>
     return this.#internal.$();
   }
 
-  // @ts-ignore: DO
+  // @ts-ignore: WIP
   at<Key extends keyof Payload>(key: Key): FieldOld.At<Payload, Key> {
     if (
       this.#internal instanceof InternalObjectState ||
@@ -614,7 +614,7 @@ export class FieldOld<Payload>
     )
       // @ts-ignore: TODO:
       return this.#internal.at(key);
-    // DO:
+    // WIP:
     // throw new Error(
     //   `Field at ${this.path.join(".")} is not an object or array`,
     // );
@@ -1255,7 +1255,7 @@ export namespace FieldOld {
 
   export interface InterfaceMap<Def extends Enso.InterfaceDef>
     extends Enso.InterfaceMap<Def> {
-    // DO: Figure out variants-returned methods!
+    // WIP: Figure out variants-returned methods!
     //
     // decompose(): Decomposed<Def["Payload"]>;
     //

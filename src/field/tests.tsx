@@ -96,7 +96,7 @@ describe(Field, () => {
     });
   });
 
-  describe.skip("value", () => {
+  describe("value", () => {
     describe("set", () => {
       describe("primitive", () => {
         it("sets a new field", () => {
@@ -140,7 +140,7 @@ describe(Field, () => {
             );
           });
 
-          it("assigns type change when setting undefined", () => {
+          it.skip("assigns type change when setting undefined", () => {
             const field = new Field<number | undefined>(42);
             expect(field.set(undefined).lastChanges).toMatchChanges(
               change.field.type,
@@ -150,7 +150,7 @@ describe(Field, () => {
       });
 
       describe("object", () => {
-        it("sets object field", () => {
+        it.skip("sets object field", () => {
           const field = new Field<{ num?: number; str?: string }>({
             num: 42,
           });
@@ -164,7 +164,7 @@ describe(Field, () => {
           expect(field.value).toEqual({});
         });
 
-        it("does not trigger child fields updates when detached", async () => {
+        it.skip("does not trigger child fields updates when detached", async () => {
           const field = new Field<{ num?: number; str?: string }>({
             num: 42,
           });
@@ -182,7 +182,7 @@ describe(Field, () => {
           expect(spy).toHaveBeenCalledOnce();
         });
 
-        it("preserves detached fields", async () => {
+        it.skip("preserves detached fields", async () => {
           const field = new Field<{ num?: number; str?: string }>({
             num: 42,
           });
@@ -210,10 +210,10 @@ describe(Field, () => {
           );
         });
 
-        it("allows to re-attach child fields", () => {
+        it.skip("allows to re-attach child fields", () => {
           const field = new Field<Record<string, number>>({ num: 42 });
-          // @ts-expect-error -- WIP: Types revamp
           const childField = field.at("num");
+          // @ts-expect-error -- WIP: Types revamp
           fieldRemove(childField);
           childField.set(9);
           expect(field.value).toEqual({ num: 9 });
@@ -226,21 +226,21 @@ describe(Field, () => {
               expect(field.set({ num: 42 }).lastChanges).toMatchChanges(0n);
             });
 
-            it("assigns type change when type changes", () => {
+            it.skip("assigns type change when type changes", () => {
               const field = new Field<object | number>({ num: 42 });
               expect(field.set(42).lastChanges).toMatchChanges(
                 change.field.type,
               );
             });
 
-            it("assigns attach change when attaching", () => {
+            it.skip("assigns attach change when attaching", () => {
               const field = new Field<{ name?: object }>({});
               expect(
                 field.$.name.set({ first: "Sasha" }).lastChanges,
               ).toMatchChanges(change.field.attach);
             });
 
-            it("assigns detach change when detaching", () => {
+            it.skip("assigns detach change when detaching", () => {
               const field = new Field<{ name?: object }>({
                 name: { first: "Sasha" },
               });
@@ -249,7 +249,7 @@ describe(Field, () => {
               ).toMatchChanges(change.field.detach);
             });
 
-            it("assigns type change when setting undefined", () => {
+            it.skip("assigns type change when setting undefined", () => {
               const field = new Field<object | undefined>({ num: 42 });
               expect(field.set(undefined).lastChanges).toMatchChanges(
                 change.field.type,
@@ -264,7 +264,7 @@ describe(Field, () => {
                 ).toMatchChanges(change.field.shape | change.child.attach);
               });
 
-              it("assigns change when child detaches", () => {
+              it.skip("assigns change when child detaches", () => {
                 const field = new Field<object>({ num: 42, str: "hello" });
                 expect(field.set({ num: 42 }).lastChanges).toMatchChanges(
                   change.field.shape | change.child.detach,
@@ -288,7 +288,7 @@ describe(Field, () => {
               ).toMatchChanges(change.field.shape | change.child.attach);
             });
 
-            it("assigns detach change when detaching", () => {
+            it.skip("assigns detach change when detaching", () => {
               const field = new Field<object>({
                 name: { first: "Sasha" },
               });
@@ -297,7 +297,7 @@ describe(Field, () => {
               );
             });
 
-            it("assigns type change when setting undefined", () => {
+            it.skip("assigns type change when setting undefined", () => {
               const field = new Field<object>({
                 name: { first: "Sasha" },
               });
@@ -306,7 +306,7 @@ describe(Field, () => {
               );
             });
 
-            it("assigns combined changes", () => {
+            it.skip("assigns combined changes", () => {
               const field = new Field<object>({ num: 42, str: "hello" });
               expect(
                 field.set({ num: 43, bool: true }).lastChanges,
@@ -326,7 +326,7 @@ describe(Field, () => {
                 ).toMatchChanges(change.child.shape | change.subtree.attach);
               });
 
-              it("assigns change when child detaches", () => {
+              it.skip("assigns change when child detaches", () => {
                 const field = new Field<object>({
                   obj: { num: 42, str: "hello" },
                 });
@@ -352,7 +352,7 @@ describe(Field, () => {
               ).toMatchChanges(change.child.shape | change.subtree.attach);
             });
 
-            it("assigns detach change when detaching", () => {
+            it.skip("assigns detach change when detaching", () => {
               const field = new Field<{ obj: object }>({
                 obj: { name: { first: "Sasha" } },
               });
@@ -361,7 +361,7 @@ describe(Field, () => {
               );
             });
 
-            it("assigns type change when setting undefined", () => {
+            it.skip("assigns type change when setting undefined", () => {
               const field = new Field<{ obj: object }>({
                 obj: { name: { first: "Sasha" } },
               });
@@ -370,7 +370,7 @@ describe(Field, () => {
               ).toMatchChanges(change.subtree.type);
             });
 
-            it("assigns combined changes", () => {
+            it.skip("assigns combined changes", () => {
               const field = new Field<object>({
                 obj: { num: 42, str: "hello" },
               });
@@ -395,7 +395,7 @@ describe(Field, () => {
                 ).toMatchChanges(change.subtree.shape | change.subtree.attach);
               });
 
-              it("assigns change when child detaches", () => {
+              it.skip("assigns change when child detaches", () => {
                 const field = new Field<object>({
                   obj: {
                     obj: { num: 42, str: "hello" },
@@ -411,7 +411,7 @@ describe(Field, () => {
       });
 
       describe("array", () => {
-        it("sets the array field", () => {
+        it.skip("sets the array field", () => {
           const field = new Field<number[]>([1, 2, 3, 4, 5]);
           field.set([1, 2, 3]);
           expect(field.value).toEqual([1, 2, 3]);
@@ -445,14 +445,14 @@ describe(Field, () => {
           );
         });
 
-        it("assigns child removed change type if a child has been removed", () => {
+        it.skip("assigns child removed change type if a child has been removed", () => {
           const field = new Field([1, 2, 3]);
           expect(field.set([1, 2]).lastChanges).toMatchChanges(
             change.field.shape | change.child.detach,
           );
         });
 
-        it("assigns combined change type", () => {
+        it.skip("assigns combined change type", () => {
           const field = new Field([1, 2]);
           const arr = [0, 2, 3];
           delete arr[1];
@@ -468,7 +468,7 @@ describe(Field, () => {
           );
         });
 
-        it("does not trigger item updates when removing", async () => {
+        it.skip("does not trigger item updates when removing", async () => {
           const field = new Field<number[]>([1, 2, 3, 4]);
           const spy = vi.fn();
           field.$[2]?.watch(spy);
@@ -486,10 +486,9 @@ describe(Field, () => {
           expect(spy).toHaveBeenCalledOnce();
         });
 
-        it("preserves removed items", async () => {
+        it.skip("preserves removed items", async () => {
           const field = new Field<number[]>([1, 2, 3, 4]);
           const spy = vi.fn();
-          // @ts-expect-error -- WIP: Types revamp
           const itemA = field.at(2);
           itemA.watch(spy);
           field.set([1, 2, 33, 4]);
@@ -497,7 +496,6 @@ describe(Field, () => {
           await postpone();
           field.set([1, 2]);
           field.set([1, 2, 333]);
-          // @ts-expect-error -- WIP: Types revamp
           const itemB = field.at(2);
           expect(itemA).toBeInstanceOf(Field);
           expect(itemA).toBe(itemB);
@@ -515,10 +513,9 @@ describe(Field, () => {
           );
         });
 
-        it("indicates no type change on adding undefined", async () => {
+        it.skip("indicates no type change on adding undefined", async () => {
           const field = new Field<Array<number | undefined>>([1, 2, 3, 4]);
           const spy = vi.fn();
-          // @ts-expect-error -- WIP: Types revamp
           const itemA = field.at(2);
           itemA.watch(spy);
           field.set([1, 2, 33, 4]);
@@ -544,13 +541,12 @@ describe(Field, () => {
 
         it("does not trigger update when setting undefined value to undefined value", () => {
           const field = new Field<number[]>([1, 2, 3, 4]);
-          // @ts-expect-error -- WIP: Types revamp
           const child = field.at(5);
           child.set(detachedValue);
           expect(child.lastChanges).toBe(0n);
         });
 
-        it("works when assigning undefined instead of an object item", () => {
+        it.skip("works when assigning undefined instead of an object item", () => {
           const field = new Field<Array<{ n: number }>>([
             { n: 1 },
             { n: 2 },
@@ -562,10 +558,9 @@ describe(Field, () => {
           expect(field.value).toEqual([{ n: 1 }, { n: 2 }]);
         });
 
-        it("works when assigning object instead of an undefined item", () => {
+        it.skip("works when assigning object instead of an undefined item", () => {
           const field = new Field<Array<{ n: number }>>([{ n: 1 }, { n: 2 }]);
           const spy = vi.fn();
-          // @ts-expect-error -- WIP: Types revamp
           const undefinedField = field.at(2);
           // @ts-expect-error -- WIP: Types revamp
           fieldMap(field, spy);
@@ -581,39 +576,33 @@ describe(Field, () => {
 
         it("assigns created changes when adding a new field", () => {
           const field = new Field<number[]>([1, 2]);
-          // @ts-expect-error -- WIP: Types revamp
           expect(field.at(2).set(3).lastChanges).toMatchChanges(
             change.field.attach,
           );
         });
 
-        it("allows to re-attach item fields", () => {
+        it.skip("allows to re-attach item fields", () => {
           const field = new Field<number[]>([1, 2, 3]);
-          // @ts-expect-error -- WIP: Types revamp
           const itemField = field.at(1);
+          // @ts-expect-error -- WIP: Types revamp
           fieldRemove(itemField);
           itemField.set(9);
           expect(field.value).toEqual([1, 9, 3]);
         });
 
-        it("shifts children when re-attaching item field", () => {
+        it.skip("shifts children when re-attaching item field", () => {
           const field = new Field<number[]>([1, 2, 3]);
-          // @ts-expect-error -- WIP: Types revamp
           const itemField = field.at(1);
 
           // @ts-expect-error -- WIP: Types revamp
           fieldRemove(field, 1);
           expect(field.value).toEqual([1, 3]);
-          // @ts-expect-error -- WIP: Types revamp
           expect(field.at(0).key).toBe("0");
-          // @ts-expect-error -- WIP: Types revamp
           expect(field.at(1).key).toBe("1");
 
           itemField.set(9);
           expect(field.value).toEqual([1, 9, 3]);
-          // @ts-expect-error -- WIP: Types revamp
           expect(field.at(0).key).toBe("0");
-          // @ts-expect-error -- WIP: Types revamp
           expect(field.at(1).key).toBe("1");
         });
 
@@ -625,7 +614,7 @@ describe(Field, () => {
               expect(field.lastChanges).toMatchChanges(0n);
             });
 
-            it("assigns type change when type changes", () => {
+            it.skip("assigns type change when type changes", () => {
               const field = new Field<number[] | number>([1, 2, 3]);
               expect(field.set(123).lastChanges).toMatchChanges(
                 change.field.type,
@@ -634,21 +623,19 @@ describe(Field, () => {
 
             it("assigns attach change when attaching", () => {
               const field = new Field<number[]>([]);
-              // @ts-expect-error -- WIP: Types revamp
               expect(field.at(0).set(1).lastChanges).toMatchChanges(
                 change.field.attach,
               );
             });
 
-            it("assigns detach change when detaching", () => {
+            it.skip("assigns detach change when detaching", () => {
               const field = new Field<number[]>([1, 2, 3]);
-              // @ts-expect-error -- WIP: Types revamp
               expect(field.at(2).set(detachedValue).lastChanges).toMatchChanges(
                 change.field.detach,
               );
             });
 
-            it("assigns type change when setting undefined", () => {
+            it.skip("assigns type change when setting undefined", () => {
               const field = new Field<number[] | undefined>([1, 2, 3]);
               expect(field.set(undefined).lastChanges).toMatchChanges(
                 change.field.type,
@@ -663,7 +650,7 @@ describe(Field, () => {
                 );
               });
 
-              it("assigns change when child detaches", () => {
+              it.skip("assigns change when child detaches", () => {
                 const field = new Field<number[]>([1, 2, 3]);
                 expect(field.set([1, 2]).lastChanges).toMatchChanges(
                   change.field.shape | change.child.detach,
@@ -687,14 +674,14 @@ describe(Field, () => {
               );
             });
 
-            it("assigns detach change when detaching", () => {
+            it.skip("assigns detach change when detaching", () => {
               const field = new Field<any[]>([1, 2, 3]);
               expect(field.set([1, 2]).lastChanges).toMatchChanges(
                 change.field.shape | change.child.detach,
               );
             });
 
-            it("assigns type change when setting undefined", () => {
+            it.skip("assigns type change when setting undefined", () => {
               const field = new Field<any[]>([1, 2, 3]);
               expect(field.set([1, 2, undefined]).lastChanges).toMatchChanges(
                 change.child.type,
@@ -716,7 +703,7 @@ describe(Field, () => {
                 );
               });
 
-              it("assigns change when child detaches", () => {
+              it.skip("assigns change when child detaches", () => {
                 const field = new Field<any[][]>([[1, 2, 3]]);
                 expect(field.set([[1, 2]]).lastChanges).toMatchChanges(
                   change.child.shape | change.subtree.detach,
@@ -740,14 +727,14 @@ describe(Field, () => {
               );
             });
 
-            it("assigns detach change when detaching", () => {
+            it.skip("assigns detach change when detaching", () => {
               const field = new Field<any[][]>([[1, 2, 3]]);
               expect(field.set([[1, 2]]).lastChanges).toMatchChanges(
                 change.child.shape | change.subtree.detach,
               );
             });
 
-            it("assigns type change when setting undefined", () => {
+            it.skip("assigns type change when setting undefined", () => {
               const field = new Field<any[][]>([[1, 2, 3]]);
               expect(field.set([[1, 2, undefined]]).lastChanges).toMatchChanges(
                 change.subtree.type,
@@ -771,7 +758,7 @@ describe(Field, () => {
                 );
               });
 
-              it("assigns change when child detaches", () => {
+              it.skip("assigns change when child detaches", () => {
                 const field = new Field<any[][]>([[[1, 2, 3]]]);
                 expect(field.set([[[1, 2]]]).lastChanges).toMatchChanges(
                   change.subtree.shape | change.subtree.detach,
@@ -862,7 +849,7 @@ describe(Field, () => {
             );
           });
 
-          it("assigns type change when setting undefined", () => {
+          it.skip("assigns type change when setting undefined", () => {
             const field = new Field<Map<string, string> | undefined>(new Map());
             expect(field.set(undefined).lastChanges).toMatchChanges(
               change.field.type,
