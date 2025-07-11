@@ -115,7 +115,8 @@ export namespace State {
     export interface Array<Value extends unknown[]>
       extends Atom.Value.Array<"state", Value> {}
 
-    export interface Tuple<Value> extends Atom.Value.Tuple<"state", Value> {}
+    export interface Tuple<Value extends Utils.Tuple>
+      extends Atom.Value.Tuple<"state", Value> {}
 
     export interface Object<Value> extends Atom.Value.Object<"state", Value> {}
   }

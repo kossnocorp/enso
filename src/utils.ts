@@ -103,10 +103,32 @@ export namespace EnsoUtils {
 
   export type Tuple = [unknown, ...unknown[]];
 
-  export type KeyOfTuple<Type extends Tuple> = Exclude<
-    keyof Type,
-    keyof unknown[]
-  >;
+  // export type KeyOfTuple<Type> = Type extends Tuple
+  //   ? Exclude<keyof Type, keyof unknown[]>
+  //   : never;
+
+  // export type KeyOfArray<Type> = Type extends Tuple
+  //   ? never
+  //   : Type extends unknown[]
+  //     ? number
+  //     : never;
+
+  // // Exclude<
+  // //   keyof Type,
+  // //   keyof unknown[]
+  // // > : never
+
+  // export type KeyOfObject<Type> = Type extends Tuple
+  //   ? never
+  //   : Type extends unknown[]
+  //     ? never
+  //     : Type extends object
+  //       ? keyof Type
+  //       : never;
+
+  // type Asd = KeyOfTuple<{ a: 1; b: 2 }>;
+  // type Asd2 = KeyOfTuple<string[]>;
+  // type Asd3 = KeyOfTuple<["a", "b"]>;
 
   export type IndexOfTuple<Type extends Tuple> =
     Exclude<keyof Type, keyof any[]> extends infer Key
@@ -217,6 +239,11 @@ export namespace EnsoUtils {
   export type CovariantifyProperty<Type> = {
     [Key in keyof Type]: Type[Key];
   };
+
+  export type CovariantifyKeyof<Type> =
+    Exclude<keyof Type, keyof object> extends infer Key extends keyof Type
+      ? Key
+      : never;
 
   //#endregion
 }

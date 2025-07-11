@@ -25,7 +25,7 @@ export declare class Atom<
     deps: DependencyList,
   ): Atom.Envelop<any, Value>;
 
-  //#endregion
+  //#endregion Static
 
   //#region Instance
 
@@ -33,7 +33,7 @@ export declare class Atom<
 
   deconstruct(): void;
 
-  //#endregion
+  //#endregion Instance
 
   //#region Qualifiers
 
@@ -45,7 +45,7 @@ export declare class Atom<
 
   readonly id: string;
 
-  //#endregion
+  //#endregion Attributes
 
   //#region Value
 
@@ -61,15 +61,17 @@ export declare class Atom<
 
   get lastChanges(): FieldChange;
 
-  //#endregion
+  //#endregion Value
 
   //#region Type
 
-  get _(): Atom.Value.Variable<Type, Value>;
+  get _(): Atom.Value.Envelop<Type, Value>;
 
   remove: Atom.RemoveProp<Type, Value>;
 
-  //#endregion
+  forEach: Atom.ForEachProp<Type, Value>;
+
+  //#endregion Type
 
   //#region Tree
 
@@ -93,7 +95,7 @@ export declare class Atom<
     Atom.Invariant.Self<Type, Value, Qualifier, Parent>
   >;
 
-  //#endregion
+  //#endregion Tree
 
   //#region Events
 
@@ -103,7 +105,7 @@ export declare class Atom<
 
   trigger(changes: FieldChange, notifyParents?: boolean): void;
 
-  //#endregion
+  //#endregion Events
 }
 
 export namespace Atom {
@@ -135,11 +137,19 @@ export namespace Atom {
 
   //#region Shell
 
+  // WIP: Try to find a better name for this type, so region can be more precise.
+  export type Type = Shell | Variant;
+
   export type Shell = "state" | "field";
 
   export type Variant = "immutable" | "common" | "invariant";
 
-  export type Type = Shell | Variant;
+  // WIP: Try to get rid of it. The purpose is to have symmetry with Ref but it
+  // might be simple Extract, however I can't check until I stabilize tysts.
+
+  export type NonShell = Exclude<Type, Shell>;
+
+  export type NonVariant = Exclude<Type, Variant>;
 
   export type Envelop<
     Type extends Atom.Type,
@@ -158,6 +168,20 @@ export namespace Atom {
           >
         : never;
 
+  export type Every<
+    Type extends Atom.Type,
+    Value,
+    Qualifier extends Atom.Qualifier = never,
+    Parent extends Atom.Parent.Constraint<Type, Value> = unknown,
+  > =
+    // Handle boolean separately, so it doesn't produce `Atom<..., true> | Atom<..., false>`
+    | (boolean extends Value ? Envelop<Type, Value, Qualifier, Parent> : never)
+    | (Exclude<Value, boolean> extends infer Value
+        ? Value extends Value
+          ? Envelop<Type, Value, Qualifier, Parent>
+          : never
+        : never);
+
   export type ExtractShell<Type extends Atom.Type> =
     Utils.IsNever<Exclude<Type, Variant>> extends true
       ? unknown
@@ -166,7 +190,7 @@ export namespace Atom {
         : never;
 
   export type ExtractVariant<Type extends Atom.Type> =
-    Utils.IsNever<Exclude<Type, Shell>> extends true
+    Utils.IsNever<Exclude<Type, NonVariant>> extends true
       ? "invariant"
       : Type extends Variant
         ? Type
@@ -183,7 +207,145 @@ export namespace Atom {
       ? Common.Self<Type, Value, Qualifier, Parent>
       : Immutable.Self<Type, Value, Qualifier, Parent>;
 
-  //#endregion
+  //#endregion Shell
+
+  //#region Qualifier
+
+  export type Qualifier = "root" | "detachable" | "tried" | "bound";
+
+  export namespace Qualifier {
+    export type Map<Qualifier extends Atom.Qualifier = never> = MapChunk<
+      Qualifier,
+      "root"
+    > &
+      MapChunk<Qualifier, "detachable"> &
+      MapChunk<Qualifier, "tried"> &
+      MapChunk<Qualifier, "bound">;
+
+    export type MapChunk<
+      // WIP: Try to make it reusable this inside Ref
+      Qualifier extends Atom.Qualifier,
+      TestQualifier extends Atom.Qualifier,
+    > = TestQualifier extends Qualifier ? { [Key in TestQualifier]: true } : {};
+  }
+
+  //#endregion Qualifier
+
+  //#region Parent
+
+  export type Parent<Type extends Atom.Type, Value, Key extends keyof Value> =
+    | Parent.Direct<Type, Value, Key>
+    | Parent.Source<Type, Value>;
+
+  export namespace Parent {
+    export type Envelop<Type extends Atom.Type, Value> = Atom.Envelop<
+      Exclude<Type, Variant> | "immutable",
+      Value
+    >;
+
+    export interface Direct<
+      Type extends Atom.Type,
+      Value,
+      Key extends keyof Value,
+    > {
+      field: Envelop<Type, Value>;
+      key: Key;
+    }
+
+    export interface Source<Type extends Atom.Type, Value> {
+      source: Envelop<Type, Value>;
+    }
+
+    export type Constraint<Type extends Atom.Type, ChildValue> =
+      | Parent.Type<Direct<Type, any, any> | Source<Type, any>, ChildValue>
+      | unknown;
+
+    export type Type<ParentProp, ChildValue> =
+      ParentProp extends Source<any, infer Value>
+        ? ChildValue extends Value[keyof Value]
+          ? ParentProp
+          : never
+        : ParentProp extends Parent<any, infer Value, infer Key>
+          ? ChildValue extends Value[Key]
+            ? ParentProp
+            : never
+          : never;
+  }
+
+  //#endregion Parent
+
+  //#region Child
+
+  export type ChildType<Type extends Atom.Type> =
+    | Extract<Type, Shell>
+    | (ExtractVariant<Type> extends infer Variant extends Atom.Variant
+        ? Variant extends "common"
+          ? "invariant"
+          : Variant
+        : never);
+
+  export type ChildValue<Value, Key extends keyof Value> =
+    | Value[Key]
+    | (Utils.IsStaticKey<Value, Key> extends true ? never : undefined);
+
+  export type ChildQualifier<Value, Key extends keyof Utils.NonNullish<Value>> =
+    Utils.IsStaticKey<Value, Key> extends true
+      ? Utils.IsOptionalKey<Value, Key> extends true
+        ? "detachable"
+        : never
+      : "detachable";
+
+  export type Child<
+    Type extends Atom.Type,
+    ParentValue,
+    Key extends keyof ParentValue,
+  > = Envelop<
+    Child.Type<Type>,
+    Child.Value<ParentValue, Key>,
+    Child.Qualifier<ParentValue, Key>
+  >;
+
+  export namespace Child {
+    export type Every<
+      Type extends Atom.Type,
+      ParentValue,
+      Key extends keyof ParentValue,
+    > = Key extends Key
+      ? Atom.Every<
+          Child.Type<Type>,
+          Child.Value<ParentValue, Key>,
+          Child.Qualifier<ParentValue, Key>
+        >
+      : never;
+
+    export type Type<Type extends Atom.Type> =
+      | Extract<Type, Shell>
+      | (ExtractVariant<Type> extends infer Variant extends Atom.Variant
+          ? Variant extends "common"
+            ? "invariant"
+            : Variant
+          : never);
+
+    export type Value<ParentValue, ParentKey extends keyof ParentValue> =
+      | ParentValue[ParentKey]
+      | (Utils.IsStaticKey<ParentValue, ParentKey> extends true
+          ? never
+          : undefined);
+
+    export type Qualifier<
+      ParentValue,
+      ParentKey extends keyof Utils.NonNullish<ParentValue>,
+    > =
+      Utils.IsStaticKey<ParentValue, ParentKey> extends true
+        ? Utils.IsOptionalKey<ParentValue, ParentKey> extends true
+          ? "detachable"
+          : never
+        : "detachable";
+  }
+
+  //#endregion Child
+
+  //#region Interface
 
   //#region Invariant
 
@@ -243,7 +405,7 @@ export namespace Atom {
     }
   }
 
-  //#endregion
+  //#endregion Invariant
 
   //#region Common
 
@@ -283,7 +445,7 @@ export namespace Atom {
       Envelop extends Atom.Envelop<any, infer Value> ? Value : never;
   }
 
-  //#endregion
+  //#endregion Common
 
   //#region Immutable
 
@@ -317,7 +479,7 @@ export namespace Atom {
 
     //#region Type
 
-    _: Value.Variable<Type, Value>;
+    _: Value.Envelop<Type, Value>;
 
     //#endregion
 
@@ -345,11 +507,9 @@ export namespace Atom {
 
     //#region Type
 
-    // narrow<NarrowedValue extends Value>(
-    //   callback: NarrowCallback<Value, NarrowedValue>,
-    // ): Envelop<Type, NarrowedValue> | undefined;
+    forEach: ForEachProp<Type, Value>;
 
-    //#endregion
+    //#endregion Type
 
     //#region Watch
 
@@ -397,28 +557,9 @@ export namespace Atom {
       | Atom.Envelop<Type, Utils.NonNullish<Value>, "tried" | Qualifier>;
   }
 
-  //#endregion
+  //#endregion Immutable
 
-  //#region Qualifier
-
-  export type Qualifier = "root" | "detachable" | "tried" | "bound";
-
-  export namespace Qualifier {
-    export type Map<Qualifier extends Atom.Qualifier = never> = MapChunk<
-      Qualifier,
-      "root"
-    > &
-      MapChunk<Qualifier, "detachable"> &
-      MapChunk<Qualifier, "tried"> &
-      MapChunk<Qualifier, "bound">;
-
-    export type MapChunk<
-      Qualifier extends Atom.Qualifier,
-      TestQualifier extends Atom.Qualifier,
-    > = TestQualifier extends Qualifier ? { [Key in TestQualifier]: true } : {};
-  }
-
-  //#endregion
+  //#endregion Interface
 
   //#region Value
 
@@ -428,7 +569,11 @@ export namespace Atom {
     // invariance.
     Utils.IsNotTop<Value> extends true
       ? { [Key in keyof Value]: Value[Key] }
-      : Utils.ResolveTop<Value>;
+      : Utils.IsUnknown<Value> extends true
+        ? never
+        : Utils.IsAny<Value> extends true
+          ? any
+          : Value;
 
   export type Set<
     Type extends Atom.Type,
@@ -459,7 +604,7 @@ export namespace Atom {
     (value: DetachedValue): Envelop<Type, DetachedValue, Qualifier, Parent>;
   }
 
-  //#endregion
+  //#endregion Value
 
   //#region Type
 
@@ -489,6 +634,121 @@ export namespace Atom {
 
   //#region Collection
 
+  export namespace Collection {
+    //#region Collection.Callback
+
+    export namespace Callback {
+      // Tuple
+
+      // NOTE: We have to have two separate overloads for objects `TuplePair`
+      // and `TupleSingle` as with the current approach binding the key and
+      // value in the arguments on the type level, TypeScript fails to find
+      // the correct overload for when the callback accepts a single argument
+      // (i.e. just the item field).
+
+      export interface TuplePair<
+        Type extends Atom.Type,
+        Value extends Utils.Tuple,
+        Result = void,
+      > {
+        (
+          ...args: {
+            [Key in Utils.IndexOfTuple<Value>]: [
+              Envelop<Child.Type<Type>, Value[Key]>,
+              Key,
+            ];
+          }[Utils.IndexOfTuple<Value>]
+        ): Result;
+      }
+
+      export interface TupleSingle<
+        Type extends Atom.Type,
+        Value extends Utils.Tuple,
+        Result = void,
+      > {
+        (
+          item: {
+            [Key in keyof Value]: Envelop<Type, Value[Key]>;
+          }[Utils.IndexOfTuple<Value>],
+          index?: Utils.IndexOfTuple<Value>,
+        ): Result;
+      }
+
+      export type TupleSingleItem<
+        Type extends Atom.Type,
+        Value extends Utils.Tuple,
+      > = {
+        [Key in Utils.IndexOfTuple<Value>]: Envelop<Type, Value[Key]>;
+      }[Utils.IndexOfTuple<Value>];
+
+      // Array
+
+      export interface Array<
+        Type extends Atom.Type,
+        Value extends unknown[],
+        Result = void,
+      > {
+        (item: ArrayItem<Type, Value>, index: number): Result;
+      }
+
+      export type ArrayItem<
+        Type extends Atom.Type,
+        Value extends unknown[],
+      > = Envelop<
+        Child.Type<Type>,
+        Value[number],
+        Child.Qualifier<Value, number>
+      >;
+
+      // Object
+
+      // NOTE: We have to have two separate overloads for objects `ObjectPair`
+      // and `ObjectSingle` as with the current approach binding the key and
+      // value in the arguments on the type level, TypeScript fails to find
+      // the correct overload for when the callback accepts a single argument
+      // (i.e. just the item field).
+
+      export interface ObjectPair<
+        Type extends Atom.Type,
+        Value extends object,
+        Result = void,
+      > {
+        (
+          // Exclude is needed to remove undefined that appears when there're
+          // optional fields in the object.
+          ...args: Exclude<
+            {
+              [Key in Utils.CovariantifyKeyof<Value>]: [
+                Child<Type, Value, Key>,
+                Key,
+              ];
+            }[Utils.CovariantifyKeyof<Value>],
+            undefined
+          >
+        ): Result;
+      }
+
+      export interface ObjectSingle<
+        Type extends Atom.Type,
+        Value extends object,
+        Result = void,
+      > {
+        (
+          // Exclude is needed to remove undefined that appears when there're
+          // optional fields in the object.
+          item: Exclude<
+            { [Key in keyof Value]: Child<Type, Value, Key> }[keyof Value],
+            undefined
+          >,
+        ): Result;
+      }
+    }
+
+    //#endregion Collection.Callback
+  }
+
+  //#region Remove
+
   export type RemoveProp<
     Type extends Atom.Type,
     Value,
@@ -511,9 +771,49 @@ export namespace Atom {
     ): Envelop<Type, Value[Key], "detachable">;
   }
 
-  //#endregion
+  //#endregion Remove
+
+  //#region ForEach
+
+  export type ForEachProp<
+    Type extends Atom.Type,
+    Value,
+  > = Value extends Utils.Tuple
+    ? ForEachTuple<Type, Value>
+    : Value extends unknown[]
+      ? ForEachArray<Type, Value>
+      : Value extends object
+        ? ForEachObject<Type, Value>
+        : never;
+
+  export interface ForEachTuple<
+    Type extends Atom.Type,
+    Value extends Utils.Tuple,
+  > {
+    (callback: Collection.Callback.TuplePair<Type, Value>): void;
+
+    (callback: Collection.Callback.TupleSingle<Type, Value>): void;
+  }
+
+  export interface ForEachArray<
+    Type extends Atom.Type,
+    Value extends unknown[],
+    Result = void,
+  > {
+    (callback: Collection.Callback.Array<Type, Value, Result>): void;
+  }
+
+  export interface ForEachObject<Type extends Atom.Type, Value extends object> {
+    (callback: Collection.Callback.ObjectPair<Type, Value>): void;
+
+    (callback: Collection.Callback.ObjectSingle<Type, Value>): void;
+  }
+
+  //#endregion ForEach
 
   //#endregion
+
+  //#endregion Type
 
   //#region Tree
 
@@ -522,49 +822,6 @@ export namespace Atom {
     unknown,
     "root"
   >;
-
-  //#region Parent
-
-  export type Parent<Type extends Atom.Type, Value, Key extends keyof Value> =
-    | Parent.Direct<Type, Value, Key>
-    | Parent.Source<Type, Value>;
-
-  export namespace Parent {
-    export type Envelop<Type extends Atom.Type, Value> = Atom.Envelop<
-      Exclude<Type, Variant> | "immutable",
-      Value
-    >;
-
-    export interface Direct<
-      Type extends Atom.Type,
-      Value,
-      Key extends keyof Value,
-    > {
-      field: Envelop<Type, Value>;
-      key: Key;
-    }
-
-    export interface Source<Type extends Atom.Type, Value> {
-      source: Envelop<Type, Value>;
-    }
-
-    export type Constraint<Type extends Atom.Type, ChildValue> =
-      | Parent.Type<Direct<Type, any, any> | Source<Type, any>, ChildValue>
-      | unknown;
-
-    export type Type<ParentProp, ChildValue> =
-      ParentProp extends Source<any, infer Value>
-        ? ChildValue extends Value[keyof Value]
-          ? ParentProp
-          : never
-        : ParentProp extends Parent<any, infer Value, infer Key>
-          ? ChildValue extends Value[Key]
-            ? ParentProp
-            : never
-          : never;
-  }
-
-  //#endregion
 
   //#region $
 
@@ -643,25 +900,6 @@ export namespace Atom {
 
   //#endregion
 
-  export type ChildType<Type extends Atom.Type> =
-    | Extract<Type, Shell>
-    | (ExtractVariant<Type> extends infer Variant extends Atom.Variant
-        ? Variant extends "common"
-          ? "invariant"
-          : Variant
-        : never);
-
-  export type ChildValue<Value, Key extends keyof Value> =
-    | Value[Key]
-    | (Utils.IsStaticKey<Value, Key> extends true ? never : undefined);
-
-  export type ChildQualifier<Value, Key extends keyof Utils.NonNullish<Value>> =
-    Utils.IsStaticKey<Value, Key> extends true
-      ? Utils.IsOptionalKey<Value, Key> extends true
-        ? "detachable"
-        : never
-      : "detachable";
-
   //#endregion
 
   //#region Events
@@ -678,7 +916,7 @@ export namespace Atom {
   export namespace Value {
     //#region Subtypes
 
-    export type Variable<Type, Value> = Type extends "state"
+    export type Envelop<Type, Value> = Type extends "state"
       ? State.Value.Variable<Value>
       : Type extends "field"
         ? Field.Value.Variable<Value>
@@ -694,44 +932,39 @@ export namespace Atom {
 
     export interface Array<Type extends Atom.Shell, Value extends unknown[]>
       extends Collection<Type, Value> {
-      each(
-        field:
-          | Atom.Envelop<Type, Value>
-          | Utils.Nullish<Enso.Tried<Atom.Envelop<Type, Value>>>,
-        callback: ArrayCallback<Type, Value>,
-      ): void;
+      forEach(callback: ArrayCallback<Type, Value>): void;
 
       find<Value extends unknown[]>(
         callback: ArrayCallback<Type, Value>,
       ): ArrayCallbackItem<Type, Value> | undefined;
     }
 
-    export interface Tuple<Type extends Atom.Shell, Value>
-      extends Collection<Type, Value> {}
+    export interface Tuple<Type extends Atom.Shell, Value extends Utils.Tuple>
+      extends Collection<Type, Value> {
+      // forEach(callback: TupleCallbackPair<Type, Value>): void;
+      // forEach(callback: TupleCallbackSingle<Type, Value>): void;
+    }
 
     export interface Object<Type extends Atom.Shell, Value>
       extends Collection<Type, Value> {
-      each<Value extends object>(
-        field:
-          | Atom.Envelop<Type, Value>
-          | Utils.Nullish<Enso.Tried<Atom.Envelop<Type, Value>>>,
-        callback: ObjectCallbackPair<Type, Value>,
-      ): void;
-
-      each<Value extends object>(
-        field:
-          | Atom.Envelop<Type, Value>
-          | Utils.Nullish<Enso.Tried<Atom.Envelop<Type, Value>>>,
-        callback: ObjectCallbackSingle<Type, Value>,
-      ): void;
-
-      filter<Value extends object>(
-        predicate: ObjectCallbackPair<Type, Value, unknown>,
-      ): ObjectCallbackResult<Type, Value>[];
-
-      filter<Value extends object>(
-        predicate: ObjectCallbackSingle<Type, Value, unknown>,
-      ): ObjectCallbackResult<Type, Value>[];
+      // forEach<Value extends object>(
+      //   field:
+      //     | Atom.Envelop<Type, Value>
+      //     | Utils.Nullish<Enso.Tried<Atom.Envelop<Type, Value>>>,
+      //   callback: ObjectCallbackPair<Type, Value>,
+      // ): void;
+      // forEach<Value extends object>(
+      //   field:
+      //     | Atom.Envelop<Type, Value>
+      //     | Utils.Nullish<Enso.Tried<Atom.Envelop<Type, Value>>>,
+      //   callback: ObjectCallbackSingle<Type, Value>,
+      // ): void;
+      // filter<Value extends object>(
+      //   predicate: ObjectCallbackPair<Type, Value, unknown>,
+      // ): ObjectCallbackResult<Type, Value>[];
+      // filter<Value extends object>(
+      //   predicate: ObjectCallbackSingle<Type, Value, unknown>,
+      // ): ObjectCallbackResult<Type, Value>[];
     }
 
     // TODO: Find a way to make this work for known built-in types
@@ -741,6 +974,35 @@ export namespace Atom {
     // export interface Record<Value> extends Collection<Value> {}
 
     //#endregion
+
+    export type TupleCallbackPair<
+      Shell extends Atom.Shell,
+      Value extends Utils.Tuple,
+      Result = void,
+    > = (
+      ...args: {
+        [Key in Utils.IndexOfTuple<Value>]: [Child<Shell, Value, Key>, Key];
+      }[Utils.IndexOfTuple<Value>]
+    ) => Result;
+
+    export type TupleCallbackSingle<
+      Shell extends Atom.Shell,
+      Value extends Utils.Tuple,
+      Result = void,
+    > = (item: TupleCallbackSingleItem<Shell, Value>) => Result;
+
+    export type TupleCallbackSingleItem<
+      Type extends Atom.Shell,
+      Value extends Utils.Tuple,
+    > =
+      Utils.IndexOfTuple<Value> extends infer Key
+        ? Key extends Key
+          ? any
+          : never
+        : never;
+    // Value extends Array<Type, infer ItemValue>
+    //   ? Atom.Envelop<Type, ItemValue, "detachable">
+    //   : never;
 
     //#region Array
 
@@ -755,7 +1017,7 @@ export namespace Atom {
       Value extends unknown[],
     > =
       Value extends Array<Type, infer ItemValue>
-        ? Enso.Detachable<Atom.Envelop<Type, ItemValue>>
+        ? Atom.Envelop<Type, ItemValue, "detachable">
         : never;
 
     //#endregion

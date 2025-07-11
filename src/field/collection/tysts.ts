@@ -1,8 +1,8 @@
 import { DetachedValue } from "../../detached/index.ts";
 import { Enso } from "../../types.ts";
 import { EnsoUtils as Utils } from "../../utils.ts";
-import { FieldOld, FieldRef } from "../definition.tsx";
-import { MaybeFieldRef } from "../ref/index.ts";
+import { FieldOld } from "../definition.tsx";
+import { FieldRefOld, MaybeFieldRefOld } from "../ref/definition.ts";
 import {
   fieldEach,
   fieldFilter,
@@ -87,9 +87,9 @@ const prim = new FieldOld<string | boolean>("hello");
     {
       // Regular
       {
-        const ref = new FieldRef(arr);
+        const ref = new FieldRefOld(arr);
         fieldEach(ref, (item, index) => {
-          item satisfies FieldRef<string | boolean>;
+          item satisfies FieldRefOld<string | boolean>;
           // @ts-expect-error
           item.any;
 
@@ -98,7 +98,7 @@ const prim = new FieldOld<string | boolean>("hello");
           index.any;
         });
         fieldEach(ref, (item) => {
-          item satisfies FieldRef<string | boolean>;
+          item satisfies FieldRefOld<string | boolean>;
           // @ts-expect-error
           item.any;
         });
@@ -107,9 +107,9 @@ const prim = new FieldOld<string | boolean>("hello");
 
       // Undefined
       {
-        const refUnd = new FieldRef(arrOrUnd);
+        const refUnd = new FieldRefOld(arrOrUnd);
         fieldEach(refUnd.try(), (item, index) => {
-          item satisfies FieldRef<string | boolean>;
+          item satisfies FieldRefOld<string | boolean>;
           // @ts-expect-error
           item.any;
 
@@ -126,12 +126,12 @@ const prim = new FieldOld<string | boolean>("hello");
     {
       // Regular
       {
-        const maybe = new MaybeFieldRef({
+        const maybe = new MaybeFieldRefOld({
           type: "direct",
           field: arr,
         });
         fieldEach(maybe, (item, index) => {
-          item satisfies MaybeFieldRef<string | boolean>;
+          item satisfies MaybeFieldRefOld<string | boolean>;
           // @ts-expect-error
           item.any;
 
@@ -140,7 +140,7 @@ const prim = new FieldOld<string | boolean>("hello");
           index.any;
         });
         fieldEach(maybe, (item) => {
-          item satisfies MaybeFieldRef<string | boolean>;
+          item satisfies MaybeFieldRefOld<string | boolean>;
           // @ts-expect-error
           item.any;
         });
@@ -149,12 +149,12 @@ const prim = new FieldOld<string | boolean>("hello");
 
       // Undefined
       {
-        const maybeUnd = new MaybeFieldRef({
+        const maybeUnd = new MaybeFieldRefOld({
           type: "direct",
           field: arrOrUnd,
         });
         fieldEach(maybeUnd.try(), (item, index) => {
-          item satisfies MaybeFieldRef<string | boolean>;
+          item satisfies MaybeFieldRefOld<string | boolean>;
           // @ts-expect-error
           item.any;
 
@@ -164,7 +164,7 @@ const prim = new FieldOld<string | boolean>("hello");
         });
         fieldEach(
           // @ts-expect-error
-          new MaybeFieldRef({ type: "direct", field: arrOrUnd }),
+          new MaybeFieldRefOld({ type: "direct", field: arrOrUnd }),
           () => {},
         );
       }
@@ -265,9 +265,9 @@ const prim = new FieldOld<string | boolean>("hello");
     {
       // Regular
       {
-        const ref = new FieldRef(obj);
+        const ref = new FieldRefOld(obj);
         fieldEach(ref, (item, key) => {
-          item satisfies FieldRef<string> | FieldRef<boolean>;
+          item satisfies FieldRefOld<string> | FieldRefOld<boolean>;
           // @ts-expect-error
           item.any;
 
@@ -291,9 +291,9 @@ const prim = new FieldOld<string | boolean>("hello");
 
       // Optional
       {
-        const refOpt = new FieldRef(objPart);
+        const refOpt = new FieldRefOld(objPart);
         fieldEach(refOpt, (item, key) => {
-          item satisfies FieldRef<boolean> | FieldRef<string | undefined>;
+          item satisfies FieldRefOld<boolean> | FieldRefOld<string | undefined>;
           // @ts-expect-error
           item.any;
 
@@ -312,7 +312,7 @@ const prim = new FieldOld<string | boolean>("hello");
           }
         });
         fieldEach(refOpt, (item) => {
-          item satisfies FieldRef<boolean> | FieldRef<string | undefined>;
+          item satisfies FieldRefOld<boolean> | FieldRefOld<string | undefined>;
           // @ts-expect-error
           item.any;
         });
@@ -321,9 +321,9 @@ const prim = new FieldOld<string | boolean>("hello");
 
       // Undefined
       {
-        const refUnd = new FieldRef(objOrUnd);
+        const refUnd = new FieldRefOld(objOrUnd);
         fieldEach(refUnd.try(), (item, key) => {
-          item satisfies FieldRef<boolean> | FieldRef<string | undefined>;
+          item satisfies FieldRefOld<boolean> | FieldRefOld<string | undefined>;
           // @ts-expect-error
           item.any;
 
@@ -350,12 +350,12 @@ const prim = new FieldOld<string | boolean>("hello");
     {
       // Regular
       {
-        const maybe = new MaybeFieldRef({
+        const maybe = new MaybeFieldRefOld({
           type: "direct",
           field: obj,
         });
         fieldEach(maybe, (item, key) => {
-          item satisfies MaybeFieldRef<string> | MaybeFieldRef<boolean>;
+          item satisfies MaybeFieldRefOld<string> | MaybeFieldRefOld<boolean>;
           // @ts-expect-error
           item.any;
 
@@ -379,14 +379,14 @@ const prim = new FieldOld<string | boolean>("hello");
 
       // Optional
       {
-        const maybeOpt = new MaybeFieldRef({
+        const maybeOpt = new MaybeFieldRefOld({
           type: "direct",
           field: objPart,
         });
         fieldEach(maybeOpt, (item, key) => {
           item satisfies
-            | MaybeFieldRef<boolean>
-            | MaybeFieldRef<string | undefined>;
+            | MaybeFieldRefOld<boolean>
+            | MaybeFieldRefOld<string | undefined>;
           // @ts-expect-error
           item.any;
 
@@ -406,8 +406,8 @@ const prim = new FieldOld<string | boolean>("hello");
         });
         fieldEach(maybeOpt, (item) => {
           item satisfies
-            | MaybeFieldRef<boolean>
-            | MaybeFieldRef<string | undefined>;
+            | MaybeFieldRefOld<boolean>
+            | MaybeFieldRefOld<string | undefined>;
           // @ts-expect-error
           item.any;
         });
@@ -416,14 +416,14 @@ const prim = new FieldOld<string | boolean>("hello");
 
       // Undefined
       {
-        const maybeUnd = new MaybeFieldRef({
+        const maybeUnd = new MaybeFieldRefOld({
           type: "direct",
           field: objOrUnd,
         });
         fieldEach(maybeUnd.try(), (item, key) => {
           item satisfies
-            | MaybeFieldRef<boolean>
-            | MaybeFieldRef<string | undefined>;
+            | MaybeFieldRefOld<boolean>
+            | MaybeFieldRefOld<string | undefined>;
           // @ts-expect-error
           item.any;
 
@@ -508,12 +508,12 @@ const prim = new FieldOld<string | boolean>("hello");
     {
       // Regular
       {
-        const ref = new FieldRef(tuple);
+        const ref = new FieldRefOld(tuple);
         fieldEach(ref, (item, index) => {
           item satisfies
-            | FieldRef<string>
-            | FieldRef<boolean>
-            | FieldRef<symbol>;
+            | FieldRefOld<string>
+            | FieldRefOld<boolean>
+            | FieldRefOld<symbol>;
           // @ts-expect-error
           item.any;
 
@@ -530,9 +530,9 @@ const prim = new FieldOld<string | boolean>("hello");
 
         fieldEach(ref, (item) => {
           item satisfies
-            | FieldRef<string>
-            | FieldRef<boolean>
-            | FieldRef<symbol>;
+            | FieldRefOld<string>
+            | FieldRefOld<boolean>
+            | FieldRefOld<symbol>;
           // @ts-expect-error
           item.any;
         });
@@ -541,12 +541,12 @@ const prim = new FieldOld<string | boolean>("hello");
 
       // Undefined
       {
-        const refUnd = new FieldRef(tupleOrUnd);
+        const refUnd = new FieldRefOld(tupleOrUnd);
         fieldEach(refUnd.try(), (item, index) => {
           item satisfies
-            | FieldRef<string>
-            | FieldRef<boolean>
-            | FieldRef<symbol>;
+            | FieldRefOld<string>
+            | FieldRefOld<boolean>
+            | FieldRefOld<symbol>;
           // @ts-expect-error
           item.any;
 
@@ -564,15 +564,15 @@ const prim = new FieldOld<string | boolean>("hello");
     {
       // Regular
       {
-        const maybe = new MaybeFieldRef({
+        const maybe = new MaybeFieldRefOld({
           type: "direct",
           field: tuple,
         });
         fieldEach(maybe, (item, index) => {
           item satisfies
-            | MaybeFieldRef<string>
-            | MaybeFieldRef<boolean>
-            | MaybeFieldRef<symbol>;
+            | MaybeFieldRefOld<string>
+            | MaybeFieldRefOld<boolean>
+            | MaybeFieldRefOld<symbol>;
           // @ts-expect-error
           item.any;
 
@@ -589,9 +589,9 @@ const prim = new FieldOld<string | boolean>("hello");
 
         fieldEach(maybe, (item) => {
           item satisfies
-            | MaybeFieldRef<string>
-            | MaybeFieldRef<boolean>
-            | MaybeFieldRef<symbol>;
+            | MaybeFieldRefOld<string>
+            | MaybeFieldRefOld<boolean>
+            | MaybeFieldRefOld<symbol>;
           // @ts-expect-error
           item.any;
         });
@@ -600,15 +600,15 @@ const prim = new FieldOld<string | boolean>("hello");
 
       // Undefined
       {
-        const maybeUnd = new MaybeFieldRef({
+        const maybeUnd = new MaybeFieldRefOld({
           type: "direct",
           field: tupleOrUnd,
         });
         fieldEach(maybeUnd.try(), (item, index) => {
           item satisfies
-            | MaybeFieldRef<string>
-            | MaybeFieldRef<boolean>
-            | MaybeFieldRef<symbol>;
+            | MaybeFieldRefOld<string>
+            | MaybeFieldRefOld<boolean>
+            | MaybeFieldRefOld<symbol>;
           // @ts-expect-error
           item.any;
 
@@ -619,7 +619,7 @@ const prim = new FieldOld<string | boolean>("hello");
 
         fieldEach(
           // @ts-expect-error
-          new MaybeFieldRef({ type: "direct", field: maybeUnd }),
+          new MaybeFieldRefOld({ type: "direct", field: maybeUnd }),
           () => {},
         );
       }
@@ -672,9 +672,9 @@ const prim = new FieldOld<string | boolean>("hello");
     {
       // Regular
       {
-        const ref = new FieldRef(arr);
+        const ref = new FieldRefOld(arr);
         const refResult = fieldMap(ref, (item, index) => {
-          item satisfies FieldRef<string | boolean>;
+          item satisfies FieldRefOld<string | boolean>;
           // @ts-expect-error
           item.any;
 
@@ -689,9 +689,9 @@ const prim = new FieldOld<string | boolean>("hello");
 
       // Undefined
       {
-        const refUnd = new FieldRef(arrOrUnd);
+        const refUnd = new FieldRefOld(arrOrUnd);
         fieldMap(refUnd.try(), (item, index) => {
-          item satisfies FieldRef<string | boolean>;
+          item satisfies FieldRefOld<string | boolean>;
           // @ts-expect-error
           item.any;
 
@@ -710,12 +710,12 @@ const prim = new FieldOld<string | boolean>("hello");
     {
       // Regular
       {
-        const maybe = new MaybeFieldRef({
+        const maybe = new MaybeFieldRefOld({
           type: "direct",
           field: arr,
         });
         const maybeResult = fieldMap(maybe, (item, index) => {
-          item satisfies MaybeFieldRef<string | boolean>;
+          item satisfies MaybeFieldRefOld<string | boolean>;
           // @ts-expect-error
           item.any;
 
@@ -730,12 +730,12 @@ const prim = new FieldOld<string | boolean>("hello");
 
       // Undefined
       {
-        const maybeUnd = new MaybeFieldRef({
+        const maybeUnd = new MaybeFieldRefOld({
           type: "direct",
           field: arrOrUnd,
         });
         fieldMap(maybeUnd.try(), (item, index) => {
-          item satisfies MaybeFieldRef<string | boolean>;
+          item satisfies MaybeFieldRefOld<string | boolean>;
           // @ts-expect-error
           item.any;
 
@@ -747,7 +747,7 @@ const prim = new FieldOld<string | boolean>("hello");
         });
         fieldMap(
           // @ts-expect-error
-          new MaybeFieldRef({ type: "direct", field: arrOrUnd }),
+          new MaybeFieldRefOld({ type: "direct", field: arrOrUnd }),
           () => {},
         );
       }
@@ -863,9 +863,9 @@ const prim = new FieldOld<string | boolean>("hello");
     {
       // Regular
       {
-        const ref = new FieldRef(obj);
+        const ref = new FieldRefOld(obj);
         const refResult = fieldMap(ref, (item, key) => {
-          item satisfies FieldRef<string> | FieldRef<boolean>;
+          item satisfies FieldRefOld<string> | FieldRefOld<boolean>;
           // @ts-expect-error
           item.any;
 
@@ -890,9 +890,9 @@ const prim = new FieldOld<string | boolean>("hello");
 
       // Optional
       {
-        const refOpt = new FieldRef(objPart);
+        const refOpt = new FieldRefOld(objPart);
         const refOptResult = fieldMap(refOpt, (item, key) => {
-          item satisfies FieldRef<boolean> | FieldRef<string | undefined>;
+          item satisfies FieldRefOld<boolean> | FieldRefOld<string | undefined>;
           // @ts-expect-error
           item.any;
 
@@ -917,9 +917,9 @@ const prim = new FieldOld<string | boolean>("hello");
 
       // Undefined
       {
-        const refUnd = new FieldRef(objOrUnd);
+        const refUnd = new FieldRefOld(objOrUnd);
         fieldMap(refUnd.try(), (item, key) => {
-          item satisfies FieldRef<boolean> | FieldRef<string | undefined>;
+          item satisfies FieldRefOld<boolean> | FieldRefOld<string | undefined>;
           // @ts-expect-error
           item.any;
 
@@ -946,12 +946,12 @@ const prim = new FieldOld<string | boolean>("hello");
     {
       // Regular
       {
-        const maybe = new MaybeFieldRef({
+        const maybe = new MaybeFieldRefOld({
           type: "direct",
           field: obj,
         });
         const maybeResult = fieldMap(maybe, (item, key) => {
-          item satisfies MaybeFieldRef<string> | MaybeFieldRef<boolean>;
+          item satisfies MaybeFieldRefOld<string> | MaybeFieldRefOld<boolean>;
           // @ts-expect-error
           item.any;
 
@@ -976,14 +976,14 @@ const prim = new FieldOld<string | boolean>("hello");
 
       // Optional
       {
-        const maybeOpt = new MaybeFieldRef({
+        const maybeOpt = new MaybeFieldRefOld({
           type: "direct",
           field: objPart,
         });
         const maybeOptResult = fieldMap(maybeOpt, (item, key) => {
           item satisfies
-            | MaybeFieldRef<boolean>
-            | MaybeFieldRef<string | undefined>;
+            | MaybeFieldRefOld<boolean>
+            | MaybeFieldRefOld<string | undefined>;
           // @ts-expect-error
           item.any;
 
@@ -1008,14 +1008,14 @@ const prim = new FieldOld<string | boolean>("hello");
 
       // Undefined
       {
-        const maybeUnd = new MaybeFieldRef({
+        const maybeUnd = new MaybeFieldRefOld({
           type: "direct",
           field: objOrUnd,
         });
         fieldMap(maybeUnd.try(), (item, key) => {
           item satisfies
-            | MaybeFieldRef<boolean>
-            | MaybeFieldRef<string | undefined>;
+            | MaybeFieldRefOld<boolean>
+            | MaybeFieldRefOld<string | undefined>;
           // @ts-expect-error
           item.any;
 
@@ -1104,12 +1104,12 @@ const prim = new FieldOld<string | boolean>("hello");
     {
       // Regular
       {
-        const ref = new FieldRef(tuple);
+        const ref = new FieldRefOld(tuple);
         const result = fieldMap(ref, (item, index) => {
           item satisfies
-            | FieldRef<string>
-            | FieldRef<boolean>
-            | FieldRef<symbol>;
+            | FieldRefOld<string>
+            | FieldRefOld<boolean>
+            | FieldRefOld<symbol>;
           // @ts-expect-error
           item.any;
 
@@ -1129,9 +1129,9 @@ const prim = new FieldOld<string | boolean>("hello");
 
         fieldMap(ref, (item) => {
           item satisfies
-            | FieldRef<string>
-            | FieldRef<boolean>
-            | FieldRef<symbol>;
+            | FieldRefOld<string>
+            | FieldRefOld<boolean>
+            | FieldRefOld<symbol>;
           // @ts-expect-error
           item.any;
         });
@@ -1140,12 +1140,12 @@ const prim = new FieldOld<string | boolean>("hello");
 
       // Undefined
       {
-        const refUnd = new FieldRef(tupleOrUnd);
+        const refUnd = new FieldRefOld(tupleOrUnd);
         fieldMap(refUnd.try(), (item, index) => {
           item satisfies
-            | FieldRef<string>
-            | FieldRef<boolean>
-            | FieldRef<symbol>;
+            | FieldRefOld<string>
+            | FieldRefOld<boolean>
+            | FieldRefOld<symbol>;
           // @ts-expect-error
           item.any;
 
@@ -1165,15 +1165,15 @@ const prim = new FieldOld<string | boolean>("hello");
     {
       // Regular
       {
-        const maybe = new MaybeFieldRef({
+        const maybe = new MaybeFieldRefOld({
           type: "direct",
           field: tuple,
         });
         const result = fieldMap(maybe, (item, index) => {
           item satisfies
-            | MaybeFieldRef<string>
-            | MaybeFieldRef<boolean>
-            | MaybeFieldRef<symbol>;
+            | MaybeFieldRefOld<string>
+            | MaybeFieldRefOld<boolean>
+            | MaybeFieldRefOld<symbol>;
           // @ts-expect-error
           item.any;
 
@@ -1193,9 +1193,9 @@ const prim = new FieldOld<string | boolean>("hello");
 
         fieldMap(maybe, (item) => {
           item satisfies
-            | MaybeFieldRef<string>
-            | MaybeFieldRef<boolean>
-            | MaybeFieldRef<symbol>;
+            | MaybeFieldRefOld<string>
+            | MaybeFieldRefOld<boolean>
+            | MaybeFieldRefOld<symbol>;
           // @ts-expect-error
           item.any;
         });
@@ -1204,15 +1204,15 @@ const prim = new FieldOld<string | boolean>("hello");
 
       // Undefined
       {
-        const maybeUnd = new MaybeFieldRef({
+        const maybeUnd = new MaybeFieldRefOld({
           type: "direct",
           field: tupleOrUnd,
         });
         fieldMap(maybeUnd.try(), (item, index) => {
           item satisfies
-            | MaybeFieldRef<string>
-            | MaybeFieldRef<boolean>
-            | MaybeFieldRef<symbol>;
+            | MaybeFieldRefOld<string>
+            | MaybeFieldRefOld<boolean>
+            | MaybeFieldRefOld<symbol>;
           // @ts-expect-error
           item.any;
 
@@ -1225,7 +1225,7 @@ const prim = new FieldOld<string | boolean>("hello");
         fieldMap(maybeUnd.try(), () => {});
         fieldMap(
           // @ts-expect-error
-          new MaybeFieldRef({ type: "direct", field: maybeUnd }),
+          new MaybeFieldRefOld({ type: "direct", field: maybeUnd }),
           () => {},
         );
       }
@@ -1253,21 +1253,21 @@ const prim = new FieldOld<string | boolean>("hello");
 
     // FieldRef
     {
-      const ref = new FieldRef(arr);
+      const ref = new FieldRefOld(arr);
       const size = fieldSize(ref);
       size satisfies number;
       // @ts-expect-error
       size.any;
 
       // @ts-expect-error
-      fieldSize(new FieldRef(arrOrUnd.try()));
+      fieldSize(new FieldRefOld(arrOrUnd.try()));
       // @ts-expect-error
-      fieldSize(new FieldRef(arrOrNum));
+      fieldSize(new FieldRefOld(arrOrNum));
     }
 
     // MaybeFieldRef
     {
-      const maybe = new MaybeFieldRef({
+      const maybe = new MaybeFieldRefOld({
         type: "direct",
         field: arr,
       });
@@ -1276,10 +1276,15 @@ const prim = new FieldOld<string | boolean>("hello");
       // @ts-expect-error
       size.any;
 
+      fieldSize(
+        new MaybeFieldRefOld({
+          type: "direct",
+          // @ts-expect-error
+          field: arrOrUnd.try(),
+        }),
+      );
       // @ts-expect-error
-      fieldSize(new MaybeFieldRef({ type: "direct", field: arrOrUnd.try() }));
-      // @ts-expect-error
-      fieldSize(new MaybeFieldRef({ type: "direct", field: arrOrNum }));
+      fieldSize(new MaybeFieldRefOld({ type: "direct", field: arrOrNum }));
     }
   }
 
@@ -1300,21 +1305,21 @@ const prim = new FieldOld<string | boolean>("hello");
 
     // FieldRef
     {
-      const ref = new FieldRef(obj);
+      const ref = new FieldRefOld(obj);
       const size = fieldSize(ref);
       size satisfies number;
       // @ts-expect-error
       size.any;
 
       // @ts-expect-error
-      fieldSize(new FieldRef(objOrUnd.try()));
+      fieldSize(new FieldRefOld(objOrUnd.try()));
       // @ts-expect-error
-      fieldSize(new FieldRef(objOrUnd));
+      fieldSize(new FieldRefOld(objOrUnd));
     }
 
     // MaybeFieldRef
     {
-      const maybe = new MaybeFieldRef({
+      const maybe = new MaybeFieldRefOld({
         type: "direct",
         field: obj,
       });
@@ -1323,10 +1328,15 @@ const prim = new FieldOld<string | boolean>("hello");
       // @ts-expect-error
       size.any;
 
+      fieldSize(
+        new MaybeFieldRefOld({
+          type: "direct",
+          // @ts-expect-error
+          field: objOrUnd.try(),
+        }),
+      );
       // @ts-expect-error
-      fieldSize(new MaybeFieldRef({ type: "direct", field: objOrUnd.try() }));
-      // @ts-expect-error
-      fieldSize(new MaybeFieldRef({ type: "direct", field: objOrUnd }));
+      fieldSize(new MaybeFieldRefOld({ type: "direct", field: objOrUnd }));
     }
   }
 
@@ -1347,21 +1357,21 @@ const prim = new FieldOld<string | boolean>("hello");
 
     // FieldRef
     {
-      const ref = new FieldRef(tuple);
+      const ref = new FieldRefOld(tuple);
       const size = fieldSize(ref);
       size satisfies 3;
       // @ts-expect-error
       size.any;
 
       // @ts-expect-error
-      fieldSize(new FieldRef(tupleOrUnd.try()));
+      fieldSize(new FieldRefOld(tupleOrUnd.try()));
       // @ts-expect-error
-      fieldSize(new FieldRef(tupleOrNum));
+      fieldSize(new FieldRefOld(tupleOrNum));
     }
 
     // MaybeFieldRef
     {
-      const maybe = new MaybeFieldRef({
+      const maybe = new MaybeFieldRefOld({
         type: "direct",
         field: tuple,
       });
@@ -1370,10 +1380,15 @@ const prim = new FieldOld<string | boolean>("hello");
       // @ts-expect-error
       size.any;
 
+      fieldSize(
+        new MaybeFieldRefOld({
+          type: "direct",
+          // @ts-expect-error
+          field: tupleOrUnd.try(),
+        }),
+      );
       // @ts-expect-error
-      fieldSize(new MaybeFieldRef({ type: "direct", field: tupleOrUnd.try() }));
-      // @ts-expect-error
-      fieldSize(new MaybeFieldRef({ type: "direct", field: tupleOrNum }));
+      fieldSize(new MaybeFieldRefOld({ type: "direct", field: tupleOrNum }));
     }
   }
 }
@@ -1457,18 +1472,18 @@ const prim = new FieldOld<string | boolean>("hello");
     {
       // Regular
       {
-        const ref = new FieldRef(arr);
+        const ref = new FieldRefOld(arr);
         const result = fieldFind(ref, (item, index) => {
-          item satisfies FieldRef<string | boolean>;
+          item satisfies FieldRefOld<string | boolean>;
           index satisfies number;
           return item.get() === "hello";
         });
 
-        result satisfies FieldRef<string | boolean> | undefined;
+        result satisfies FieldRefOld<string | boolean> | undefined;
         // @ts-expect-error
-        result satisfies FieldRef<string> | FieldOld<boolean> | undefined;
+        result satisfies FieldRefOld<string> | FieldOld<boolean> | undefined;
         // @ts-expect-error
-        result satisfies FieldRef<string | boolean>;
+        result satisfies FieldRefOld<string | boolean>;
         // @ts-expect-error
         result satisfies undefined;
         // @ts-expect-error
@@ -1486,18 +1501,18 @@ const prim = new FieldOld<string | boolean>("hello");
 
       // Undefined
       {
-        const refUnd = new FieldRef(arrOrUnd);
+        const refUnd = new FieldRefOld(arrOrUnd);
         const result = fieldFind(refUnd.try(), (item, index) => {
-          item satisfies FieldRef<string | boolean>;
+          item satisfies FieldRefOld<string | boolean>;
           index satisfies number;
           return item.get() === "hello";
         });
 
-        result satisfies FieldRef<string | boolean> | undefined;
+        result satisfies FieldRefOld<string | boolean> | undefined;
         // @ts-expect-error
-        result satisfies FieldRef<string | boolean>;
+        result satisfies FieldRefOld<string | boolean>;
         // @ts-expect-error
-        result satisfies FieldRef<string> | FieldOld<boolean>;
+        result satisfies FieldRefOld<string> | FieldOld<boolean>;
         // @ts-expect-error
         result satisfies undefined;
         // @ts-expect-error
@@ -1523,18 +1538,18 @@ const prim = new FieldOld<string | boolean>("hello");
     {
       // Regular
       {
-        const maybe = new MaybeFieldRef({ type: "direct", field: arr });
+        const maybe = new MaybeFieldRefOld({ type: "direct", field: arr });
         const result = fieldFind(maybe, (item, index) => {
-          item satisfies MaybeFieldRef<string | boolean>;
+          item satisfies MaybeFieldRefOld<string | boolean>;
           index satisfies number;
           return item.get() === "hello";
         });
 
-        result satisfies MaybeFieldRef<string | boolean> | undefined;
+        result satisfies MaybeFieldRefOld<string | boolean> | undefined;
         // @ts-expect-error
-        result satisfies MaybeFieldRef<string> | FieldOld<boolean>;
+        result satisfies MaybeFieldRefOld<string> | FieldOld<boolean>;
         // @ts-expect-error
-        result satisfies MaybeFieldRef<string | boolean>;
+        result satisfies MaybeFieldRefOld<string | boolean>;
         // @ts-expect-error
         result satisfies undefined;
         // @ts-expect-error
@@ -1552,18 +1567,21 @@ const prim = new FieldOld<string | boolean>("hello");
 
       // Undefined
       {
-        const maybeUnd = new MaybeFieldRef({ type: "direct", field: arrOrUnd });
+        const maybeUnd = new MaybeFieldRefOld({
+          type: "direct",
+          field: arrOrUnd,
+        });
         const result = fieldFind(maybeUnd.try(), (item, index) => {
-          item satisfies MaybeFieldRef<string | boolean>;
+          item satisfies MaybeFieldRefOld<string | boolean>;
           index satisfies number;
           return item.get() === "hello";
         });
 
-        result satisfies MaybeFieldRef<string | boolean> | undefined;
+        result satisfies MaybeFieldRefOld<string | boolean> | undefined;
         // @ts-expect-error
-        result satisfies MaybeFieldRef<string> | FieldOld<boolean>;
+        result satisfies MaybeFieldRefOld<string> | FieldOld<boolean>;
         // @ts-expect-error
-        result satisfies MaybeFieldRef<string | boolean>;
+        result satisfies MaybeFieldRefOld<string | boolean>;
         // @ts-expect-error
         resultOpt satisfies undefined;
         // @ts-expect-error
@@ -1735,9 +1753,9 @@ const prim = new FieldOld<string | boolean>("hello");
     {
       // Regular
       {
-        const ref = new FieldRef(obj);
+        const ref = new FieldRefOld(obj);
         const result = fieldFind(ref, (item, key) => {
-          item satisfies FieldRef<string> | FieldRef<boolean>;
+          item satisfies FieldRefOld<string> | FieldRefOld<boolean>;
           key satisfies keyof Hello;
           if (key === "hello") {
             item.get() satisfies string;
@@ -1752,9 +1770,9 @@ const prim = new FieldOld<string | boolean>("hello");
           }
         });
 
-        result satisfies FieldRef<string> | FieldRef<boolean> | undefined;
+        result satisfies FieldRefOld<string> | FieldRefOld<boolean> | undefined;
         // @ts-expect-error
-        result satisfies FieldRef<string> | FieldRef<boolean>;
+        result satisfies FieldRefOld<string> | FieldRefOld<boolean>;
         // @ts-expect-error
         result satisfies undefined;
         // @ts-expect-error
@@ -1770,9 +1788,9 @@ const prim = new FieldOld<string | boolean>("hello");
 
       // Optional
       {
-        const refOpt = new FieldRef(objPart);
+        const refOpt = new FieldRefOld(objPart);
         const result = fieldFind(refOpt, (item, key) => {
-          item satisfies FieldRef<boolean> | FieldRef<string | undefined>;
+          item satisfies FieldRefOld<boolean> | FieldRefOld<string | undefined>;
           key satisfies keyof Ok;
           if (key === "ok") {
             item.get() satisfies boolean;
@@ -1788,11 +1806,11 @@ const prim = new FieldOld<string | boolean>("hello");
         });
 
         result satisfies
-          | FieldRef<boolean>
-          | FieldRef<string | undefined>
+          | FieldRefOld<boolean>
+          | FieldRefOld<string | undefined>
           | undefined;
         // @ts-expect-error
-        result satisfies FieldRef<boolean> | FieldRef<string | undefined>;
+        result satisfies FieldRefOld<boolean> | FieldRefOld<string | undefined>;
         // @ts-expect-error
         result satisfies undefined;
         // @ts-expect-error
@@ -1808,9 +1826,9 @@ const prim = new FieldOld<string | boolean>("hello");
 
       // Undefined
       {
-        const refUnd = new FieldRef(objOrUnd);
+        const refUnd = new FieldRefOld(objOrUnd);
         const result = fieldFind(refUnd.try(), (item, key) => {
-          item satisfies FieldRef<boolean> | FieldRef<string | undefined>;
+          item satisfies FieldRefOld<boolean> | FieldRefOld<string | undefined>;
           key satisfies keyof Ok;
           if (key === "ok") {
             item.get() satisfies boolean;
@@ -1826,11 +1844,11 @@ const prim = new FieldOld<string | boolean>("hello");
         });
 
         result satisfies
-          | FieldRef<boolean>
-          | FieldRef<string | undefined>
+          | FieldRefOld<boolean>
+          | FieldRefOld<string | undefined>
           | undefined;
         // @ts-expect-error
-        result satisfies FieldRef<boolean> | FieldRef<string | undefined>;
+        result satisfies FieldRefOld<boolean> | FieldRefOld<string | undefined>;
         // @ts-expect-error
         result satisfies undefined;
         // @ts-expect-error
@@ -1849,9 +1867,9 @@ const prim = new FieldOld<string | boolean>("hello");
     {
       // Regular
       {
-        const maybe = new MaybeFieldRef({ type: "direct", field: obj });
+        const maybe = new MaybeFieldRefOld({ type: "direct", field: obj });
         const result = fieldFind(maybe, (item, key) => {
-          item satisfies MaybeFieldRef<string> | MaybeFieldRef<boolean>;
+          item satisfies MaybeFieldRefOld<string> | MaybeFieldRefOld<boolean>;
           key satisfies keyof Hello;
           if (key === "hello") {
             item.get() satisfies string;
@@ -1867,11 +1885,11 @@ const prim = new FieldOld<string | boolean>("hello");
         });
 
         result satisfies
-          | MaybeFieldRef<string>
-          | MaybeFieldRef<boolean>
+          | MaybeFieldRefOld<string>
+          | MaybeFieldRefOld<boolean>
           | undefined;
         // @ts-expect-error
-        result satisfies MaybeFieldRef<string> | MaybeFieldRef<boolean>;
+        result satisfies MaybeFieldRefOld<string> | MaybeFieldRefOld<boolean>;
         // @ts-expect-error
         result satisfies undefined;
         // @ts-expect-error
@@ -1887,11 +1905,14 @@ const prim = new FieldOld<string | boolean>("hello");
 
       // Optional
       {
-        const maybeOpt = new MaybeFieldRef({ type: "direct", field: objPart });
+        const maybeOpt = new MaybeFieldRefOld({
+          type: "direct",
+          field: objPart,
+        });
         const result = fieldFind(maybeOpt, (item, key) => {
           item satisfies
-            | MaybeFieldRef<boolean>
-            | MaybeFieldRef<string | undefined>;
+            | MaybeFieldRefOld<boolean>
+            | MaybeFieldRefOld<string | undefined>;
           key satisfies keyof Ok;
           if (key === "ok") {
             item.get() satisfies boolean;
@@ -1907,13 +1928,13 @@ const prim = new FieldOld<string | boolean>("hello");
         });
 
         result satisfies
-          | MaybeFieldRef<boolean>
-          | MaybeFieldRef<string | undefined>
+          | MaybeFieldRefOld<boolean>
+          | MaybeFieldRefOld<string | undefined>
           | undefined;
         // @ts-expect-error
         result satisfies
-          | MaybeFieldRef<boolean>
-          | MaybeFieldRef<string | undefined>;
+          | MaybeFieldRefOld<boolean>
+          | MaybeFieldRefOld<string | undefined>;
         // @ts-expect-error
         result satisfies undefined;
         // @ts-expect-error
@@ -1929,11 +1950,14 @@ const prim = new FieldOld<string | boolean>("hello");
 
       // Undefined
       {
-        const maybeUnd = new MaybeFieldRef({ type: "direct", field: objOrUnd });
+        const maybeUnd = new MaybeFieldRefOld({
+          type: "direct",
+          field: objOrUnd,
+        });
         const result = fieldFind(maybeUnd.try(), (item, key) => {
           item satisfies
-            | MaybeFieldRef<boolean>
-            | MaybeFieldRef<string | undefined>;
+            | MaybeFieldRefOld<boolean>
+            | MaybeFieldRefOld<string | undefined>;
           key satisfies keyof Ok;
           if (key === "ok") {
             item.get() satisfies boolean;
@@ -1949,13 +1973,13 @@ const prim = new FieldOld<string | boolean>("hello");
         });
 
         result satisfies
-          | MaybeFieldRef<boolean>
-          | MaybeFieldRef<string | undefined>
+          | MaybeFieldRefOld<boolean>
+          | MaybeFieldRefOld<string | undefined>
           | undefined;
         // @ts-expect-error
         result satisfies
-          | MaybeFieldRef<boolean>
-          | MaybeFieldRef<string | undefined>;
+          | MaybeFieldRefOld<boolean>
+          | MaybeFieldRefOld<string | undefined>;
         // @ts-expect-error
         result satisfies undefined;
         // @ts-expect-error
@@ -2078,12 +2102,12 @@ const prim = new FieldOld<string | boolean>("hello");
     {
       // Regular
       {
-        const ref = new FieldRef(tuple);
+        const ref = new FieldRefOld(tuple);
         const result = fieldFind(ref, (item, index) => {
           item satisfies
-            | FieldRef<string>
-            | FieldRef<boolean>
-            | FieldRef<symbol>;
+            | FieldRefOld<string>
+            | FieldRefOld<boolean>
+            | FieldRefOld<symbol>;
           index satisfies 0 | 1 | 2;
 
           if (index === 1) {
@@ -2097,15 +2121,15 @@ const prim = new FieldOld<string | boolean>("hello");
         });
 
         result satisfies
-          | FieldRef<string>
-          | FieldRef<boolean>
-          | FieldRef<symbol>
+          | FieldRefOld<string>
+          | FieldRefOld<boolean>
+          | FieldRefOld<symbol>
           | undefined;
         // @ts-expect-error
         result satisfies
-          | FieldRef<string>
-          | FieldRef<boolean>
-          | FieldRef<symbol>;
+          | FieldRefOld<string>
+          | FieldRefOld<boolean>
+          | FieldRefOld<symbol>;
         // @ts-expect-error
         result satisfies undefined;
         // @ts-expect-error
@@ -2121,12 +2145,12 @@ const prim = new FieldOld<string | boolean>("hello");
 
       // Undefined
       {
-        const refUnd = new FieldRef(tupleOrUnd);
+        const refUnd = new FieldRefOld(tupleOrUnd);
         const result = fieldFind(refUnd.try(), (item, index) => {
           item satisfies
-            | FieldRef<string>
-            | FieldRef<boolean>
-            | FieldRef<symbol>;
+            | FieldRefOld<string>
+            | FieldRefOld<boolean>
+            | FieldRefOld<symbol>;
           index satisfies 0 | 1 | 2;
 
           if (index === 1) {
@@ -2140,15 +2164,15 @@ const prim = new FieldOld<string | boolean>("hello");
         });
 
         result satisfies
-          | FieldRef<string>
-          | FieldRef<boolean>
-          | FieldRef<symbol>
+          | FieldRefOld<string>
+          | FieldRefOld<boolean>
+          | FieldRefOld<symbol>
           | undefined;
         // @ts-expect-error
         result satisfies
-          | FieldRef<string>
-          | FieldRef<boolean>
-          | FieldRef<symbol>;
+          | FieldRefOld<string>
+          | FieldRefOld<boolean>
+          | FieldRefOld<symbol>;
         // @ts-expect-error
         result satisfies undefined;
         // @ts-expect-error
@@ -2167,12 +2191,12 @@ const prim = new FieldOld<string | boolean>("hello");
     {
       // Regular
       {
-        const maybe = new MaybeFieldRef({ type: "direct", field: tuple });
+        const maybe = new MaybeFieldRefOld({ type: "direct", field: tuple });
         const result = fieldFind(maybe, (item, index) => {
           item satisfies
-            | MaybeFieldRef<string>
-            | MaybeFieldRef<boolean>
-            | MaybeFieldRef<symbol>;
+            | MaybeFieldRefOld<string>
+            | MaybeFieldRefOld<boolean>
+            | MaybeFieldRefOld<symbol>;
           index satisfies 0 | 1 | 2;
 
           if (index === 1) {
@@ -2186,15 +2210,15 @@ const prim = new FieldOld<string | boolean>("hello");
         });
 
         result satisfies
-          | MaybeFieldRef<string>
-          | MaybeFieldRef<boolean>
-          | MaybeFieldRef<symbol>
+          | MaybeFieldRefOld<string>
+          | MaybeFieldRefOld<boolean>
+          | MaybeFieldRefOld<symbol>
           | undefined;
         // @ts-expect-error
         result satisfies
-          | MaybeFieldRef<string>
-          | MaybeFieldRef<boolean>
-          | MaybeFieldRef<symbol>;
+          | MaybeFieldRefOld<string>
+          | MaybeFieldRefOld<boolean>
+          | MaybeFieldRefOld<symbol>;
         // @ts-expect-error
         result satisfies undefined;
         // @ts-expect-error
@@ -2210,15 +2234,15 @@ const prim = new FieldOld<string | boolean>("hello");
 
       // Undefined
       {
-        const maybeUnd = new MaybeFieldRef({
+        const maybeUnd = new MaybeFieldRefOld({
           type: "direct",
           field: tupleOrUnd,
         });
         const result = fieldFind(maybeUnd.try(), (item, index) => {
           item satisfies
-            | MaybeFieldRef<string>
-            | MaybeFieldRef<boolean>
-            | MaybeFieldRef<symbol>;
+            | MaybeFieldRefOld<string>
+            | MaybeFieldRefOld<boolean>
+            | MaybeFieldRefOld<symbol>;
           index satisfies 0 | 1 | 2;
 
           if (index === 1) {
@@ -2232,15 +2256,15 @@ const prim = new FieldOld<string | boolean>("hello");
         });
 
         result satisfies
-          | MaybeFieldRef<string>
-          | MaybeFieldRef<boolean>
-          | MaybeFieldRef<symbol>
+          | MaybeFieldRefOld<string>
+          | MaybeFieldRefOld<boolean>
+          | MaybeFieldRefOld<symbol>
           | undefined;
         // @ts-expect-error
         result satisfies
-          | MaybeFieldRef<string>
-          | MaybeFieldRef<boolean>
-          | MaybeFieldRef<symbol>;
+          | MaybeFieldRefOld<string>
+          | MaybeFieldRefOld<boolean>
+          | MaybeFieldRefOld<symbol>;
         // @ts-expect-error
         result satisfies undefined;
         // @ts-expect-error
@@ -2321,19 +2345,19 @@ const prim = new FieldOld<string | boolean>("hello");
     {
       // Regular
       {
-        const ref = new FieldRef(arr);
+        const ref = new FieldRefOld(arr);
         const result = fieldFilter(ref, (item, index) => {
-          item satisfies FieldRef<string | boolean>;
+          item satisfies FieldRefOld<string | boolean>;
           index satisfies number;
           return true;
         });
 
-        result satisfies Array<FieldRef<string | boolean>>;
+        result satisfies Array<FieldRefOld<string | boolean>>;
         // @ts-expect-error
         result.any;
 
         fieldFilter(ref, (item) => {
-          item satisfies FieldRef<string | boolean>;
+          item satisfies FieldRefOld<string | boolean>;
           return true;
         });
         fieldFilter(ref, () => true);
@@ -2347,14 +2371,14 @@ const prim = new FieldOld<string | boolean>("hello");
 
       // Undefined
       {
-        const refUnd = new FieldRef(arrOrUnd);
+        const refUnd = new FieldRefOld(arrOrUnd);
         const result = fieldFilter(refUnd.try(), (item, index) => {
-          item satisfies FieldRef<string | boolean>;
+          item satisfies FieldRefOld<string | boolean>;
           index satisfies number;
           return true;
         });
 
-        result satisfies Array<FieldRef<string | boolean>>;
+        result satisfies Array<FieldRefOld<string | boolean>>;
         // @ts-expect-error
         result.any;
 
@@ -2378,19 +2402,19 @@ const prim = new FieldOld<string | boolean>("hello");
     {
       // Regular
       {
-        const maybe = new MaybeFieldRef({ type: "direct", field: arr });
+        const maybe = new MaybeFieldRefOld({ type: "direct", field: arr });
         const result = fieldFilter(maybe, (item, index) => {
-          item satisfies MaybeFieldRef<string | boolean>;
+          item satisfies MaybeFieldRefOld<string | boolean>;
           index satisfies number;
           return true;
         });
 
-        result satisfies Array<MaybeFieldRef<string | boolean>>;
+        result satisfies Array<MaybeFieldRefOld<string | boolean>>;
         // @ts-expect-error
         result.any;
 
         fieldFilter(maybe, (item) => {
-          item satisfies MaybeFieldRef<string | boolean>;
+          item satisfies MaybeFieldRefOld<string | boolean>;
           return true;
         });
         fieldFilter(maybe, () => true);
@@ -2404,14 +2428,17 @@ const prim = new FieldOld<string | boolean>("hello");
 
       // Undefined
       {
-        const maybeUnd = new MaybeFieldRef({ type: "direct", field: arrOrUnd });
+        const maybeUnd = new MaybeFieldRefOld({
+          type: "direct",
+          field: arrOrUnd,
+        });
         const result = fieldFilter(maybeUnd.try(), (item, index) => {
-          item satisfies MaybeFieldRef<string | boolean>;
+          item satisfies MaybeFieldRefOld<string | boolean>;
           index satisfies number;
           return true;
         });
 
-        result satisfies Array<MaybeFieldRef<string | boolean>>;
+        result satisfies Array<MaybeFieldRefOld<string | boolean>>;
         // @ts-expect-error
         result.any;
 
@@ -2570,9 +2597,9 @@ const prim = new FieldOld<string | boolean>("hello");
     {
       // Regular
       {
-        const ref = new FieldRef(obj);
+        const ref = new FieldRefOld(obj);
         const result = fieldFilter(ref, (item, key) => {
-          item satisfies FieldRef<string> | FieldRef<boolean>;
+          item satisfies FieldRefOld<string> | FieldRefOld<boolean>;
           key satisfies keyof Hello;
           if (key === "hello") {
             item.get() satisfies string;
@@ -2587,7 +2614,7 @@ const prim = new FieldOld<string | boolean>("hello");
           }
         });
 
-        result satisfies Array<FieldRef<string> | FieldRef<boolean>>;
+        result satisfies Array<FieldRefOld<string> | FieldRefOld<boolean>>;
         // @ts-expect-error
         result.any;
 
@@ -2601,9 +2628,9 @@ const prim = new FieldOld<string | boolean>("hello");
 
       // Optional
       {
-        const refOpt = new FieldRef(objPart);
+        const refOpt = new FieldRefOld(objPart);
         const result = fieldFilter(refOpt, (item, key) => {
-          item satisfies FieldRef<boolean> | FieldRef<string | undefined>;
+          item satisfies FieldRefOld<boolean> | FieldRefOld<string | undefined>;
           key satisfies keyof Ok;
           if (key === "ok") {
             item.get() satisfies boolean;
@@ -2619,7 +2646,7 @@ const prim = new FieldOld<string | boolean>("hello");
         });
 
         result satisfies Array<
-          FieldRef<boolean> | FieldRef<string | undefined>
+          FieldRefOld<boolean> | FieldRefOld<string | undefined>
         >;
         // @ts-expect-error
         result.any;
@@ -2634,9 +2661,9 @@ const prim = new FieldOld<string | boolean>("hello");
 
       // Undefined
       {
-        const refUnd = new FieldRef(objOrUnd);
+        const refUnd = new FieldRefOld(objOrUnd);
         const result = fieldFilter(refUnd.try(), (item, key) => {
-          item satisfies FieldRef<boolean> | FieldRef<string | undefined>;
+          item satisfies FieldRefOld<boolean> | FieldRefOld<string | undefined>;
           key satisfies keyof Ok;
           if (key === "ok") {
             item.get() satisfies boolean;
@@ -2652,7 +2679,7 @@ const prim = new FieldOld<string | boolean>("hello");
         });
 
         result satisfies Array<
-          FieldRef<boolean> | FieldRef<string | undefined>
+          FieldRefOld<boolean> | FieldRefOld<string | undefined>
         >;
         // @ts-expect-error
         result.any;
@@ -2672,9 +2699,9 @@ const prim = new FieldOld<string | boolean>("hello");
     {
       // Regular
       {
-        const maybe = new MaybeFieldRef({ type: "direct", field: obj });
+        const maybe = new MaybeFieldRefOld({ type: "direct", field: obj });
         const result = fieldFilter(maybe, (item, key) => {
-          item satisfies MaybeFieldRef<string> | MaybeFieldRef<boolean>;
+          item satisfies MaybeFieldRefOld<string> | MaybeFieldRefOld<boolean>;
           key satisfies keyof Hello;
           if (key === "hello") {
             item.get() satisfies string;
@@ -2689,7 +2716,9 @@ const prim = new FieldOld<string | boolean>("hello");
           }
         });
 
-        result satisfies Array<MaybeFieldRef<string> | MaybeFieldRef<boolean>>;
+        result satisfies Array<
+          MaybeFieldRefOld<string> | MaybeFieldRefOld<boolean>
+        >;
         // @ts-expect-error
         result.any;
 
@@ -2703,11 +2732,14 @@ const prim = new FieldOld<string | boolean>("hello");
 
       // Optional
       {
-        const maybeOpt = new MaybeFieldRef({ type: "direct", field: objPart });
+        const maybeOpt = new MaybeFieldRefOld({
+          type: "direct",
+          field: objPart,
+        });
         const result = fieldFilter(maybeOpt, (item, key) => {
           item satisfies
-            | MaybeFieldRef<boolean>
-            | MaybeFieldRef<string | undefined>;
+            | MaybeFieldRefOld<boolean>
+            | MaybeFieldRefOld<string | undefined>;
           key satisfies keyof Ok;
           if (key === "ok") {
             item.get() satisfies boolean;
@@ -2723,7 +2755,7 @@ const prim = new FieldOld<string | boolean>("hello");
         });
 
         result satisfies Array<
-          MaybeFieldRef<boolean> | MaybeFieldRef<string | undefined>
+          MaybeFieldRefOld<boolean> | MaybeFieldRefOld<string | undefined>
         >;
         // @ts-expect-error
         result.any;
@@ -2738,11 +2770,14 @@ const prim = new FieldOld<string | boolean>("hello");
 
       // Undefined
       {
-        const maybeUnd = new MaybeFieldRef({ type: "direct", field: objOrUnd });
+        const maybeUnd = new MaybeFieldRefOld({
+          type: "direct",
+          field: objOrUnd,
+        });
         const result = fieldFilter(maybeUnd.try(), (item, key) => {
           item satisfies
-            | MaybeFieldRef<boolean>
-            | MaybeFieldRef<string | undefined>;
+            | MaybeFieldRefOld<boolean>
+            | MaybeFieldRefOld<string | undefined>;
           key satisfies keyof Ok;
           if (key === "ok") {
             item.get() satisfies boolean;
@@ -2758,7 +2793,7 @@ const prim = new FieldOld<string | boolean>("hello");
         });
 
         result satisfies Array<
-          MaybeFieldRef<boolean> | MaybeFieldRef<string | undefined>
+          MaybeFieldRefOld<boolean> | MaybeFieldRefOld<string | undefined>
         >;
         // @ts-expect-error
         result.any;
@@ -2858,12 +2893,12 @@ const prim = new FieldOld<string | boolean>("hello");
     {
       // Regular
       {
-        const ref = new FieldRef(tuple);
+        const ref = new FieldRefOld(tuple);
         const result = fieldFilter(ref, (item, index) => {
           item satisfies
-            | FieldRef<string>
-            | FieldRef<boolean>
-            | FieldRef<symbol>;
+            | FieldRefOld<string>
+            | FieldRefOld<boolean>
+            | FieldRefOld<symbol>;
           index satisfies 0 | 1 | 2;
 
           if (index === 1) {
@@ -2875,7 +2910,7 @@ const prim = new FieldOld<string | boolean>("hello");
           return false;
         });
         result satisfies Array<
-          FieldRef<string> | FieldRef<boolean> | FieldRef<symbol>
+          FieldRefOld<string> | FieldRefOld<boolean> | FieldRefOld<symbol>
         >;
         // @ts-expect-error
         result.any;
@@ -2891,12 +2926,12 @@ const prim = new FieldOld<string | boolean>("hello");
 
       // Undefined
       {
-        const refUnd = new FieldRef(tupleOrUnd);
+        const refUnd = new FieldRefOld(tupleOrUnd);
         const result = fieldFilter(refUnd.try(), (item, index) => {
           item satisfies
-            | FieldRef<string>
-            | FieldRef<boolean>
-            | FieldRef<symbol>;
+            | FieldRefOld<string>
+            | FieldRefOld<boolean>
+            | FieldRefOld<symbol>;
           index satisfies 0 | 1 | 2;
 
           if (index === 1) {
@@ -2908,7 +2943,7 @@ const prim = new FieldOld<string | boolean>("hello");
           return false;
         });
         result satisfies Array<
-          FieldRef<string> | FieldRef<boolean> | FieldRef<symbol>
+          FieldRefOld<string> | FieldRefOld<boolean> | FieldRefOld<symbol>
         >;
         // @ts-expect-error
         result.any;
@@ -2931,15 +2966,15 @@ const prim = new FieldOld<string | boolean>("hello");
     {
       // Regular
       {
-        const maybe = new MaybeFieldRef({
+        const maybe = new MaybeFieldRefOld({
           type: "direct",
           field: tuple,
         });
         const result = fieldFilter(maybe, (item, index) => {
           item satisfies
-            | MaybeFieldRef<string>
-            | MaybeFieldRef<boolean>
-            | MaybeFieldRef<symbol>;
+            | MaybeFieldRefOld<string>
+            | MaybeFieldRefOld<boolean>
+            | MaybeFieldRefOld<symbol>;
           index satisfies 0 | 1 | 2;
 
           if (index === 1) {
@@ -2951,7 +2986,9 @@ const prim = new FieldOld<string | boolean>("hello");
           return false;
         });
         result satisfies Array<
-          MaybeFieldRef<string> | MaybeFieldRef<boolean> | MaybeFieldRef<symbol>
+          | MaybeFieldRefOld<string>
+          | MaybeFieldRefOld<boolean>
+          | MaybeFieldRefOld<symbol>
         >;
         // @ts-expect-error
         result.any;
@@ -2967,15 +3004,15 @@ const prim = new FieldOld<string | boolean>("hello");
 
       // Undefined
       {
-        const maybeUnd = new MaybeFieldRef({
+        const maybeUnd = new MaybeFieldRefOld({
           type: "direct",
           field: tupleOrUnd,
         });
         const result = fieldFilter(maybeUnd.try(), (item, index) => {
           item satisfies
-            | MaybeFieldRef<string>
-            | MaybeFieldRef<boolean>
-            | MaybeFieldRef<symbol>;
+            | MaybeFieldRefOld<string>
+            | MaybeFieldRefOld<boolean>
+            | MaybeFieldRefOld<symbol>;
           index satisfies 0 | 1 | 2;
 
           if (index === 1) {
@@ -2987,7 +3024,9 @@ const prim = new FieldOld<string | boolean>("hello");
           return false;
         });
         result satisfies Array<
-          MaybeFieldRef<string> | MaybeFieldRef<boolean> | MaybeFieldRef<symbol>
+          | MaybeFieldRefOld<string>
+          | MaybeFieldRefOld<boolean>
+          | MaybeFieldRefOld<symbol>
         >;
         // @ts-expect-error
         result.any;

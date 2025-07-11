@@ -170,17 +170,13 @@ export class AtomValueObject<Shell extends Atom.Shell, Value> extends AtomValue<
     return this.#children.size;
   }
 
-  // @ts-expect-error
-  each(callback) {
+  forEach(callback: AtomInternalObject.Callback) {
     this.#children.forEach((field, key) => callback(field, key));
   }
 
-  // @ts-expect-error
-  map(callback) {
-    // @ts-expect-error
-    const result = [];
+  map(callback: AtomInternalObject.Callback<unknown>) {
+    const result: unknown[] = [];
     this.#children.forEach((field, key) => result.push(callback(field, key)));
-    // @ts-expect-error
     return result;
   }
 
@@ -206,4 +202,10 @@ export class AtomValueObject<Shell extends Atom.Shell, Value> extends AtomValue<
   }
 
   //#endregion
+}
+
+export namespace AtomInternalObject {
+  export interface Callback<Result = void> {
+    (item: unknown, index: any): Result;
+  }
 }

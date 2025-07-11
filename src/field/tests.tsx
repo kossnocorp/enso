@@ -1,18 +1,15 @@
-import React, { useState } from "react";
-import { assert, beforeEach, describe, expect, it, vi } from "vitest";
+import { act, cleanup, render, screen } from "@testing-library/react";
+import React, { useRef, useState } from "react";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import { postpone } from "../../tests/utils.ts";
 import { change } from "../change/index.ts";
-import { EventsTree } from "../events/index.ts";
-import { Enso } from "../types.ts";
-import { ValidationTree } from "../validation/index.ts";
-import { fieldEach, fieldMap, fieldRemove } from "./collection/index.ts";
-import { Field } from "./index.js";
-import { ComputedField, FieldOld } from "./definition.tsx";
-import { FieldRef } from "./ref/index.ts";
 import { DetachedValue, detachedValue } from "../detached/index.ts";
-import { act, cleanup, render, screen } from "@testing-library/react";
-import { useRef } from "react";
-import { Atom } from "../atom/index.js";
+import { EventsTree } from "../events/index.ts";
+import { ValidationTree } from "../validation/index.ts";
+import { fieldEach, fieldMap } from "./collection/index.ts";
+import { ComputedField, FieldOld } from "./definition.tsx";
+import { Field } from "./index.js";
+import { FieldRefOld } from "./ref/index.ts";
 
 //#region Field
 
@@ -1263,6 +1260,75 @@ describe(Field, () => {
   describe("type", () => {
     describe("collection", () => {
       describe(Field.prototype.remove, () => {
+        describe(Array, () => {
+          it("removes a field by index", () => {
+            const field = new Field([1, 2, 3]);
+            field.remove(1);
+            expect(field.value).toEqual([1, 3]);
+          });
+
+          it("returns the removed field", () => {
+            const field = new Field([1, 2, 3]);
+            const oneField = field.at(1);
+            const removedField = field.remove(1);
+            expect(removedField).toBe(oneField);
+            expect(removedField.value).toBe(undefined);
+          });
+
+          it("removes child", () => {
+            const parent = new Field([1, 2, 3]);
+            const field = parent.at(1);
+            field.self.remove();
+            expect(parent.value).toEqual([1, 3]);
+            expect(field.value).toBe(undefined);
+          });
+
+          it("doesn't throw on removing non-existing item", () => {
+            const field = new Field([1, 2, 3]);
+            expect(() => field.remove(6)).not.toThrow();
+          });
+
+          it("updates the children indices", () => {
+            const field = new Field([1, 2, 3, 4]);
+            field.remove(1);
+            expect(field.at(0).key).toBe("0");
+            expect(field.at(1).key).toBe("1");
+            expect(field.at(2).key).toBe("2");
+          });
+
+          describe("changes", () => {
+            describe("child", () => {
+              it("triggers updates", async () => {
+                const spy = vi.fn();
+                const field = new Field([1, 2, 3, 4]);
+                field.watch(spy);
+                field.remove(1);
+                await postpone();
+                const [[value, event]]: any = spy.mock.calls;
+                expect(value).toEqual([1, 3, 4]);
+                expect(event.changes).toMatchChanges(
+                  change.field.shape | change.child.detach,
+                );
+              });
+            });
+
+            describe("subtree", () => {
+              it("triggers updates", async () => {
+                const spy = vi.fn();
+                const field = new Field([[1, 2, 3, 4]]);
+                field.watch(spy);
+                field.try(0)?.remove(1);
+                await postpone();
+                const [[value, event]]: any = spy.mock.calls;
+                expect(value).toEqual([[1, 3, 4]]);
+                expect(event.changes).toMatchChanges(
+                  change.child.shape | change.subtree.detach,
+                );
+              });
+            });
+          });
+        });
+
         describe(Object, () => {
           it("removes a record field by key", () => {
             const field = new Field<Record<string, number>>({
@@ -1359,73 +1425,34 @@ describe(Field, () => {
             });
           });
         });
+      });
 
+      describe(Field.prototype.forEach, () => {
         describe(Array, () => {
-          it("removes a field by index", () => {
+          it("iterates items", () => {
             const field = new Field([1, 2, 3]);
-            field.remove(1);
-            expect(field.value).toEqual([1, 3]);
+            const mapped: [number, number][] = [];
+            field.forEach((item, index) =>
+              mapped.push([index, item.value * 2]),
+            );
+            expect(mapped).toEqual([
+              [0, 2],
+              [1, 4],
+              [2, 6],
+            ]);
           });
+        });
 
-          it("returns the removed field", () => {
-            const field = new Field([1, 2, 3]);
-            const oneField = field.at(1);
-            const removedField = field.remove(1);
-            expect(removedField).toBe(oneField);
-            expect(removedField.value).toBe(undefined);
-          });
-
-          it("removes child", () => {
-            const parent = new Field([1, 2, 3]);
-            const field = parent.at(1);
-            field.self.remove();
-            expect(parent.value).toEqual([1, 3]);
-            expect(field.value).toBe(undefined);
-          });
-
-          it("doesn't throw on removing non-existing item", () => {
-            const field = new Field([1, 2, 3]);
-            expect(() => field.remove(6)).not.toThrow();
-          });
-
-          it("updates the children indices", () => {
-            const field = new Field([1, 2, 3, 4]);
-            field.remove(1);
-            expect(field.at(0).key).toBe("0");
-            expect(field.at(1).key).toBe("1");
-            expect(field.at(2).key).toBe("2");
-          });
-
-          describe("changes", () => {
-            describe("child", () => {
-              it("triggers updates", async () => {
-                const spy = vi.fn();
-                const field = new Field([1, 2, 3, 4]);
-                field.watch(spy);
-                field.remove(1);
-                await postpone();
-                const [[value, event]]: any = spy.mock.calls;
-                expect(value).toEqual([1, 3, 4]);
-                expect(event.changes).toMatchChanges(
-                  change.field.shape | change.child.detach,
-                );
-              });
-            });
-
-            describe("subtree", () => {
-              it("triggers updates", async () => {
-                const spy = vi.fn();
-                const field = new Field([[1, 2, 3, 4]]);
-                field.watch(spy);
-                field.try(0)?.remove(1);
-                await postpone();
-                const [[value, event]]: any = spy.mock.calls;
-                expect(value).toEqual([[1, 3, 4]]);
-                expect(event.changes).toMatchChanges(
-                  change.child.shape | change.subtree.detach,
-                );
-              });
-            });
+        describe(Object, () => {
+          it("iterates items and keys", () => {
+            const field = new Field({ a: 1, b: 2, c: 3 });
+            const mapped: [string, number][] = [];
+            field.forEach((item, key) => mapped.push([key, item.value]));
+            expect(mapped).toEqual([
+              ["a", 1],
+              ["b", 2],
+              ["c", 3],
+            ]);
           });
         });
       });
@@ -2511,7 +2538,7 @@ describe(Field, () => {
         });
 
         it("clears previous errors on validation", () => {
-          function validateNum(ref: FieldRef<number>) {
+          function validateNum(ref: FieldRefOld<number>) {
             if (ref.get() !== 43) {
               ref.addError("Invalid");
             }
@@ -2633,7 +2660,7 @@ describe(Field, () => {
         });
 
         it("clears previous errors on validation", () => {
-          function validateMap(ref: FieldRef<Map<string, number>>) {
+          function validateMap(ref: FieldRefOld<Map<string, number>>) {
             if (ref.get().get("num") !== 43) {
               ref.addError("Invalid");
             }
@@ -3272,11 +3299,11 @@ function fromCodes(codes: number[]) {
   return codes.map((c) => String.fromCharCode(c)).join("");
 }
 
-function validateRequired(ref: FieldRef.Variable<string | undefined>) {
+function validateRequired(ref: FieldRefOld.Variable<string | undefined>) {
   if (!ref.get()?.trim()) ref.addError("Required");
 }
 
-function validateName(ref: FieldRef<Name>) {
+function validateName(ref: FieldRefOld<Name>) {
   validateRequired(ref.$.first);
   validateRequired(ref.$.last);
 }

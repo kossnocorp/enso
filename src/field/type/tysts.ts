@@ -1,5 +1,5 @@
 import { FieldOld } from "../definition.tsx";
-import { FieldRef, MaybeFieldRef } from "../ref/index.ts";
+import { FieldRefOld, MaybeFieldRefOld } from "../ref/definition.ts";
 import { fieldDiscriminate } from "./index.ts";
 
 //#region fieldDiscriminate
@@ -303,45 +303,45 @@ import { fieldDiscriminate } from "./index.ts";
   {
     // Value union
     {
-      const refValue = new FieldRef(unionValue);
+      const refValue = new FieldRefOld(unionValue);
       const result = fieldDiscriminate(refValue, "type");
 
       result satisfies
         | {
             discriminator: "user";
-            field: FieldRef<User>;
+            field: FieldRefOld<User>;
           }
         | {
             discriminator: "organization";
-            field: FieldRef<Organization>;
+            field: FieldRefOld<Organization>;
           };
       // @ts-expect-error
       result satisfies
         | {
             discriminator: "user";
-            field: FieldRef.Detachable<User>;
+            field: FieldRefOld.Detachable<User>;
           }
         | {
             discriminator: "organization";
-            field: FieldRef.Detachable<Organization>;
+            field: FieldRefOld.Detachable<Organization>;
           };
       // @ts-expect-error
       result satisfies
         | {
             discriminator: "user";
-            field: FieldRef.Tried<User>;
+            field: FieldRefOld.Tried<User>;
           }
         | {
             discriminator: "organization";
-            field: FieldRef.Tried<Organization>;
+            field: FieldRefOld.Tried<Organization>;
           };
       // @ts-expect-error
       result.any;
 
-      const _manual: FieldRef.Discriminated<User | Organization, "type"> =
+      const _manual: FieldRefOld.Discriminated<User | Organization, "type"> =
         result;
       // @ts-expect-error
-      const _manualWrong: FieldRef.Discriminated<User, "type"> = result;
+      const _manualWrong: FieldRefOld.Discriminated<User, "type"> = result;
 
       // @ts-expect-error
       fieldDiscriminate(refValue, "paid");
@@ -349,45 +349,45 @@ import { fieldDiscriminate } from "./index.ts";
 
     // Field union
     {
-      const refUnion = FieldRef.every(unionField);
+      const refUnion = FieldRefOld.every(unionField);
       const result = fieldDiscriminate(refUnion, "type");
 
       result satisfies
         | {
             discriminator: "user";
-            field: FieldRef<User>;
+            field: FieldRefOld<User>;
           }
         | {
             discriminator: "organization";
-            field: FieldRef<Organization>;
+            field: FieldRefOld<Organization>;
           };
       // @ts-expect-error
       result satisfies
         | {
             discriminator: "user";
-            field: FieldRef.Detachable<User>;
+            field: FieldRefOld.Detachable<User>;
           }
         | {
             discriminator: "organization";
-            field: FieldRef.Detachable<Organization>;
+            field: FieldRefOld.Detachable<Organization>;
           };
       // @ts-expect-error
       result satisfies
         | {
             discriminator: "user";
-            field: FieldRef.Tried<User>;
+            field: FieldRefOld.Tried<User>;
           }
         | {
             discriminator: "organization";
-            field: FieldRef.Tried<Organization>;
+            field: FieldRefOld.Tried<Organization>;
           };
       // @ts-expect-error
       result.any;
 
-      const _manual: FieldRef.Discriminated<User | Organization, "type"> =
+      const _manual: FieldRefOld.Discriminated<User | Organization, "type"> =
         result;
       // @ts-expect-error
-      const _manualWrong: FieldRef.Discriminated<User, "type"> = result;
+      const _manualWrong: FieldRefOld.Discriminated<User, "type"> = result;
 
       // @ts-expect-error
       fieldDiscriminate(refUnion, "paid");
@@ -395,42 +395,42 @@ import { fieldDiscriminate } from "./index.ts";
 
     // Undefined field
     {
-      const refTry = FieldRef.every(unionField.try());
+      const refTry = FieldRefOld.every(unionField.try());
       const result = fieldDiscriminate(refTry, "type");
 
       result satisfies
         | {
             discriminator: "user";
-            field: FieldRef.Tried<User>;
+            field: FieldRefOld.Tried<User>;
           }
         | {
             discriminator: "organization";
-            field: FieldRef.Tried<Organization>;
+            field: FieldRefOld.Tried<Organization>;
           };
       // @ts-expect-error
       result satisfies
         | {
             discriminator: "user";
-            field: FieldRef.Detachable<User>;
+            field: FieldRefOld.Detachable<User>;
           }
         | {
             discriminator: "organization";
-            field: FieldRef.Detachable<Organization>;
+            field: FieldRefOld.Detachable<Organization>;
           };
 
-      const _manual: FieldRef.Discriminated<
+      const _manual: FieldRefOld.Discriminated<
         User | Organization,
         "type",
         "tried"
       > = result;
       // @ts-expect-error
-      const _manualWrong: FieldRef.Discriminated<User, "type", "tried"> =
+      const _manualWrong: FieldRefOld.Discriminated<User, "type", "tried"> =
         result;
     }
 
     // Undefined value
     {
-      const refUndef = new FieldRef(
+      const refUndef = new FieldRefOld(
         unionField as FieldOld<User | Organization | undefined>,
       );
       const result = fieldDiscriminate(refUndef, "type");
@@ -438,54 +438,56 @@ import { fieldDiscriminate } from "./index.ts";
       result satisfies
         | {
             discriminator: undefined;
-            field: FieldRef<undefined>;
+            field: FieldRefOld<undefined>;
           }
         | {
             discriminator: "user";
-            field: FieldRef<User>;
+            field: FieldRefOld<User>;
           }
         | {
             discriminator: "organization";
-            field: FieldRef<Organization>;
+            field: FieldRefOld<Organization>;
           };
       // @ts-expect-error
       result satisfies
         | {
             discriminator: undefined;
-            field: FieldRef.Detachable<undefined>;
+            field: FieldRefOld.Detachable<undefined>;
           }
         | {
             discriminator: "user";
-            field: FieldRef.Detachable<User>;
+            field: FieldRefOld.Detachable<User>;
           }
         | {
             discriminator: "organization";
-            field: FieldRef.Detachable<Organization>;
+            field: FieldRefOld.Detachable<Organization>;
           };
       // @ts-expect-error
       result satisfies
         | {
             discriminator: undefined;
-            field: FieldRef.Tried<undefined>;
+            field: FieldRefOld.Tried<undefined>;
           }
         | {
             discriminator: "user";
-            field: FieldRef.Tried<User>;
+            field: FieldRefOld.Tried<User>;
           }
         | {
             discriminator: "organization";
-            field: FieldRef.Tried<Organization>;
+            field: FieldRefOld.Tried<Organization>;
           };
       // @ts-expect-error
       result.any;
 
-      const _manual: FieldRef.Discriminated<
+      const _manual: FieldRefOld.Discriminated<
         User | Organization | undefined,
         "type"
       > = result;
       // @ts-expect-error
-      const _manualWrong: FieldRef.Discriminated<User | Organization, "type"> =
-        result;
+      const _manualWrong: FieldRefOld.Discriminated<
+        User | Organization,
+        "type"
+      > = result;
 
       // @ts-expect-error
       fieldDiscriminate(refValue, "paid");
@@ -493,7 +495,7 @@ import { fieldDiscriminate } from "./index.ts";
 
     // Detachable
     {
-      const refDetachable = FieldRef.every(
+      const refDetachable = FieldRefOld.every(
         unionField as
           | FieldOld.Detachable<User>
           | FieldOld.Detachable<Organization>,
@@ -503,32 +505,32 @@ import { fieldDiscriminate } from "./index.ts";
       result satisfies
         | {
             discriminator: "user";
-            field: FieldRef.Detachable<User>;
+            field: FieldRefOld.Detachable<User>;
           }
         | {
             discriminator: "organization";
-            field: FieldRef.Detachable<Organization>;
+            field: FieldRefOld.Detachable<Organization>;
           };
       // @ts-expect-error
       result satisfies
         | {
             discriminator: "user";
-            field: FieldRef.Tried<User>;
+            field: FieldRefOld.Tried<User>;
           }
         | {
             discriminator: "organization";
-            field: FieldRef.Tried<Organization>;
+            field: FieldRefOld.Tried<Organization>;
           };
       // @ts-expect-error
       result.any;
 
-      const _manual: FieldRef.Discriminated<
+      const _manual: FieldRefOld.Discriminated<
         User | Organization,
         "type",
         "detachable"
       > = result;
       // @ts-expect-error
-      const _manualWrong: FieldRef.Discriminated<
+      const _manualWrong: FieldRefOld.Discriminated<
         User | Organization,
         "type",
         "tried"
@@ -537,7 +539,7 @@ import { fieldDiscriminate } from "./index.ts";
 
     // Mixed
     {
-      const refMixed = FieldRef.every(
+      const refMixed = FieldRefOld.every(
         unionField as
           | FieldOld.Branded<User, "detachable" | "tried">
           | FieldOld.Branded<Organization, "detachable" | "tried">,
@@ -547,32 +549,32 @@ import { fieldDiscriminate } from "./index.ts";
       result satisfies
         | {
             discriminator: "user";
-            field: FieldRef.Branded<User, "detachable" | "tried">;
+            field: FieldRefOld.Branded<User, "detachable" | "tried">;
           }
         | {
             discriminator: "organization";
-            field: FieldRef.Branded<Organization, "detachable" | "tried">;
+            field: FieldRefOld.Branded<Organization, "detachable" | "tried">;
           };
       // @ts-expect-error
       result satisfies
         | {
             discriminator: "user";
-            field: FieldRef.Bound<User>;
+            field: FieldRefOld.Bound<User>;
           }
         | {
             discriminator: "organization";
-            field: FieldRef.Bound<Organization>;
+            field: FieldRefOld.Bound<Organization>;
           };
       // @ts-expect-error
       result.any;
 
-      const _manual: FieldRef.Discriminated<
+      const _manual: FieldRefOld.Discriminated<
         User | Organization,
         "type",
         "detachable" | "tried"
       > = result;
       // @ts-expect-error
-      const _manualWrong: FieldRef.Discriminated<
+      const _manualWrong: FieldRefOld.Discriminated<
         User | Organization,
         "type",
         "bound"
@@ -584,7 +586,7 @@ import { fieldDiscriminate } from "./index.ts";
   {
     // Value union
     {
-      const maybeValue = new MaybeFieldRef({
+      const maybeValue = new MaybeFieldRefOld({
         type: "direct",
         field: unionValue,
       });
@@ -593,39 +595,41 @@ import { fieldDiscriminate } from "./index.ts";
       result satisfies
         | {
             discriminator: "user";
-            field: MaybeFieldRef<User>;
+            field: MaybeFieldRefOld<User>;
           }
         | {
             discriminator: "organization";
-            field: MaybeFieldRef<Organization>;
+            field: MaybeFieldRefOld<Organization>;
           };
       // @ts-expect-error
       result satisfies
         | {
             discriminator: "user";
-            field: MaybeFieldRef.Detachable<User>;
+            field: MaybeFieldRefOld.Detachable<User>;
           }
         | {
             discriminator: "organization";
-            field: MaybeFieldRef.Detachable<Organization>;
+            field: MaybeFieldRefOld.Detachable<Organization>;
           };
       // @ts-expect-error
       result satisfies
         | {
             discriminator: "user";
-            field: MaybeFieldRef.Tried<User>;
+            field: MaybeFieldRefOld.Tried<User>;
           }
         | {
             discriminator: "organization";
-            field: MaybeFieldRef.Tried<Organization>;
+            field: MaybeFieldRefOld.Tried<Organization>;
           };
       // @ts-expect-error
       result.any;
 
-      const _manual: MaybeFieldRef.Discriminated<User | Organization, "type"> =
-        result;
+      const _manual: MaybeFieldRefOld.Discriminated<
+        User | Organization,
+        "type"
+      > = result;
       // @ts-expect-error
-      const _manualWrong: MaybeFieldRef.Discriminated<User, "type"> = result;
+      const _manualWrong: MaybeFieldRefOld.Discriminated<User, "type"> = result;
 
       // @ts-expect-error
       fieldDiscriminate(maybeValue, "paid");
@@ -633,45 +637,47 @@ import { fieldDiscriminate } from "./index.ts";
 
     // Field union
     {
-      const maybeUnion = MaybeFieldRef.every(unionField);
+      const maybeUnion = MaybeFieldRefOld.every(unionField);
       const result = fieldDiscriminate(maybeUnion, "type");
 
       result satisfies
         | {
             discriminator: "user";
-            field: MaybeFieldRef<User>;
+            field: MaybeFieldRefOld<User>;
           }
         | {
             discriminator: "organization";
-            field: MaybeFieldRef<Organization>;
+            field: MaybeFieldRefOld<Organization>;
           };
       // @ts-expect-error
       result satisfies
         | {
             discriminator: "user";
-            field: MaybeFieldRef.Detachable<User>;
+            field: MaybeFieldRefOld.Detachable<User>;
           }
         | {
             discriminator: "organization";
-            field: MaybeFieldRef.Detachable<Organization>;
+            field: MaybeFieldRefOld.Detachable<Organization>;
           };
       // @ts-expect-error
       result satisfies
         | {
             discriminator: "user";
-            field: MaybeFieldRef.Tried<User>;
+            field: MaybeFieldRefOld.Tried<User>;
           }
         | {
             discriminator: "organization";
-            field: MaybeFieldRef.Tried<Organization>;
+            field: MaybeFieldRefOld.Tried<Organization>;
           };
       // @ts-expect-error
       result.any;
 
-      const _manual: MaybeFieldRef.Discriminated<User | Organization, "type"> =
-        result;
+      const _manual: MaybeFieldRefOld.Discriminated<
+        User | Organization,
+        "type"
+      > = result;
       // @ts-expect-error
-      const _manualWrong: MaybeFieldRef.Discriminated<User, "type"> = result;
+      const _manualWrong: MaybeFieldRefOld.Discriminated<User, "type"> = result;
 
       // @ts-expect-error
       fieldDiscriminate(maybeUnion, "paid");
@@ -679,42 +685,45 @@ import { fieldDiscriminate } from "./index.ts";
 
     // Undefined field
     {
-      const maybeTry = MaybeFieldRef.every(unionField.try());
+      const maybeTry = MaybeFieldRefOld.every(unionField.try());
       const result = fieldDiscriminate(maybeTry, "type");
 
       result satisfies
         | {
             discriminator: "user";
-            field: MaybeFieldRef.Tried<User>;
+            field: MaybeFieldRefOld.Tried<User>;
           }
         | {
             discriminator: "organization";
-            field: MaybeFieldRef.Tried<Organization>;
+            field: MaybeFieldRefOld.Tried<Organization>;
           };
       // @ts-expect-error
       result satisfies
         | {
             discriminator: "user";
-            field: MaybeFieldRef.Detachable<User>;
+            field: MaybeFieldRefOld.Detachable<User>;
           }
         | {
             discriminator: "organization";
-            field: MaybeFieldRef.Detachable<Organization>;
+            field: MaybeFieldRefOld.Detachable<Organization>;
           };
 
-      const _manual: MaybeFieldRef.Discriminated<
+      const _manual: MaybeFieldRefOld.Discriminated<
         User | Organization,
         "type",
         "tried"
       > = result;
       // @ts-expect-error
-      const _manualWrong: MaybeFieldRef.Discriminated<User, "type", "tried"> =
-        result;
+      const _manualWrong: MaybeFieldRefOld.Discriminated<
+        User,
+        "type",
+        "tried"
+      > = result;
     }
 
     // Undefined value
     {
-      const maybeUndef = new MaybeFieldRef({
+      const maybeUndef = new MaybeFieldRefOld({
         type: "direct",
         field: unionField as FieldOld<User | Organization | undefined>,
       });
@@ -723,53 +732,53 @@ import { fieldDiscriminate } from "./index.ts";
       result satisfies
         | {
             discriminator: undefined;
-            field: MaybeFieldRef<undefined>;
+            field: MaybeFieldRefOld<undefined>;
           }
         | {
             discriminator: "user";
-            field: MaybeFieldRef<User>;
+            field: MaybeFieldRefOld<User>;
           }
         | {
             discriminator: "organization";
-            field: MaybeFieldRef<Organization>;
+            field: MaybeFieldRefOld<Organization>;
           };
       // @ts-expect-error
       result satisfies
         | {
             discriminator: undefined;
-            field: MaybeFieldRef.Detachable<undefined>;
+            field: MaybeFieldRefOld.Detachable<undefined>;
           }
         | {
             discriminator: "user";
-            field: MaybeFieldRef.Detachable<User>;
+            field: MaybeFieldRefOld.Detachable<User>;
           }
         | {
             discriminator: "organization";
-            field: MaybeFieldRef.Detachable<Organization>;
+            field: MaybeFieldRefOld.Detachable<Organization>;
           };
       // @ts-expect-error
       result satisfies
         | {
             discriminator: undefined;
-            field: MaybeFieldRef.Tried<undefined>;
+            field: MaybeFieldRefOld.Tried<undefined>;
           }
         | {
             discriminator: "user";
-            field: MaybeFieldRef.Tried<User>;
+            field: MaybeFieldRefOld.Tried<User>;
           }
         | {
             discriminator: "organization";
-            field: MaybeFieldRef.Tried<Organization>;
+            field: MaybeFieldRefOld.Tried<Organization>;
           };
       // @ts-expect-error
       result.any;
 
-      const _manual: MaybeFieldRef.Discriminated<
+      const _manual: MaybeFieldRefOld.Discriminated<
         User | Organization | undefined,
         "type"
       > = result;
       // @ts-expect-error
-      const _manualWrong: MaybeFieldRef.Discriminated<
+      const _manualWrong: MaybeFieldRefOld.Discriminated<
         User | Organization,
         "type"
       > = result;
@@ -780,7 +789,7 @@ import { fieldDiscriminate } from "./index.ts";
 
     // Detachable
     {
-      const maybeDetachable = MaybeFieldRef.every(
+      const maybeDetachable = MaybeFieldRefOld.every(
         unionField as
           | FieldOld.Detachable<User>
           | FieldOld.Detachable<Organization>,
@@ -790,32 +799,32 @@ import { fieldDiscriminate } from "./index.ts";
       result satisfies
         | {
             discriminator: "user";
-            field: MaybeFieldRef.Detachable<User>;
+            field: MaybeFieldRefOld.Detachable<User>;
           }
         | {
             discriminator: "organization";
-            field: MaybeFieldRef.Detachable<Organization>;
+            field: MaybeFieldRefOld.Detachable<Organization>;
           };
       // @ts-expect-error
       result satisfies
         | {
             discriminator: "user";
-            field: MaybeFieldRef.Tried<User>;
+            field: MaybeFieldRefOld.Tried<User>;
           }
         | {
             discriminator: "organization";
-            field: MaybeFieldRef.Tried<Organization>;
+            field: MaybeFieldRefOld.Tried<Organization>;
           };
       // @ts-expect-error
       result.any;
 
-      const _manual: MaybeFieldRef.Discriminated<
+      const _manual: MaybeFieldRefOld.Discriminated<
         User | Organization,
         "type",
         "detachable"
       > = result;
       // @ts-expect-error
-      const _manualWrong: MaybeFieldRef.Discriminated<
+      const _manualWrong: MaybeFieldRefOld.Discriminated<
         User | Organization,
         "type",
         "tried"
@@ -824,7 +833,7 @@ import { fieldDiscriminate } from "./index.ts";
 
     // Mixed
     {
-      const maybeMixed = MaybeFieldRef.every(
+      const maybeMixed = MaybeFieldRefOld.every(
         unionField as
           | FieldOld.Branded<User, "detachable" | "tried">
           | FieldOld.Branded<Organization, "detachable" | "tried">,
@@ -834,32 +843,35 @@ import { fieldDiscriminate } from "./index.ts";
       result satisfies
         | {
             discriminator: "user";
-            field: MaybeFieldRef.Branded<User, "detachable" | "tried">;
+            field: MaybeFieldRefOld.Branded<User, "detachable" | "tried">;
           }
         | {
             discriminator: "organization";
-            field: MaybeFieldRef.Branded<Organization, "detachable" | "tried">;
+            field: MaybeFieldRefOld.Branded<
+              Organization,
+              "detachable" | "tried"
+            >;
           };
       // @ts-expect-error
       result satisfies
         | {
             discriminator: "user";
-            field: MaybeFieldRef.Bound<User>;
+            field: MaybeFieldRefOld.Bound<User>;
           }
         | {
             discriminator: "organization";
-            field: MaybeFieldRef.Bound<Organization>;
+            field: MaybeFieldRefOld.Bound<Organization>;
           };
       // @ts-expect-error
       result.any;
 
-      const _manual: MaybeFieldRef.Discriminated<
+      const _manual: MaybeFieldRefOld.Discriminated<
         User | Organization,
         "type",
         "detachable" | "tried"
       > = result;
       // @ts-expect-error
-      const _manualWrong: MaybeFieldRef.Discriminated<
+      const _manualWrong: MaybeFieldRefOld.Discriminated<
         User | Organization,
         "type",
         "bound"

@@ -211,13 +211,11 @@ export class AtomValueArray<Shell extends Atom.Shell, Value> extends AtomValue<
     return this.#children.length;
   }
 
-  // @ts-expect-error
-  each(callback) {
+  forEach(callback: AtomInternalArray.Callback) {
     this.#children.forEach(callback);
   }
 
-  // @ts-expect-error
-  map(callback) {
+  map(callback: AtomInternalArray.Callback) {
     return this.#children.map(callback);
   }
 
@@ -272,4 +270,10 @@ export class AtomValueArray<Shell extends Atom.Shell, Value> extends AtomValue<
   }
 
   //#endregion
+}
+
+export namespace AtomInternalArray {
+  export interface Callback {
+    (item: unknown, index: number): void;
+  }
 }

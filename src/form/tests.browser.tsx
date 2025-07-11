@@ -7,7 +7,7 @@ import { render } from "vitest-browser-react";
 import { userEvent } from "@vitest/browser/context";
 import "@vitest/browser/matchers.d.ts";
 import { FieldOld } from "../field/definition.tsx";
-import { FieldRef } from "../field/ref/index.ts";
+import { FieldRefOld } from "../field/ref/definition.ts";
 import { Form } from "./index.tsx";
 
 describe("Form", () => {
@@ -641,7 +641,7 @@ interface Hello {
   hello: string;
 }
 
-function validateHello(ref: FieldRef<Hello>) {
+function validateHello(ref: FieldRefOld<Hello>) {
   if (!ref.$.hello.get().trim()) ref.$.hello.addError("Hello is required");
 }
 

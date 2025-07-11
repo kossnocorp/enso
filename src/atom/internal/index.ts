@@ -2,7 +2,7 @@ import { AtomValueArray } from "./array/index.ts";
 import { AtomValueObject } from "./object/index.ts";
 import { AtomValuePrimitive } from "./opaque/index.ts";
 
-export function detectValueConstructor(value: unknown) {
+export function detectInternalConstructor(value: unknown) {
   if (value !== null && typeof value === "object")
     return Array.isArray(value)
       ? AtomValueArray
