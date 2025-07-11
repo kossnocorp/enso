@@ -1,8 +1,8 @@
 import { describe, expect, it, vi } from "vitest";
 import { postpone } from "../../../tests/utils.ts";
 import { change } from "../../change/index.ts";
-import { FieldOld, FieldRef } from "../definition.tsx";
-import { MaybeFieldRef } from "../ref/index.ts";
+import { FieldOld } from "../definition.tsx";
+import { FieldRefOld, MaybeFieldRefOld } from "../ref/definition.ts";
 import {
   fieldEach,
   fieldFilter,
@@ -37,13 +37,13 @@ describe(fieldEach, () => {
       });
     });
 
-    describe(FieldRef, () => {
+    describe(FieldRefOld, () => {
       it("iterates items", () => {
-        const ref = new FieldRef(field);
+        const ref = new FieldRefOld(field);
         const mapped: [number, number][] = [];
         fieldEach(ref, (item, index) => {
           mapped.push([index, item.get() * 2]);
-          expect(item).toBeInstanceOf(FieldRef);
+          expect(item).toBeInstanceOf(FieldRefOld);
         });
         expect(mapped).toEqual([
           [0, 2],
@@ -53,20 +53,20 @@ describe(fieldEach, () => {
       });
 
       it("accepts undefined field", () => {
-        const ref = new FieldRef(fieldUnd);
+        const ref = new FieldRefOld(fieldUnd);
         const spy = vi.fn();
         fieldEach(ref.try(), spy);
         expect(spy).not.toHaveBeenCalled();
       });
     });
 
-    describe(MaybeFieldRef, () => {
+    describe(MaybeFieldRefOld, () => {
       it("iterates items", () => {
-        const ref = new MaybeFieldRef({ type: "direct", field });
+        const ref = new MaybeFieldRefOld({ type: "direct", field });
         const mapped: [number, number][] = [];
         fieldEach(ref, (item, index) => {
           mapped.push([index, item.get() * 2]);
-          expect(item).toBeInstanceOf(MaybeFieldRef);
+          expect(item).toBeInstanceOf(MaybeFieldRefOld);
         });
         expect(mapped).toEqual([
           [0, 2],
@@ -76,7 +76,7 @@ describe(fieldEach, () => {
       });
 
       it("accepts undefined field", () => {
-        const ref = new MaybeFieldRef({ type: "direct", field: fieldUnd });
+        const ref = new MaybeFieldRefOld({ type: "direct", field: fieldUnd });
         const spy = vi.fn();
         fieldEach(ref.try(), spy);
         expect(spy).not.toHaveBeenCalled();
@@ -108,13 +108,13 @@ describe(fieldEach, () => {
       });
     });
 
-    describe(FieldRef, () => {
+    describe(FieldRefOld, () => {
       it("iterates items and keys", () => {
-        const ref = new FieldRef(field);
+        const ref = new FieldRefOld(field);
         const mapped: [string, number][] = [];
         fieldEach(ref, (item, key) => {
           mapped.push([key, item.get()]);
-          expect(item).toBeInstanceOf(FieldRef);
+          expect(item).toBeInstanceOf(FieldRefOld);
         });
         expect(mapped).toEqual([
           ["a", 1],
@@ -124,20 +124,20 @@ describe(fieldEach, () => {
       });
 
       it("accepts undefined field", () => {
-        const ref = new FieldRef(fieldUnd);
+        const ref = new FieldRefOld(fieldUnd);
         const spy = vi.fn();
         fieldEach(ref.try(), spy);
         expect(spy).not.toHaveBeenCalled();
       });
     });
 
-    describe(MaybeFieldRef, () => {
+    describe(MaybeFieldRefOld, () => {
       it("iterates items and keys", () => {
-        const ref = new MaybeFieldRef({ type: "direct", field });
+        const ref = new MaybeFieldRefOld({ type: "direct", field });
         const mapped: [string, number][] = [];
         fieldEach(ref, (item, key) => {
           mapped.push([key, item.get()]);
-          expect(item).toBeInstanceOf(MaybeFieldRef);
+          expect(item).toBeInstanceOf(MaybeFieldRefOld);
         });
         expect(mapped).toEqual([
           ["a", 1],
@@ -147,7 +147,7 @@ describe(fieldEach, () => {
       });
 
       it("accepts undefined field", () => {
-        const ref = new MaybeFieldRef({ type: "direct", field: fieldUnd });
+        const ref = new MaybeFieldRefOld({ type: "direct", field: fieldUnd });
         const spy = vi.fn();
         fieldEach(ref.try(), spy);
         expect(spy).not.toHaveBeenCalled();
@@ -181,11 +181,11 @@ describe(fieldMap, () => {
       });
     });
 
-    describe(FieldRef, () => {
+    describe(FieldRefOld, () => {
       it("maps items", () => {
-        const ref = new FieldRef(field);
+        const ref = new FieldRefOld(field);
         const mapped = fieldMap(ref, (item, index) => {
-          expect(item).toBeInstanceOf(FieldRef);
+          expect(item).toBeInstanceOf(FieldRefOld);
           return [index, item.get() * 2];
         });
         expect(mapped).toEqual([
@@ -196,18 +196,18 @@ describe(fieldMap, () => {
       });
 
       it("accepts undefined field", () => {
-        const ref = new FieldRef(fieldUnd);
+        const ref = new FieldRefOld(fieldUnd);
         const spy = vi.fn();
         fieldMap(ref.try(), spy);
         expect(spy).not.toHaveBeenCalled();
       });
     });
 
-    describe(MaybeFieldRef, () => {
+    describe(MaybeFieldRefOld, () => {
       it("maps items", () => {
-        const ref = new MaybeFieldRef({ type: "direct", field });
+        const ref = new MaybeFieldRefOld({ type: "direct", field });
         const mapped = fieldMap(ref, (item, index) => {
-          expect(item).toBeInstanceOf(MaybeFieldRef);
+          expect(item).toBeInstanceOf(MaybeFieldRefOld);
           return [index, item.get() * 2];
         });
         expect(mapped).toEqual([
@@ -218,7 +218,7 @@ describe(fieldMap, () => {
       });
 
       it("accepts undefined field", () => {
-        const ref = new MaybeFieldRef({ type: "direct", field: fieldUnd });
+        const ref = new MaybeFieldRefOld({ type: "direct", field: fieldUnd });
         const spy = vi.fn();
         fieldMap(ref.try(), spy);
         expect(spy).not.toHaveBeenCalled();
@@ -249,11 +249,11 @@ describe(fieldMap, () => {
       });
     });
 
-    describe(FieldRef, () => {
+    describe(FieldRefOld, () => {
       it("maps items and keys", () => {
-        const ref = new FieldRef(field);
+        const ref = new FieldRefOld(field);
         const mapped = fieldMap(ref, (item, key) => {
-          expect(item).toBeInstanceOf(FieldRef);
+          expect(item).toBeInstanceOf(FieldRefOld);
           return [key, item.get()];
         });
         expect(mapped).toEqual([
@@ -264,18 +264,18 @@ describe(fieldMap, () => {
       });
 
       it("accepts undefined field", () => {
-        const ref = new FieldRef(fieldUnd);
+        const ref = new FieldRefOld(fieldUnd);
         const spy = vi.fn();
         fieldMap(ref.try(), spy);
         expect(spy).not.toHaveBeenCalled();
       });
     });
 
-    describe(MaybeFieldRef, () => {
+    describe(MaybeFieldRefOld, () => {
       it("maps items and keys", () => {
-        const ref = new MaybeFieldRef({ type: "direct", field });
+        const ref = new MaybeFieldRefOld({ type: "direct", field });
         const mapped = fieldMap(ref, (item, key) => {
-          expect(item).toBeInstanceOf(MaybeFieldRef);
+          expect(item).toBeInstanceOf(MaybeFieldRefOld);
           return [key, item.get()];
         });
         expect(mapped).toEqual([
@@ -286,7 +286,7 @@ describe(fieldMap, () => {
       });
 
       it("accepts undefined field", () => {
-        const ref = new MaybeFieldRef({ type: "direct", field: fieldUnd });
+        const ref = new MaybeFieldRefOld({ type: "direct", field: fieldUnd });
         const spy = vi.fn();
         fieldMap(ref.try(), spy);
         expect(spy).not.toHaveBeenCalled();
@@ -304,18 +304,18 @@ describe(fieldSize, () => {
       });
     });
 
-    describe(FieldRef, () => {
+    describe(FieldRefOld, () => {
       it("returns size", () => {
         const field = new FieldOld([1, 2, 3]);
-        const ref = new FieldRef(field);
+        const ref = new FieldRefOld(field);
         expect(fieldSize(ref)).toBe(3);
       });
     });
 
-    describe(MaybeFieldRef, () => {
+    describe(MaybeFieldRefOld, () => {
       it("returns size", () => {
         const field = new FieldOld([1, 2, 3]);
-        const ref = new MaybeFieldRef({ type: "direct", field });
+        const ref = new MaybeFieldRefOld({ type: "direct", field });
         expect(fieldSize(ref)).toBe(3);
       });
     });
@@ -329,18 +329,18 @@ describe(fieldSize, () => {
       });
     });
 
-    describe(FieldRef, () => {
+    describe(FieldRefOld, () => {
       it("returns size", () => {
         const field = new FieldOld({ a: 1, b: 2, c: 3 });
-        const ref = new FieldRef(field);
+        const ref = new FieldRefOld(field);
         expect(fieldSize(ref)).toBe(3);
       });
     });
 
-    describe(MaybeFieldRef, () => {
+    describe(MaybeFieldRefOld, () => {
       it("returns size", () => {
         const field = new FieldOld({ a: 1, b: 2, c: 3 });
-        const ref = new MaybeFieldRef({ type: "direct", field });
+        const ref = new MaybeFieldRefOld({ type: "direct", field });
         expect(fieldSize(ref)).toBe(3);
       });
     });
@@ -372,25 +372,25 @@ describe(fieldFind, () => {
       });
     });
 
-    describe(FieldRef, () => {
+    describe(FieldRefOld, () => {
       it("finds an item in the array", () => {
         const field = new FieldOld([1, 2, 3]);
-        const ref = new FieldRef(field);
+        const ref = new FieldRefOld(field);
         const item = fieldFind(ref, (item) => item.get() === 2);
-        expect(item).toBeInstanceOf(FieldRef);
+        expect(item).toBeInstanceOf(FieldRefOld);
         expect(item?.get()).toBe(2);
       });
 
       it("returns undefined if item not found", () => {
         const field = new FieldOld([1, 2, 3]);
-        const ref = new FieldRef(field);
+        const ref = new FieldRefOld(field);
         const item = fieldFind(ref, (item) => item.get() === 4);
         expect(item).toBe(undefined);
       });
 
       it("passes index to the predicate", () => {
         const field = new FieldOld([1, 2, 3]);
-        const ref = new FieldRef(field);
+        const ref = new FieldRefOld(field);
         const item = fieldFind(
           ref,
           (item, index) => item.get() === 2 && index === 1,
@@ -399,25 +399,25 @@ describe(fieldFind, () => {
       });
     });
 
-    describe(MaybeFieldRef, () => {
+    describe(MaybeFieldRefOld, () => {
       it("finds an item in the array", () => {
         const field = new FieldOld([1, 2, 3]);
-        const ref = new MaybeFieldRef({ type: "direct", field });
+        const ref = new MaybeFieldRefOld({ type: "direct", field });
         const item = fieldFind(ref, (item) => item.get() === 2);
-        expect(item).toBeInstanceOf(MaybeFieldRef);
+        expect(item).toBeInstanceOf(MaybeFieldRefOld);
         expect(item?.get()).toBe(2);
       });
 
       it("returns undefined if item not found", () => {
         const field = new FieldOld([1, 2, 3]);
-        const ref = new MaybeFieldRef({ type: "direct", field });
+        const ref = new MaybeFieldRefOld({ type: "direct", field });
         const item = fieldFind(ref, (item) => item.get() === 4);
         expect(item).toBe(undefined);
       });
 
       it("passes index to the predicate", () => {
         const field = new FieldOld([1, 2, 3]);
-        const ref = new MaybeFieldRef({ type: "direct", field });
+        const ref = new MaybeFieldRefOld({ type: "direct", field });
         const item = fieldFind(
           ref,
           (item, index) => item.get() === 2 && index === 1,
@@ -451,25 +451,25 @@ describe(fieldFind, () => {
       });
     });
 
-    describe(FieldRef, () => {
+    describe(FieldRefOld, () => {
       it("finds an item in the object", () => {
         const field = new FieldOld({ a: 1, b: 2, c: 3 });
-        const ref = new FieldRef(field);
+        const ref = new FieldRefOld(field);
         const item = fieldFind(ref, (item) => item.get() === 2);
-        expect(item).toBeInstanceOf(FieldRef);
+        expect(item).toBeInstanceOf(FieldRefOld);
         expect(item?.get()).toBe(2);
       });
 
       it("returns undefined if item not found", () => {
         const field = new FieldOld({ a: 1, b: 2, c: 3 });
-        const ref = new FieldRef(field);
+        const ref = new FieldRefOld(field);
         const item = fieldFind(ref, (item) => item.get() === 4);
         expect(item).toBe(undefined);
       });
 
       it("passes key to the predicate", () => {
         const field = new FieldOld({ a: 1, b: 2, c: 3 });
-        const ref = new FieldRef(field);
+        const ref = new FieldRefOld(field);
         const item = fieldFind(
           ref,
           (item, key) => item.get() === 2 && key === "b",
@@ -478,25 +478,25 @@ describe(fieldFind, () => {
       });
     });
 
-    describe(MaybeFieldRef, () => {
+    describe(MaybeFieldRefOld, () => {
       it("finds an item in the object", () => {
         const field = new FieldOld({ a: 1, b: 2, c: 3 });
-        const ref = new MaybeFieldRef({ type: "direct", field });
+        const ref = new MaybeFieldRefOld({ type: "direct", field });
         const item = fieldFind(ref, (item) => item.get() === 2);
-        expect(item).toBeInstanceOf(MaybeFieldRef);
+        expect(item).toBeInstanceOf(MaybeFieldRefOld);
         expect(item?.get()).toBe(2);
       });
 
       it("returns undefined if item not found", () => {
         const field = new FieldOld({ a: 1, b: 2, c: 3 });
-        const ref = new MaybeFieldRef({ type: "direct", field });
+        const ref = new MaybeFieldRefOld({ type: "direct", field });
         const item = fieldFind(ref, (item) => item.get() === 4);
         expect(item).toBe(undefined);
       });
 
       it("passes key to the predicate", () => {
         const field = new FieldOld({ a: 1, b: 2, c: 3 });
-        const ref = new MaybeFieldRef({ type: "direct", field });
+        const ref = new MaybeFieldRefOld({ type: "direct", field });
         const item = fieldFind(
           ref,
           (item, key) => item.get() === 2 && key === "b",
@@ -529,49 +529,49 @@ describe(fieldFilter, () => {
       });
     });
 
-    describe(FieldRef, () => {
+    describe(FieldRefOld, () => {
       it("filters items in the array", () => {
         const field = new FieldOld([1, 2, 3, 4]);
-        const ref = new FieldRef(field);
+        const ref = new FieldRefOld(field);
         const items = fieldFilter(ref, (item) => item.get() % 2 === 0);
-        items.forEach((item) => expect(item).toBeInstanceOf(FieldRef));
+        items.forEach((item) => expect(item).toBeInstanceOf(FieldRefOld));
         expect(items.map((f) => f.get())).toEqual([2, 4]);
       });
 
       it("returns empty array if none match", () => {
         const field = new FieldOld([1, 3, 5]);
-        const ref = new FieldRef(field);
+        const ref = new FieldRefOld(field);
         const items = fieldFilter(ref, (item) => item.get() === 2);
         expect(items).toEqual([]);
       });
 
       it("passes index to the predicate", () => {
         const field = new FieldOld([1, 2, 3]);
-        const ref = new FieldRef(field);
+        const ref = new FieldRefOld(field);
         const items = fieldFilter(ref, (item, index) => index === 1);
         expect(items.map((f) => f.get())).toEqual([2]);
       });
     });
 
-    describe(MaybeFieldRef, () => {
+    describe(MaybeFieldRefOld, () => {
       it("filters items in the array", () => {
         const field = new FieldOld([1, 2, 3, 4]);
-        const ref = new MaybeFieldRef({ type: "direct", field });
+        const ref = new MaybeFieldRefOld({ type: "direct", field });
         const items = fieldFilter(ref, (item) => item.get() % 2 === 0);
-        items.forEach((item) => expect(item).toBeInstanceOf(MaybeFieldRef));
+        items.forEach((item) => expect(item).toBeInstanceOf(MaybeFieldRefOld));
         expect(items.map((f) => f.get())).toEqual([2, 4]);
       });
 
       it("returns empty array if none match", () => {
         const field = new FieldOld([1, 3, 5]);
-        const ref = new MaybeFieldRef({ type: "direct", field });
+        const ref = new MaybeFieldRefOld({ type: "direct", field });
         const items = fieldFilter(ref, (item) => item.get() === 2);
         expect(items).toEqual([]);
       });
 
       it("passes index to the predicate", () => {
         const field = new FieldOld([1, 2, 3]);
-        const ref = new MaybeFieldRef({ type: "direct", field });
+        const ref = new MaybeFieldRefOld({ type: "direct", field });
         const items = fieldFilter(ref, (item, index) => index === 1);
         expect(items.map((f) => f.get())).toEqual([2]);
       });
@@ -599,49 +599,49 @@ describe(fieldFilter, () => {
       });
     });
 
-    describe(FieldRef, () => {
+    describe(FieldRefOld, () => {
       it("filters items in the object", () => {
         const field = new FieldOld({ a: 1, b: 2, c: 3, d: 4 });
-        const ref = new FieldRef(field);
+        const ref = new FieldRefOld(field);
         const items = fieldFilter(ref, (item) => item.get() % 2 === 0);
-        items.forEach((item) => expect(item).toBeInstanceOf(FieldRef));
+        items.forEach((item) => expect(item).toBeInstanceOf(FieldRefOld));
         expect(items.map((f) => f.get())).toEqual([2, 4]);
       });
 
       it("returns empty array if none match", () => {
         const field = new FieldOld({ a: 1, b: 3 });
-        const ref = new FieldRef(field);
+        const ref = new FieldRefOld(field);
         const items = fieldFilter(ref, (item) => item.get() === 2);
         expect(items).toEqual([]);
       });
 
       it("passes key to the predicate", () => {
         const field = new FieldOld({ a: 1, b: 2, c: 3 });
-        const ref = new FieldRef(field);
+        const ref = new FieldRefOld(field);
         const items = fieldFilter(ref, (item, key) => key === "b");
         expect(items.map((f) => f.get())).toEqual([2]);
       });
     });
 
-    describe(MaybeFieldRef, () => {
+    describe(MaybeFieldRefOld, () => {
       it("filters items in the object", () => {
         const field = new FieldOld({ a: 1, b: 2, c: 3, d: 4 });
-        const ref = new MaybeFieldRef({ type: "direct", field });
+        const ref = new MaybeFieldRefOld({ type: "direct", field });
         const items = fieldFilter(ref, (item) => item.get() % 2 === 0);
-        items.forEach((item) => expect(item).toBeInstanceOf(MaybeFieldRef));
+        items.forEach((item) => expect(item).toBeInstanceOf(MaybeFieldRefOld));
         expect(items.map((f) => f.get())).toEqual([2, 4]);
       });
 
       it("returns empty array if none match", () => {
         const field = new FieldOld({ a: 1, b: 3 });
-        const ref = new MaybeFieldRef({ type: "direct", field });
+        const ref = new MaybeFieldRefOld({ type: "direct", field });
         const items = fieldFilter(ref, (item) => item.get() === 2);
         expect(items).toEqual([]);
       });
 
       it("passes key to the predicate", () => {
         const field = new FieldOld({ a: 1, b: 2, c: 3 });
-        const ref = new MaybeFieldRef({ type: "direct", field });
+        const ref = new MaybeFieldRefOld({ type: "direct", field });
         const items = fieldFilter(ref, (item, key) => key === "b");
         expect(items.map((f) => f.get())).toEqual([2]);
       });

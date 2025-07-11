@@ -1,9 +1,63 @@
+import { Atom } from "../../atom/index.js";
+import { AtomRef } from "../../atom/ref/index.js";
 import { AsState } from "../../state/index.ts";
 import { Enso } from "../../types.ts";
 import { EnsoUtils as Utils } from "../../utils.ts";
 import { AsCollection, AsCollectionRead } from "../collection/index.ts";
 import { FieldOld } from "../definition.tsx";
 import { staticImplements } from "../util.ts";
+import type { FieldRefGhost } from "./ghost/definition.ts";
+
+const refHintSymbol = Symbol();
+
+export declare class FieldRef<
+    Value,
+    Qualifier extends AtomRef.Qualifier = never,
+    ParentValue = unknown,
+  >
+  extends AtomRef<"field" | "ref", Value, Qualifier, ParentValue>
+  implements FieldRef.Interface<Value, Qualifier, ParentValue>
+{
+  //#region Instance
+
+  [refHintSymbol]: true;
+
+  constructor(atom: Atom.Envelop<"field", Value, Qualifier, ParentValue>);
+
+  //#endregion Instance
+}
+
+export namespace FieldRef {
+  //#region Shell
+
+  export type Envelop<
+    Type extends AtomRef.Type,
+    Value,
+    Qualifier extends AtomRef.Qualifier = never,
+    ParentValue = unknown,
+  > = Type extends "ref"
+    ? FieldRef<Utils.NonNullish<Value>, Qualifier, ParentValue>
+    : Type extends "ref-ghost"
+      ? FieldRefGhost<Utils.NonNullish<Value>, Qualifier, ParentValue>
+      : never;
+
+  //#endregion Shell
+
+  //#region Interface
+
+  export interface Interface<
+    Value,
+    Qualifier extends AtomRef.Qualifier = never,
+    Parent extends Atom.Parent.Constraint<"field", Value> = unknown,
+  > extends Hint,
+      AtomRef.Interface<"field" | "ref", Value, Qualifier, Parent> {}
+
+  export interface Hint {
+    [refHintSymbol]: true;
+  }
+
+  //#endregion Interface
+}
 
 /**
  * @internal
@@ -11,9 +65,9 @@ import { staticImplements } from "../util.ts";
  * `FieldRef` instances for the same fields.
  */
 // TODO: Test if reducing number of allocations is actually worth the memory hit.
-const fieldRefsStore = new WeakMap<FieldOld<any>, FieldRef<any>>();
+const fieldRefsStore = new WeakMap<FieldOld<any>, FieldRefOld<any>>();
 
-const refHintSymbol = Symbol();
+const refHintSymbolOld = Symbol();
 
 /**
  * Reference to a field that protects the field's value from being changed. It
@@ -23,30 +77,30 @@ const refHintSymbol = Symbol();
 @staticImplements<AsCollectionRead>()
 // TODO: Try making this work or remove:
 // Static<typeof FieldRef<unknown>, AsCollectionRead>,
-export class FieldRef<Payload> implements FieldRef.Hint {
-  static get<Payload>(field: FieldOld<Payload>): FieldRef<Payload> {
+export class FieldRefOld<Payload> implements FieldRefOld.Hint {
+  static get<Payload>(field: FieldOld<Payload>): FieldRefOld<Payload> {
     // @ts-ignore: TODO:
     let ref: any = fieldRefsStore.get(field);
     if (!ref) {
       // @ts-ignore: TODO:
-      ref = new FieldRef(field);
+      ref = new FieldRefOld(field);
       // @ts-ignore: TODO:
       fieldRefsStore.set(field, ref);
     }
     return ref;
   }
 
-  [refHintSymbol] = true as const;
+  [refHintSymbolOld] = true as const;
 
   #field: FieldOld<Payload>;
 
   static every<FieldType extends FieldOld.Hint>(
     field: FieldType,
   ): Enso.TransferBrands<
-    FieldRef<FieldOld.EveryValueUnion<FieldType>>,
+    FieldRefOld<FieldOld.EveryValueUnion<FieldType>>,
     FieldType
   > {
-    return new FieldRef(field as any) as any;
+    return new FieldRefOld(field as any) as any;
   }
 
   constructor(external: FieldOld<Payload>) {
@@ -63,44 +117,44 @@ export class FieldRef<Payload> implements FieldRef.Hint {
 
   //#region Tree
 
-  $ = new Proxy({} as FieldRef.$Object<Payload>, {
+  $ = new Proxy({} as FieldRefOld.$Object<Payload>, {
     get: (_, key: string) => this.at(key as keyof Payload),
   });
 
-  at<Key extends keyof Payload>(key: Key): FieldRef.At<Payload, Key> {
+  at<Key extends keyof Payload>(key: Key): FieldRefOld.At<Payload, Key> {
     // @ts-ignore: TODO:
-    return FieldRef.get(this.#field.at(key));
+    return FieldRefOld.get(this.#field.at(key));
   }
 
-  try(): Enso.TryUnion<FieldRef.InterfaceDef<Payload>>;
+  try(): Enso.TryUnion<FieldRefOld.InterfaceDef<Payload>>;
 
   try<Key extends keyof Utils.NonNullish<Payload>>(
     key: Key,
-  ): FieldRef.TryKey<FieldOld.InterfaceDef<Payload>, Key>;
+  ): FieldRefOld.TryKey<FieldOld.InterfaceDef<Payload>, Key>;
 
   try(...[key]: any[]): any {
     const field = this.#field.try(key);
-    return field && FieldRef.get(field);
+    return field && FieldRefOld.get(field);
   }
 
-  maybe(): MaybeFieldRef<Payload> {
-    return new MaybeFieldRef({ type: "direct", field: this.#field });
+  maybe(): MaybeFieldRefOld<Payload> {
+    return new MaybeFieldRefOld({ type: "direct", field: this.#field });
   }
 
   //#endregion
 
   //#region Map
 
-  decompose(): FieldRef.Decomposed<Payload> {
+  decompose(): FieldRefOld.Decomposed<Payload> {
     return {
       value: this.get(),
       field: this,
-    } as unknown as FieldRef.Decomposed<Payload>;
+    } as unknown as FieldRefOld.Decomposed<Payload>;
   }
 
   discriminate<Discriminator extends keyof Utils.NonUndefined<Payload>>(
     discriminator: Discriminator,
-  ): FieldRef.Discriminated<Payload, Discriminator> {
+  ): FieldRefOld.Discriminated<Payload, Discriminator> {
     // @ts-ignore: TODO:
     return {
       // @ts-ignore: TODO:
@@ -122,55 +176,55 @@ export class FieldRef<Payload> implements FieldRef.Hint {
   //#region Collection
 
   static asCollection<Value>(
-    field: FieldRef<Value>,
+    field: FieldRefOld<Value>,
   ): AsCollection.Result<Value> {
     return FieldOld.asCollection(field.#field);
   }
 
   static asArray<Value>(
-    field: FieldRef<Value>,
+    field: FieldRefOld<Value>,
   ): AsCollection.AsArrayResult<Value> {
     return FieldOld.asArray(field.#field);
   }
 
   static asObject<Value>(
-    field: FieldRef<Value>,
+    field: FieldRefOld<Value>,
   ): AsCollection.AsObjectResult<Value> {
     return FieldOld.asObject(field.#field);
   }
 
   static asChild<Value>(
-    field: FieldRef<Value>,
+    field: FieldRefOld<Value>,
   ): AsCollection.AsChildResult<Value> {
     return FieldOld.asChild(field.#field);
   }
 
   static asState<Value>(
-    field: FieldRef<Value>,
+    field: FieldRefOld<Value>,
   ): AsState.ReadWriteResult<Value> | undefined {
     return FieldOld.asState(field.#field);
   }
 
   static fromField<Value>(
     field: FieldOld<Value> | undefined,
-  ): FieldRef<Value> | undefined {
-    return field && FieldRef.get(field);
+  ): FieldRefOld<Value> | undefined {
+    return field && FieldRefOld.get(field);
   }
 
   //#endregion
 }
 
-export namespace FieldRef {
+export namespace FieldRefOld {
   //#region Interfaces
 
   export interface Hint {
-    [refHintSymbol]: true;
+    [refHintSymbolOld]: true;
   }
 
   export type InterfaceDef<Payload> = {
     Payload: Payload;
-    Unknown: FieldRef<unknown>;
-    NonNullish: FieldRef<Utils.NonNullish<Payload>>;
+    Unknown: FieldRefOld<unknown>;
+    NonNullish: FieldRefOld<Utils.NonNullish<Payload>>;
     Bound: unknown;
   };
 
@@ -178,14 +232,14 @@ export namespace FieldRef {
 
   //#region Properties
 
-  export type Detachable<Value> = Enso.Detachable<FieldRef<Value>>;
+  export type Detachable<Value> = Enso.Detachable<FieldRefOld<Value>>;
 
-  export type Tried<Value> = Enso.Tried<FieldRef<Value>>;
+  export type Tried<Value> = Enso.Tried<FieldRefOld<Value>>;
 
-  export type Bound<Value> = Enso.Bound<FieldRef<Value>>;
+  export type Bound<Value> = Enso.Bound<FieldRefOld<Value>>;
 
   export type Branded<Value, Flags extends Enso.Flags> = Enso.Branded<
-    FieldRef<Value>,
+    FieldRefOld<Value>,
     Flags
   >;
 
@@ -194,14 +248,14 @@ export namespace FieldRef {
   //#region Tree
 
   export type $Object<Payload> = {
-    [Key in keyof Payload]-?: FieldRef<
+    [Key in keyof Payload]-?: FieldRefOld<
       Utils.IsStaticKey<Payload, Key> extends true
         ? Payload[Key]
         : Payload[Key] | undefined
     >;
   };
 
-  export type At<Payload, Key extends keyof Payload> = FieldRef<
+  export type At<Payload, Key extends keyof Payload> = FieldRefOld<
     AtPayload<Payload, Key>
   >;
 
@@ -226,15 +280,15 @@ export namespace FieldRef {
 
   export type Every<Value> =
     // Handle boolean separately, so it doesn't produce FieldRef<true> | FieldRef<false>
-    | (boolean extends Value ? FieldRef<boolean> : never)
+    | (boolean extends Value ? FieldRefOld<boolean> : never)
     | (Exclude<Value, boolean> extends infer Value
         ? Value extends Value
-          ? FieldRef<Value>
+          ? FieldRefOld<Value>
           : never
         : never);
 
   export type EveryValueUnion<FieldType> =
-    FieldType extends FieldRef<infer Value> ? Value : never;
+    FieldType extends FieldRefOld<infer Value> ? Value : never;
 
   export type DiscriminateResult<
     FieldType,
@@ -259,7 +313,7 @@ export namespace FieldRef {
           ? {
               discriminator: DiscriminatorValue;
               field: Enso.Branded<
-                Enso.TransferBrands<FieldRef<Payload>, BrandsSource>,
+                Enso.TransferBrands<FieldRefOld<Payload>, BrandsSource>,
                 Flags
               >;
             }
@@ -269,7 +323,7 @@ export namespace FieldRef {
         {
           discriminator: undefined;
           field: Enso.Branded<
-            Enso.TransferBrands<FieldRef<Payload>, BrandsSource>,
+            Enso.TransferBrands<FieldRefOld<Payload>, BrandsSource>,
             Flags
           >;
         }
@@ -286,7 +340,7 @@ export namespace FieldRef {
   export type Decomposed<Payload> = Payload extends Payload
     ? {
         value: Payload;
-        field: FieldRef<Payload>;
+        field: FieldRefOld<Payload>;
       }
     : never;
 
@@ -307,7 +361,7 @@ export namespace FieldRef {
     Result = void,
   > = (
     ...args: {
-      [Key in Utils.IndexOfTuple<Value>]: [FieldRef<Value[Key]>, Key];
+      [Key in Utils.IndexOfTuple<Value>]: [FieldRefOld<Value[Key]>, Key];
     }[Utils.IndexOfTuple<Value>]
   ) => Result;
 
@@ -341,7 +395,7 @@ export namespace FieldRef {
     // Exclude is needed to remove undefined that appears when there're optional
     // fields in the object.
     ...args: Exclude<
-      { [Key in keyof Value]: [FieldRef<Value[Key]>, Key] }[keyof Value],
+      { [Key in keyof Value]: [FieldRefOld<Value[Key]>, Key] }[keyof Value],
       undefined
     >
   ) => Result;
@@ -353,7 +407,7 @@ export namespace FieldRef {
     // Exclude is needed to remove undefined that appears when there're optional
     // fields in the object.
     item: Exclude<
-      { [Key in keyof Value]: FieldRef<Value[Key]> }[keyof Value],
+      { [Key in keyof Value]: FieldRefOld<Value[Key]> }[keyof Value],
       undefined
     >,
   ) => Result;
@@ -372,7 +426,7 @@ export namespace FieldRef {
     // Remove undefined that sneaks in
     Exclude<
       // Use mapped type to preserve Type | undefined for optional fields
-      { [Key in keyof Value]: FieldRef<Value[Key]> }[keyof Value],
+      { [Key in keyof Value]: FieldRefOld<Value[Key]> }[keyof Value],
       undefined
     >;
 
@@ -381,8 +435,8 @@ export namespace FieldRef {
   //#region Helpers
 
   export type Variable<Payload> =
-    | FieldRef<Payload>
-    | (Payload extends Payload ? FieldRef<Payload> : never);
+    | FieldRefOld<Payload>
+    | (Payload extends Payload ? FieldRefOld<Payload> : never);
 
   //#endregion
 }
@@ -396,32 +450,32 @@ declare module "../collection/index.ts" {
     // Tuple
 
     <Value extends Utils.Tuple>(
-      field: FieldRef<Value> | Utils.Nullish<Enso.Tried<FieldRef<Value>>>,
-      callback: FieldRef.CollectionCallbackTuplePair<Value>,
+      field: FieldRefOld<Value> | Utils.Nullish<Enso.Tried<FieldRefOld<Value>>>,
+      callback: FieldRefOld.CollectionCallbackTuplePair<Value>,
     ): void;
 
     <Value extends Utils.Tuple>(
-      field: FieldRef<Value> | Utils.Nullish<Enso.Tried<FieldRef<Value>>>,
-      callback: FieldRef.CollectionCallbackTupleSingle<Value>,
+      field: FieldRefOld<Value> | Utils.Nullish<Enso.Tried<FieldRefOld<Value>>>,
+      callback: FieldRefOld.CollectionCallbackTupleSingle<Value>,
     ): void;
 
     // Array
 
     <Value extends unknown[]>(
-      field: FieldRef<Value> | Utils.Nullish<Enso.Tried<FieldRef<Value>>>,
-      callback: FieldRef.CollectionCallbackArray<Value>,
+      field: FieldRefOld<Value> | Utils.Nullish<Enso.Tried<FieldRefOld<Value>>>,
+      callback: FieldRefOld.CollectionCallbackArray<Value>,
     ): void;
 
     // Object
 
     <Value extends object>(
-      field: FieldRef<Value> | Utils.Nullish<Enso.Tried<FieldRef<Value>>>,
-      callback: FieldRef.CollectionCallbackObjectPair<Value>,
+      field: FieldRefOld<Value> | Utils.Nullish<Enso.Tried<FieldRefOld<Value>>>,
+      callback: FieldRefOld.CollectionCallbackObjectPair<Value>,
     ): void;
 
     <Value extends object>(
-      field: FieldRef<Value> | Utils.Nullish<Enso.Tried<FieldRef<Value>>>,
-      callback: FieldRef.CollectionCallbackObjectSingle<Value>,
+      field: FieldRefOld<Value> | Utils.Nullish<Enso.Tried<FieldRefOld<Value>>>,
+      callback: FieldRefOld.CollectionCallbackObjectSingle<Value>,
     ): void;
   }
 
@@ -431,32 +485,32 @@ declare module "../collection/index.ts" {
     // Tuple
 
     <Value extends Utils.Tuple, Result>(
-      field: FieldRef<Value> | Utils.Nullish<Enso.Tried<FieldRef<Value>>>,
-      callback: FieldRef.CollectionCallbackTuplePair<Value, Result>,
+      field: FieldRefOld<Value> | Utils.Nullish<Enso.Tried<FieldRefOld<Value>>>,
+      callback: FieldRefOld.CollectionCallbackTuplePair<Value, Result>,
     ): Result[];
 
     <Value extends Utils.Tuple, Result>(
-      field: FieldRef<Value> | Utils.Nullish<Enso.Tried<FieldRef<Value>>>,
-      callback: FieldRef.CollectionCallbackTupleSingle<Value, Result>,
+      field: FieldRefOld<Value> | Utils.Nullish<Enso.Tried<FieldRefOld<Value>>>,
+      callback: FieldRefOld.CollectionCallbackTupleSingle<Value, Result>,
     ): Result[];
 
     // Array
 
     <Value extends unknown[], Result>(
-      field: FieldRef<Value> | Utils.Nullish<Enso.Tried<FieldRef<Value>>>,
-      callback: FieldRef.CollectionCallbackArray<Value, Result>,
+      field: FieldRefOld<Value> | Utils.Nullish<Enso.Tried<FieldRefOld<Value>>>,
+      callback: FieldRefOld.CollectionCallbackArray<Value, Result>,
     ): Result[];
 
     // Object
 
     <Value extends object, Result>(
-      field: FieldRef<Value> | Utils.Nullish<Enso.Tried<FieldRef<Value>>>,
-      callback: FieldRef.CollectionCallbackObjectPair<Value, Result>,
+      field: FieldRefOld<Value> | Utils.Nullish<Enso.Tried<FieldRefOld<Value>>>,
+      callback: FieldRefOld.CollectionCallbackObjectPair<Value, Result>,
     ): Result[];
 
     <Value extends object, Result>(
-      field: FieldRef<Value> | Utils.Nullish<Enso.Tried<FieldRef<Value>>>,
-      callback: FieldRef.CollectionCallbackObjectSingle<Value, Result>,
+      field: FieldRefOld<Value> | Utils.Nullish<Enso.Tried<FieldRefOld<Value>>>,
+      callback: FieldRefOld.CollectionCallbackObjectSingle<Value, Result>,
     ): Result[];
   }
 
@@ -465,11 +519,11 @@ declare module "../collection/index.ts" {
   interface FieldSize {
     // Tuple/Array
 
-    <Value extends Array<unknown>>(field: FieldRef<Value>): Value["length"];
+    <Value extends Array<unknown>>(field: FieldRefOld<Value>): Value["length"];
 
     // Object
 
-    <Value extends object>(field: FieldRef<Value>): number;
+    <Value extends object>(field: FieldRefOld<Value>): number;
   }
 
   // `fieldFind`
@@ -478,33 +532,33 @@ declare module "../collection/index.ts" {
     // Tuple
 
     <Value extends Utils.Tuple>(
-      field: FieldRef<Value> | Utils.Nullish<Enso.Tried<FieldRef<Value>>>,
-      predicate: FieldRef.CollectionCallbackTuplePair<Value, unknown>,
-    ): FieldRef.ItemResultTuple<Value> | undefined;
+      field: FieldRefOld<Value> | Utils.Nullish<Enso.Tried<FieldRefOld<Value>>>,
+      predicate: FieldRefOld.CollectionCallbackTuplePair<Value, unknown>,
+    ): FieldRefOld.ItemResultTuple<Value> | undefined;
 
     <Value extends Utils.Tuple>(
-      field: FieldRef<Value> | Utils.Nullish<Enso.Tried<FieldRef<Value>>>,
-      predicate: FieldRef.CollectionCallbackTupleSingle<Value, unknown>,
-    ): FieldRef.ItemResultTuple<Value> | undefined;
+      field: FieldRefOld<Value> | Utils.Nullish<Enso.Tried<FieldRefOld<Value>>>,
+      predicate: FieldRefOld.CollectionCallbackTupleSingle<Value, unknown>,
+    ): FieldRefOld.ItemResultTuple<Value> | undefined;
 
     // Array
 
     <Value extends unknown[]>(
-      field: FieldRef<Value> | Utils.Nullish<Enso.Tried<FieldRef<Value>>>,
-      callback: FieldRef.CollectionCallbackArray<Value, unknown>,
-    ): FieldRef.ItemResultArray<Value> | undefined;
+      field: FieldRefOld<Value> | Utils.Nullish<Enso.Tried<FieldRefOld<Value>>>,
+      callback: FieldRefOld.CollectionCallbackArray<Value, unknown>,
+    ): FieldRefOld.ItemResultArray<Value> | undefined;
 
     // Object
 
     <Value extends object>(
-      field: FieldRef<Value> | Utils.Nullish<Enso.Tried<FieldRef<Value>>>,
-      predicate: FieldRef.CollectionCallbackObjectPair<Value, unknown>,
-    ): FieldRef.ItemResultObject<Value> | undefined;
+      field: FieldRefOld<Value> | Utils.Nullish<Enso.Tried<FieldRefOld<Value>>>,
+      predicate: FieldRefOld.CollectionCallbackObjectPair<Value, unknown>,
+    ): FieldRefOld.ItemResultObject<Value> | undefined;
 
     <Value extends object>(
-      field: FieldRef<Value> | Utils.Nullish<Enso.Tried<FieldRef<Value>>>,
-      predicate: FieldRef.CollectionCallbackObjectSingle<Value, unknown>,
-    ): FieldRef.ItemResultObject<Value> | undefined;
+      field: FieldRefOld<Value> | Utils.Nullish<Enso.Tried<FieldRefOld<Value>>>,
+      predicate: FieldRefOld.CollectionCallbackObjectSingle<Value, unknown>,
+    ): FieldRefOld.ItemResultObject<Value> | undefined;
   }
 
   // `fieldFilter`
@@ -513,33 +567,33 @@ declare module "../collection/index.ts" {
     // Tuple
 
     <Value extends Utils.Tuple>(
-      field: FieldRef<Value> | Utils.Nullish<Enso.Tried<FieldRef<Value>>>,
-      predicate: FieldRef.CollectionCallbackTuplePair<Value, unknown>,
-    ): FieldRef.ItemResultTuple<Value>[];
+      field: FieldRefOld<Value> | Utils.Nullish<Enso.Tried<FieldRefOld<Value>>>,
+      predicate: FieldRefOld.CollectionCallbackTuplePair<Value, unknown>,
+    ): FieldRefOld.ItemResultTuple<Value>[];
 
     <Value extends Utils.Tuple>(
-      field: FieldRef<Value> | Utils.Nullish<Enso.Tried<FieldRef<Value>>>,
-      predicate: FieldRef.CollectionCallbackTupleSingle<Value, unknown>,
-    ): FieldRef.ItemResultTuple<Value>[];
+      field: FieldRefOld<Value> | Utils.Nullish<Enso.Tried<FieldRefOld<Value>>>,
+      predicate: FieldRefOld.CollectionCallbackTupleSingle<Value, unknown>,
+    ): FieldRefOld.ItemResultTuple<Value>[];
 
     // Array
 
     <Value extends unknown[]>(
-      field: FieldRef<Value> | Utils.Nullish<Enso.Tried<FieldRef<Value>>>,
-      callback: FieldRef.CollectionCallbackArray<Value, unknown>,
-    ): FieldRef.ItemResultArray<Value>[];
+      field: FieldRefOld<Value> | Utils.Nullish<Enso.Tried<FieldRefOld<Value>>>,
+      callback: FieldRefOld.CollectionCallbackArray<Value, unknown>,
+    ): FieldRefOld.ItemResultArray<Value>[];
 
     // Object
 
     <Value extends object>(
-      field: FieldRef<Value> | Utils.Nullish<Enso.Tried<FieldRef<Value>>>,
-      predicate: FieldRef.CollectionCallbackObjectPair<Value, unknown>,
-    ): FieldRef.ItemResultObject<Value>[];
+      field: FieldRefOld<Value> | Utils.Nullish<Enso.Tried<FieldRefOld<Value>>>,
+      predicate: FieldRefOld.CollectionCallbackObjectPair<Value, unknown>,
+    ): FieldRefOld.ItemResultObject<Value>[];
 
     <Value extends object>(
-      field: FieldRef<Value> | Utils.Nullish<Enso.Tried<FieldRef<Value>>>,
-      predicate: FieldRef.CollectionCallbackObjectSingle<Value, unknown>,
-    ): FieldRef.ItemResultObject<Value>[];
+      field: FieldRefOld<Value> | Utils.Nullish<Enso.Tried<FieldRefOld<Value>>>,
+      predicate: FieldRefOld.CollectionCallbackObjectSingle<Value, unknown>,
+    ): FieldRefOld.ItemResultObject<Value>[];
   }
 }
 
@@ -548,20 +602,20 @@ declare module "../type/index.ts" {
 
   interface FieldDiscriminate {
     <
-      FieldType extends FieldRef.Hint,
+      FieldType extends FieldRefOld.Hint,
       Discriminator extends Utils.NonUndefined<
-        FieldRef.DiscriminatorFor<FieldType>
+        FieldRefOld.DiscriminatorFor<FieldType>
       >,
     >(
       field: FieldType,
       discriminator: Discriminator,
-    ): FieldRef.DiscriminateResult<FieldType, Discriminator>;
+    ): FieldRefOld.DiscriminateResult<FieldType, Discriminator>;
   }
 }
 
 //#endregion
 
-const maybeRefHintSymbol = Symbol();
+const maybeRefHintSymbolOld = Symbol();
 
 /**
  * Class representing maybe fields references. Unlike `FieldRef` representing
@@ -573,21 +627,21 @@ const maybeRefHintSymbol = Symbol();
 @staticImplements<AsCollectionRead>()
 // TODO: Try making this work or remove:
 // Static<typeof MaybeFieldRef<unknown>, AsCollectionRead>,
-export class MaybeFieldRef<Payload> implements MaybeFieldRef.Hint {
-  #target: MaybeFieldRef.Target<Payload>;
+export class MaybeFieldRefOld<Payload> implements MaybeFieldRefOld.Hint {
+  #target: MaybeFieldRefOld.Target<Payload>;
 
-  [maybeRefHintSymbol] = true as const;
+  [maybeRefHintSymbolOld] = true as const;
 
   static every<FieldType extends FieldOld.Hint>(
     field: FieldType,
   ): Enso.TransferBrands<
-    MaybeFieldRef<FieldOld.EveryValueUnion<FieldType>>,
+    MaybeFieldRefOld<FieldOld.EveryValueUnion<FieldType>>,
     FieldType
   > {
-    return new MaybeFieldRef({ type: "direct", field: field as any }) as any;
+    return new MaybeFieldRefOld({ type: "direct", field: field as any }) as any;
   }
 
-  constructor(target: MaybeFieldRef.Target<Payload>) {
+  constructor(target: MaybeFieldRefOld.Target<Payload>) {
     this.#target = target;
   }
 
@@ -620,11 +674,11 @@ export class MaybeFieldRef<Payload> implements MaybeFieldRef.Hint {
 
   at<Key extends keyof Utils.NonNullish<Payload>>(
     key: Key,
-  ): MaybeFieldRef.At<Payload, Key> {
+  ): MaybeFieldRefOld.At<Payload, Key> {
     // maybe<Key extends keyof Utils.NonNullish<Payload>>(
     //   key: Key,
     // ): MaybeFieldRef.Result<Payload, Key> {
-    let target: MaybeFieldRef.Target<unknown>;
+    let target: MaybeFieldRefOld.Target<unknown>;
     if (this.#target.type === "direct") {
       const field = this.#target.field.at(key as any);
       target = field
@@ -642,31 +696,31 @@ export class MaybeFieldRef<Payload> implements MaybeFieldRef.Hint {
     }
 
     // @ts-ignore: TODO:
-    return new MaybeFieldRef(target);
+    return new MaybeFieldRefOld(target);
   }
 
-  try(): Enso.TryUnion<MaybeFieldRef.InterfaceDef<Payload>>;
+  try(): Enso.TryUnion<MaybeFieldRefOld.InterfaceDef<Payload>>;
 
   try<Key extends keyof Utils.NonNullish<Payload>>(
     key: Key,
-  ): FieldOld.TryKey<MaybeFieldRef.InterfaceDef<Payload>, Key>;
+  ): FieldOld.TryKey<MaybeFieldRefOld.InterfaceDef<Payload>, Key>;
 
   try(...[key]: any[]): any {
     // If it is a shadow field, there can't be anything to try.
     if (this.#target.type !== "direct") return;
     const field = this.#target.field.try(key);
-    return field && FieldRef.get(field);
+    return field && FieldRefOld.get(field);
   }
 
   //#endregion
 
   //#region Map
 
-  decompose(): MaybeFieldRef.Decomposed<Payload> {
+  decompose(): MaybeFieldRefOld.Decomposed<Payload> {
     return {
       value: this.get(),
       field: this,
-    } as unknown as MaybeFieldRef.Decomposed<Payload>;
+    } as unknown as MaybeFieldRefOld.Decomposed<Payload>;
   }
 
   //#endregion
@@ -690,7 +744,7 @@ export class MaybeFieldRef<Payload> implements MaybeFieldRef.Hint {
   //#region Collection
 
   static asCollection<Value>(
-    field: MaybeFieldRef<Value>,
+    field: MaybeFieldRefOld<Value>,
   ): AsCollection.Result<Value> {
     // If it is a shadow field, there can't be anything to iterate.
     if (field.#target.type !== "direct") return;
@@ -698,7 +752,7 @@ export class MaybeFieldRef<Payload> implements MaybeFieldRef.Hint {
   }
 
   static asArray<Value>(
-    field: MaybeFieldRef<Value>,
+    field: MaybeFieldRefOld<Value>,
   ): AsCollection.AsArrayResult<Value> {
     // If it is a shadow field, there can't be anything to iterate.
     if (field.#target.type !== "direct") return;
@@ -706,7 +760,7 @@ export class MaybeFieldRef<Payload> implements MaybeFieldRef.Hint {
   }
 
   static asObject<Value>(
-    field: MaybeFieldRef<Value>,
+    field: MaybeFieldRefOld<Value>,
   ): AsCollection.AsObjectResult<Value> {
     // If it is a shadow field, there can't be anything to access.
     if (field.#target.type !== "direct") return;
@@ -714,7 +768,7 @@ export class MaybeFieldRef<Payload> implements MaybeFieldRef.Hint {
   }
 
   static asChild<Value>(
-    field: MaybeFieldRef<Value>,
+    field: MaybeFieldRefOld<Value>,
   ): AsCollection.AsChildResult<Value> {
     // If it is a shadow field, there can't be anything to access.
     if (field.#target.type !== "direct") return;
@@ -722,7 +776,7 @@ export class MaybeFieldRef<Payload> implements MaybeFieldRef.Hint {
   }
 
   static asState<Value>(
-    field: MaybeFieldRef<Value>,
+    field: MaybeFieldRefOld<Value>,
   ): AsState.ReadWriteResult<Value> | undefined {
     // If it is a shadow field, there can't be anything to access.
     if (field.#target.type !== "direct") return;
@@ -731,10 +785,10 @@ export class MaybeFieldRef<Payload> implements MaybeFieldRef.Hint {
 
   static fromField<Value>(
     field: FieldOld<Value> | undefined,
-  ): MaybeFieldRef<Value> | undefined {
+  ): MaybeFieldRefOld<Value> | undefined {
     return (
       field &&
-      new MaybeFieldRef({
+      new MaybeFieldRefOld({
         type: "direct",
         field,
       })
@@ -744,17 +798,17 @@ export class MaybeFieldRef<Payload> implements MaybeFieldRef.Hint {
   //#endregion
 }
 
-export namespace MaybeFieldRef {
+export namespace MaybeFieldRefOld {
   //#region Interfaces
 
   export interface Hint {
-    [maybeRefHintSymbol]: true;
+    [maybeRefHintSymbolOld]: true;
   }
 
   export type InterfaceDef<Payload> = {
     Payload: Payload;
-    Unknown: MaybeFieldRef<unknown>;
-    NonNullish: MaybeFieldRef<Utils.NonNullish<Payload>>;
+    Unknown: MaybeFieldRefOld<unknown>;
+    NonNullish: MaybeFieldRefOld<Utils.NonNullish<Payload>>;
     Bound: unknown;
   };
 
@@ -762,14 +816,14 @@ export namespace MaybeFieldRef {
 
   //#region Properties
 
-  export type Detachable<Value> = Enso.Detachable<MaybeFieldRef<Value>>;
+  export type Detachable<Value> = Enso.Detachable<MaybeFieldRefOld<Value>>;
 
-  export type Tried<Value> = Enso.Tried<MaybeFieldRef<Value>>;
+  export type Tried<Value> = Enso.Tried<MaybeFieldRefOld<Value>>;
 
-  export type Bound<Value> = Enso.Bound<MaybeFieldRef<Value>>;
+  export type Bound<Value> = Enso.Bound<MaybeFieldRefOld<Value>>;
 
   export type Branded<Value, Flags extends Enso.Flags> = Enso.Branded<
-    MaybeFieldRef<Value>,
+    MaybeFieldRefOld<Value>,
     Flags
   >;
 
@@ -804,7 +858,7 @@ export namespace MaybeFieldRef {
   export type At<
     Payload,
     Key extends keyof Utils.NonNullish<Payload>,
-  > = MaybeFieldRef<
+  > = MaybeFieldRefOld<
     | Utils.NonNullish<Payload>[Key]
     // If payload is Utils.Nullish, we need to add undefined to the type, so that
     // `a.b` in `{ a?: { b: string } }` is not just `string`.
@@ -827,15 +881,15 @@ export namespace MaybeFieldRef {
 
   export type Every<Value> =
     // Handle boolean separately, so it doesn't produce FieldRef<true> | FieldRef<false>
-    | (boolean extends Value ? MaybeFieldRef<boolean> : never)
+    | (boolean extends Value ? MaybeFieldRefOld<boolean> : never)
     | (Exclude<Value, boolean> extends infer Value
         ? Value extends Value
-          ? MaybeFieldRef<Value>
+          ? MaybeFieldRefOld<Value>
           : never
         : never);
 
   export type EveryValueUnion<FieldType> =
-    FieldType extends MaybeFieldRef<infer Value> ? Value : never;
+    FieldType extends MaybeFieldRefOld<infer Value> ? Value : never;
 
   //#endregion
 
@@ -844,7 +898,7 @@ export namespace MaybeFieldRef {
   export type Decomposed<Payload> = Payload extends Payload
     ? {
         value: Payload;
-        field: MaybeFieldRef<Payload>;
+        field: MaybeFieldRefOld<Payload>;
       }
     : never;
 
@@ -871,7 +925,7 @@ export namespace MaybeFieldRef {
           ? {
               discriminator: DiscriminatorValue;
               field: Enso.Branded<
-                Enso.TransferBrands<MaybeFieldRef<Payload>, BrandsSource>,
+                Enso.TransferBrands<MaybeFieldRefOld<Payload>, BrandsSource>,
                 Flags
               >;
             }
@@ -881,7 +935,7 @@ export namespace MaybeFieldRef {
         {
           discriminator: undefined;
           field: Enso.Branded<
-            Enso.TransferBrands<MaybeFieldRef<Payload>, BrandsSource>,
+            Enso.TransferBrands<MaybeFieldRefOld<Payload>, BrandsSource>,
             Flags
           >;
         }
@@ -908,7 +962,7 @@ export namespace MaybeFieldRef {
     Result = void,
   > = (
     ...args: {
-      [Key in Utils.IndexOfTuple<Value>]: [MaybeFieldRef<Value[Key]>, Key];
+      [Key in Utils.IndexOfTuple<Value>]: [MaybeFieldRefOld<Value[Key]>, Key];
     }[Utils.IndexOfTuple<Value>]
   ) => Result;
 
@@ -942,7 +996,9 @@ export namespace MaybeFieldRef {
     // Exclude is needed to remove undefined that appears when there're optional
     // fields in the object.
     ...args: Exclude<
-      { [Key in keyof Value]: [MaybeFieldRef<Value[Key]>, Key] }[keyof Value],
+      {
+        [Key in keyof Value]: [MaybeFieldRefOld<Value[Key]>, Key];
+      }[keyof Value],
       undefined
     >
   ) => Result;
@@ -954,7 +1010,7 @@ export namespace MaybeFieldRef {
     // Exclude is needed to remove undefined that appears when there're optional
     // fields in the object.
     item: Exclude<
-      { [Key in keyof Value]: MaybeFieldRef<Value[Key]> }[keyof Value],
+      { [Key in keyof Value]: MaybeFieldRefOld<Value[Key]> }[keyof Value],
       undefined
     >,
   ) => Result;
@@ -973,15 +1029,15 @@ export namespace MaybeFieldRef {
     // Remove undefined that sneaks in
     Exclude<
       // Use mapped type to preserve Type | undefined for optional fields
-      { [Key in keyof Value]: MaybeFieldRef<Value[Key]> }[keyof Value],
+      { [Key in keyof Value]: MaybeFieldRefOld<Value[Key]> }[keyof Value],
       undefined
     >;
 
   //#region Helpers
 
   export type Variable<Payload> =
-    | MaybeFieldRef<Payload>
-    | (Payload extends Payload ? MaybeFieldRef<Payload> : never);
+    | MaybeFieldRefOld<Payload>
+    | (Payload extends Payload ? MaybeFieldRefOld<Payload> : never);
 
   // //#endregion
 }
@@ -996,41 +1052,41 @@ declare module "../collection/index.ts" {
 
     <Value extends Utils.Tuple>(
       field:
-        | MaybeFieldRef<Value>
-        | Utils.Nullish<Enso.Tried<MaybeFieldRef<Value>>>,
-      callback: MaybeFieldRef.CollectionCallbackTuplePair<Value>,
+        | MaybeFieldRefOld<Value>
+        | Utils.Nullish<Enso.Tried<MaybeFieldRefOld<Value>>>,
+      callback: MaybeFieldRefOld.CollectionCallbackTuplePair<Value>,
     ): void;
 
     <Value extends Utils.Tuple>(
       field:
-        | MaybeFieldRef<Value>
-        | Utils.Nullish<Enso.Tried<MaybeFieldRef<Value>>>,
-      callback: MaybeFieldRef.CollectionCallbackTupleSingle<Value>,
+        | MaybeFieldRefOld<Value>
+        | Utils.Nullish<Enso.Tried<MaybeFieldRefOld<Value>>>,
+      callback: MaybeFieldRefOld.CollectionCallbackTupleSingle<Value>,
     ): void;
 
     // Array
 
     <Value extends Array<unknown>>(
       field:
-        | MaybeFieldRef<Value>
-        | Utils.Nullish<Enso.Tried<MaybeFieldRef<Value>>>,
-      callback: MaybeFieldRef.CollectionCallbackArray<Value>,
+        | MaybeFieldRefOld<Value>
+        | Utils.Nullish<Enso.Tried<MaybeFieldRefOld<Value>>>,
+      callback: MaybeFieldRefOld.CollectionCallbackArray<Value>,
     ): void;
 
     // Object
 
     <Value extends object>(
       field:
-        | MaybeFieldRef<Value>
-        | Utils.Nullish<Enso.Tried<MaybeFieldRef<Value>>>,
-      callback: MaybeFieldRef.CollectionCallbackObjectPair<Value>,
+        | MaybeFieldRefOld<Value>
+        | Utils.Nullish<Enso.Tried<MaybeFieldRefOld<Value>>>,
+      callback: MaybeFieldRefOld.CollectionCallbackObjectPair<Value>,
     ): void;
 
     <Value extends object>(
       field:
-        | MaybeFieldRef<Value>
-        | Utils.Nullish<Enso.Tried<MaybeFieldRef<Value>>>,
-      callback: MaybeFieldRef.CollectionCallbackObjectSingle<Value>,
+        | MaybeFieldRefOld<Value>
+        | Utils.Nullish<Enso.Tried<MaybeFieldRefOld<Value>>>,
+      callback: MaybeFieldRefOld.CollectionCallbackObjectSingle<Value>,
     ): void;
   }
 
@@ -1041,41 +1097,41 @@ declare module "../collection/index.ts" {
 
     <Value extends Utils.Tuple, Result>(
       field:
-        | MaybeFieldRef<Value>
-        | Utils.Nullish<Enso.Tried<MaybeFieldRef<Value>>>,
-      callback: MaybeFieldRef.CollectionCallbackTuplePair<Value, Result>,
+        | MaybeFieldRefOld<Value>
+        | Utils.Nullish<Enso.Tried<MaybeFieldRefOld<Value>>>,
+      callback: MaybeFieldRefOld.CollectionCallbackTuplePair<Value, Result>,
     ): Result[];
 
     <Value extends Utils.Tuple, Result>(
       field:
-        | MaybeFieldRef<Value>
-        | Utils.Nullish<Enso.Tried<MaybeFieldRef<Value>>>,
-      callback: MaybeFieldRef.CollectionCallbackTupleSingle<Value, Result>,
+        | MaybeFieldRefOld<Value>
+        | Utils.Nullish<Enso.Tried<MaybeFieldRefOld<Value>>>,
+      callback: MaybeFieldRefOld.CollectionCallbackTupleSingle<Value, Result>,
     ): Result[];
 
     // Array
 
     <Value extends Array<unknown>, Result>(
       field:
-        | MaybeFieldRef<Value>
-        | Utils.Nullish<Enso.Tried<MaybeFieldRef<Value>>>,
-      callback: MaybeFieldRef.CollectionCallbackArray<Value, Result>,
+        | MaybeFieldRefOld<Value>
+        | Utils.Nullish<Enso.Tried<MaybeFieldRefOld<Value>>>,
+      callback: MaybeFieldRefOld.CollectionCallbackArray<Value, Result>,
     ): Result[];
 
     // Object
 
     <Value extends object, Result>(
       field:
-        | MaybeFieldRef<Value>
-        | Utils.Nullish<Enso.Tried<MaybeFieldRef<Value>>>,
-      callback: MaybeFieldRef.CollectionCallbackObjectPair<Value, Result>,
+        | MaybeFieldRefOld<Value>
+        | Utils.Nullish<Enso.Tried<MaybeFieldRefOld<Value>>>,
+      callback: MaybeFieldRefOld.CollectionCallbackObjectPair<Value, Result>,
     ): Result[];
 
     <Value extends object, Result>(
       field:
-        | MaybeFieldRef<Value>
-        | Utils.Nullish<Enso.Tried<MaybeFieldRef<Value>>>,
-      callback: MaybeFieldRef.CollectionCallbackObjectSingle<Value, Result>,
+        | MaybeFieldRefOld<Value>
+        | Utils.Nullish<Enso.Tried<MaybeFieldRefOld<Value>>>,
+      callback: MaybeFieldRefOld.CollectionCallbackObjectSingle<Value, Result>,
     ): Result[];
   }
 
@@ -1084,11 +1140,11 @@ declare module "../collection/index.ts" {
   interface FieldSize {
     // Tuple/Array
 
-    <Value extends unknown[]>(field: MaybeFieldRef<Value>): Value["length"];
+    <Value extends unknown[]>(field: MaybeFieldRefOld<Value>): Value["length"];
 
     // Object
 
-    <Value extends object>(field: MaybeFieldRef<Value>): number;
+    <Value extends object>(field: MaybeFieldRefOld<Value>): number;
   }
 
   // `fieldFind`
@@ -1098,42 +1154,45 @@ declare module "../collection/index.ts" {
 
     <Value extends Utils.Tuple>(
       field:
-        | MaybeFieldRef<Value>
-        | Utils.Nullish<Enso.Tried<MaybeFieldRef<Value>>>,
-      predicate: MaybeFieldRef.CollectionCallbackTuplePair<Value, unknown>,
-    ): MaybeFieldRef.ItemResultTuple<Value> | undefined;
+        | MaybeFieldRefOld<Value>
+        | Utils.Nullish<Enso.Tried<MaybeFieldRefOld<Value>>>,
+      predicate: MaybeFieldRefOld.CollectionCallbackTuplePair<Value, unknown>,
+    ): MaybeFieldRefOld.ItemResultTuple<Value> | undefined;
 
     <Value extends Utils.Tuple>(
       field:
-        | MaybeFieldRef<Value>
-        | Utils.Nullish<Enso.Tried<MaybeFieldRef<Value>>>,
-      predicate: MaybeFieldRef.CollectionCallbackTupleSingle<Value, unknown>,
-    ): MaybeFieldRef.ItemResultTuple<Value> | undefined;
+        | MaybeFieldRefOld<Value>
+        | Utils.Nullish<Enso.Tried<MaybeFieldRefOld<Value>>>,
+      predicate: MaybeFieldRefOld.CollectionCallbackTupleSingle<Value, unknown>,
+    ): MaybeFieldRefOld.ItemResultTuple<Value> | undefined;
 
     // Array
 
     <Value extends unknown[]>(
       field:
-        | MaybeFieldRef<Value>
-        | Utils.Nullish<Enso.Tried<MaybeFieldRef<Value>>>,
-      callback: MaybeFieldRef.CollectionCallbackArray<Value, unknown>,
-    ): MaybeFieldRef.ItemResultArray<Value> | undefined;
+        | MaybeFieldRefOld<Value>
+        | Utils.Nullish<Enso.Tried<MaybeFieldRefOld<Value>>>,
+      callback: MaybeFieldRefOld.CollectionCallbackArray<Value, unknown>,
+    ): MaybeFieldRefOld.ItemResultArray<Value> | undefined;
 
     // Object
 
     <Value extends object>(
       field:
-        | MaybeFieldRef<Value>
-        | Utils.Nullish<Enso.Tried<MaybeFieldRef<Value>>>,
-      predicate: MaybeFieldRef.CollectionCallbackObjectPair<Value, unknown>,
-    ): MaybeFieldRef.ItemResultObject<Value> | undefined;
+        | MaybeFieldRefOld<Value>
+        | Utils.Nullish<Enso.Tried<MaybeFieldRefOld<Value>>>,
+      predicate: MaybeFieldRefOld.CollectionCallbackObjectPair<Value, unknown>,
+    ): MaybeFieldRefOld.ItemResultObject<Value> | undefined;
 
     <Value extends object>(
       field:
-        | MaybeFieldRef<Value>
-        | Utils.Nullish<Enso.Tried<MaybeFieldRef<Value>>>,
-      predicate: MaybeFieldRef.CollectionCallbackObjectSingle<Value, unknown>,
-    ): MaybeFieldRef.ItemResultObject<Value> | undefined;
+        | MaybeFieldRefOld<Value>
+        | Utils.Nullish<Enso.Tried<MaybeFieldRefOld<Value>>>,
+      predicate: MaybeFieldRefOld.CollectionCallbackObjectSingle<
+        Value,
+        unknown
+      >,
+    ): MaybeFieldRefOld.ItemResultObject<Value> | undefined;
   }
 
   // `fieldFilter`
@@ -1143,42 +1202,45 @@ declare module "../collection/index.ts" {
 
     <Value extends Utils.Tuple>(
       field:
-        | MaybeFieldRef<Value>
-        | Utils.Nullish<Enso.Tried<MaybeFieldRef<Value>>>,
-      predicate: MaybeFieldRef.CollectionCallbackTuplePair<Value, unknown>,
-    ): MaybeFieldRef.ItemResultTuple<Value>[];
+        | MaybeFieldRefOld<Value>
+        | Utils.Nullish<Enso.Tried<MaybeFieldRefOld<Value>>>,
+      predicate: MaybeFieldRefOld.CollectionCallbackTuplePair<Value, unknown>,
+    ): MaybeFieldRefOld.ItemResultTuple<Value>[];
 
     <Value extends Utils.Tuple>(
       field:
-        | MaybeFieldRef<Value>
-        | Utils.Nullish<Enso.Tried<MaybeFieldRef<Value>>>,
-      predicate: MaybeFieldRef.CollectionCallbackTupleSingle<Value, unknown>,
-    ): MaybeFieldRef.ItemResultTuple<Value>[];
+        | MaybeFieldRefOld<Value>
+        | Utils.Nullish<Enso.Tried<MaybeFieldRefOld<Value>>>,
+      predicate: MaybeFieldRefOld.CollectionCallbackTupleSingle<Value, unknown>,
+    ): MaybeFieldRefOld.ItemResultTuple<Value>[];
 
     // Array
 
     <Value extends unknown[]>(
       field:
-        | MaybeFieldRef<Value>
-        | Utils.Nullish<Enso.Tried<MaybeFieldRef<Value>>>,
-      callback: MaybeFieldRef.CollectionCallbackArray<Value, unknown>,
-    ): MaybeFieldRef.ItemResultArray<Value>[];
+        | MaybeFieldRefOld<Value>
+        | Utils.Nullish<Enso.Tried<MaybeFieldRefOld<Value>>>,
+      callback: MaybeFieldRefOld.CollectionCallbackArray<Value, unknown>,
+    ): MaybeFieldRefOld.ItemResultArray<Value>[];
 
     // Object
 
     <Value extends object>(
       field:
-        | MaybeFieldRef<Value>
-        | Utils.Nullish<Enso.Tried<MaybeFieldRef<Value>>>,
-      predicate: MaybeFieldRef.CollectionCallbackObjectPair<Value, unknown>,
-    ): MaybeFieldRef.ItemResultObject<Value>[];
+        | MaybeFieldRefOld<Value>
+        | Utils.Nullish<Enso.Tried<MaybeFieldRefOld<Value>>>,
+      predicate: MaybeFieldRefOld.CollectionCallbackObjectPair<Value, unknown>,
+    ): MaybeFieldRefOld.ItemResultObject<Value>[];
 
     <Value extends object>(
       field:
-        | MaybeFieldRef<Value>
-        | Utils.Nullish<Enso.Tried<MaybeFieldRef<Value>>>,
-      predicate: MaybeFieldRef.CollectionCallbackObjectSingle<Value, unknown>,
-    ): MaybeFieldRef.ItemResultObject<Value>[];
+        | MaybeFieldRefOld<Value>
+        | Utils.Nullish<Enso.Tried<MaybeFieldRefOld<Value>>>,
+      predicate: MaybeFieldRefOld.CollectionCallbackObjectSingle<
+        Value,
+        unknown
+      >,
+    ): MaybeFieldRefOld.ItemResultObject<Value>[];
   }
 }
 
@@ -1187,14 +1249,14 @@ declare module "../type/index.ts" {
 
   interface FieldDiscriminate {
     <
-      FieldType extends MaybeFieldRef.Hint,
+      FieldType extends MaybeFieldRefOld.Hint,
       Discriminator extends Utils.NonUndefined<
-        MaybeFieldRef.DiscriminatorFor<FieldType>
+        MaybeFieldRefOld.DiscriminatorFor<FieldType>
       >,
     >(
       field: FieldType,
       discriminator: Discriminator,
-    ): MaybeFieldRef.DiscriminateResult<FieldType, Discriminator>;
+    ): MaybeFieldRefOld.DiscriminateResult<FieldType, Discriminator>;
   }
 }
 

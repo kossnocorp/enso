@@ -53,6 +53,37 @@ import { Atom } from "./index.js";
       // @ts-expect-error
       tyst<AnyProp>({} as Atom.ValueProp<User>);
     }
+
+    // Union
+    {
+      type UnionProp = Atom.ValueProp<string | number>;
+
+      tyst<UnionProp>({} as string | number);
+      tyst<UnionProp>({} as number);
+      tyst<UnionProp>({} as string);
+      // @ts-expect-error
+      tyst<UnionProp>({} as unknown);
+      // @ts-expect-error
+      tyst<UnionProp>({} as Atom.ValueProp<boolean>);
+      // @ts-expect-error
+      tyst<UnionProp>({} as Atom.ValueProp<User>);
+    }
+
+    // Nullish
+    {
+      type NullishProp = Atom.ValueProp<string | undefined | null>;
+
+      tyst<NullishProp>({} as string | undefined | null);
+      tyst<NullishProp>({} as string);
+      tyst<NullishProp>(undefined);
+      tyst<NullishProp>(null);
+      // @ts-expect-error
+      tyst<NullishProp>({} as unknown);
+      // @ts-expect-error
+      tyst<NullishProp>({} as Atom.ValueProp<boolean>);
+      // @ts-expect-error
+      tyst<NullishProp>({} as Atom.ValueProp<User>);
+    }
   }
 }
 

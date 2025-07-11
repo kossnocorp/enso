@@ -12,9 +12,9 @@ import {
 import { detachedValue } from "../detached/index.ts";
 import { EventsTree } from "../events/index.ts";
 import { useAtomHook } from "./hooks/index.ts";
-import { externalSymbol } from "./value/base/index.ts";
-import { detectValueConstructor } from "./value/index.ts";
-import { AtomValuePrimitive } from "./value/opaque/index.ts";
+import { externalSymbol } from "./internal/base/index.ts";
+import { detectInternalConstructor } from "./internal/index.ts";
+import { AtomValuePrimitive } from "./internal/opaque/index.ts";
 
 export class Atom {
   //#region Static
@@ -163,10 +163,10 @@ export class Atom {
     // Frozen fields should not change!
     if (Object.isFrozen(this)) return 0n;
 
-    const Value = detectValueConstructor(value);
+    const Internal = detectInternalConstructor(value);
 
     // The field is already of the same type
-    if (this.#internal instanceof Value) return this.#internal.set(value);
+    if (this.#internal instanceof Internal) return this.#internal.set(value);
 
     // The field is of a different type
     this.#internal.unwatch();
@@ -179,7 +179,7 @@ export class Atom {
     // Field type is changing
     else changes |= change.field.type;
 
-    this.#internal = new Value(this, value);
+    this.#internal = new Internal(this, value);
     this.#internal.set(value);
     return changes;
   }
@@ -213,6 +213,10 @@ export class Atom {
       return this.set(detachedValue, true);
     },
   };
+
+  forEach(callback) {
+    this.#internal.forEach(callback);
+  }
 
   //#endregion
 

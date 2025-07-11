@@ -34,10 +34,9 @@ import type { Enso } from "../types.ts";
 import type { EnsoUtils as Utils } from "../utils.ts";
 import { ValidationTree } from "../validation/index.ts";
 import { AsCollection } from "./collection/index.ts";
-import { FieldRef } from "./ref/index.ts";
+import { FieldRefOld } from "./ref/definition.ts";
+import { FieldRef } from "./ref/index.js";
 import { Static, staticImplements } from "./util.ts";
-
-export { FieldRef };
 
 export * from "./collection/index.ts";
 export * from "./transform/index.ts";
@@ -64,7 +63,8 @@ export declare class Field<
       typeof Field<Value, Qualifier, Parent>,
       Atom.StaticSubclass<"field">
     >,
-    Field.Invariant<Value, Qualifier, Parent>
+    Field.Invariant<Value, Qualifier, Parent>,
+    Field.ImmutableBase<Value>
 {
   //#region Static
 
@@ -99,9 +99,34 @@ export declare class Field<
     >,
   ): React.ReactNode;
 
-  //#endregion
+  //#endregion Static
+
+  //#region Instance
 
   [hintSymbol]: true;
+
+  //#endregion Instance
+
+  //#region Validation
+
+  get validationTree(): ValidationTree;
+
+  /**
+   * Validates the field using the provided validator function.
+   * It clears all the previous errors and withholds any changes until
+   * the validation is resolved.
+   */
+  validate<Context>(
+    validator: Field.Validator<Value, Context>,
+    context: Context,
+  ): Promise<void>;
+
+  validate(
+    validator: Field.Validator<Value, undefined>,
+    context?: undefined,
+  ): Promise<void>;
+
+  //#endregion Validation
 }
 
 export namespace Field {
@@ -118,30 +143,56 @@ export namespace Field {
         ? Invariant<Value, Qualifier, Parent>
         : never;
 
+  //#region Interface
+
   export interface Invariant<
     Value,
     Qualifier extends Atom.Qualifier = never,
     Parent extends Atom.Parent.Constraint<"field", Value> = unknown,
   > extends Hint,
-      Atom.Invariant<"field" | "invariant", Value, Qualifier, Parent> {}
+      Atom.Invariant<"field" | "invariant", Value, Qualifier, Parent>,
+      ImmutableBase<Value> {}
 
   export interface Common<
     Value,
     Qualifier extends Atom.Qualifier = never,
     Parent extends Atom.Parent.Constraint<"field", Value> = unknown,
   > extends Hint,
-      Atom.Common<"field" | "common", Value, Qualifier, Parent> {}
+      Atom.Common<"field" | "common", Value, Qualifier, Parent>,
+      ImmutableBase<Value> {}
 
   export interface Immutable<
     Value,
     Qualifier extends Atom.Qualifier = never,
     Parent extends Atom.Parent.Constraint<"field", Value> = unknown,
   > extends Hint,
-      Atom.Immutable<"field" | "immutable", Value, Qualifier, Parent> {}
+      Atom.Immutable<"field" | "immutable", Value, Qualifier, Parent>,
+      ImmutableBase<Value> {}
+
+  export interface ImmutableBase<Value> {
+    get validationTree(): ValidationTree;
+
+    /**
+     * Validates the field using the provided validator function.
+     * It clears all the previous errors and withholds any changes until
+     * the validation is resolved.
+     */
+    validate<Context>(
+      validator: Field.Validator<Value, Context>,
+      context: Context,
+    ): Promise<void>;
+
+    validate(
+      validator: Field.Validator<Value, undefined>,
+      context?: undefined,
+    ): Promise<void>;
+  }
 
   export interface Hint {
     [hintSymbol]: true;
   }
+
+  //#endregion
 
   export type Parent<Value, Key extends keyof Value> = Atom.Parent<
     "field",
@@ -169,12 +220,21 @@ export namespace Field {
     export interface Array<Value extends unknown[]>
       extends Atom.Value.Array<"field", Value> {}
 
-    export interface Tuple<Value> extends Atom.Value.Tuple<"field", Value> {}
+    export interface Tuple<Value extends Utils.Tuple>
+      extends Atom.Value.Tuple<"field", Value> {}
 
     export interface Object<Value> extends Atom.Value.Object<"field", Value> {}
   }
 
   //#endregion
+
+  //#region Validation
+
+  export type Validator<Value, Context = undefined> = undefined extends Context
+    ? (payload: FieldRef<Value>) => Promise<void> | void
+    : (payload: FieldRef<Value>, context: Context) => Promise<void> | void;
+
+  //#endregion Validation
 }
 
 // vvvvvvvvvvvvvvvvvvv  PENDING  vvvvvvvvvvvvvvvvvvv
@@ -1183,7 +1243,7 @@ export class FieldOld<Payload>
     // optional.
     this.withhold();
     // @ts-ignore: TODO:
-    await validator(FieldRef.get(this), context);
+    await validator(FieldRefOld.get(this), context);
     this.unleash();
   }
 
@@ -1721,8 +1781,8 @@ export namespace FieldOld {
     Payload,
     Context = undefined,
   > = undefined extends Context
-    ? (payload: FieldRef<Payload>) => Promise<void> | void
-    : (payload: FieldRef<Payload>, context: Context) => Promise<void> | void;
+    ? (payload: FieldRefOld<Payload>) => Promise<void> | void
+    : (payload: FieldRefOld<Payload>, context: Context) => Promise<void> | void;
 
   //#endregion
 }

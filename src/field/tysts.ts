@@ -724,7 +724,7 @@ import { Field } from "./definition.tsx";
   }
 }
 
-// `Field["opt"]`
+// `Field["self"]["try"]`
 {
   // Basic
   {
@@ -875,12 +875,183 @@ import { Field } from "./definition.tsx";
   }
 }
 
+//#region Type
+
+//#region Collection
+
+const tuple = new Field<[string, boolean, symbol]>(["1", true, Symbol("3")]);
+const tupleOrUnd = new Field<[string, boolean, symbol] | undefined>([
+  "1",
+  true,
+  Symbol("3"),
+]);
+const tupleOrNum = new Field<[string, boolean, symbol] | number>([
+  "1",
+  true,
+  Symbol("3"),
+]);
+
+const arr = new Field<Array<string | boolean>>([]);
+const arrOrUnd = new Field<Array<string | boolean> | undefined>([]);
+const arrOrNum = new Field<Array<string | boolean> | number>([]);
+const arrOrNumOrUnd = new Field<Array<string | boolean> | number | undefined>(
+  [],
+);
+
+const obj = new Field<Hello>({ hello: "hi", world: true });
+const objPart = new Field<Ok>({ ok: true });
+const objOrUnd = new Field<Ok | undefined>({ ok: true });
+
+const rec = new Field<Record<string, string | boolean>>({});
+const prim = new Field<string | boolean>("hello");
+
+// `Field["forEach"]`
+{
+  // Tuple
+  {
+    const result = tuple.forEach((item, index) => {
+      item satisfies Field<string> | Field<boolean> | Field<symbol>;
+      // @ts-expect-error
+      item satisfies
+        | Field<string, "detachable">
+        | Field<boolean, "detachable">
+        | Field<symbol, "detachable">;
+      // @ts-expect-error
+      item.any;
+
+      index satisfies 0 | 1 | 2;
+      // @ts-expect-error
+      index.any;
+
+      if (index === 1) {
+        item.value satisfies boolean;
+        // @ts-expect-error
+        item.value satisfies string;
+      }
+    });
+    result satisfies void;
+
+    tuple.forEach((item) => {
+      item satisfies Field<string> | Field<boolean> | Field<symbol>;
+      // @ts-expect-error
+      item satisfies
+        | Field<string, "detachable">
+        | Field<boolean, "detachable">
+        | Field<symbol, "detachable">;
+      // @ts-expect-error
+      item.any;
+    });
+    tuple.forEach(() => {});
+  }
+
+  // Array
+  {
+    const result = arr.forEach((item, index) => {
+      item satisfies Field<string | boolean, "detachable">;
+      // @ts-expect-error
+      item.any;
+
+      index satisfies number;
+      // @ts-expect-error
+      index.any;
+    });
+    result satisfies void;
+    arr.forEach((item) => {
+      item satisfies Field<string | boolean, "detachable">;
+      // @ts-expect-error
+      item.any;
+    });
+    arr.forEach(() => {});
+  }
+
+  // Object
+  {
+    // Regular
+    {
+      const result = obj.forEach((item, key) => {
+        item satisfies Field<string> | Field<boolean>;
+        // @ts-expect-error
+        item.any;
+
+        key satisfies keyof Hello;
+        // @ts-expect-error
+        key.any;
+
+        if (key === "hello") {
+          item.value satisfies string;
+          // @ts-expect-error
+          item.value satisfies number;
+        } else {
+          item.value satisfies boolean;
+          // @ts-expect-error
+          item.value satisfies string;
+        }
+      });
+      result satisfies void;
+
+      obj.forEach((item) => {
+        item satisfies Field<string> | Field<boolean>;
+        // @ts-expect-error
+        item.any;
+      });
+      obj.forEach(() => {});
+    }
+
+    // Optional
+    {
+      objPart.forEach((item, key) => {
+        item satisfies Field<boolean> | Field<string | undefined, "detachable">;
+        // @ts-expect-error
+        item satisfies
+          | Field<boolean, "detachable">
+          | Field<string | undefined, "detachable">;
+        // @ts-expect-error
+        item.any;
+
+        key satisfies keyof Ok;
+        // @ts-expect-error
+        key.any;
+
+        if (key === "ok") {
+          item.value satisfies boolean;
+          // @ts-expect-error
+          item.value satisfies string | undefined;
+        } else {
+          item.value satisfies string | undefined;
+          // @ts-expect-error
+          item.value satisfies boolean;
+        }
+      });
+      objPart.forEach((item) => {
+        item satisfies Field<boolean> | Field<string | undefined, "detachable">;
+        // @ts-expect-error
+        item satisfies
+          | Field<boolean, "detachable">
+          | Field<string | undefined, "detachable">;
+        // @ts-expect-error
+        item.any;
+      });
+      objPart.forEach(() => {});
+    }
+  }
+}
+
+//#endregion Collection
+
+//#endregion Type
+
 //#region Helpers
 
 function tyst<Type>(_arg: Type): void {}
 
 interface Hello {
   hello: string;
+  world: boolean;
+}
+
+interface Ok {
+  ok: boolean;
+  message?: string;
 }
 
 interface Entity {
