@@ -5,10 +5,10 @@ export declare class AtomRefGhost<
     Type extends Atom.Type,
     Value,
     Qualifier extends AtomRef.Qualifier = never,
-    ParentValue = unknown,
+    Parent extends Atom.Parent.Constraint<Value> = never,
   >
-  extends AtomRef<Type | "ref-ghost", Value, Qualifier, ParentValue>
-  implements AtomRefGhost.Interface<Type, Value, Qualifier, ParentValue> {}
+  extends AtomRef<Type | "ref-ghost", Value, Qualifier, Parent>
+  implements AtomRefGhost.Interface<Type, Value, Qualifier, Parent> {}
 
 export namespace AtomRefGhost {
   //#region Interface
@@ -17,13 +17,8 @@ export namespace AtomRefGhost {
     Type extends Atom.Type,
     Value,
     Qualifier extends AtomRef.Qualifier = never,
-    ParentValue = unknown,
-  > extends AtomRef.Interface<
-      Type | "ref-ghost",
-      Value,
-      Qualifier,
-      ParentValue
-    > {}
+    Parent extends Atom.Parent.Constraint<Value> = never,
+  > extends AtomRef.Interface<Type | "ref-ghost", Value, Qualifier, Parent> {}
 
   //#endregion Interface
 }

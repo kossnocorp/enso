@@ -6,8 +6,8 @@ export declare class AtomRef<
   Type extends AtomRef.Type,
   Value,
   Qualifier extends AtomRef.Qualifier = never,
-  ParentValue = unknown,
-> implements AtomRef.Interface<Type, Value, Qualifier, ParentValue>
+  Parent extends Atom.Parent.Constraint<Value> = never,
+> implements AtomRef.Interface<Type, Value, Qualifier, Parent>
 {
   //#region Value
 
@@ -43,25 +43,23 @@ export namespace AtomRef {
     Type extends AtomRef.Type,
     Value,
     Qualifier extends AtomRef.Qualifier = never,
-    ParentValue = unknown,
+    Parent extends Atom.Parent.Constraint<Value> = never,
   > =
     Extract<Type, Atom.Shell> extends "field"
-      ? FieldRef.Envelop<Type, Value, Qualifier, ParentValue>
+      ? FieldRef.Envelop<Type, Value, Qualifier, Parent>
       : ExtractShell<Type>;
 
   export type Every<
     Type extends AtomRef.Type,
     Value,
     Qualifier extends AtomRef.Qualifier = never,
-    ParentValue = unknown,
+    Parent extends Atom.Parent.Constraint<Value> = never,
   > =
     // Handle boolean separately, so it doesn't produce `Ref<..., true> | Ref<..., false>`
-    | (boolean extends Value
-        ? Envelop<Type, Value, Qualifier, ParentValue>
-        : never)
+    | (boolean extends Value ? Envelop<Type, Value, Qualifier, Parent> : never)
     | (Exclude<Value, boolean> extends infer Value
         ? Value extends Value
-          ? Envelop<Type, Value, Qualifier, ParentValue>
+          ? Envelop<Type, Value, Qualifier, Parent>
           : never
         : never);
 
@@ -127,7 +125,7 @@ export namespace AtomRef {
     Type extends AtomRef.Type,
     Value,
     Qualifier extends AtomRef.Qualifier = never,
-    ParentValue = unknown,
+    Parent extends Atom.Parent.Constraint<Value> = never,
   > {
     //#region Value
 

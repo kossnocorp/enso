@@ -8,7 +8,7 @@ const hintSymbol = Symbol();
 export class State<
     Value,
     Qualifier extends Atom.Qualifier = never,
-    Parent extends Atom.Parent.Constraint<"state", Value> = unknown,
+    Parent extends Atom.Parent.Constraint<Value> = never,
   >
   extends Atom<"state", Value, Qualifier, Parent>
   implements
@@ -23,8 +23,11 @@ export class State<
   static create<
     Value,
     Qualifier extends Atom.Qualifier = never,
-    Parent extends Atom.Parent.Constraint<"state", Value> = undefined,
-  >(value: Value, parent?: Parent): State<Value, Qualifier, Parent> {
+    Parent extends Atom.Parent.Constraint<Value> = never,
+  >(
+    value: Value,
+    parent?: Atom.Parent.Def<"state", Parent>,
+  ): State<Value, Qualifier, Parent> {
     return void 0 as any;
   }
 
@@ -55,7 +58,7 @@ export namespace State {
     Type extends Atom.Type,
     Value,
     Qualifier extends Atom.Qualifier = never,
-    Parent extends Atom.Parent.Constraint<Type, Value> = unknown,
+    Parent extends Atom.Parent.Constraint<Value> = never,
   > = "immutable" extends Type
     ? Immutable<Value, Qualifier, Parent>
     : "common" extends Type
@@ -67,21 +70,21 @@ export namespace State {
   export interface Invariant<
     Value,
     Qualifier extends Atom.Qualifier = never,
-    Parent extends Atom.Parent.Constraint<"state", Value> = unknown,
+    Parent extends Atom.Parent.Constraint<Value> = never,
   > extends Hint,
       Atom.Invariant<"state" | "invariant", Value, Qualifier, Parent> {}
 
   export interface Common<
     Value,
     Qualifier extends Atom.Qualifier = never,
-    Parent extends Atom.Parent.Constraint<"state", Value> = unknown,
+    Parent extends Atom.Parent.Constraint<Value> = never,
   > extends Hint,
       Atom.Common<"state" | "common", Value, Qualifier, Parent> {}
 
   export interface Immutable<
     Value,
     Qualifier extends Atom.Qualifier = never,
-    Parent extends Atom.Parent.Constraint<"state", Value> = unknown,
+    Parent extends Atom.Parent.Constraint<Value> = never,
   > extends Hint,
       Atom.Immutable<"state" | "immutable", Value, Qualifier, Parent> {}
 
@@ -89,8 +92,7 @@ export namespace State {
     [hintSymbol]: true;
   }
 
-  export type Parent<Value, Key extends keyof Value> = Atom.Parent<
-    "state",
+  export type Parent<Value, Key extends keyof Value> = Atom.Parent.Interface<
     Value,
     Key
   >;

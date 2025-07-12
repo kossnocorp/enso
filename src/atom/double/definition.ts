@@ -4,7 +4,7 @@ export declare class AtomDouble<
   Type extends Atom.Type,
   Value,
   Qualifier extends Atom.Qualifier = never,
-  Parent extends Atom.Parent.Constraint<Type, Value> = unknown,
+  Parent extends Atom.Parent.Constraint<Value> = never,
 > implements AtomDouble.Interface<Type, Value, Qualifier, Parent> {}
 
 export namespace AtomDouble {
@@ -14,7 +14,7 @@ export namespace AtomDouble {
     Type extends Atom.Type,
     Value,
     Qualifier extends Atom.Qualifier = never,
-    Parent extends Atom.Parent.Constraint<Type, Value> = unknown,
+    Parent extends Atom.Parent.Constraint<Value> = never,
   > {}
 
   //#endregion Interface
