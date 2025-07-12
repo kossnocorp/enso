@@ -48,9 +48,9 @@ export namespace FieldRef {
   export interface Interface<
     Value,
     Qualifier extends AtomRef.Qualifier = never,
-    Parent extends Atom.Parent.Constraint<"field", Value> = unknown,
+    ParentValue = unknown,
   > extends Hint,
-      AtomRef.Interface<"field" | "ref", Value, Qualifier, Parent> {}
+      AtomRef.Interface<"field" | "ref", Value, Qualifier, ParentValue> {}
 
   export interface Hint {
     [refHintSymbol]: true;
