@@ -1,3 +1,5 @@
+"use client";
+
 import { Atom } from "../atom/index.js";
 
 export class Field extends Atom {

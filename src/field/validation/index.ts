@@ -1,5 +1,5 @@
 import { ValidationTree } from "../../validation/index.ts";
-import type { Field } from "../definition.tsx";
+import type { Field } from "../definition.ts";
 import type { FieldRef } from "../ref/definition.ts";
 
 //#region validateField

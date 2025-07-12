@@ -3,7 +3,7 @@
 import { describe, expect, it, vi } from "vitest";
 import { change } from "../../change/index.ts";
 import { Field } from "../index.js";
-import { FieldOld } from "../definition.tsx";
+import { FieldOld } from "../old.tsx";
 import {
   FieldRef,
   FieldRefOld,

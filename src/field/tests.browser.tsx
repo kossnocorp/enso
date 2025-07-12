@@ -4,7 +4,7 @@ import { describe, expect, it, vi } from "vitest";
 import { render } from "vitest-browser-react";
 import "../../tests/browser.js";
 import { change } from "../change/index.ts";
-import { FieldOld, useFieldDiscriminate } from "./definition.tsx";
+import { FieldOld, useFieldDiscriminate } from "./old.tsx";
 import { postpone } from "../../tests/utils.ts";
 import { fieldDecompose, useFieldDecompose } from "./transform/index.ts";
 import { fieldMap, fieldPush, fieldRemove } from "./collection/index.ts";

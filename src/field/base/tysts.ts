@@ -2,7 +2,7 @@
 
 import { ChangesEvent, fieldChange } from "../../change/index.ts";
 import { type EventsTree } from "../../events/index.ts";
-import { FieldOld } from "../definition.tsx";
+import { FieldOld } from "../old.tsx";
 import type { BaseField } from "./index.ts";
 
 // It accepts any payload extensions

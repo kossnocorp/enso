@@ -1,7 +1,7 @@
 import { nanoid } from "nanoid";
 import { describe, expect, it, vi } from "vitest";
-import { FieldOld } from "../field/definition.tsx";
-import { Form } from "./index.tsx";
+import { FieldOld } from "../field/old.tsx";
+import { Form } from "./old.tsx";
 
 describe.skip("Form", () => {
   it("creates a form instance", () => {

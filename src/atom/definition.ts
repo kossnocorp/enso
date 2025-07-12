@@ -1,12 +1,12 @@
-import { DependencyList, useEffect } from "react";
+import { DependencyList } from "react";
 import { ChangesEvent, FieldChange } from "../change/index.ts";
 import { DetachedValue } from "../detached/index.ts";
-import { Field } from "../field/definition.tsx";
+import { EventsTree } from "../events/index.ts";
+import { Field } from "../field/definition.ts";
+import { Static } from "../field/util.ts";
 import { State } from "../state/index.ts";
 import { Enso } from "../types.ts";
 import type { EnsoUtils as Utils } from "../utils.ts";
-import { Static } from "../field/util.ts";
-import { EventsTree } from "../events/index.ts";
 
 export declare class Atom<
     Type extends Atom.Type,

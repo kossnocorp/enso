@@ -1,7 +1,7 @@
 import { act, cleanup, render, screen } from "@testing-library/react";
 import React from "react";
 import { afterEach, assert, describe, expect, it, vi } from "vitest";
-import { FieldOld } from "../definition.tsx";
+import { FieldOld } from "../old.tsx";
 import { fieldDecompose, useFieldDecompose } from "./index.ts";
 
 describe(fieldDecompose, () => {

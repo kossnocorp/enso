@@ -1,7 +1,7 @@
 import { DetachedValue } from "../../detached/index.ts";
 import { Enso } from "../../types.ts";
 import { EnsoUtils as Utils } from "../../utils.ts";
-import { FieldOld } from "../definition.tsx";
+import { FieldOld } from "../old.tsx";
 import { FieldRefOld, MaybeFieldRefOld } from "../ref/definition.ts";
 import {
   fieldEach,

@@ -1,5 +1,5 @@
 import { State } from "../state/index.ts";
-import { Field } from "./definition.tsx";
+import { Field } from "./index.js";
 
 // Variance
 {

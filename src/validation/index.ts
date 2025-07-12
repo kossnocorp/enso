@@ -1,4 +1,4 @@
-import type { FieldOld } from "../field/definition.tsx";
+import type { FieldOld } from "../field/old.tsx";
 import { Enso } from "../types.ts";
 
 export class ValidationTree {
