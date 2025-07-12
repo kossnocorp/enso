@@ -35,7 +35,7 @@ import type { EnsoUtils as Utils } from "../utils.ts";
 import { ValidationTree } from "../validation/index.ts";
 import { AsCollection } from "./collection/index.ts";
 import { FieldRefOld } from "./ref/definition.ts";
-import { FieldRef } from "./ref/index.js";
+import type { FieldRef } from "./ref/definition.ts";
 import { Static, staticImplements } from "./util.ts";
 
 export * from "./collection/index.ts";
@@ -106,27 +106,6 @@ export declare class Field<
   [hintSymbol]: true;
 
   //#endregion Instance
-
-  //#region Validation
-
-  get validationTree(): ValidationTree;
-
-  /**
-   * Validates the field using the provided validator function.
-   * It clears all the previous errors and withholds any changes until
-   * the validation is resolved.
-   */
-  validate<Context>(
-    validator: Field.Validator<Value, Context>,
-    context: Context,
-  ): Promise<void>;
-
-  validate(
-    validator: Field.Validator<Value, undefined>,
-    context?: undefined,
-  ): Promise<void>;
-
-  //#endregion Validation
 }
 
 export namespace Field {
@@ -169,24 +148,7 @@ export namespace Field {
       Atom.Immutable<"field" | "immutable", Value, Qualifier, Parent>,
       ImmutableBase<Value> {}
 
-  export interface ImmutableBase<Value> {
-    get validationTree(): ValidationTree;
-
-    /**
-     * Validates the field using the provided validator function.
-     * It clears all the previous errors and withholds any changes until
-     * the validation is resolved.
-     */
-    validate<Context>(
-      validator: Field.Validator<Value, Context>,
-      context: Context,
-    ): Promise<void>;
-
-    validate(
-      validator: Field.Validator<Value, undefined>,
-      context?: undefined,
-    ): Promise<void>;
-  }
+  export interface ImmutableBase<Value> {}
 
   export interface Hint {
     [hintSymbol]: true;
@@ -227,14 +189,6 @@ export namespace Field {
   }
 
   //#endregion
-
-  //#region Validation
-
-  export type Validator<Value, Context = undefined> = undefined extends Context
-    ? (payload: FieldRef<Value>) => Promise<void> | void
-    : (payload: FieldRef<Value>, context: Context) => Promise<void> | void;
-
-  //#endregion Validation
 }
 
 // vvvvvvvvvvvvvvvvvvv  PENDING  vvvvvvvvvvvvvvvvvvv

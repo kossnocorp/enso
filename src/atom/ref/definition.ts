@@ -17,7 +17,7 @@ export declare class AtomRef<
 
   //#region Type
 
-  // forEach: Ref.ForEachProp<Type, Value>;
+  forEach: AtomRef.ForEachProp<Type, Value>;
 
   //#endregion Type
 }
@@ -107,13 +107,7 @@ export namespace AtomRef {
       Child.Qualifier<ParentValue, Key>
     >;
 
-    export type Type<Type extends AtomRef.Type> =
-      | Extract<Type, Type>
-      | (ExtractVariant<Type> extends infer Variant extends AtomRef.Variant
-          ? Variant extends "common"
-            ? "invariant"
-            : Variant
-          : never);
+    export type Type<Type extends AtomRef.Type> = Type;
 
     export type Value<Value, Key extends keyof Value> =
       | Value[Key]
@@ -143,7 +137,7 @@ export namespace AtomRef {
 
     //#region Type
 
-    // forEach: ForEachProp<Type, Value>;
+    forEach: AtomRef.ForEachProp<Type, Value>;
 
     //#endregion Type
   }
@@ -156,6 +150,7 @@ export namespace AtomRef {
 
   export namespace Collection {
     //#region Collection.Callback
+
     export namespace Callback {
       // Tuple
 
@@ -165,21 +160,40 @@ export namespace AtomRef {
       // the correct overload for when the callback accepts a single argument
       // (i.e. just the item field).
 
-      export type TuplePair<
+      export interface TuplePair<
         Type extends AtomRef.Type,
         Value extends Utils.Tuple,
         Result = void,
-      > = (
-        ...args: {
-          [Key in Utils.IndexOfTuple<Value>]: [Child<Type, Value, Key>, Key];
-        }[Utils.IndexOfTuple<Value>]
-      ) => Result;
+      > {
+        (
+          ...args: {
+            [Key in Utils.IndexOfTuple<Value>]: [
+              Envelop<Child.Type<Type>, Value[Key]>,
+              Key,
+            ];
+          }[Utils.IndexOfTuple<Value>]
+        ): Result;
+      }
 
-      export type TupleSingle<
+      export interface TupleSingle<
         Type extends AtomRef.Type,
         Value extends Utils.Tuple,
         Result = void,
-      > = (item: Child.Every<Type, Value, Utils.IndexOfTuple<Value>>) => Result;
+      > {
+        (
+          item: {
+            [Key in keyof Value]: Envelop<Type, Value[Key]>;
+          }[Utils.IndexOfTuple<Value>],
+          index?: Utils.IndexOfTuple<Value>,
+        ): Result;
+      }
+
+      export type TupleSingleItem<
+        Type extends AtomRef.Type,
+        Value extends Utils.Tuple,
+      > = {
+        [Key in Utils.IndexOfTuple<Value>]: Envelop<Type, Value[Key]>;
+      }[Utils.IndexOfTuple<Value>];
 
       // Array
 
@@ -188,8 +202,17 @@ export namespace AtomRef {
         Value extends unknown[],
         Result = void,
       > {
-        (item: Child<Type, Value, number>, index: number): Result;
+        (item: ArrayItem<Type, Value>, index: number): Result;
       }
+
+      export type ArrayItem<
+        Type extends AtomRef.Type,
+        Value extends unknown[],
+      > = Envelop<
+        Child.Type<Type>,
+        Value[number],
+        Child.Qualifier<Value, number>
+      >;
 
       // Object
 
@@ -199,33 +222,43 @@ export namespace AtomRef {
       // the correct overload for when the callback accepts a single argument
       // (i.e. just the item field).
 
-      export type ObjectPair<
+      export interface ObjectPair<
         Type extends AtomRef.Type,
         Value extends object,
         Result = void,
-      > = (
-        // Exclude is needed to remove undefined that appears when there're
-        // optional fields in the object.
-        ...args: Exclude<
-          { [Key in keyof Value]: [Child<Type, Value, Key>, Key] }[keyof Value],
-          undefined
-        >
-      ) => Result;
+      > {
+        (
+          // Exclude is needed to remove undefined that appears when there're
+          // optional fields in the object.
+          ...args: Exclude<
+            {
+              [Key in Utils.CovariantifyKeyof<Value>]: [
+                Child<Type, Value, Key>,
+                Key,
+              ];
+            }[Utils.CovariantifyKeyof<Value>],
+            undefined
+          >
+        ): Result;
+      }
 
-      export type ObjectSingle<
+      export interface ObjectSingle<
         Type extends AtomRef.Type,
         Value extends object,
         Result = void,
-      > = (
-        // Exclude is needed to remove undefined that appears when there're
-        // optional fields in the object.
-        item: Exclude<
-          { [Key in keyof Value]: Child<Type, Value, Key> }[keyof Value],
-          undefined
-        >,
-      ) => Result;
+      > {
+        (
+          // Exclude is needed to remove undefined that appears when there're
+          // optional fields in the object.
+          item: Exclude<
+            { [Key in keyof Value]: Child<Type, Value, Key> }[keyof Value],
+            undefined
+          >,
+        ): Result;
+      }
     }
-    //#endregion
+
+    //#endregion Collection.Callback
   }
 
   //#region ForEach
@@ -267,7 +300,7 @@ export namespace AtomRef {
     (callback: Collection.Callback.ObjectSingle<Type, Value>): void;
   }
 
-  //#endregion
+  //#endregion ForEach
 
   //#endregion Collection
 
