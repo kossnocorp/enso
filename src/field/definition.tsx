@@ -35,7 +35,6 @@ import type { EnsoUtils as Utils } from "../utils.ts";
 import { ValidationTree } from "../validation/index.ts";
 import { AsCollection } from "./collection/index.ts";
 import { FieldRefOld } from "./ref/definition.ts";
-import type { FieldRef } from "./ref/definition.ts";
 import { Static, staticImplements } from "./util.ts";
 
 export * from "./collection/index.ts";
@@ -55,7 +54,7 @@ const externalSymbol = Symbol();
 export declare class Field<
     Value,
     Qualifier extends Atom.Qualifier = never,
-    Parent extends Atom.Parent.Constraint<"field", Value> = unknown,
+    Parent extends Atom.Parent.Constraint<Value> = never,
   >
   extends Atom<"field", Value, Qualifier, Parent>
   implements
@@ -71,8 +70,11 @@ export declare class Field<
   static create<
     Value,
     Qualifier extends Atom.Qualifier = never,
-    Parent extends Atom.Parent.Constraint<"field", Value> = undefined,
-  >(value: Value, parent?: Parent): Field<Value, Qualifier, Parent>;
+    Parent extends Atom.Parent.Constraint<Value> = never,
+  >(
+    value: Value,
+    parent?: Atom.Parent.Def<"field", Parent>,
+  ): Field<Value, Qualifier, Parent>;
 
   static common<Envelop extends Field.Common<any>>(
     atom: Envelop,
@@ -113,7 +115,7 @@ export namespace Field {
     Type extends Atom.Type,
     Value,
     Qualifier extends Atom.Qualifier = never,
-    Parent extends Atom.Parent.Constraint<Type, Value> = unknown,
+    Parent extends Atom.Parent.Constraint<Value> = never,
   > = "immutable" extends Type
     ? Immutable<Value, Qualifier, Parent>
     : "common" extends Type
@@ -127,7 +129,7 @@ export namespace Field {
   export interface Invariant<
     Value,
     Qualifier extends Atom.Qualifier = never,
-    Parent extends Atom.Parent.Constraint<"field", Value> = unknown,
+    Parent extends Atom.Parent.Constraint<Value> = never,
   > extends Hint,
       Atom.Invariant<"field" | "invariant", Value, Qualifier, Parent>,
       ImmutableBase<Value> {}
@@ -135,7 +137,7 @@ export namespace Field {
   export interface Common<
     Value,
     Qualifier extends Atom.Qualifier = never,
-    Parent extends Atom.Parent.Constraint<"field", Value> = unknown,
+    Parent extends Atom.Parent.Constraint<Value> = never,
   > extends Hint,
       Atom.Common<"field" | "common", Value, Qualifier, Parent>,
       ImmutableBase<Value> {}
@@ -143,7 +145,7 @@ export namespace Field {
   export interface Immutable<
     Value,
     Qualifier extends Atom.Qualifier = never,
-    Parent extends Atom.Parent.Constraint<"field", Value> = unknown,
+    Parent extends Atom.Parent.Constraint<Value> = never,
   > extends Hint,
       Atom.Immutable<"field" | "immutable", Value, Qualifier, Parent>,
       ImmutableBase<Value> {}
@@ -156,11 +158,10 @@ export namespace Field {
 
   //#endregion
 
-  export type Parent<Value, Key extends keyof Value> = Atom.Parent<
-    "field",
-    Value,
-    Key
-  >;
+  export type Parent<
+    ParentValue,
+    Key extends keyof ParentValue,
+  > = Atom.Parent.Interface<ParentValue, Key>;
 
   //#region Value
 
