@@ -1,6 +1,6 @@
 // @ts-nocheck
 
-import { Field } from "../../definition.tsx";
+import { Field } from "../../definition.ts";
 import { FieldRefGhost } from "./definition.ts";
 
 //#region Type

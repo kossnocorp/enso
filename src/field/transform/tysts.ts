@@ -1,4 +1,4 @@
-import { FieldOld } from "../definition.tsx";
+import { FieldOld } from "../old.tsx";
 import { fieldDecompose, useFieldDecompose } from "./index.ts";
 
 const unionValue = new FieldOld<Hello | Blah>({ hello: "world" });

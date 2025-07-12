@@ -1,4 +1,4 @@
-import { FieldOld } from "../definition.tsx";
+import { FieldOld } from "../old.tsx";
 import { FieldRefOld, MaybeFieldRefOld } from "../ref/definition.ts";
 import { fieldDiscriminate } from "./index.ts";
 

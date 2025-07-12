@@ -1,4 +1,4 @@
-import { Field } from "../definition.tsx";
+import { Field } from "../definition.ts";
 import { FieldRef } from "./definition.ts";
 
 //#region Type

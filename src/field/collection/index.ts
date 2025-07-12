@@ -1,5 +1,5 @@
 import { EnsoUtils as Utils } from "../../utils.ts";
-import { FieldOld } from "../definition.tsx";
+import { FieldOld } from "../old.tsx";
 import type { StaticImplements } from "../util.ts";
 
 // NOTE: Following interfaces roughly define shape of classes that expose

@@ -1,18 +1,12 @@
-import {
-  DependencyList,
-  useCallback as reactUseCallback,
-  useMemo as reactUseMemo,
-  useEffect,
-  useRef,
-} from "react";
-import { useRerender } from "../../hooks/rerender.ts";
-import { Enso } from "../../types.ts";
-import { FieldOld } from "../../field/definition.tsx";
+import { useEffect, useRef } from "react";
+import { FieldOld } from "../../field/old.tsx";
 import {
   type TypedHook,
   useTypedCallback,
   useTypedMemo,
 } from "../../hooks/index.ts";
+import { useRerender } from "../../hooks/rerender.ts";
+import { Enso } from "../../types.ts";
 
 export function useAtomHook<Payload, Value, Result = Value>(
   props: UseFieldHook.Props<Payload, Value, Result>,

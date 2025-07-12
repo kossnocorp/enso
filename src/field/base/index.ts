@@ -1,6 +1,6 @@
 import type { Enso } from "../../types.ts";
 import { EnsoUtils as Utils } from "../../utils.ts";
-import type { FieldOld } from "../definition.tsx";
+import type { FieldOld } from "../old.tsx";
 
 export interface BaseField<Payload>
   extends Enso.InterfaceAttributes<BaseField.Def<Payload>>,
