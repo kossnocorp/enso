@@ -36,9 +36,9 @@ export namespace FieldRef {
     Qualifier extends AtomRef.Qualifier = never,
     ParentValue = unknown,
   > = Type extends "ref"
-    ? FieldRef<Utils.NonNullish<Value>, Qualifier, ParentValue>
+    ? FieldRef<Value, Qualifier, ParentValue>
     : Type extends "ref-ghost"
-      ? FieldRefGhost<Utils.NonNullish<Value>, Qualifier, ParentValue>
+      ? FieldRefGhost<Value, Qualifier, ParentValue>
       : never;
 
   //#endregion Shell

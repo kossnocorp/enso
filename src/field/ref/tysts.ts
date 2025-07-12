@@ -1,5 +1,3 @@
-// @ts-nocheck
-
 import { Field } from "../definition.tsx";
 import { FieldRef } from "./definition.ts";
 
@@ -94,10 +92,7 @@ const prim = new Field<string | boolean>("hello");
   {
     // Regular
     {
-      const ref = new FieldRef({
-        type: "direct",
-        field: ref,
-      });
+      const ref = new FieldRef(obj);
       ref.forEach((item, key) => {
         item satisfies FieldRef<string> | FieldRef<boolean>;
         // @ts-expect-error
@@ -125,10 +120,7 @@ const prim = new Field<string | boolean>("hello");
 
     // Optional
     {
-      const ref = new FieldRef({
-        type: "direct",
-        field: objPart,
-      });
+      const ref = new FieldRef(objPart);
       ref.forEach((item, key) => {
         item satisfies FieldRef<boolean> | FieldRef<string | undefined>;
         // @ts-expect-error
