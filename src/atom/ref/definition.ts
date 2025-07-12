@@ -1,6 +1,6 @@
 import { EnsoUtils as Utils } from "../../utils.ts";
 import type { Atom } from "../index.js";
-import type { FieldRef } from "../../field/ref/index.js";
+import type { FieldRef } from "../../field/ref/definition.ts";
 
 export declare class AtomRef<
   Type extends AtomRef.Type,
@@ -45,9 +45,9 @@ export namespace AtomRef {
     Qualifier extends AtomRef.Qualifier = never,
     ParentValue = unknown,
   > =
-    ExtractShell<Type> extends "field"
-      ? FieldRef.Envelop<Type, Utils.NonNullish<Value>, Qualifier, ParentValue>
-      : never;
+    Extract<Type, Atom.Shell> extends "field"
+      ? FieldRef.Envelop<Type, Value, Qualifier, ParentValue>
+      : ExtractShell<Type>;
 
   export type Every<
     Type extends AtomRef.Type,
