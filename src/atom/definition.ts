@@ -117,6 +117,14 @@ export declare class Atom<
   trigger(changes: FieldChange, notifyParents?: boolean): void;
 
   //#endregion Events
+
+  //#region Transform
+
+  decompose: Atom.Decompose.Prop<Type, Value, Qualifier, Parent>;
+
+  useDecompose: Atom.Decompose.Use.Prop<Type, Value, Qualifier, Parent>;
+
+  //#endregion Transform
 }
 
 export namespace Atom {
@@ -559,6 +567,14 @@ export namespace Atom {
     trigger(changes: FieldChange, notifyParents?: boolean): void;
 
     //#endregion
+
+    //#region Transform
+
+    decompose: Decompose.Prop<Type, Value, Qualifier, Parent>;
+
+    useDecompose: Decompose.Use.Prop<Type, Value, Qualifier, Parent>;
+
+    //#endregion Transform
   }
 
   export namespace Immutable {
@@ -1230,6 +1246,65 @@ export namespace Atom {
   export type Unwatch = () => void;
 
   //#endregion
+
+  //#region Transform
+
+  //#region Decompose
+
+  export namespace Decompose {
+    export interface Prop<
+      Type extends Atom.Type,
+      Value,
+      Qualifier extends Atom.Qualifier = never,
+      Parent extends Atom.Parent.Constraint<Value> = never,
+    > {
+      (): Result<Type, Value, Qualifier, Parent>;
+    }
+
+    export type Result<
+      Type extends Atom.Type,
+      Value,
+      Qualifier extends Atom.Qualifier = never,
+      Parent extends Atom.Parent.Constraint<Value> = never,
+    > =
+      | (Value extends Value
+          ? {
+              value: Value;
+              field: Envelop<Type, Value, Qualifier, Parent>;
+            }
+          : never)
+      | (Type extends (infer Shell extends Atom.Shell) | infer Variant
+          ? Variant extends "common" | "immutable"
+            ? {
+                value: unknown;
+                field: Envelop<Shell | Type, unknown, Qualifier, Parent>;
+              }
+            : never
+          : never);
+
+    export namespace Use {
+      export interface Prop<
+        Type extends Atom.Type,
+        Value,
+        Qualifier extends Atom.Qualifier = never,
+        Parent extends Atom.Parent.Constraint<Value> = never,
+      > {
+        (
+          callback: Callback<Value>,
+          deps: DependencyList,
+        ): Result<Type, Value, Qualifier, Parent>;
+      }
+
+      export type Callback<Value> = (
+        newValue: Value,
+        prevValue: Value,
+      ) => boolean;
+    }
+  }
+
+  //#endregion
+
+  //#endregion Transform
 }
 
 namespace AtomPrivate {

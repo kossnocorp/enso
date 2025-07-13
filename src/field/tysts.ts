@@ -1487,6 +1487,189 @@ const prim = new Field<string | boolean>("hello");
 
 //#endregion Type
 
+//#region Transform
+
+const unionValue = new Field<Hello | Blah>({ hello: "world", world: true });
+const unionField = new Field({ hello: "world", world: true }) as
+  | Field<Hello>
+  | Field<Blah>;
+
+// `Field["decompose"]`
+{
+  // Value union
+  {
+    const decomposed = unionValue.decompose();
+    decomposed satisfies
+      | {
+          value: Hello;
+          field: Field<Hello>;
+        }
+      | {
+          value: Blah;
+          field: Field<Blah>;
+        };
+    // @ts-expect-error
+    decomposed.any;
+
+    const _manual: Field.Decomposed<Hello | Blah> = decomposed;
+    // @ts-expect-error
+    const _manualWrong: Field.Decomposed<Hello> = decomposed;
+  }
+
+  // Field union
+  {
+    const decomposed = unionField.decompose();
+    decomposed satisfies
+      | {
+          value: Hello;
+          field: Field<Hello>;
+        }
+      | {
+          value: Blah;
+          field: Field<Blah>;
+        };
+    // @ts-expect-error
+    decomposed.any;
+
+    const _manual: Field.Decomposed<Hello | Blah> = decomposed;
+    // @ts-expect-error
+    const _manualWrong: Field.Decomposed<Hello> = decomposed;
+  }
+
+  // Detachable
+  {
+    const decomposed = (
+      unionValue as Field<Hello | Blah, "detachable">
+    ).decompose();
+    decomposed satisfies
+      | {
+          value: Hello;
+          field: Field<Hello, "detachable">;
+        }
+      | {
+          value: Blah;
+          field: Field<Blah, "detachable">;
+        };
+    // @ts-expect-error
+    decomposed.any;
+
+    const _manual: Field.Decomposed<Hello | Blah, "detachable"> = decomposed;
+    // @ts-expect-error
+    const _manualWrong1: Field.Decomposed<Hello> = decomposed;
+    // @ts-expect-error
+    const _manualWrong2: Field.Decomposed<Hello | Blah, "bound"> = decomposed;
+    // @ts-expect-error
+    const _manualWrong3: Field.Decomposed<
+      Hello | Blah,
+      "detachable" | "bound"
+    > = decomposed;
+  }
+}
+
+// `Field["useDecompose"]`
+{
+  // Value union
+  {
+    const decomposed = unionValue.useDecompose((newValue, prevValue) => {
+      newValue satisfies Hello | Blah;
+      // @ts-expect-error
+      newValue.any;
+
+      prevValue satisfies Hello | Blah;
+      // @ts-expect-error
+      prevValue.any;
+
+      return true;
+    }, []);
+    decomposed satisfies
+      | {
+          value: Hello;
+          field: Field<Hello>;
+        }
+      | {
+          value: Blah;
+          field: Field<Blah>;
+        };
+    // @ts-expect-error
+    decomposed.any;
+
+    const _manual: Field.Decomposed<Hello | Blah> = decomposed;
+    // @ts-expect-error
+    const _manualWrong: Field.Decomposed<Hello> = decomposed;
+  }
+
+  // Field union
+  {
+    const decomposed = unionField.useDecompose((newValue, prevValue) => {
+      newValue satisfies Hello | Blah;
+      // @ts-expect-error
+      newValue.any;
+
+      prevValue satisfies Hello | Blah;
+      // @ts-expect-error
+      prevValue.any;
+
+      return true;
+    }, []);
+    decomposed satisfies
+      | {
+          value: Hello;
+          field: Field<Hello>;
+        }
+      | {
+          value: Blah;
+          field: Field<Blah>;
+        };
+    // @ts-expect-error
+    decomposed.any;
+
+    const _manual: Field.Decomposed<Hello | Blah> = decomposed;
+    // @ts-expect-error
+    const _manualWrong: Field.Decomposed<Hello> = decomposed;
+  }
+
+  // Detachable
+  {
+    const decomposed = (
+      unionValue as Field<Hello | Blah, "detachable">
+    ).useDecompose((newValue, prevValue) => {
+      newValue satisfies Hello | Blah;
+      // @ts-expect-error
+      newValue.any;
+
+      prevValue satisfies Hello | Blah;
+      // @ts-expect-error
+      prevValue.any;
+
+      return true;
+    }, []);
+    decomposed satisfies
+      | {
+          value: Hello;
+          field: Field<Hello, "detachable">;
+        }
+      | {
+          value: Blah;
+          field: Field<Blah, "detachable">;
+        };
+    // @ts-expect-error
+    decomposed.any;
+
+    const _manual: Field.Decomposed<Hello | Blah, "detachable"> = decomposed;
+    // @ts-expect-error
+    const _manualWrong1: Field.Decomposed<Hello> = decomposed;
+    // @ts-expect-error
+    const _manualWrong2: Field.Decomposed<Hello | Blah, "bound"> = decomposed;
+    // @ts-expect-error
+    const _manualWrong3: Field.Decomposed<
+      Hello | Blah,
+      "detachable" | "bound"
+    > = decomposed;
+  }
+}
+
+//#endregion Transform
+
 //#region Helpers
 
 function tyst<Type>(_arg: Type): void {}
@@ -1499,6 +1682,10 @@ interface Hello {
 interface Ok {
   ok: boolean;
   message?: string;
+}
+
+interface Blah {
+  blah: string;
 }
 
 interface Entity {
