@@ -1036,6 +1036,160 @@ const prim = new Field<string | boolean>("hello");
   }
 }
 
+// `Field["filter"]`
+{
+  // Array
+  {
+    const result = arr.filter((item, index) => {
+      item satisfies Field<string | boolean, "detachable">;
+      index satisfies number;
+      return true;
+    });
+    result satisfies Array<Field<string | boolean, "detachable">>;
+    // @ts-expect-error
+    result.any;
+
+    arr.filter((item) => {
+      item satisfies Field<string | boolean, "detachable">;
+      return true;
+    });
+    arr.filter(() => true);
+    arr.filter((_item) => 0);
+    arr.filter((_item) => "");
+    arr.filter((_item) => null);
+    // @ts-expect-error
+    arr.filter((item) => item.value.toExponential());
+  }
+
+  // Object
+  {
+    // Regular
+    {
+      const result = obj.filter((item, key) => {
+        item satisfies Field<string> | Field<boolean>;
+        // @ts-expect-error
+        item satisfies
+          | Field<string, "detachable">
+          | Field<boolean | "detachable">;
+        // @ts-expect-error
+        item.any;
+        key satisfies keyof Hello;
+        // @ts-expect-error
+        key.any;
+        if (key === "hello") {
+          item.value satisfies string;
+          // @ts-expect-error
+          item.value satisfies number;
+          return item.value.length > 0;
+        } else {
+          item.value satisfies boolean;
+          // @ts-expect-error
+          item.value satisfies string;
+          return item.value === true ? 1 : 0;
+        }
+      });
+      result satisfies Array<Field<string> | Field<boolean>>;
+      // @ts-expect-error
+      result.any;
+
+      obj.filter((item) => {
+        item satisfies Field<string> | Field<boolean>;
+        // @ts-expect-error
+        item.any;
+        return true;
+      });
+      obj.filter(() => true);
+      obj.filter((_item) => 0);
+      obj.filter((_item) => "");
+      obj.filter((_item) => null);
+      // @ts-expect-error
+      obj.filter((item) => item.value.toExponential());
+    }
+
+    // Optional
+    {
+      const result = objPart.filter((item, key) => {
+        item satisfies Field<boolean> | Field<string | undefined, "detachable">;
+        // @ts-expect-error
+        item satisfies
+          | Field<boolean, "detachable">
+          | Field<string | undefined, "detachable">;
+        // @ts-expect-error
+        item.any;
+        key satisfies keyof Ok;
+        // @ts-expect-error
+        key.any;
+        if (key === "ok") {
+          item.value satisfies boolean;
+          // @ts-expect-error
+          item.value satisfies string | undefined;
+          return item.value;
+        } else {
+          item.value satisfies string | undefined;
+          // @ts-expect-error
+          item.value satisfies boolean;
+          return !!item.value;
+        }
+      });
+      result satisfies Array<Field<boolean> | Field<string | undefined>>;
+      // @ts-expect-error
+      result.any;
+
+      objPart.filter((item) => {
+        item satisfies Field<boolean> | Field<string | undefined>;
+        // @ts-expect-error
+        item.any;
+        return true;
+      });
+      objPart.filter(() => true);
+    }
+  }
+
+  // Tuple
+  {
+    // Regular
+    {
+      const result = tuple.filter((item, index) => {
+        item satisfies Field<string> | Field<boolean> | Field<symbol>;
+        // @ts-expect-error
+        item satisfies
+          | Field<string, "detachable">
+          | Field<boolean, "detachable">
+          | Field<symbol, "detachable">;
+        index satisfies 0 | 1 | 2;
+        if (index === 1) {
+          item.value satisfies boolean;
+          // @ts-expect-error
+          item.value.any;
+        }
+        return false;
+      });
+      result satisfies Array<Field<string> | Field<boolean> | Field<symbol>>;
+      // @ts-expect-error
+      result satisfies Array<
+        | Field<string, "detachable">
+        | Field<boolean, "detachable">
+        | Field<symbol, "detachable">
+      >;
+      // @ts-expect-error
+      result satisfies Array<Field<string | boolean | symbol>>;
+      // @ts-expect-error
+      result.any;
+
+      tuple.filter((item) => {
+        item satisfies Field<string> | Field<boolean> | Field<symbol>;
+        return true;
+      });
+      tuple.filter(() => true);
+      tuple.filter((_item) => 0);
+      tuple.filter((_item) => "");
+      tuple.filter((_item) => null);
+      // @ts-expect-error
+      tuple.filter((item) => item.value.toExponential());
+    }
+  }
+}
+
 //#endregion Collection
 
 //#endregion Type
