@@ -76,6 +76,8 @@ export declare class Atom<
 
   forEach: Atom.ForEachProp<Type, Value>;
 
+  filter: Atom.Filter.Prop<Type, Value>;
+
   //#endregion Type
 
   //#region Tree
@@ -536,6 +538,8 @@ export namespace Atom {
 
     forEach: ForEachProp<Type, Value>;
 
+    filter: Filter.Prop<Type, Value>;
+
     //#endregion Type
 
     //#region Watch
@@ -840,7 +844,7 @@ export namespace Atom {
         ): Result;
       }
 
-      export type TupleSingleItem<
+      export type TupleItem<
         Type extends Atom.Type,
         Value extends Utils.Tuple,
       > = {
@@ -908,9 +912,41 @@ export namespace Atom {
           >,
         ): Result;
       }
+
+      export type ObjectItem<
+        Type extends Atom.Type,
+        Value extends object,
+      > = Exclude<
+        { [Key in keyof Value]: Child<Type, Value, Key> }[keyof Value],
+        undefined
+      >;
     }
 
     //#endregion Collection.Callback
+
+    // //#region Collection.Result
+
+    // export namespace Result {
+    //   export type Tuple<
+    //     Type extends Atom.Type,
+    //     Value extends Utils.Tuple,
+    //   > = Every<Value[Utils.IndexOfTuple<Value>]>;
+
+    //   export type Array<
+    //     Type extends Atom.Type,
+    //     Value extends unknown[],
+    //   > = Detachable<Value[number]>;
+
+    //   export type Object<Type extends Atom.Type, Value extends object> =
+    //     // Remove undefined that sneaks in
+    //     Exclude<
+    //       // Use mapped type to preserve Type | undefined for optional fields
+    //       { [Key in keyof Value]: Envelop<Type, Value[Key]> }[keyof Value],
+    //       undefined
+    //     >;
+    // }
+
+    // //#endregion Collection.Result
   }
 
   //#region Remove
@@ -973,6 +1009,48 @@ export namespace Atom {
     (callback: Collection.Callback.ObjectPair<Type, Value>): void;
 
     (callback: Collection.Callback.ObjectSingle<Type, Value>): void;
+  }
+
+  //#endregion ForEach
+
+  //#region Filter
+
+  export namespace Filter {
+    export type Prop<Type extends Atom.Type, Value> = Value extends Utils.Tuple
+      ? Tuple<Type, Value>
+      : Value extends unknown[]
+        ? Array<Type, Value>
+        : Value extends object
+          ? Object<Type, Value>
+          : never;
+
+    export interface Tuple<Type extends Atom.Type, Value extends Utils.Tuple> {
+      (
+        callback: Collection.Callback.TuplePair<Type, Value, unknown>,
+      ): Result<Collection.Callback.TupleItem<Type, Value>>;
+
+      (
+        callback: Collection.Callback.TupleSingle<Type, Value, unknown>,
+      ): Result<Collection.Callback.TupleItem<Type, Value>>;
+    }
+
+    export interface Array<Type extends Atom.Type, Value extends unknown[]> {
+      (
+        callback: Collection.Callback.Array<Type, Value, unknown>,
+      ): Result<Collection.Callback.ArrayItem<Type, Value>>;
+    }
+
+    export interface Object<Type extends Atom.Type, Value extends object> {
+      (
+        callback: Collection.Callback.ObjectPair<Type, Value, unknown>,
+      ): Result<Collection.Callback.ObjectItem<Type, Value>>;
+
+      (
+        callback: Collection.Callback.ObjectSingle<Type, Value, unknown>,
+      ): Result<Collection.Callback.ObjectItem<Type, Value>>;
+    }
+
+    export type Result<Item> = Item[];
   }
 
   //#endregion ForEach
