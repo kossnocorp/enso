@@ -146,4 +146,14 @@ export namespace Field {
   }
 
   //#endregion
+
+  //#region Transform
+
+  export type Decomposed<
+    Value,
+    Qualifier extends Atom.Qualifier = never,
+    Parent extends Atom.Parent.Constraint<Value> = never,
+  > = Atom.Decompose.Result<"field", Value, Qualifier, Parent>;
+
+  //#endregion Transform
 }
