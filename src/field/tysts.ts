@@ -1036,6 +1036,299 @@ const prim = new Field<string | boolean>("hello");
   }
 }
 
+// `Field["map"]`
+{
+  // Array
+  {
+    const result = arr.map((item, index) => {
+      item satisfies Field<string | boolean, "detachable">;
+      // @ts-expect-error
+      item.any;
+
+      index satisfies number;
+      // @ts-expect-error
+      index.any;
+
+      return Number(item.value);
+    });
+    result satisfies number[];
+  }
+
+  // Object
+  {
+    // Regular
+    {
+      const result = obj.map((item, key) => {
+        item satisfies Field<string> | Field<boolean>;
+        // @ts-expect-error
+        item.any;
+
+        key satisfies keyof Hello;
+        // @ts-expect-error
+        key.any;
+
+        if (key === "hello") {
+          item.value satisfies string;
+          // @ts-expect-error
+          item.value satisfies number;
+          return item.value.length;
+        } else {
+          item.value satisfies boolean;
+          // @ts-expect-error
+          item.value satisfies string;
+          return item.value === true ? 1 : 0;
+        }
+      });
+      result satisfies number[];
+      obj.map((item) => {
+        item satisfies Field<string> | Field<boolean>;
+        // @ts-expect-error
+        item.any;
+        return 0;
+      });
+      obj.map(() => 0);
+    }
+
+    // Optional
+    {
+      const resultOpt = objPart.map((item, key) => {
+        item satisfies Field<boolean> | Field<string | undefined>;
+        // @ts-expect-error
+        item.any;
+
+        key satisfies keyof Ok;
+        // @ts-expect-error
+        key.any;
+
+        if (key === "ok") {
+          item.value satisfies boolean;
+          // @ts-expect-error
+          item.value satisfies string | undefined;
+          return item.value === true ? 1 : 0;
+        } else {
+          item.value satisfies string | undefined;
+          // @ts-expect-error
+          item.value satisfies boolean;
+          return item.value?.length ?? 0;
+        }
+      });
+      resultOpt satisfies number[];
+      objPart.map((item) => {
+        item satisfies Field<boolean> | Field<string | undefined>;
+        // @ts-expect-error
+        item.any;
+        return 0;
+      });
+      objPart.map(() => 0);
+    }
+  }
+
+  // Tuple
+  {
+    const result = tuple.map((item, index) => {
+      item satisfies Field<string> | Field<boolean> | Field<symbol>;
+      // @ts-expect-error
+      item.any;
+
+      index satisfies 0 | 1 | 2;
+      // @ts-expect-error
+      index.any;
+
+      if (index === 1) {
+        item.value satisfies boolean;
+        // @ts-expect-error
+        item.value satisfies string;
+      }
+
+      return 0;
+    });
+    result satisfies number[];
+
+    tuple.map((item) => {
+      item satisfies Field<string> | Field<boolean> | Field<symbol>;
+      // @ts-expect-error
+      item.any;
+    });
+    arr.map(() => {});
+  }
+}
+
+// `Field["find"]`
+{
+  // Array
+  {
+    // Regular
+    {
+      const result = arr.find((item, index) => {
+        item satisfies Field<string | boolean, "detachable">;
+        index satisfies number;
+        return item.value === "hello";
+      });
+
+      result satisfies Field<string | boolean, "detachable"> | undefined;
+      // @ts-expect-error
+      result satisfies
+        | Field<string, "detachable">
+        | Field<boolean, "detachable">;
+      // @ts-expect-error
+      result satisfies Field<string | boolean, "detachable">;
+      // @ts-expect-error
+      result satisfies undefined;
+      // @ts-expect-error
+      result.any;
+
+      arr.find((item) => {
+        item satisfies Field<string | boolean, "detachable">;
+        return true;
+      });
+      arr.find(() => true);
+
+      arr.find((_item) => 0);
+      arr.find((_item) => "");
+      arr.find((_item) => null);
+      // @ts-expect-error
+      arr.find((item) => item.value.toExponential());
+    }
+  }
+
+  // Object
+  {
+    // Regular
+    {
+      const result = obj.find((item, key) => {
+        item satisfies Field<string> | Field<boolean>;
+        // @ts-expect-error
+        item.any;
+
+        key satisfies keyof Hello;
+        // @ts-expect-error
+        key.any;
+
+        if (key === "hello") {
+          item.value satisfies string;
+          // @ts-expect-error
+          item.value satisfies number;
+          return item.value.length > 0;
+        } else {
+          item.value satisfies boolean;
+          // @ts-expect-error
+          item.value satisfies string;
+          return item.value === true ? 1 : 0;
+        }
+      });
+
+      result satisfies Field<string> | Field<boolean> | undefined;
+      // @ts-expect-error
+      result satisfies Field<string> | Field<boolean>;
+      // @ts-expect-error
+      resultOpt satisfies undefined;
+      // @ts-expect-error
+      result.any;
+
+      obj.find((item) => {
+        item satisfies Field<string> | Field<boolean>;
+        // @ts-expect-error
+        item.any;
+        return true;
+      });
+      obj.find(() => true);
+
+      obj.find((item) => item);
+      obj.find((_item) => 0);
+      obj.find((_item) => "");
+      obj.find((_item) => null);
+      // @ts-expect-error
+      obj.find((item) => item.value.toExponential());
+    }
+
+    // Optional
+    {
+      const resultOpt = objPart.find((item, key) => {
+        item satisfies Field<boolean> | Field<string | undefined>;
+        // @ts-expect-error
+        item.any;
+
+        key satisfies keyof Ok;
+        // @ts-expect-error
+        key.any;
+
+        if (key === "ok") {
+          item.value satisfies boolean;
+          // @ts-expect-error
+          item.value satisfies string | undefined;
+          return item.value;
+        } else {
+          item.value satisfies string | undefined;
+          // @ts-expect-error
+          item.value satisfies boolean;
+          return !!item.value;
+        }
+      });
+      resultOpt satisfies
+        | Field<string | undefined>
+        | Field<boolean>
+        | undefined;
+      // @ts-expect-error
+      resultOpt satisfies Field<string | undefined> | Field<boolean>;
+      // @ts-expect-error
+      resultOpt satisfies undefined;
+      // @ts-expect-error
+      resultOpt.any;
+
+      objPart.find((item) => {
+        item satisfies Field<boolean> | Field<string | undefined>;
+        // @ts-expect-error
+        item.any;
+        return true;
+      });
+      objPart.find(() => true);
+    }
+  }
+
+  // Tuple
+  {
+    // Regular
+    {
+      const result = tuple.find((item, index) => {
+        item satisfies Field<string> | Field<boolean> | Field<symbol>;
+        index satisfies 0 | 1 | 2;
+
+        if (index === 1) {
+          item.value satisfies boolean;
+          // @ts-expect-error
+          item.value satisfies string;
+          return true;
+        }
+
+        return false;
+      });
+
+      result satisfies
+        | Field<string>
+        | Field<boolean>
+        | Field<symbol>
+        | undefined;
+      // @ts-expect-error
+      result satisfies Field<string> | Field<boolean> | Field<symbol>;
+      // @ts-expect-error
+      result satisfies undefined;
+      // @ts-expect-error
+      result.any;
+
+      tuple.find((item) => {
+        item satisfies Field<string> | Field<boolean> | Field<symbol>;
+        return true;
+      });
+      tuple.find(() => true);
+      tuple.find((_item) => 0);
+      tuple.find((_item) => "");
+      tuple.find((_item) => null);
+      // @ts-expect-error
+      tuple.find((item) => item.value.toExponential());
+    }
+  }
+}
+
 // `Field["filter"]`
 {
   // Array
