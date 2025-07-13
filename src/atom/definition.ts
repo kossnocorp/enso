@@ -76,7 +76,11 @@ export declare class Atom<
 
   forEach: Atom.ForEachProp<Type, Value>;
 
-  filter: Atom.Filter.Prop<Type, Value>;
+  map: Atom.MapProp<Type, Value>;
+
+  find: Atom.FindProp<Type, Value>;
+
+  filter: Atom.FilterProp<Type, Value>;
 
   //#endregion Type
 
@@ -538,7 +542,11 @@ export namespace Atom {
 
     forEach: ForEachProp<Type, Value>;
 
-    filter: Filter.Prop<Type, Value>;
+    map: MapProp<Type, Value>;
+
+    find: FindProp<Type, Value>;
+
+    filter: FilterProp<Type, Value>;
 
     //#endregion Type
 
@@ -802,153 +810,6 @@ export namespace Atom {
 
   //#endregion
 
-  //#region Collection
-
-  export namespace Collection {
-    //#region Collection.Callback
-
-    export namespace Callback {
-      // Tuple
-
-      // NOTE: We have to have two separate overloads for objects `TuplePair`
-      // and `TupleSingle` as with the current approach binding the key and
-      // value in the arguments on the type level, TypeScript fails to find
-      // the correct overload for when the callback accepts a single argument
-      // (i.e. just the item field).
-
-      export interface TuplePair<
-        Type extends Atom.Type,
-        Value extends Utils.Tuple,
-        Result = void,
-      > {
-        (
-          ...args: {
-            [Key in Utils.IndexOfTuple<Value>]: [
-              Envelop<Child.Type<Type>, Value[Key]>,
-              Key,
-            ];
-          }[Utils.IndexOfTuple<Value>]
-        ): Result;
-      }
-
-      export interface TupleSingle<
-        Type extends Atom.Type,
-        Value extends Utils.Tuple,
-        Result = void,
-      > {
-        (
-          item: {
-            [Key in keyof Value]: Envelop<Type, Value[Key]>;
-          }[Utils.IndexOfTuple<Value>],
-          index?: Utils.IndexOfTuple<Value>,
-        ): Result;
-      }
-
-      export type TupleItem<
-        Type extends Atom.Type,
-        Value extends Utils.Tuple,
-      > = {
-        [Key in Utils.IndexOfTuple<Value>]: Envelop<Type, Value[Key]>;
-      }[Utils.IndexOfTuple<Value>];
-
-      // Array
-
-      export interface Array<
-        Type extends Atom.Type,
-        Value extends unknown[],
-        Result = void,
-      > {
-        (item: ArrayItem<Type, Value>, index: number): Result;
-      }
-
-      export type ArrayItem<
-        Type extends Atom.Type,
-        Value extends unknown[],
-      > = Envelop<
-        Child.Type<Type>,
-        Value[number],
-        Child.Qualifier<Value, number>
-      >;
-
-      // Object
-
-      // NOTE: We have to have two separate overloads for objects `ObjectPair`
-      // and `ObjectSingle` as with the current approach binding the key and
-      // value in the arguments on the type level, TypeScript fails to find
-      // the correct overload for when the callback accepts a single argument
-      // (i.e. just the item field).
-
-      export interface ObjectPair<
-        Type extends Atom.Type,
-        Value extends object,
-        Result = void,
-      > {
-        (
-          // Exclude is needed to remove undefined that appears when there're
-          // optional fields in the object.
-          ...args: Exclude<
-            {
-              [Key in Utils.CovariantifyKeyof<Value>]: [
-                Child<Type, Value, Key>,
-                Key,
-              ];
-            }[Utils.CovariantifyKeyof<Value>],
-            undefined
-          >
-        ): Result;
-      }
-
-      export interface ObjectSingle<
-        Type extends Atom.Type,
-        Value extends object,
-        Result = void,
-      > {
-        (
-          // Exclude is needed to remove undefined that appears when there're
-          // optional fields in the object.
-          item: Exclude<
-            { [Key in keyof Value]: Child<Type, Value, Key> }[keyof Value],
-            undefined
-          >,
-        ): Result;
-      }
-
-      export type ObjectItem<
-        Type extends Atom.Type,
-        Value extends object,
-      > = Exclude<
-        { [Key in keyof Value]: Child<Type, Value, Key> }[keyof Value],
-        undefined
-      >;
-    }
-
-    //#endregion Collection.Callback
-
-    // //#region Collection.Result
-
-    // export namespace Result {
-    //   export type Tuple<
-    //     Type extends Atom.Type,
-    //     Value extends Utils.Tuple,
-    //   > = Every<Value[Utils.IndexOfTuple<Value>]>;
-
-    //   export type Array<
-    //     Type extends Atom.Type,
-    //     Value extends unknown[],
-    //   > = Detachable<Value[number]>;
-
-    //   export type Object<Type extends Atom.Type, Value extends object> =
-    //     // Remove undefined that sneaks in
-    //     Exclude<
-    //       // Use mapped type to preserve Type | undefined for optional fields
-    //       { [Key in keyof Value]: Envelop<Type, Value[Key]> }[keyof Value],
-    //       undefined
-    //     >;
-    // }
-
-    // //#endregion Collection.Result
-  }
-
   //#region Remove
 
   export type RemoveProp<
@@ -975,85 +836,298 @@ export namespace Atom {
 
   //#endregion Remove
 
-  //#region ForEach
+  //#region Collection
 
-  export type ForEachProp<
-    Type extends Atom.Type,
-    Value,
-  > = Value extends Utils.Tuple
-    ? ForEachTuple<Type, Value>
-    : Value extends unknown[]
-      ? ForEachArray<Type, Value>
-      : Value extends object
-        ? ForEachObject<Type, Value>
-        : never;
+  export namespace Collection {
+    //#region Handler
 
-  export interface ForEachTuple<
-    Type extends Atom.Type,
-    Value extends Utils.Tuple,
-  > {
-    (callback: Collection.Callback.TuplePair<Type, Value>): void;
+    // Tuple
 
-    (callback: Collection.Callback.TupleSingle<Type, Value>): void;
-  }
+    // NOTE: We have to have two separate overloads for objects `TuplePair`
+    // and `TupleSingle` as with the current approach binding the key and
+    // value in the arguments on the type level, TypeScript fails to find
+    // the correct overload for when the callback accepts a single argument
+    // (i.e. just the item field).
 
-  export interface ForEachArray<
-    Type extends Atom.Type,
-    Value extends unknown[],
-    Result = void,
-  > {
-    (callback: Collection.Callback.Array<Type, Value, Result>): void;
-  }
+    export interface TupleHandlerPair<
+      Type extends Atom.Type,
+      Value extends Utils.Tuple,
+      Result = void,
+    > {
+      (
+        ...args: {
+          [Key in Utils.IndexOfTuple<Value>]: [
+            Envelop<Child.Type<Type>, Value[Key]>,
+            Key,
+          ];
+        }[Utils.IndexOfTuple<Value>]
+      ): Result;
+    }
 
-  export interface ForEachObject<Type extends Atom.Type, Value extends object> {
-    (callback: Collection.Callback.ObjectPair<Type, Value>): void;
+    export interface TupleHandlerSingle<
+      Type extends Atom.Type,
+      Value extends Utils.Tuple,
+      Result = void,
+    > {
+      (
+        item: {
+          [Key in keyof Value]: Envelop<Type, Value[Key]>;
+        }[Utils.IndexOfTuple<Value>],
+        index?: Utils.IndexOfTuple<Value>,
+      ): Result;
+    }
 
-    (callback: Collection.Callback.ObjectSingle<Type, Value>): void;
-  }
+    export type TupleItem<Type extends Atom.Type, Value extends Utils.Tuple> = {
+      [Key in Utils.IndexOfTuple<Value>]: Envelop<Type, Value[Key]>;
+    }[Utils.IndexOfTuple<Value>];
 
-  //#endregion ForEach
+    // Array
 
-  //#region Filter
+    export interface ArrayHandler<
+      Type extends Atom.Type,
+      Value extends unknown[],
+      Result = void,
+    > {
+      (item: ArrayItem<Type, Value>, index: number): Result;
+    }
 
-  export namespace Filter {
-    export type Prop<Type extends Atom.Type, Value> = Value extends Utils.Tuple
-      ? Tuple<Type, Value>
+    export type ArrayItem<
+      Type extends Atom.Type,
+      Value extends unknown[],
+    > = Envelop<
+      Child.Type<Type>,
+      Value[number],
+      Child.Qualifier<Value, number>
+    >;
+
+    // Object
+
+    // NOTE: We have to have two separate overloads for objects `ObjectPair`
+    // and `ObjectSingle` as with the current approach binding the key and
+    // value in the arguments on the type level, TypeScript fails to find
+    // the correct overload for when the callback accepts a single argument
+    // (i.e. just the item field).
+
+    export interface ObjectHandlerPair<
+      Type extends Atom.Type,
+      Value extends object,
+      Result = void,
+    > {
+      (
+        // Exclude is needed to remove undefined that appears when there're
+        // optional fields in the object.
+        ...args: Exclude<
+          {
+            [Key in Utils.CovariantifyKeyof<Value>]: [
+              Child<Type, Value, Key>,
+              Key,
+            ];
+          }[Utils.CovariantifyKeyof<Value>],
+          undefined
+        >
+      ): Result;
+    }
+
+    export interface ObjectHandlerSingle<
+      Type extends Atom.Type,
+      Value extends object,
+      Result = void,
+    > {
+      (
+        // Exclude is needed to remove undefined that appears when there're
+        // optional fields in the object.
+        item: Exclude<
+          { [Key in keyof Value]: Child<Type, Value, Key> }[keyof Value],
+          undefined
+        >,
+      ): Result;
+    }
+
+    export type ObjectItem<
+      Type extends Atom.Type,
+      Value extends object,
+    > = Exclude<
+      { [Key in keyof Value]: Child<Type, Value, Key> }[keyof Value],
+      undefined
+    >;
+
+    //#endregion Handler
+
+    //#region Processor
+
+    export type Mapper<
+      Type extends Atom.Type,
+      Value,
+      ProcessorType extends Mapper.ResultType,
+    > = Value extends Utils.Tuple
+      ? Mapper.Tuple<Type, Value, ProcessorType>
       : Value extends unknown[]
-        ? Array<Type, Value>
+        ? Mapper.Array<Type, Value, ProcessorType>
         : Value extends object
-          ? Object<Type, Value>
+          ? Mapper.Object<Type, Value, ProcessorType>
           : never;
 
-    export interface Tuple<Type extends Atom.Type, Value extends Utils.Tuple> {
-      (
-        callback: Collection.Callback.TuplePair<Type, Value, unknown>,
-      ): Result<Collection.Callback.TupleItem<Type, Value>>;
+    export namespace Mapper {
+      export type ResultType = "each" | "map";
 
-      (
-        callback: Collection.Callback.TupleSingle<Type, Value, unknown>,
-      ): Result<Collection.Callback.TupleItem<Type, Value>>;
+      export type CallbackResult<
+        ProcessorType extends Mapper.ResultType,
+        Result,
+      > = ProcessorType extends "each" ? unknown : Result;
+
+      export type Result<
+        ProcessorType extends Mapper.ResultType,
+        Result,
+      > = ProcessorType extends "each" ? void : Result[];
+
+      export interface Tuple<
+        Type extends Atom.Type,
+        Value extends Utils.Tuple,
+        ProcessorType extends Mapper.ResultType,
+      > {
+        <Result>(
+          callback: Collection.TupleHandlerPair<
+            Type,
+            Value,
+            CallbackResult<ProcessorType, Result>
+          >,
+        ): Mapper.Result<ProcessorType, Result>;
+
+        <Result>(
+          callback: Collection.TupleHandlerSingle<
+            Type,
+            Value,
+            CallbackResult<ProcessorType, Result>
+          >,
+        ): Mapper.Result<ProcessorType, Result>;
+      }
+
+      export interface Array<
+        Type extends Atom.Type,
+        Value extends unknown[],
+        ProcessorType extends Mapper.ResultType,
+      > {
+        <Result>(
+          callback: Collection.ArrayHandler<
+            Type,
+            Value,
+            CallbackResult<ProcessorType, Result>
+          >,
+        ): Mapper.Result<ProcessorType, Result>;
+      }
+
+      export interface Object<
+        Type extends Atom.Type,
+        Value extends object,
+        ProcessorType extends Mapper.ResultType,
+      > {
+        <Result>(
+          callback: Collection.ObjectHandlerPair<
+            Type,
+            Value,
+            CallbackResult<ProcessorType, Result>
+          >,
+        ): Mapper.Result<ProcessorType, Result>;
+
+        <Result>(
+          callback: Collection.ObjectHandlerSingle<
+            Type,
+            Value,
+            CallbackResult<ProcessorType, Result>
+          >,
+        ): Mapper.Result<ProcessorType, Result>;
+      }
     }
 
-    export interface Array<Type extends Atom.Type, Value extends unknown[]> {
-      (
-        callback: Collection.Callback.Array<Type, Value, unknown>,
-      ): Result<Collection.Callback.ArrayItem<Type, Value>>;
+    //#endregion
+
+    //#region Selector
+
+    export type Selector<
+      Type extends Atom.Type,
+      Value,
+      SelectorType extends Selector.Type,
+    > = Value extends Utils.Tuple
+      ? Selector.Tuple<Type, Value, SelectorType>
+      : Value extends unknown[]
+        ? Selector.Array<Type, Value, SelectorType>
+        : Value extends object
+          ? Selector.Object<Type, Value, SelectorType>
+          : never;
+
+    export namespace Selector {
+      export type Type = "find" | "filter";
+
+      export type Result<
+        SelectorType extends Selector.Type,
+        Result,
+      > = SelectorType extends "find" ? Result | undefined : Result[];
+
+      export interface Tuple<
+        Type extends Atom.Type,
+        Value extends Utils.Tuple,
+        SelectorType extends Selector.Type,
+      > {
+        (
+          callback: Collection.TupleHandlerPair<Type, Value, unknown>,
+        ): Result<SelectorType, Collection.TupleItem<Type, Value>>;
+
+        (
+          callback: Collection.TupleHandlerSingle<Type, Value, unknown>,
+        ): Result<SelectorType, Collection.TupleItem<Type, Value>>;
+      }
+
+      export interface Array<
+        Type extends Atom.Type,
+        Value extends unknown[],
+        SelectorType extends Selector.Type,
+      > {
+        (
+          callback: Collection.ArrayHandler<Type, Value, unknown>,
+        ): Result<SelectorType, Collection.ArrayItem<Type, Value>>;
+      }
+
+      export interface Object<
+        Type extends Atom.Type,
+        Value extends object,
+        SelectorType extends Selector.Type,
+      > {
+        (
+          callback: Collection.ObjectHandlerPair<Type, Value, unknown>,
+        ): Result<SelectorType, Collection.ObjectItem<Type, Value>>;
+
+        (
+          callback: Collection.ObjectHandlerSingle<Type, Value, unknown>,
+        ): Result<SelectorType, Collection.ObjectItem<Type, Value>>;
+      }
     }
 
-    export interface Object<Type extends Atom.Type, Value extends object> {
-      (
-        callback: Collection.Callback.ObjectPair<Type, Value, unknown>,
-      ): Result<Collection.Callback.ObjectItem<Type, Value>>;
-
-      (
-        callback: Collection.Callback.ObjectSingle<Type, Value, unknown>,
-      ): Result<Collection.Callback.ObjectItem<Type, Value>>;
-    }
-
-    export type Result<Item> = Item[];
+    //#endregion Selector
   }
 
-  //#endregion ForEach
+  export type ForEachProp<Type extends Atom.Type, Value> = Collection.Mapper<
+    Type,
+    Value,
+    "each"
+  >;
+
+  export type MapProp<Type extends Atom.Type, Value> = Collection.Mapper<
+    Type,
+    Value,
+    "map"
+  >;
+
+  export type FindProp<Type extends Atom.Type, Value> = Collection.Selector<
+    Type,
+    Value,
+    "find"
+  >;
+
+  export type FilterProp<Type extends Atom.Type, Value> = Collection.Selector<
+    Type,
+    Value,
+    "filter"
+  >;
 
   //#endregion
 

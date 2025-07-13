@@ -146,118 +146,116 @@ export namespace AtomRef {
 
   //#region Collection
 
-  export namespace Collection {
-    //#region Collection.Callback
+  //#region Mapper
 
-    export namespace Callback {
-      // Tuple
+  export namespace Mapper {
+    // Tuple
 
-      // NOTE: We have to have two separate overloads for objects `TuplePair`
-      // and `TupleSingle` as with the current approach binding the key and
-      // value in the arguments on the type level, TypeScript fails to find
-      // the correct overload for when the callback accepts a single argument
-      // (i.e. just the item field).
+    // NOTE: We have to have two separate overloads for objects `TuplePair`
+    // and `TupleSingle` as with the current approach binding the key and
+    // value in the arguments on the type level, TypeScript fails to find
+    // the correct overload for when the callback accepts a single argument
+    // (i.e. just the item field).
 
-      export interface TuplePair<
-        Type extends AtomRef.Type,
-        Value extends Utils.Tuple,
-        Result = void,
-      > {
-        (
-          ...args: {
-            [Key in Utils.IndexOfTuple<Value>]: [
-              Envelop<Child.Type<Type>, Value[Key]>,
-              Key,
-            ];
-          }[Utils.IndexOfTuple<Value>]
-        ): Result;
-      }
-
-      export interface TupleSingle<
-        Type extends AtomRef.Type,
-        Value extends Utils.Tuple,
-        Result = void,
-      > {
-        (
-          item: {
-            [Key in keyof Value]: Envelop<Type, Value[Key]>;
-          }[Utils.IndexOfTuple<Value>],
-          index?: Utils.IndexOfTuple<Value>,
-        ): Result;
-      }
-
-      export type TupleSingleItem<
-        Type extends AtomRef.Type,
-        Value extends Utils.Tuple,
-      > = {
-        [Key in Utils.IndexOfTuple<Value>]: Envelop<Type, Value[Key]>;
-      }[Utils.IndexOfTuple<Value>];
-
-      // Array
-
-      export interface Array<
-        Type extends AtomRef.Type,
-        Value extends unknown[],
-        Result = void,
-      > {
-        (item: ArrayItem<Type, Value>, index: number): Result;
-      }
-
-      export type ArrayItem<
-        Type extends AtomRef.Type,
-        Value extends unknown[],
-      > = Envelop<
-        Child.Type<Type>,
-        Value[number],
-        Child.Qualifier<Value, number>
-      >;
-
-      // Object
-
-      // NOTE: We have to have two separate overloads for objects `ObjectPair`
-      // and `ObjectSingle` as with the current approach binding the key and
-      // value in the arguments on the type level, TypeScript fails to find
-      // the correct overload for when the callback accepts a single argument
-      // (i.e. just the item field).
-
-      export interface ObjectPair<
-        Type extends AtomRef.Type,
-        Value extends object,
-        Result = void,
-      > {
-        (
-          // Exclude is needed to remove undefined that appears when there're
-          // optional fields in the object.
-          ...args: Exclude<
-            {
-              [Key in Utils.CovariantifyKeyof<Value>]: [
-                Child<Type, Value, Key>,
-                Key,
-              ];
-            }[Utils.CovariantifyKeyof<Value>],
-            undefined
-          >
-        ): Result;
-      }
-
-      export interface ObjectSingle<
-        Type extends AtomRef.Type,
-        Value extends object,
-        Result = void,
-      > {
-        (
-          // Exclude is needed to remove undefined that appears when there're
-          // optional fields in the object.
-          item: Exclude<
-            { [Key in keyof Value]: Child<Type, Value, Key> }[keyof Value],
-            undefined
-          >,
-        ): Result;
-      }
+    export interface TuplePair<
+      Type extends AtomRef.Type,
+      Value extends Utils.Tuple,
+      Result = void,
+    > {
+      (
+        ...args: {
+          [Key in Utils.IndexOfTuple<Value>]: [
+            Envelop<Child.Type<Type>, Value[Key]>,
+            Key,
+          ];
+        }[Utils.IndexOfTuple<Value>]
+      ): Result;
     }
 
-    //#endregion Collection.Callback
+    export interface TupleSingle<
+      Type extends AtomRef.Type,
+      Value extends Utils.Tuple,
+      Result = void,
+    > {
+      (
+        item: {
+          [Key in keyof Value]: Envelop<Type, Value[Key]>;
+        }[Utils.IndexOfTuple<Value>],
+        index?: Utils.IndexOfTuple<Value>,
+      ): Result;
+    }
+
+    export type TupleSingleItem<
+      Type extends AtomRef.Type,
+      Value extends Utils.Tuple,
+    > = {
+      [Key in Utils.IndexOfTuple<Value>]: Envelop<Type, Value[Key]>;
+    }[Utils.IndexOfTuple<Value>];
+
+    // Array
+
+    export interface Array<
+      Type extends AtomRef.Type,
+      Value extends unknown[],
+      Result = void,
+    > {
+      (item: ArrayItem<Type, Value>, index: number): Result;
+    }
+
+    export type ArrayItem<
+      Type extends AtomRef.Type,
+      Value extends unknown[],
+    > = Envelop<
+      Child.Type<Type>,
+      Value[number],
+      Child.Qualifier<Value, number>
+    >;
+
+    // Object
+
+    // NOTE: We have to have two separate overloads for objects `ObjectPair`
+    // and `ObjectSingle` as with the current approach binding the key and
+    // value in the arguments on the type level, TypeScript fails to find
+    // the correct overload for when the callback accepts a single argument
+    // (i.e. just the item field).
+
+    export interface ObjectPair<
+      Type extends AtomRef.Type,
+      Value extends object,
+      Result = void,
+    > {
+      (
+        // Exclude is needed to remove undefined that appears when there're
+        // optional fields in the object.
+        ...args: Exclude<
+          {
+            [Key in Utils.CovariantifyKeyof<Value>]: [
+              Child<Type, Value, Key>,
+              Key,
+            ];
+          }[Utils.CovariantifyKeyof<Value>],
+          undefined
+        >
+      ): Result;
+    }
+
+    export interface ObjectSingle<
+      Type extends AtomRef.Type,
+      Value extends object,
+      Result = void,
+    > {
+      (
+        // Exclude is needed to remove undefined that appears when there're
+        // optional fields in the object.
+        item: Exclude<
+          { [Key in keyof Value]: Child<Type, Value, Key> }[keyof Value],
+          undefined
+        >,
+      ): Result;
+    }
   }
+
+  //#endregion Mapper
 
   //#region ForEach
 
@@ -276,9 +274,9 @@ export namespace AtomRef {
     Type extends AtomRef.Type,
     Value extends Utils.Tuple,
   > {
-    (callback: Collection.Callback.TuplePair<Type, Value>): void;
+    (callback: Mapper.TuplePair<Type, Value>): void;
 
-    (callback: Collection.Callback.TupleSingle<Type, Value>): void;
+    (callback: Mapper.TupleSingle<Type, Value>): void;
   }
 
   export interface ForEachArray<
@@ -286,16 +284,16 @@ export namespace AtomRef {
     Value extends unknown[],
     Result = void,
   > {
-    (callback: Collection.Callback.Array<Type, Value, Result>): void;
+    (callback: Mapper.Array<Type, Value, Result>): void;
   }
 
   export interface ForEachObject<
     Type extends AtomRef.Type,
     Value extends object,
   > {
-    (callback: Collection.Callback.ObjectPair<Type, Value>): void;
+    (callback: Mapper.ObjectPair<Type, Value>): void;
 
-    (callback: Collection.Callback.ObjectSingle<Type, Value>): void;
+    (callback: Mapper.ObjectSingle<Type, Value>): void;
   }
 
   //#endregion ForEach
