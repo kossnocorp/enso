@@ -1,3 +1,4 @@
+import { Atom } from "../atom/index.js";
 import { State } from "../state/index.ts";
 import { Field } from "./index.js";
 
@@ -305,17 +306,69 @@ import { Field } from "./index.js";
 
 // Field.common
 {
-  const entity = {} as Field<User> | Field<Account>;
+  // Basic
+  {
+    const entity = {} as Field<User> | Field<Account>;
 
-  Field.common(entity) satisfies Field.Common<User | Account>;
-  // @ts-expect-error
-  Field.common(entity) satisfies Field<User | Account>;
-  // @ts-expect-error
-  Field.common(entity) satisfies Field.Common<Hello>;
+    const result = Field.common(entity);
 
-  Field.common(entity).value satisfies User | Account;
-  // @ts-expect-error
-  Field.common(entity).value satisfies Hello;
+    result satisfies Field.Common<User | Account>;
+    // @ts-expect-error
+    result satisfies Field<User | Account>;
+    // @ts-expect-error
+    result satisfies Field.Common<Hello>;
+
+    result.value satisfies User | Account;
+    // @ts-expect-error
+    result.value satisfies Hello;
+  }
+
+  // Qualifier
+  {
+    // Shared
+    {
+      const entity = {} as
+        | Field<User, "detachable">
+        | Field<Account, "detachable">;
+
+      const result = Field.common(entity);
+
+      result satisfies Field.Common<User | Account, "detachable">;
+      // @ts-expect-error
+      result satisfies Field.Common<User | Account, "detachable" | "bound">;
+      // @ts-expect-error
+      result satisfies Field.Common<User | Account, "bound">;
+      // @ts-expect-error
+      result satisfies Field<User | Account, "detachable">;
+      // @ts-expect-error
+      result satisfies Field.Common<Hello, "detachable">;
+
+      result.value satisfies User | Account;
+      // @ts-expect-error
+      result.value satisfies Hello;
+    }
+
+    // Mixed
+    {
+      const entity = {} as
+        | Field<User, "detachable">
+        | Field<Account, "detachable" | "bound">;
+
+      const result = Field.common(entity);
+
+      result satisfies Field.Common<User | Account, "detachable">;
+      // @ts-expect-error
+      result satisfies Field.Common<User | Account, "detachable" | "bound">;
+      // @ts-expect-error
+      result satisfies Field<User | Account, "detachable">;
+      // @ts-expect-error
+      result satisfies Field.Common<Hello, "detachable">;
+
+      result.value satisfies User | Account;
+      // @ts-expect-error
+      result.value satisfies Hello;
+    }
+  }
 }
 
 // `Field["value"]`
@@ -1665,6 +1718,571 @@ const unionField = new Field({ hello: "world", world: true }) as
       Hello | Blah,
       "detachable" | "bound"
     > = decomposed;
+  }
+}
+
+//#region Field["discriminate"] / Field["useDiscriminate"]
+{
+  const method = {} as "discriminate" | "useDiscriminate";
+
+  interface Named {
+    type: string;
+    name: string;
+  }
+
+  interface User extends Named {
+    type: "user";
+    email: string;
+  }
+
+  interface Organization extends Named {
+    type: "organization";
+    paid: boolean;
+  }
+
+  interface Unrelated {
+    type: "unrelated";
+    value: string;
+  }
+
+  const unionValue = new Field<User | Organization>({} as User);
+  const unionField = new Field({} as User) as Field<User> | Field<Organization>;
+
+  // Value union
+  {
+    const result = unionValue[method]("type");
+
+    result satisfies
+      | {
+          discriminator: "user";
+          field: Field<User>;
+        }
+      | {
+          discriminator: "organization";
+          field: Field<Organization>;
+        };
+    // @ts-expect-error
+    result satisfies
+      | {
+          discriminator: "user";
+          field: Field<User, "detachable">;
+        }
+      | {
+          discriminator: "organization";
+          field: Field<Organization, "detachable">;
+        };
+    // @ts-expect-error
+    result satisfies
+      | {
+          discriminator: "user";
+          field: Field<User, "tried">;
+        }
+      | {
+          discriminator: "organization";
+          field: Field<Organization, "tried">;
+        };
+    // @ts-expect-error
+    result.any;
+
+    if (result.discriminator === "user") {
+      result.field satisfies Field<User>;
+      result.field satisfies Field.Common<User>;
+      // @ts-expect-error
+      result.field satisfies Field<Organization>;
+      // @ts-expect-error
+      result.field.any;
+
+      result.field.value satisfies User;
+    }
+
+    const _manual1: Field.Discriminated<User | Organization, "type"> = result;
+    const _manual2: Field.Common.Discriminated<User | Organization, "type"> =
+      result;
+    const _manual3: Field.Discriminated<
+      User | Organization | Unrelated,
+      "type"
+    > = result;
+    const _manual4: Field.Common.Discriminated<
+      User | Organization | Unrelated,
+      "type"
+    > = result;
+    // @ts-expect-error
+    const _manualWrong1: Field.Discriminated<User, "type"> = result;
+    // @ts-expect-error
+    const _manualWrong2: Field.Discriminated<Named, "type"> = result;
+    // @ts-expect-error
+    const _manualWrong3: Field.Discriminated<Unrelated, "type"> = result;
+
+    // @ts-expect-error
+    unionValue[method]("paid");
+  }
+
+  // Field union
+  {
+    const result = Field.common(unionField)[method]("type");
+
+    result satisfies
+      | {
+          discriminator: "user";
+          field: Field.Common<User>;
+        }
+      | {
+          discriminator: "organization";
+          field: Field.Common<Organization>;
+        }
+      | {
+          discriminator: unknown;
+          field: Field.Common<unknown>;
+        };
+    // @ts-expect-error
+    result satisfies
+      | {
+          discriminator: "user";
+          field: Field.Common<User, "detachable">;
+        }
+      | {
+          discriminator: "organization";
+          field: Field.Common<Organization, "detachable">;
+        }
+      | {
+          discriminator: unknown;
+          field: Field.Common<unknown>;
+        };
+    // @ts-expect-error
+    result satisfies
+      | {
+          discriminator: "user";
+          field: Field.Common<User, "tried">;
+        }
+      | {
+          discriminator: "organization";
+          field: Field.Common<Organization, "tried">;
+        }
+      | {
+          discriminator: unknown;
+          field: Field.Common<unknown>;
+        };
+    // @ts-expect-error
+    result.any;
+
+    if (result.discriminator === "user") {
+      result.field satisfies Field.Common<User>;
+      // @ts-expect-error
+      result.field satisfies Field<User>;
+      // @ts-expect-error
+      result.field satisfies Field.Common<Organization>;
+      // @ts-expect-error
+      result.field.any;
+
+      result.field.value satisfies User;
+    }
+
+    const _manual1: Field.Common.Discriminated<User | Organization, "type"> =
+      result;
+    const _manual2: Field.Common.Discriminated<
+      User | Organization | Unrelated,
+      "type"
+    > = result;
+    // @ts-expect-error
+    const _manualWrong1: Field.Discriminated<User | Organization, "type"> =
+      result;
+    // @ts-expect-error
+    const _manualWrong2: Field.Common.Discriminated<User, "type"> = result;
+    // @ts-expect-error
+    const _manualWrong4: Field.Common.Discriminated<Unrelated, "type"> = result;
+    // @ts-expect-error
+    const _manualWrong5: Field.Common.Discriminated<Named, "type"> = result;
+
+    // @ts-expect-error
+    unionField[method]("paid");
+  }
+
+  // Undefined value
+  {
+    const result = (unionValue as Field<User | Organization | undefined>)[
+      method
+    ]("type");
+
+    result satisfies
+      | {
+          discriminator: undefined;
+          field: Field<undefined>;
+        }
+      | {
+          discriminator: "user";
+          field: Field<User>;
+        }
+      | {
+          discriminator: "organization";
+          field: Field<Organization>;
+        };
+    // @ts-expect-error
+    result satisfies
+      | {
+          discriminator: undefined;
+          field: Field<undefined, "detachable">;
+        }
+      | {
+          discriminator: "user";
+          field: Field<User, "detachable">;
+        }
+      | {
+          discriminator: "organization";
+          field: Field<Organization, "detachable">;
+        };
+    // @ts-expect-error
+    result satisfies
+      | {
+          discriminator: undefined;
+          field: Field<undefined, "tried">;
+        }
+      | {
+          discriminator: "user";
+          field: Field<User, "tried">;
+        }
+      | {
+          discriminator: "organization";
+          field: Field<Organization, "tried">;
+        };
+    // @ts-expect-error
+    result.any;
+
+    if (result.discriminator === "user") {
+      result.field satisfies Field<User>;
+      result.field satisfies Field.Common<User>;
+      // @ts-expect-error
+      result.field satisfies Field<Organization>;
+      // @ts-expect-error
+      result.field.any;
+
+      result.field.value satisfies User;
+    }
+
+    const _manual1: Field.Discriminated<
+      User | Organization | undefined,
+      "type"
+    > = result;
+    const _manual2: Field.Common.Discriminated<
+      User | Organization | undefined,
+      "type"
+    > = result;
+    const _manual3: Field.Common.Discriminated<
+      User | Organization | undefined | Unrelated,
+      "type"
+    > = result;
+    // @ts-expect-error
+    const _manualWrong1: Field.Discriminated<User | Organization, "type"> =
+      result;
+    // @ts-expect-error
+    const _manualWrong2: Field.Discriminated<Named | undefined, "type"> =
+      result;
+    // @ts-expect-error
+    const _manualWrong3: Field.Discriminated<Unrelated | undefined, "type"> =
+      result;
+    // @ts-expect-error
+    const _manualWrong4: Field.Discriminated<Named | undefined, "type"> =
+      result;
+
+    // @ts-expect-error
+    unionValue[method]("paid");
+  }
+
+  // Detachable
+  {
+    const result = (unionValue as Field<User | Organization, "detachable">)[
+      method
+    ]("type");
+
+    result satisfies
+      | {
+          discriminator: "user";
+          field: Field<User, "detachable">;
+        }
+      | {
+          discriminator: "organization";
+          field: Field<Organization, "detachable">;
+        };
+    // @ts-expect-error
+    result satisfies
+      | {
+          discriminator: "user";
+          field: Field<User, "tried">;
+        }
+      | {
+          discriminator: "organization";
+          field: Field<Organization, "tried">;
+        };
+    // @ts-expect-error
+    result.any;
+
+    if (result.discriminator === "user") {
+      result.field satisfies Field<User, "detachable">;
+      result.field satisfies Field.Common<User, "detachable">;
+      // @ts-expect-error
+      result.field satisfies Field<User, "bound">;
+      // @ts-expect-error
+      result.field satisfies Field<Organization, "detachable">;
+      // @ts-expect-error
+      result.field.any;
+
+      result.field.value satisfies User;
+    }
+
+    const _manual1: Field.Discriminated<
+      User | Organization,
+      "type",
+      "detachable"
+    > = result;
+    const _manual2: Field.Discriminated<User | Organization, "type"> = result;
+    const _manual3: Field.Common.Discriminated<
+      User | Organization,
+      "type",
+      "detachable"
+    > = result;
+    const _manual4: Field.Discriminated<
+      User | Organization | Unrelated,
+      "type",
+      "detachable"
+    > = result;
+    const _manual5: Field.Common.Discriminated<
+      User | Organization | Unrelated,
+      "type",
+      "detachable"
+    > = result;
+    // @ts-expect-error
+    const _manualWrong1: Field.Discriminated<User, "type", "detachable"> =
+      result;
+    // @ts-expect-error
+    const _manualWrong2: Field.Discriminated<
+      User | Organization,
+      "type",
+      "tried"
+    > = result;
+    // @ts-expect-error
+    const _manualWrong3: Field.Discriminated<Named, "type", "detachable"> =
+      result;
+    // @ts-expect-error
+    const _manualWrong4: Field.Discriminated<Unrelated, "type", "detachable"> =
+      result;
+  }
+
+  // Mixed
+  {
+    const result = Field.common(
+      unionField as
+        | Field<User, "detachable" | "tried">
+        | Field<Organization, "detachable">,
+    )[method]("type");
+
+    result satisfies
+      | {
+          discriminator: "user";
+          field: Field.Common<User, "detachable">;
+        }
+      | {
+          discriminator: "organization";
+          field: Field.Common<Organization, "detachable">;
+        }
+      | {
+          discriminator: unknown;
+          field: Field.Common<unknown, "detachable">;
+        };
+    // @ts-expect-error
+    result satisfies
+      | {
+          discriminator: "user";
+          field: Field.Common<User, "detachable" | "tried">;
+        }
+      | {
+          discriminator: "organization";
+          field: Field.Common<Organization, "detachable" | "tried">;
+        }
+      | {
+          discriminator: unknown;
+          field: Field.Common<unknown, "detachable" | "tried">;
+        };
+    // @ts-expect-error
+    result satisfies
+      | {
+          discriminator: "user";
+          field: Field<User, "bound">;
+        }
+      | {
+          discriminator: "organization";
+          field: Field<Organization, "bound">;
+        }
+      | {
+          discriminator: unknown;
+          field: Field.Common<unknown, "detachable">;
+        };
+    // @ts-expect-error
+    result.any;
+
+    if (result.discriminator === "user") {
+      result.field satisfies Field.Common<User, "detachable">;
+      // @ts-expect-error
+      result.field satisfies Field<User, "detachable">;
+      // @ts-expect-error
+      result.field satisfies Field.Common<User, "tried">;
+      // @ts-expect-error
+      result.field satisfies Field.Common<Organization, "detachable">;
+      // @ts-expect-error
+      result.field.any;
+
+      result.field.value satisfies User;
+    }
+
+    const _manual1: Field.Common.Discriminated<
+      User | Organization,
+      "type",
+      "detachable"
+    > = result;
+    const _manual2: Field.Common.Discriminated<
+      User | Organization | Unrelated,
+      "type",
+      "detachable"
+    > = result;
+    // @ts-expect-error
+    const _manualWrong1: Field.Common.Discriminated<
+      User | Organization,
+      "type",
+      "bound"
+    > = result;
+    // @ts-expect-error
+    const _manualWrong2: Field.Discriminated<
+      User | Organization,
+      "type",
+      "detachable"
+    > = result;
+    // @ts-expect-error
+    const _manualWrong3: Field.Common.Discriminated<
+      User,
+      "type",
+      "detachable"
+    > = result;
+    // @ts-expect-error
+    const _manualWrong5: Field.Common.Discriminated<
+      Unrelated,
+      "type",
+      "detachable"
+    > = result;
+    // @ts-expect-error
+    const _manualWrong6: Field.Common.Discriminated<
+      Named,
+      "type",
+      "detachable"
+    > = result;
+  }
+
+  // Immutable
+  {
+    const result = (
+      unionValue as unknown as Field.Immutable<User | Organization, "bound">
+    )[method]("type");
+
+    result satisfies
+      | {
+          discriminator: "user";
+          field: Field.Immutable<User, "bound">;
+        }
+      | {
+          discriminator: "organization";
+          field: Field.Immutable<Organization, "bound">;
+        }
+      | {
+          discriminator: unknown;
+          field: Field.Immutable<unknown, "bound">;
+        };
+    // @ts-expect-error
+    result satisfies
+      | {
+          discriminator: "user";
+          field: Field.Immutable<User, "detachable">;
+        }
+      | {
+          discriminator: "organization";
+          field: Field.Immutable<Organization, "detachable">;
+        }
+      | {
+          discriminator: unknown;
+          field: Field.Immutable<unknown, "detachable">;
+        };
+    // @ts-expect-error
+    result satisfies
+      | {
+          discriminator: "user";
+          field: Field.Common<User, "detachable">;
+        }
+      | {
+          discriminator: "organization";
+          field: Field.Common<Organization, "detachable">;
+        }
+      | {
+          discriminator: unknown;
+          field: Field.Common<unknown, "detachable">;
+        };
+    // @ts-expect-error
+    result satisfies
+      | {
+          discriminator: "user";
+          field: Field<User, "detachable">;
+        }
+      | {
+          discriminator: "organization";
+          field: Field<Organization, "detachable">;
+        }
+      | {
+          discriminator: unknown;
+          field: Field<unknown, "detachable">;
+        };
+    // @ts-expect-error
+    result.any;
+
+    if (result.discriminator === "user") {
+      result.field satisfies Field.Immutable<User>;
+      // @ts-expect-error
+      result.field satisfies Field<User>;
+      // @ts-expect-error
+      result.field satisfies Field.Common<User>;
+      // @ts-expect-error
+      result.field satisfies Field.Immutable<Organization>;
+      // @ts-expect-error
+      result.field.any;
+
+      result.field.value satisfies User;
+    }
+
+    const _manual1: Field.Immutable.Discriminated<
+      User | Organization,
+      "type",
+      "bound"
+    > = result;
+    const _manual2: Field.Immutable.Discriminated<
+      User | Organization | Unrelated,
+      "type",
+      "bound"
+    > = result;
+    // @ts-expect-error
+    const _manualWrong1: Field.Discriminated<
+      User | Organization,
+      "type",
+      "bound"
+    > = result;
+    // @ts-expect-error
+    const _manualWrong2: Field.Immutable.Discriminated<User, "type", "bound"> =
+      result;
+    // @ts-expect-error
+    const _manualWrong4: Field.Immutable.Discriminated<
+      Unrelated,
+      "type",
+      "bound"
+    > = result;
+    // @ts-expect-error
+    const _manualWrong5: Field.Immutable.Discriminated<Named, "type", "bound"> =
+      result;
+
+    // @ts-expect-error
+    unionField[method]("paid");
   }
 }
 

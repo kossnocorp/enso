@@ -37,6 +37,8 @@ export declare class Atom<
 
   //#region Phantoms
 
+  [AtomPrivate.immutableInvariantPhantom]: Atom.Immutable.Phantom<Type, Value>;
+
   [AtomPrivate.qualifiersPhantom](): Atom.Qualifier.Map<Qualifier>;
 
   [AtomPrivate.valueInvariantPhantom]: Atom.Value.Phantom<
@@ -123,6 +125,10 @@ export declare class Atom<
   decompose: Atom.Decompose.Prop<Type, Value, Qualifier, Parent>;
 
   useDecompose: Atom.Decompose.Use.Prop<Type, Value, Qualifier, Parent>;
+
+  discriminate: Atom.Discriminate.Prop<Type, Value, Qualifier, Parent>;
+
+  useDiscriminate: Atom.Discriminate.Prop<Type, Value, Qualifier, Parent>;
 
   //#endregion Transform
 }
@@ -478,10 +484,40 @@ export namespace Atom {
     export type Join<
       Type extends Atom.Type,
       Envelop extends Atom.Common.Envelop<Type, any>,
-    > = Atom.Common.Envelop<Type, Common.Value<Envelop>>;
+    > = Atom.Common.Envelop<
+      Type,
+      Common.Value<Envelop>,
+      Common.Qualifier<Envelop>
+    >;
 
     export type Value<Envelop extends Atom.Envelop<any, any>> =
       Envelop extends Atom.Envelop<any, infer Value> ? Value : never;
+
+    export type Qualifier<Envelop extends Atom.Envelop<any, any>> =
+      Qualifier.Common<Envelop>;
+
+    export namespace Qualifier {
+      export type Common<
+        Envelop,
+        Qualifier = All<Envelop>,
+      > = Qualifier extends string
+        ? IsCommon<Qualifier, Envelop> extends true
+          ? Qualifier
+          : never
+        : never;
+
+      export type All<Envelop> =
+        Envelop extends Atom.Envelop<any, any, infer Qualifier>
+          ? Qualifier
+          : never;
+
+      export type IsCommon<Qualifier, Envelop> =
+        Envelop extends Atom.Envelop<any, any, infer EnvelopQualifier>
+          ? Qualifier extends EnvelopQualifier
+            ? true
+            : false
+          : false;
+    }
   }
 
   //#endregion Common
@@ -494,13 +530,18 @@ export namespace Atom {
     Qualifier extends Atom.Qualifier = never,
     Parent extends Atom.Parent.Constraint<Value> = never,
   > {
-    //#region Qualifiers
+    //#region Phantoms
+
+    // NOTE: As immutable atoms never resolve invariant children like common,
+    // we must manually provide phantom type to ensure proper variance between
+    // them.
+    [AtomPrivate.immutableInvariantPhantom]: Immutable.Phantom<Type, Value>;
 
     [AtomPrivate.qualifiersPhantom](): Atom.Qualifier.Map<Qualifier>;
 
     [AtomPrivate.parentInvariantPhantom]: Parent.Phantom<Value, Parent>;
 
-    //#endregion
+    //#endregion Phantoms
 
     //#region Instance
 
@@ -574,10 +615,19 @@ export namespace Atom {
 
     useDecompose: Decompose.Use.Prop<Type, Value, Qualifier, Parent>;
 
+    discriminate: Discriminate.Prop<Type, Value, Qualifier, Parent>;
+
+    useDiscriminate: Discriminate.Prop<Type, Value, Qualifier, Parent>;
+
     //#endregion Transform
   }
 
   export namespace Immutable {
+    export type Phantom<Type extends Atom.Type, Value> = $Prop<
+      Extract<Type, Shell> | "common",
+      Value
+    >;
+
     export type Envelop<
       Type extends Atom.Type,
       Value,
@@ -610,10 +660,6 @@ export namespace Atom {
       | (undefined extends Value ? undefined : never)
       // Resolve branded field without null or undefined
       | Atom.Envelop<Type, Utils.NonNullish<Value>, "tried" | Qualifier>;
-  }
-
-  export interface Interface<Value> {
-    value: Value;
   }
 
   //#endregion Immutable
@@ -1268,19 +1314,28 @@ export namespace Atom {
       Parent extends Atom.Parent.Constraint<Value> = never,
     > =
       | (Value extends Value
-          ? {
+          ? // WIP: Why can't I use `Item` here?
+            {
               value: Value;
               field: Envelop<Type, Value, Qualifier, Parent>;
             }
           : never)
+      // Add unknown option for the common and immutable variants
       | (Type extends (infer Shell extends Atom.Shell) | infer Variant
           ? Variant extends "common" | "immutable"
-            ? {
-                value: unknown;
-                field: Envelop<Shell | Type, unknown, Qualifier, Parent>;
-              }
+            ? Item<Shell | Variant, unknown, Qualifier, Parent>
             : never
           : never);
+
+    export interface Item<
+      Type extends Atom.Type,
+      ItemValue,
+      Qualifier extends Atom.Qualifier = never,
+      Parent extends Atom.Parent.Constraint<ItemValue> = never,
+    > {
+      value: ItemValue;
+      field: Envelop<Type, ItemValue, Qualifier, Parent>;
+    }
 
     export namespace Use {
       export interface Prop<
@@ -1304,10 +1359,71 @@ export namespace Atom {
 
   //#endregion
 
+  //#region Discriminate
+
+  export namespace Discriminate {
+    export interface Prop<
+      Type extends Atom.Type,
+      Value,
+      Qualifier extends Atom.Qualifier = never,
+      Parent extends Atom.Parent.Constraint<Value> = never,
+    > {
+      <Discriminator extends Discriminate.Discriminator<Value>>(
+        discriminator: Discriminator,
+      ): Result<Type, Value, Discriminator, Qualifier, Parent>;
+    }
+
+    export type Discriminator<Payload> = keyof Utils.NonUndefined<Payload>;
+
+    export type Result<
+      Type extends Atom.Type,
+      Value,
+      Discriminator extends Discriminate.Discriminator<Value>,
+      Qualifier extends Atom.Qualifier = never,
+      Parent extends Atom.Parent.Constraint<Value> = never,
+    > = Inner<Type, Value, Discriminator, Qualifier, Parent>;
+
+    export type Inner<
+      Type extends Atom.Type,
+      Value,
+      Discriminator extends Discriminate.Discriminator<Value>,
+      Qualifier extends Atom.Qualifier = never,
+      Parent extends Atom.Parent.Constraint<Value> = never,
+    > =
+      | (Value extends Value
+          ? Discriminator extends keyof Value
+            ? Value[Discriminator] extends infer DiscriminatorValue
+              ? DiscriminatorValue extends Value[Discriminator]
+                ? {
+                    discriminator: DiscriminatorValue;
+                    field: Envelop<Type, Value, Qualifier, Parent>;
+                  }
+                : never
+              : never
+            : // Add the payload type without the discriminator (i.e. undefined)
+              {
+                discriminator: undefined;
+                field: Envelop<Type, Value, Qualifier, Parent>;
+              }
+          : never)
+      // Add unknown option for the common and immutable variants
+      | (Type extends (infer Shell extends Atom.Shell) | infer Variant
+          ? Variant extends "common" | "immutable"
+            ? {
+                discriminator: unknown;
+                field: Envelop<Shell | Variant, unknown, Qualifier, Parent>;
+              }
+            : never
+          : never);
+  }
+
+  //#endregion Discriminate
+
   //#endregion Transform
 }
 
 namespace AtomPrivate {
+  export declare const immutableInvariantPhantom: unique symbol;
   export declare const qualifiersPhantom: unique symbol;
   export declare const valueInvariantPhantom: unique symbol;
   export declare const parentInvariantPhantom: unique symbol;
