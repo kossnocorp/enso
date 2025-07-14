@@ -78,6 +78,8 @@ export declare class Atom<
 
   get _(): Atom.Value.Envelop<Type, Value>;
 
+  size: Atom.SizeProp<Value>;
+
   remove: Atom.RemoveProp<Type, Value>;
 
   forEach: Atom.ForEachProp<Type, Value>;
@@ -599,6 +601,8 @@ export namespace Atom {
 
     //#region Type
 
+    size: SizeProp<Value>;
+
     forEach: ForEachProp<Type, Value>;
 
     map: MapProp<Type, Value>;
@@ -883,6 +887,8 @@ export namespace Atom {
   }
 
   //#endregion
+
+  export type SizeProp<Value> = Value extends object ? number : never;
 
   //#region Remove
 
