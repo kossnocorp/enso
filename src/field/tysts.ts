@@ -375,7 +375,7 @@ import { Field } from "./index.js";
 
 // `Field["value"]` / `Field["useValue"]`
 {
-  function _value<Value>(field: Field<Value>): Value {
+  function _value(field: Field<Hello>): Hello {
     return Math.random() > 0.5 ? field.value : field.useValue();
   }
 
