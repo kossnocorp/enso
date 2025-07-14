@@ -1,4 +1,3 @@
-import { Atom } from "../atom/index.js";
 import { State } from "../state/index.ts";
 import { Field } from "./index.js";
 
@@ -22,7 +21,7 @@ import { Field } from "./index.js";
       _account = {} as Field.Common<User>;
     }
 
-    // Qualifiers
+    // Qualifier
     {
       let _common: Field.Common<Entity>;
       _common = {} as Field.Common<Account | User, "detachable">;
@@ -91,7 +90,7 @@ import { Field } from "./index.js";
       _account = {} as Field<User>;
     }
 
-    // Qualifiers
+    // Qualifier
     {
       let _common: Field.Common<Entity>;
       _common = {} as Field<Account | User, "detachable">;
@@ -159,7 +158,7 @@ import { Field } from "./index.js";
       _account = {} as Field<User>;
     }
 
-    // Qualifiers
+    // Qualifier
     {
       let _common: Field<Entity>;
       _common = {} as Field<Entity, "detachable">;
@@ -237,7 +236,7 @@ import { Field } from "./index.js";
       _account = {} as Field.Common<User>;
     }
 
-    // Qualifiers
+    // Qualifier
     {
       let _common: Field<Entity>;
       // @ts-expect-error
@@ -371,8 +370,12 @@ import { Field } from "./index.js";
   }
 }
 
-// `Field["value"]`
+// `Field["value"]` / `Field["useValue"]`
 {
+  function _value<Value>(field: Field<Value>): Value {
+    return Math.random() > 0.5 ? field.value : field.useValue();
+  }
+
   // `Field.Common`
   {
     // Primitive
@@ -482,19 +485,19 @@ import { Field } from "./index.js";
 
       entity.value satisfies Entity;
       // @ts-expect-error
-      entity.any;
+      entity.value.any;
 
       account.value satisfies Account;
       // @ts-expect-error
       account.value satisfies User;
       // @ts-expect-error
-      account.any;
+      account.value.any;
 
       user.value satisfies User;
       // @ts-expect-error
       user.value satisfies Account;
       // @ts-expect-error
-      user.any;
+      user.value.any;
 
       // Parent
 
@@ -506,7 +509,7 @@ import { Field } from "./index.js";
 
         container.value satisfies Entity;
         // @ts-expect-error
-        container.any;
+        container.value.any;
       }
 
       if ("field" in organization.parent) {
@@ -514,7 +517,7 @@ import { Field } from "./index.js";
 
         organization.value satisfies User;
         // @ts-expect-error
-        organization.any;
+        organization.value.any;
       }
     }
 
@@ -527,7 +530,7 @@ import { Field } from "./index.js";
       entity.$.name satisfies State<string>;
       entity.$.name.value satisfies string;
       // @ts-expect-error
-      entity.$.name.any;
+      entity.$.name.value.any;
 
       // @ts-expect-error
       entity.$.paid;
@@ -542,7 +545,7 @@ import { Field } from "./index.js";
       entity.$.name satisfies State<string>;
       entity.$.name.value satisfies string;
       // @ts-expect-error
-      entity.$.name.any;
+      entity.$.name.value.any;
 
       // @ts-expect-error
       entity.$.paid;
@@ -800,7 +803,7 @@ import { Field } from "./index.js";
     user.at("email").self.try() satisfies State<string, "tried"> | undefined;
   }
 
-  // Qualifiers
+  // Qualifier
   {
     const user = {} as Field<User, "detachable">;
 
@@ -1536,6 +1539,51 @@ const prim = new Field<string | boolean>("hello");
   }
 }
 
+// `Field["useCollection"]`
+{
+  // Array
+  {
+    const field = new Field<string[]>([]);
+    const result = field.useCollection();
+    result satisfies Field<string[], "bound">;
+    // @ts-expect-error
+    result satisfies Field<number[], "bound">;
+    // @ts-expect-error
+    result.any;
+  }
+
+  // Object
+  {
+    const field = new Field({} as Hello);
+    const result = field.useCollection();
+    result satisfies Field<Hello, "bound">;
+    // @ts-expect-error
+    result satisfies Field<Blah, "bound">;
+    // @ts-expect-error
+    result.any;
+  }
+
+  // Qualifier
+  {
+    const field = {} as Field<Hello, "detachable">;
+    const result = field.useCollection();
+    result satisfies Field<Hello, "bound" | "detachable">;
+    // @ts-expect-error
+    result satisfies Field<Hello, "bound" | "tried">;
+    // @ts-expect-error
+    result satisfies Field<Blah, "bound" | "detachable">;
+    // @ts-expect-error
+    result.any;
+  }
+
+  // Primitive
+  {
+    const field = new Field("hello");
+    // @ts-expect-error
+    field.useCollection();
+  }
+}
+
 //#endregion Collection
 
 //#endregion Type
@@ -1723,7 +1771,14 @@ const unionField = new Field({ hello: "world", world: true }) as
 
 //#region Field["discriminate"] / Field["useDiscriminate"]
 {
-  const method = {} as "discriminate" | "useDiscriminate";
+  function _discriminate<Value, Key extends keyof Value>(
+    field: Field<Value>,
+    key: Key,
+  ): Field.Discriminated<Value, Key> {
+    return Math.random() > 0.5
+      ? field.discriminate(key)
+      : field.useDiscriminate(key);
+  }
 
   interface Named {
     type: string;
@@ -1750,7 +1805,7 @@ const unionField = new Field({ hello: "world", world: true }) as
 
   // Value union
   {
-    const result = unionValue[method]("type");
+    const result = unionValue.discriminate("type");
 
     result satisfies
       | {
@@ -1814,12 +1869,12 @@ const unionField = new Field({ hello: "world", world: true }) as
     const _manualWrong3: Field.Discriminated<Unrelated, "type"> = result;
 
     // @ts-expect-error
-    unionValue[method]("paid");
+    unionValue.discriminate("paid");
   }
 
   // Field union
   {
-    const result = Field.common(unionField)[method]("type");
+    const result = Field.common(unionField).discriminate("type");
 
     result satisfies
       | {
@@ -1894,14 +1949,14 @@ const unionField = new Field({ hello: "world", world: true }) as
     const _manualWrong5: Field.Common.Discriminated<Named, "type"> = result;
 
     // @ts-expect-error
-    unionField[method]("paid");
+    unionField.discriminate("paid");
   }
 
   // Undefined value
   {
-    const result = (unionValue as Field<User | Organization | undefined>)[
-      method
-    ]("type");
+    const result = (
+      unionValue as Field<User | Organization | undefined>
+    ).discriminate("type");
 
     result satisfies
       | {
@@ -1984,14 +2039,14 @@ const unionField = new Field({ hello: "world", world: true }) as
       result;
 
     // @ts-expect-error
-    unionValue[method]("paid");
+    unionValue.discriminate("paid");
   }
 
   // Detachable
   {
-    const result = (unionValue as Field<User | Organization, "detachable">)[
-      method
-    ]("type");
+    const result = (
+      unionValue as Field<User | Organization, "detachable">
+    ).discriminate("type");
 
     result satisfies
       | {
@@ -2072,7 +2127,7 @@ const unionField = new Field({ hello: "world", world: true }) as
       unionField as
         | Field<User, "detachable" | "tried">
         | Field<Organization, "detachable">,
-    )[method]("type");
+    ).discriminate("type");
 
     result satisfies
       | {
@@ -2178,7 +2233,7 @@ const unionField = new Field({ hello: "world", world: true }) as
   {
     const result = (
       unionValue as unknown as Field.Immutable<User | Organization, "bound">
-    )[method]("type");
+    ).discriminate("type");
 
     result satisfies
       | {
@@ -2282,7 +2337,7 @@ const unionField = new Field({ hello: "world", world: true }) as
       result;
 
     // @ts-expect-error
-    unionField[method]("paid");
+    unionField.discriminate("paid");
   }
 }
 
