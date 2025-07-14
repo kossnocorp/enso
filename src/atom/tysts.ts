@@ -84,6 +84,67 @@ import { Atom } from "./index.js";
       // @ts-expect-error
       tyst<NullishProp>({} as Atom.ValueProp<User>);
     }
+
+    // Branded
+    {
+      type Branded<Value> = Value & { [brand]: true };
+
+      // Number
+      {
+        type NumberProp = Atom.ValueProp<Branded<number>>;
+
+        tyst<NumberProp>({} as Branded<number>);
+        tyst<number>({} as NumberProp);
+        // @ts-expect-error
+        tyst<NumberProp>({} as number);
+        // @ts-expect-error
+        tyst<NumberProp>({} as string);
+        // @ts-expect-error
+        tyst<NumberProp>({} as unknown);
+      }
+
+      // String
+      {
+        type StringProp = Atom.ValueProp<Branded<string>>;
+
+        tyst<StringProp>({} as Branded<string>);
+        tyst<string>({} as StringProp);
+        // @ts-expect-error
+        tyst<StringProp>({} as string);
+        // @ts-expect-error
+        tyst<StringProp>({} as number);
+        // @ts-expect-error
+        tyst<StringProp>({} as unknown);
+      }
+
+      // Boolean
+      {
+        type BooleanProp = Atom.ValueProp<Branded<boolean>>;
+
+        tyst<BooleanProp>({} as Branded<boolean>);
+        tyst<boolean>({} as BooleanProp);
+        // @ts-expect-error
+        tyst<BooleanProp>({} as boolean);
+        // @ts-expect-error
+        tyst<BooleanProp>({} as number);
+        // @ts-expect-error
+        tyst<BooleanProp>({} as unknown);
+      }
+
+      // Symbol
+      {
+        type SymbolProp = Atom.ValueProp<Branded<symbol>>;
+
+        tyst<SymbolProp>({} as Branded<symbol>);
+        tyst<symbol>({} as SymbolProp);
+        // @ts-expect-error
+        tyst<SymbolProp>({} as symbol);
+        // @ts-expect-error
+        tyst<BooleanProp>({} as number);
+        // @ts-expect-error
+        tyst<BooleanProp>({} as unknown);
+      }
+    }
   }
 }
 
@@ -162,5 +223,7 @@ interface User extends Entity {
   age: number;
   email?: string;
 }
+
+declare const brand: unique symbol;
 
 //#endregion

@@ -689,7 +689,17 @@ export namespace Atom {
     // respectively, so we have to have special case for them to account for
     // invariance.
     Utils.IsNotTop<Value> extends true
-      ? { [Key in keyof Value]: Value[Key] }
+      ? // Preserve brand if it exists
+        Value extends string & (infer Brand extends Utils.AnyBrand)
+        ? string & Brand
+        : Value extends number & (infer Brand extends Utils.AnyBrand)
+          ? number & Brand
+          : Value extends boolean & (infer Brand extends Utils.AnyBrand)
+            ? boolean & Brand
+            : Value extends symbol & (infer Brand extends Utils.AnyBrand)
+              ? symbol & Brand
+              : // Otherwise map the value to its own type
+                { [Key in keyof Value]: Value[Key] }
       : Utils.IsUnknown<Value> extends true
         ? never
         : Utils.IsAny<Value> extends true
