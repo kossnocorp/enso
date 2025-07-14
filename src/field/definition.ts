@@ -11,7 +11,7 @@ export declare class Field<
     Qualifier extends Atom.Qualifier = never,
     Parent extends Atom.Parent.Constraint<Value> = never,
   >
-  extends Atom<"field", Value, Qualifier, Parent>
+  extends Atom<"field" | "invariant", Value, Qualifier, Parent>
   implements
     Static<
       typeof Field<Value, Qualifier, Parent>,
