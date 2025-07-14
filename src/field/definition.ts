@@ -1,4 +1,9 @@
-import React, { DependencyList } from "react";
+import React, {
+  DependencyList,
+  FocusEventHandler,
+  MutableRefObject,
+  RefCallback,
+} from "react";
 import { Atom } from "../atom/index.js";
 import type { EnsoUtils as Utils } from "../utils.ts";
 import { FieldOld } from "./old.tsx";
@@ -47,8 +52,7 @@ export declare class Field<
     ErrorsEnable extends boolean = false,
     ValidEnable extends boolean = false,
   >(
-    // WIP:
-    props: FieldOld.ComponentProps<
+    props: Field.Component.Props<
       Payload,
       MetaEnable,
       DirtyEnable,
@@ -199,4 +203,99 @@ export namespace Field {
   >;
 
   //#endregion Transform
+
+  //#region Meta
+
+  export type Meta<Props extends Meta.Props | undefined> =
+    Props extends Meta.Props
+      ? {
+          valid: Meta.Enable<Props["valid"], boolean>;
+          errors: Meta.Enable<Props["errors"], Error[]>;
+          dirty: Meta.Enable<Props["dirty"], boolean>;
+        }
+      : {
+          valid: boolean;
+          errors: Error[];
+          dirty: boolean;
+        };
+
+  export namespace Meta {
+    export interface Props {
+      valid?: boolean | undefined;
+      errors?: boolean | undefined;
+      dirty?: boolean | undefined;
+    }
+
+    export type Enable<Enable, Payload> = Enable extends true
+      ? Payload
+      : Enable extends false
+        ? undefined
+        : Enable extends boolean
+          ? Payload | undefined
+          : Enable extends undefined
+            ? undefined
+            : never;
+  }
+
+  //#endregion Meta
+
+  //#region Control
+
+  //#region Component
+
+  export namespace Component {
+    export type Props<
+      Payload,
+      MetaEnable extends boolean | undefined = undefined,
+      DirtyEnable extends boolean = false,
+      ErrorsEnable extends boolean = false,
+      ValidEnable extends boolean = false,
+    > = {
+      field: Field<Payload>;
+      render: Render<
+        Payload,
+        MetaEnable extends true
+          ? undefined
+          : MetaEnable extends false
+            ? {
+                valid: false;
+                errors: false;
+                dirty: false;
+              }
+            : {
+                valid: ValidEnable;
+                errors: ErrorsEnable;
+                dirty: DirtyEnable;
+              }
+      >;
+      meta?: MetaEnable;
+      dirty?: DirtyEnable;
+      errors?: ErrorsEnable;
+      valid?: ValidEnable;
+    };
+
+    export type Render<Payload, MetaProps extends Meta.Props | undefined> = (
+      input: Input<Payload>,
+      meta: Meta<MetaProps>,
+    ) => React.ReactNode;
+  }
+
+  //#endregion Component
+
+  //#region Input
+
+  export type Input<Value> = {
+    name: string;
+    value: Value;
+    onChange: Input.OnChange<Value>;
+    onBlur: FocusEventHandler<Element>;
+  };
+
+  export namespace Input {
+    export type OnChange<Value> = (value: Value) => void;
+  }
+
+  //#endregion Input
+
+  //#endregion
 }
