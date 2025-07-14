@@ -64,6 +64,10 @@ export declare class Atom<
 
   useValue(): Atom.ValueProp<Value>;
 
+  compute: Atom.Compute.Prop<Value>;
+
+  useCompute: Atom.Compute.Prop<Value>;
+
   set: Atom.Set<Type, Value, Qualifier, Parent>;
 
   get lastChanges(): FieldChange;
@@ -558,6 +562,10 @@ export namespace Atom {
     value: ValueProp<Value>;
 
     useValue(): ValueProp<Value>;
+
+    compute: Compute.Prop<Value>;
+
+    useCompute: Compute.Prop<Value>;
 
     //#endregion
 
@@ -1307,6 +1315,20 @@ export namespace Atom {
   //#endregion
 
   //#region Transform
+
+  //#region Compute
+
+  export namespace Compute {
+    export interface Prop<Value> {
+      <Result>(callback: Callback<Value, Result>): Result;
+    }
+
+    export interface Callback<Value, Result> {
+      (value: Value): Result;
+    }
+  }
+
+  //#endregion Compute
 
   //#region Decompose
 

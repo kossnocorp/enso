@@ -1,3 +1,4 @@
+import { Atom } from "../atom/index.js";
 import { State } from "../state/index.ts";
 import { Field } from "./index.js";
 
@@ -370,6 +371,8 @@ import { Field } from "./index.js";
   }
 }
 
+//#region Value
+
 // `Field["value"]` / `Field["useValue"]`
 {
   function _value<Value>(field: Field<Value>): Value {
@@ -552,6 +555,23 @@ import { Field } from "./index.js";
     }
   }
 }
+
+// `Field["compute"]` / `Field["useCompute"]`
+{
+  const field = {} as Field<number>;
+
+  let result = field.compute((value) => Number.isNaN(value));
+
+  result satisfies boolean;
+  // @ts-expect-error
+  result satisfies number;
+  // @ts-expect-error
+  result.any;
+
+  result = field.useCompute((value) => value > 0);
+}
+
+//#endregion Value
 
 // `Field["root"]`
 {
