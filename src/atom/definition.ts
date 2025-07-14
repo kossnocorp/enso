@@ -84,6 +84,8 @@ export declare class Atom<
 
   filter: Atom.FilterProp<Type, Value>;
 
+  useCollection: Atom.UseCollectionProp<Type, Value, Qualifier, Parent>;
+
   //#endregion Type
 
   //#region Tree
@@ -596,6 +598,8 @@ export namespace Atom {
     find: FindProp<Type, Value>;
 
     filter: FilterProp<Type, Value>;
+
+    useCollection: UseCollectionProp<Type, Value, Qualifier, Parent>;
 
     //#endregion Type
 
@@ -1190,6 +1194,15 @@ export namespace Atom {
     Value,
     "filter"
   >;
+
+  export type UseCollectionProp<
+    Type extends Atom.Type,
+    Value,
+    Qualifier extends Atom.Qualifier = never,
+    Parent extends Atom.Parent.Constraint<Value> = never,
+  > = Value extends object
+    ? () => Envelop<Type, Value, Qualifier | "bound", Parent>
+    : never;
 
   //#endregion
 
