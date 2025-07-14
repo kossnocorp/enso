@@ -981,6 +981,31 @@ const objOrUnd = new Field<Ok | undefined>({ ok: true });
 const rec = new Field<Record<string, string | boolean>>({});
 const prim = new Field<string | boolean>("hello");
 
+// `Field["size"]`
+{
+  // Array
+  {
+    const field = new Field([] as string[]);
+    field.size satisfies number;
+    // @ts-expect-error
+    field.size.any;
+  }
+
+  // Object
+  {
+    const field = new Field({ a: 1 });
+    field.size satisfies number;
+    // @ts-expect-error
+    field.size.any;
+  }
+
+  // Primitive
+  {
+    const field = new Field(1);
+    field.size satisfies never;
+  }
+}
+
 // `Field["forEach"]`
 {
   // Tuple
