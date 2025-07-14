@@ -1,5 +1,6 @@
 import { DependencyList, FormEvent, ReactElement } from "react";
 import type { Atom } from "../atom/definition.ts";
+import { Field } from "../field/definition.ts";
 import { FieldValidation } from "../field/validation/index.ts";
 
 export declare class Form<Value> implements Form.Interface<Value> {
@@ -23,16 +24,16 @@ export declare class Form<Value> implements Form.Interface<Value> {
 
   //#endregion Instance
 
-  //#region Tree
+  //#region Field
 
-  $: Atom.$Prop<"field" | "invariant", Value>;
+  get field(): Field<Value>;
 
-  //#endregion Tree
+  //#endregion
 }
 
 export namespace Form {
   export interface Interface<Value> {
-    $: Atom.$Prop<"field" | "invariant", Value>;
+    field: Field<Value>;
   }
 
   export interface Options<Value> {
