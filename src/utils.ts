@@ -246,4 +246,14 @@ export namespace EnsoUtils {
       : never;
 
   //#endregion
+
+  //#region Union & Intersection
+
+  export type UnionToIntersection<Union> = (
+    Union extends any ? (key: Union) => void : never
+  ) extends (key: infer Intersection) => void
+    ? Intersection
+    : never;
+
+  //#endregion
 }

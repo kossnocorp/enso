@@ -98,6 +98,21 @@ export namespace Field {
       Atom.Common<"field" | "common", Value, Qualifier, Parent>,
       ImmutableBase<Value> {}
 
+  export namespace Common {
+    export type Discriminated<
+      Value,
+      Discriminator extends Atom.Discriminate.Discriminator<Value>,
+      Qualifier extends Atom.Qualifier = never,
+      Parent extends Atom.Parent.Constraint<Value> = never,
+    > = Atom.Discriminate.Result<
+      "field" | "common",
+      Value,
+      Discriminator,
+      Qualifier,
+      Parent
+    >;
+  }
+
   export interface Immutable<
     Value,
     Qualifier extends Atom.Qualifier = never,
@@ -105,6 +120,21 @@ export namespace Field {
   > extends Hint,
       Atom.Immutable<"field" | "immutable", Value, Qualifier, Parent>,
       ImmutableBase<Value> {}
+
+  export namespace Immutable {
+    export type Discriminated<
+      Value,
+      Discriminator extends Atom.Discriminate.Discriminator<Value>,
+      Qualifier extends Atom.Qualifier = never,
+      Parent extends Atom.Parent.Constraint<Value> = never,
+    > = Atom.Discriminate.Result<
+      "field" | "immutable",
+      Value,
+      Discriminator,
+      Qualifier,
+      Parent
+    >;
+  }
 
   export interface ImmutableBase<Value> {}
 
@@ -154,6 +184,19 @@ export namespace Field {
     Qualifier extends Atom.Qualifier = never,
     Parent extends Atom.Parent.Constraint<Value> = never,
   > = Atom.Decompose.Result<"field", Value, Qualifier, Parent>;
+
+  export type Discriminated<
+    Value,
+    Discriminator extends Atom.Discriminate.Discriminator<Value>,
+    Qualifier extends Atom.Qualifier = never,
+    Parent extends Atom.Parent.Constraint<Value> = never,
+  > = Atom.Discriminate.Result<
+    "field" | "invariant",
+    Value,
+    Discriminator,
+    Qualifier,
+    Parent
+  >;
 
   //#endregion Transform
 }
