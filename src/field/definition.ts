@@ -1,13 +1,9 @@
-import React, {
-  DependencyList,
-  FocusEventHandler,
-  MutableRefObject,
-  RefCallback,
-} from "react";
+import React, { DependencyList, FocusEventHandler } from "react";
 import { Atom } from "../atom/index.js";
 import type { EnsoUtils as Utils } from "../utils.ts";
-import { FieldOld } from "./old.tsx";
 import { Static } from "./util.ts";
+
+export * from "./ref/index.js";
 
 const hintSymbol = Symbol();
 
