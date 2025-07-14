@@ -568,7 +568,7 @@ import { Field } from "./index.js";
   // @ts-expect-error
   result.any;
 
-  result = field.useCompute((value) => value > 0);
+  result = field.useCompute((value) => value > 0, []);
 }
 
 //#endregion Value

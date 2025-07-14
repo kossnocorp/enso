@@ -66,7 +66,7 @@ export declare class Atom<
 
   compute: Atom.Compute.Prop<Value>;
 
-  useCompute: Atom.Compute.Prop<Value>;
+  useCompute: Atom.Compute.UseProp<Value>;
 
   set: Atom.Set<Type, Value, Qualifier, Parent>;
 
@@ -567,7 +567,7 @@ export namespace Atom {
 
     compute: Compute.Prop<Value>;
 
-    useCompute: Compute.Prop<Value>;
+    useCompute: Compute.UseProp<Value>;
 
     //#endregion
 
@@ -1331,6 +1331,10 @@ export namespace Atom {
 
     export interface Callback<Value, Result> {
       (value: Value): Result;
+    }
+
+    export interface UseProp<Value> {
+      <Result>(callback: Callback<Value, Result>, deps: DependencyList): Result;
     }
   }
 
