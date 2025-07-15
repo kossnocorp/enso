@@ -1,8 +1,7 @@
-import { Atom } from "../atom/index.js";
 import { State } from "../state/index.ts";
 import { Field } from "./index.js";
 
-// Variance
+//#region Variance
 {
   // `Field.Common` as `Field.Common`
   {
@@ -303,8 +302,9 @@ import { Field } from "./index.js";
     }
   }
 }
+//#endregion
 
-// Field.common
+//#region Field.common
 {
   // Basic
   {
@@ -370,10 +370,11 @@ import { Field } from "./index.js";
     }
   }
 }
+//#endregion
 
 //#region Value
 
-// `Field["value"]` / `Field["useValue"]`
+//#region `Field["value"]` / `Field["useValue"]`
 {
   function _value(field: Field<Hello>): Hello {
     return Math.random() > 0.5 ? field.value : field.useValue();
@@ -400,19 +401,19 @@ import { Field } from "./index.js";
 
       entity.value satisfies Entity;
       // @ts-expect-error
-      entity.any;
+      entity.value.any;
 
       account.value satisfies Account;
       // @ts-expect-error
       account.value satisfies User;
       // @ts-expect-error
-      account.any;
+      account.value.any;
 
       user.value satisfies User;
       // @ts-expect-error
       user.value satisfies Account;
       // @ts-expect-error
-      user.any;
+      user.value.any;
 
       // Parent
 
@@ -424,7 +425,7 @@ import { Field } from "./index.js";
 
         container.value satisfies Entity;
         // @ts-expect-error
-        container.any;
+        container.value.any;
       }
 
       if ("field" in organization.parent) {
@@ -432,7 +433,7 @@ import { Field } from "./index.js";
 
         organization.value satisfies User;
         // @ts-expect-error
-        organization.any;
+        organization.value.any;
       }
     }
 
@@ -445,7 +446,7 @@ import { Field } from "./index.js";
       entity.$.name satisfies State<string>;
       entity.$.name.value satisfies string;
       // @ts-expect-error
-      entity.$.name.any;
+      entity.$.name.value.any;
 
       // @ts-expect-error
       entity.$.paid;
@@ -460,7 +461,7 @@ import { Field } from "./index.js";
       entity.$.name satisfies State<string>;
       entity.$.name.value satisfies string;
       // @ts-expect-error
-      entity.$.name.any;
+      entity.$.name.value.any;
 
       // @ts-expect-error
       entity.$.paid;
@@ -555,8 +556,9 @@ import { Field } from "./index.js";
     }
   }
 }
+//#endregion
 
-// `Field["compute"]` / `Field["useCompute"]`
+//#region `Field["compute"]` / `Field["useCompute"]`
 {
   const field = {} as Field<number>;
 
@@ -570,10 +572,11 @@ import { Field } from "./index.js";
 
   result = field.useCompute((value) => value > 0, []);
 }
+//#endregion
 
 //#endregion Value
 
-// `Field["root"]`
+//#region `Field["root"]`
 {
   // Immutability
   {
@@ -584,8 +587,9 @@ import { Field } from "./index.js";
     user.root satisfies Field.Invariant<unknown, "root">;
   }
 }
+//#endregion
 
-// `Field["parent"]`
+//#region `Field["parent"]`
 {
   // Immutability
   {
@@ -602,8 +606,9 @@ import { Field } from "./index.js";
     }
   }
 }
+//#endregion
 
-// `Field["$"]`
+//#region `Field["$"]`
 {
   // Basic
   {
@@ -644,8 +649,9 @@ import { Field } from "./index.js";
     entity.$.name satisfies Field<number>;
   }
 }
+//#endregion
 
-// `Field["at"]`
+//#region `Field["at"]`
 {
   // Basic
   {
@@ -709,8 +715,9 @@ import { Field } from "./index.js";
     Field.common(entity).at("name") satisfies Field<number>;
   }
 }
+//#endregion
 
-// `Field["try"]`
+//#region `Field["try"]`
 {
   // Basic
   {
@@ -799,8 +806,9 @@ import { Field } from "./index.js";
     >;
   }
 }
+//#endregion
 
-// `Field["self"]["try"]`
+//#region `Field["self"]["try"]`
 {
   // Basic
   {
@@ -950,6 +958,7 @@ import { Field } from "./index.js";
     >;
   }
 }
+//#endregion
 
 //#region Type
 
@@ -981,7 +990,7 @@ const objOrUnd = new Field<Ok | undefined>({ ok: true });
 const rec = new Field<Record<string, string | boolean>>({});
 const prim = new Field<string | boolean>("hello");
 
-// `Field["size"]`
+//#region `Field["size"]`
 {
   // Array
   {
@@ -1005,8 +1014,9 @@ const prim = new Field<string | boolean>("hello");
     field.size satisfies never;
   }
 }
+//#endregion
 
-// `Field["forEach"]`
+//#region `Field["forEach"]`
 {
   // Tuple
   {
@@ -1136,8 +1146,9 @@ const prim = new Field<string | boolean>("hello");
     }
   }
 }
+//#endregion
 
-// `Field["map"]`
+//#region `Field["map"]`
 {
   // Array
   {
@@ -1253,8 +1264,9 @@ const prim = new Field<string | boolean>("hello");
     arr.map(() => {});
   }
 }
+//#endregion
 
-// `Field["find"]`
+//#region `Field["find"]`
 {
   // Array
   {
@@ -1429,8 +1441,9 @@ const prim = new Field<string | boolean>("hello");
     }
   }
 }
+//#endregion
 
-// `Field["filter"]`
+//#region `Field["filter"]`
 {
   // Array
   {
@@ -1583,8 +1596,9 @@ const prim = new Field<string | boolean>("hello");
     }
   }
 }
+//#endregion
 
-// `Field["useCollection"]`
+//#region `Field["useCollection"]`
 {
   // Array
   {
@@ -1628,6 +1642,7 @@ const prim = new Field<string | boolean>("hello");
     field.useCollection();
   }
 }
+//#endregion
 
 //#endregion Collection
 
@@ -1640,7 +1655,7 @@ const unionField = new Field({ hello: "world", world: true }) as
   | Field<Hello>
   | Field<Blah>;
 
-// `Field["decompose"]`
+//#region `Field["decompose"]`
 {
   // Value union
   {
@@ -1711,8 +1726,9 @@ const unionField = new Field({ hello: "world", world: true }) as
     > = decomposed;
   }
 }
+//#endregion
 
-// `Field["useDecompose"]`
+//#region `Field["useDecompose"]`
 {
   // Value union
   {
@@ -1813,6 +1829,7 @@ const unionField = new Field({ hello: "world", world: true }) as
     > = decomposed;
   }
 }
+//#endregion
 
 //#region Field["discriminate"] / Field["useDiscriminate"]
 {
@@ -2385,6 +2402,108 @@ const unionField = new Field({ hello: "world", world: true }) as
     unionField.discriminate("paid");
   }
 }
+//#endregion
+
+//#region Field["into"]
+{
+  // Invariant
+  {
+    const field = new Field("hello");
+    const result = field
+      .into((value) => {
+        value satisfies string;
+        // @ts-expect-error
+        value.any;
+
+        return value.length;
+      })
+      .from((sizeValue, value) => {
+        sizeValue satisfies number;
+        // @ts-expect-error
+        sizeValue.any;
+
+        value satisfies string;
+        // @ts-expect-error
+        value.any;
+
+        return value.slice(0, sizeValue);
+      });
+
+    result satisfies Field<number, Field.Proxied<string>>;
+    result satisfies Field<number>;
+    result satisfies Field<number, Field.Proxied<any>>;
+    result satisfies Field<number, Field.Proxied<unknown>>;
+    // @ts-expect-error
+    result satisfies Field<number, Field.Proxied<number>>;
+  }
+
+  // Common
+  {
+    const field = new Field("hello") as Field.Common<string>;
+    const result = field
+      .into((value) => {
+        value satisfies string;
+        // @ts-expect-error
+        value.any;
+
+        return value.length;
+      })
+      .from((sizeValue, value) => {
+        sizeValue satisfies number;
+        // @ts-expect-error
+        sizeValue.any;
+
+        value satisfies string;
+        // @ts-expect-error
+        value.any;
+
+        return value.slice(0, sizeValue);
+      });
+
+    result satisfies Field.Common<number, Field.Proxied<string>>;
+    result satisfies Field.Common<number>;
+    result satisfies Field.Common<number, Field.Proxied<any>>;
+    result satisfies Field.Common<number, Field.Proxied<unknown>>;
+    // @ts-expect-error
+    result satisfies Field.Common<number, Field.Proxied<number>>;
+    // @ts-expect-error
+    result satisfies Field<number, Field.Proxied<string>>;
+  }
+
+  // Immutable
+  {
+    const field = new Field("hello") as Field.Immutable<string>;
+    const result = field
+      .into((value) => {
+        value satisfies string;
+        // @ts-expect-error
+        value.any;
+
+        return value.length;
+      })
+      .from((sizeValue, value) => {
+        sizeValue satisfies number;
+        // @ts-expect-error
+        sizeValue.any;
+
+        value satisfies string;
+        // @ts-expect-error
+        value.any;
+
+        return value.slice(0, sizeValue);
+      });
+
+    result satisfies Field.Immutable<number, Field.Proxied<string>>;
+    result satisfies Field.Immutable<number>;
+    result satisfies Field.Immutable<number, Field.Proxied<any>>;
+    result satisfies Field.Immutable<number, Field.Proxied<unknown>>;
+    // @ts-expect-error
+    result satisfies Field.Immutable<number, Field.Proxied<number>>;
+    // @ts-expect-error
+    result satisfies Field<number, Field.Proxied<string>>;
+  }
+}
+//#endregion
 
 //#endregion Transform
 

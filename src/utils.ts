@@ -230,6 +230,10 @@ export namespace EnsoUtils {
 
   export type IsNever<Type> = [Type] extends [never] ? true : false;
 
+  export type NeverDefault<Type, DefaultType> = [Type] extends [never]
+    ? DefaultType
+    : Type;
+
   //#endregion
 
   //#region Variance

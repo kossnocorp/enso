@@ -11,8 +11,8 @@ import type { EnsoUtils as Utils } from "../utils.ts";
 export declare class Atom<
     Type extends Atom.Type,
     Value,
-    Qualifier extends Atom.Qualifier = never,
-    Parent extends Atom.Parent.Constraint<Value> = never,
+    Qualifier extends Atom.Qualifier = Atom.Qualifier.Default,
+    Parent extends Atom.Parent.Constraint<Value> = Atom.Parent.Default,
   >
   implements
     Static<typeof Atom<Type, Value, Qualifier, Parent>, Atom.Static<any>>,
@@ -138,6 +138,8 @@ export declare class Atom<
 
   useDiscriminate: Atom.Discriminate.Prop<Type, Value, Qualifier, Parent>;
 
+  into: Atom.Proxy.Into.Prop<Type, Value, Qualifier, Parent>;
+
   //#endregion Transform
 }
 
@@ -154,8 +156,8 @@ export namespace Atom {
   export interface StaticSubclass<Type extends Atom.Type> {
     create<
       Value,
-      Qualifier extends Atom.Qualifier = never,
-      Parent extends Atom.Parent.Constraint<Value> = never,
+      Qualifier extends Atom.Qualifier = Atom.Qualifier.Default,
+      Parent extends Atom.Parent.Constraint<Value> = Atom.Parent.Default,
     >(
       value: Value,
       parent?: Parent.Def<Type, Parent>,
@@ -187,8 +189,8 @@ export namespace Atom {
   export type Envelop<
     Type extends Atom.Type,
     Value,
-    Qualifier extends Atom.Qualifier = never,
-    Parent extends Atom.Parent.Constraint<Value> = never,
+    Qualifier extends Atom.Qualifier = Atom.Qualifier.Default,
+    Parent extends Atom.Parent.Constraint<Value> = Atom.Parent.Default,
   > =
     ExtractShell<Type> extends "state"
       ? State.Envelop<"state" | ExtractVariant<Type>, Value, Qualifier, Parent>
@@ -204,8 +206,8 @@ export namespace Atom {
   export type Every<
     Type extends Atom.Type,
     Value,
-    Qualifier extends Atom.Qualifier = never,
-    Parent extends Atom.Parent.Constraint<Value> = never,
+    Qualifier extends Atom.Qualifier = Atom.Qualifier.Default,
+    Parent extends Atom.Parent.Constraint<Value> = Atom.Parent.Default,
   > =
     // Handle boolean separately, so it doesn't produce `Atom<..., true> | Atom<..., false>`
     | (boolean extends Value ? Envelop<Type, Value, Qualifier, Parent> : never)
@@ -232,8 +234,8 @@ export namespace Atom {
   export type SelfEnvelop<
     Type extends Atom.Type,
     Value,
-    Qualifier extends Atom.Qualifier = never,
-    Parent extends Atom.Parent.Constraint<Value> = never,
+    Qualifier extends Atom.Qualifier = Atom.Qualifier.Default,
+    Parent extends Atom.Parent.Constraint<Value> = Atom.Parent.Default,
   > = "invariant" extends Type
     ? Invariant.Self<Type, Value, Qualifier, Parent>
     : "common" extends Type
@@ -244,22 +246,37 @@ export namespace Atom {
 
   //#region Qualifier
 
-  export type Qualifier = "root" | "detachable" | "tried" | "bound";
+  export type Qualifier =
+    | "root"
+    | "detachable"
+    | "tried"
+    | "bound"
+    | Proxy.Qualifier<unknown>;
 
   export namespace Qualifier {
-    export type Map<Qualifier extends Atom.Qualifier = never> = MapChunk<
-      Qualifier,
-      "root"
-    > &
-      MapChunk<Qualifier, "detachable"> &
-      MapChunk<Qualifier, "tried"> &
-      MapChunk<Qualifier, "bound">;
+    export type Default = never;
+
+    export type Map<Qualifier extends Atom.Qualifier = never> =
+      Utils.NeverDefault<
+        MapChunk<Qualifier, "root"> &
+          MapChunk<Qualifier, "detachable"> &
+          MapChunk<Qualifier, "tried"> &
+          MapChunk<Qualifier, "bound"> &
+          (Qualifier extends Proxy.Qualifier<infer SourceValue>
+            ? { proxy: SourceValue }
+            : {}),
+        {}
+      >;
 
     export type MapChunk<
       // WIP: Try to make it reusable this inside Ref
       Qualifier extends Atom.Qualifier,
-      TestQualifier extends Atom.Qualifier,
-    > = TestQualifier extends Qualifier ? { [Key in TestQualifier]: true } : {};
+      TestQualifier extends keyof any,
+    > = TestQualifier extends Qualifier
+      ? {
+          [Key in TestQualifier]: true;
+        }
+      : {};
   }
 
   //#endregion Qualifier
@@ -267,6 +284,8 @@ export namespace Atom {
   //#region Parent
 
   export namespace Parent {
+    export type Default = never;
+
     export type Phantom<ChildValue, Parent extends Constraint<ChildValue>> =
       Utils.IsNever<Parent> extends true ? unknown : { parent: Parent };
 
@@ -402,8 +421,8 @@ export namespace Atom {
   export interface Invariant<
     Type extends Atom.Type,
     Value,
-    Qualifier extends Atom.Qualifier = never,
-    Parent extends Atom.Parent.Constraint<Value> = never,
+    Qualifier extends Atom.Qualifier = Atom.Qualifier.Default,
+    Parent extends Atom.Parent.Constraint<Value> = Atom.Parent.Default,
   > extends Common<Type, Value, Qualifier, Parent> {
     //#region Value
 
@@ -439,8 +458,8 @@ export namespace Atom {
     export type Envelop<
       Type extends Atom.Type,
       Value,
-      Qualifier extends Atom.Qualifier = never,
-      Parent extends Atom.Parent.Constraint<Value> = never,
+      Qualifier extends Atom.Qualifier = Atom.Qualifier.Default,
+      Parent extends Atom.Parent.Constraint<Value> = Atom.Parent.Default,
     > =
       ExtractShell<Type> extends "state"
         ? State.Invariant<Value, Qualifier, Parent>
@@ -451,8 +470,8 @@ export namespace Atom {
     export interface Self<
       Type extends Atom.Type,
       Value,
-      Qualifier extends Atom.Qualifier = never,
-      Parent extends Atom.Parent.Constraint<Value> = never,
+      Qualifier extends Atom.Qualifier = Atom.Qualifier.Default,
+      Parent extends Atom.Parent.Constraint<Value> = Atom.Parent.Default,
     > extends Common.Self<Type, Value, Qualifier> {
       remove: Atom.Self.RemoveProp<Type, Value, Qualifier, Parent>;
     }
@@ -465,16 +484,16 @@ export namespace Atom {
   export interface Common<
     Type extends Atom.Type,
     Value,
-    Qualifier extends Atom.Qualifier = never,
-    Parent extends Atom.Parent.Constraint<Value> = never,
+    Qualifier extends Atom.Qualifier = Atom.Qualifier.Default,
+    Parent extends Atom.Parent.Constraint<Value> = Atom.Parent.Default,
   > extends Immutable<Type, Value, Qualifier, Parent> {}
 
   export namespace Common {
     export type Envelop<
       Type extends Atom.Type,
       Value,
-      Qualifier extends Atom.Qualifier = never,
-      Parent extends Atom.Parent.Constraint<Value> = never,
+      Qualifier extends Atom.Qualifier = Atom.Qualifier.Default,
+      Parent extends Atom.Parent.Constraint<Value> = Atom.Parent.Default,
     > =
       ExtractShell<Type> extends "state"
         ? State.Common<Value, Qualifier, Parent>
@@ -485,8 +504,8 @@ export namespace Atom {
     export interface Self<
       Type extends Atom.Type,
       Value,
-      Qualifier extends Atom.Qualifier = never,
-      Parent extends Atom.Parent.Constraint<Value> = never,
+      Qualifier extends Atom.Qualifier = Atom.Qualifier.Default,
+      Parent extends Atom.Parent.Constraint<Value> = Atom.Parent.Default,
     > extends Immutable.Self<Type, Value, Qualifier, Parent> {}
 
     export type Join<
@@ -535,8 +554,8 @@ export namespace Atom {
   export interface Immutable<
     Type extends Atom.Type,
     Value,
-    Qualifier extends Atom.Qualifier = never,
-    Parent extends Atom.Parent.Constraint<Value> = never,
+    Qualifier extends Atom.Qualifier = Atom.Qualifier.Default,
+    Parent extends Atom.Parent.Constraint<Value> = Atom.Parent.Default,
   > {
     //#region Phantoms
 
@@ -635,6 +654,8 @@ export namespace Atom {
 
     useDiscriminate: Discriminate.Prop<Type, Value, Qualifier, Parent>;
 
+    into: Proxy.Into.Prop<Type, Value, Qualifier, Parent>;
+
     //#endregion Transform
   }
 
@@ -647,8 +668,8 @@ export namespace Atom {
     export type Envelop<
       Type extends Atom.Type,
       Value,
-      Qualifier extends Atom.Qualifier = never,
-      Parent extends Atom.Parent.Constraint<Value> = never,
+      Qualifier extends Atom.Qualifier = Atom.Qualifier.Default,
+      Parent extends Atom.Parent.Constraint<Value> = Atom.Parent.Default,
     > =
       ExtractShell<Type> extends "state"
         ? State.Immutable<Value, Qualifier, Parent>
@@ -659,8 +680,8 @@ export namespace Atom {
     export interface Self<
       Type extends Atom.Type,
       Value,
-      Qualifier extends Atom.Qualifier = never,
-      Parent extends Atom.Parent.Constraint<Value> = never,
+      Qualifier extends Atom.Qualifier = Atom.Qualifier.Default,
+      Parent extends Atom.Parent.Constraint<Value> = Atom.Parent.Default,
     > {
       try(): Remove<Type, Value, Qualifier>;
     }
@@ -709,8 +730,8 @@ export namespace Atom {
   export type Set<
     Type extends Atom.Type,
     Value,
-    Qualifier extends Atom.Qualifier = never,
-    Parent extends Atom.Parent.Constraint<Value> = never,
+    Qualifier extends Atom.Qualifier = Atom.Qualifier.Default,
+    Parent extends Atom.Parent.Constraint<Value> = Atom.Parent.Default,
   > = "detachable" extends Qualifier
     ? SetDetachable<Type, Value, Qualifier, Parent>
     : SetCommon<Type, Value, Qualifier, Parent>;
@@ -718,8 +739,8 @@ export namespace Atom {
   export interface SetCommon<
     Type extends Atom.Type,
     Value,
-    Qualifier extends Atom.Qualifier = never,
-    Parent extends Atom.Parent.Constraint<Value> = never,
+    Qualifier extends Atom.Qualifier = Atom.Qualifier.Default,
+    Parent extends Atom.Parent.Constraint<Value> = Atom.Parent.Default,
   > {
     <NewValue extends Value>(
       value: NewValue,
@@ -730,7 +751,7 @@ export namespace Atom {
     Type extends Atom.Type,
     Value,
     Qualifier extends Atom.Qualifier | "detachable" = never,
-    Parent extends Atom.Parent.Constraint<Value> = never,
+    Parent extends Atom.Parent.Constraint<Value> = Atom.Parent.Default,
   > extends SetCommon<Type, Value, Qualifier, Parent> {
     (value: DetachedValue): Envelop<Type, DetachedValue, Qualifier, Parent>;
   }
@@ -739,8 +760,8 @@ export namespace Atom {
     export interface Phantom<
       Type extends Atom.Type,
       Value,
-      Qualifier extends Atom.Qualifier = never,
-      Parent extends Atom.Parent.Constraint<Value> = never,
+      Qualifier extends Atom.Qualifier = Atom.Qualifier.Default,
+      Parent extends Atom.Parent.Constraint<Value> = Atom.Parent.Default,
     > {
       (value: Value): Atom.Envelop<Type, Value, Qualifier, Parent>;
     }
@@ -880,8 +901,8 @@ export namespace Atom {
     export type RemoveProp<
       Type extends Atom.Type,
       Value,
-      Qualifier extends Atom.Qualifier = never,
-      Parent extends Atom.Parent.Constraint<Value> = never,
+      Qualifier extends Atom.Qualifier = Atom.Qualifier.Default,
+      Parent extends Atom.Parent.Constraint<Value> = Atom.Parent.Default,
     > = Qualifier extends "detachable"
       ? RemoveFn<Type, Value, Qualifier, Parent>
       : never;
@@ -889,8 +910,8 @@ export namespace Atom {
     export interface RemoveFn<
       Type extends Atom.Type,
       Value,
-      Qualifier extends Atom.Qualifier = never,
-      Parent extends Atom.Parent.Constraint<Value> = never,
+      Qualifier extends Atom.Qualifier = Atom.Qualifier.Default,
+      Parent extends Atom.Parent.Constraint<Value> = Atom.Parent.Default,
     > {
       (): Envelop<Type, DetachedValue, Qualifier, Parent>;
     }
@@ -1222,8 +1243,8 @@ export namespace Atom {
   export type UseCollectionProp<
     Type extends Atom.Type,
     Value,
-    Qualifier extends Atom.Qualifier = never,
-    Parent extends Atom.Parent.Constraint<Value> = never,
+    Qualifier extends Atom.Qualifier = Atom.Qualifier.Default,
+    Parent extends Atom.Parent.Constraint<Value> = Atom.Parent.Default,
   > = Value extends object
     ? () => Envelop<Type, Value, Qualifier | "bound", Parent>
     : never;
@@ -1356,8 +1377,8 @@ export namespace Atom {
     export interface Prop<
       Type extends Atom.Type,
       Value,
-      Qualifier extends Atom.Qualifier = never,
-      Parent extends Atom.Parent.Constraint<Value> = never,
+      Qualifier extends Atom.Qualifier = Atom.Qualifier.Default,
+      Parent extends Atom.Parent.Constraint<Value> = Atom.Parent.Default,
     > {
       (): Result<Type, Value, Qualifier, Parent>;
     }
@@ -1365,8 +1386,8 @@ export namespace Atom {
     export type Result<
       Type extends Atom.Type,
       Value,
-      Qualifier extends Atom.Qualifier = never,
-      Parent extends Atom.Parent.Constraint<Value> = never,
+      Qualifier extends Atom.Qualifier = Atom.Qualifier.Default,
+      Parent extends Atom.Parent.Constraint<Value> = Atom.Parent.Default,
     > =
       | (Value extends Value
           ? // WIP: Why can't I use `Item` here?
@@ -1385,8 +1406,8 @@ export namespace Atom {
     export interface Item<
       Type extends Atom.Type,
       ItemValue,
-      Qualifier extends Atom.Qualifier = never,
-      Parent extends Atom.Parent.Constraint<ItemValue> = never,
+      Qualifier extends Atom.Qualifier = Atom.Qualifier.Default,
+      Parent extends Atom.Parent.Constraint<ItemValue> = Atom.Parent.Default,
     > {
       value: ItemValue;
       field: Envelop<Type, ItemValue, Qualifier, Parent>;
@@ -1396,8 +1417,8 @@ export namespace Atom {
       export interface Prop<
         Type extends Atom.Type,
         Value,
-        Qualifier extends Atom.Qualifier = never,
-        Parent extends Atom.Parent.Constraint<Value> = never,
+        Qualifier extends Atom.Qualifier = Atom.Qualifier.Default,
+        Parent extends Atom.Parent.Constraint<Value> = Atom.Parent.Default,
       > {
         (
           callback: Callback<Value>,
@@ -1420,8 +1441,8 @@ export namespace Atom {
     export interface Prop<
       Type extends Atom.Type,
       Value,
-      Qualifier extends Atom.Qualifier = never,
-      Parent extends Atom.Parent.Constraint<Value> = never,
+      Qualifier extends Atom.Qualifier = Atom.Qualifier.Default,
+      Parent extends Atom.Parent.Constraint<Value> = Atom.Parent.Default,
     > {
       <Discriminator extends Discriminate.Discriminator<Value>>(
         discriminator: Discriminator,
@@ -1434,16 +1455,16 @@ export namespace Atom {
       Type extends Atom.Type,
       Value,
       Discriminator extends Discriminate.Discriminator<Value>,
-      Qualifier extends Atom.Qualifier = never,
-      Parent extends Atom.Parent.Constraint<Value> = never,
+      Qualifier extends Atom.Qualifier = Atom.Qualifier.Default,
+      Parent extends Atom.Parent.Constraint<Value> = Atom.Parent.Default,
     > = Inner<Type, Value, Discriminator, Qualifier, Parent>;
 
     export type Inner<
       Type extends Atom.Type,
       Value,
       Discriminator extends Discriminate.Discriminator<Value>,
-      Qualifier extends Atom.Qualifier = never,
-      Parent extends Atom.Parent.Constraint<Value> = never,
+      Qualifier extends Atom.Qualifier = Atom.Qualifier.Default,
+      Parent extends Atom.Parent.Constraint<Value> = Atom.Parent.Default,
     > =
       | (Value extends Value
           ? Discriminator extends keyof Value
@@ -1473,6 +1494,91 @@ export namespace Atom {
   }
 
   //#endregion Discriminate
+
+  //#region Proxy
+
+  export namespace Proxy {
+    export interface Qualifier<SourceValue> {
+      source: SourceValue;
+      // source(value: SourceValue): void;
+      // source(): SourceValue;
+    }
+
+    export type Envelop<
+      Type extends Atom.Type,
+      Value,
+      ComputedValue,
+      Qualifier extends Atom.Qualifier = Atom.Qualifier.Default,
+      Parent extends Atom.Parent.Constraint<Value> = Atom.Parent.Default,
+    > = Atom.Envelop<
+      Type,
+      ComputedValue,
+      Qualifier | Proxy.Qualifier<Value>,
+      Parent
+    >;
+
+    export namespace Into {
+      export type Prop<
+        Type extends Atom.Type,
+        Value,
+        Qualifier extends Atom.Qualifier = Atom.Qualifier.Default,
+        Parent extends Atom.Parent.Constraint<Value> = Atom.Parent.Default,
+      > = Into.Fn<Type, Value, Qualifier, Parent>;
+
+      export interface Fn<
+        Type extends Atom.Type,
+        Value,
+        Qualifier extends Atom.Qualifier = Atom.Qualifier.Default,
+        Parent extends Atom.Parent.Constraint<Value> = Atom.Parent.Default,
+      > {
+        <ComputedValue>(
+          intoMapper: Into.Mapper<Value, ComputedValue>,
+        ): Result<Type, Value, ComputedValue, Qualifier, Parent>;
+      }
+
+      export interface Mapper<Value, ComputedValue> {
+        (value: Value): ComputedValue;
+      }
+
+      export type Result<
+        Type extends Atom.Type,
+        Value,
+        ComputedValue,
+        Qualifier extends Atom.Qualifier = Atom.Qualifier.Default,
+        Parent extends Atom.Parent.Constraint<Value> = Atom.Parent.Default,
+      > = Obj<Type, Value, ComputedValue, Qualifier, Parent>;
+
+      export interface Obj<
+        Type extends Atom.Type,
+        Value,
+        ComputedValue,
+        Qualifier extends Atom.Qualifier = Atom.Qualifier.Default,
+        Parent extends Atom.Parent.Constraint<Value> = Atom.Parent.Default,
+      > {
+        from: From.Fn<Type, Value, ComputedValue, Qualifier, Parent>;
+      }
+    }
+
+    export namespace From {
+      export interface Fn<
+        Type extends Atom.Type,
+        Value,
+        ComputedValue,
+        Qualifier extends Atom.Qualifier = Atom.Qualifier.Default,
+        Parent extends Atom.Parent.Constraint<Value> = Atom.Parent.Default,
+      > {
+        <MappedValue extends Value>(
+          mapper: Mapper<Value, ComputedValue, MappedValue>,
+        ): Envelop<Type, Value, ComputedValue, Qualifier, Parent>;
+      }
+
+      export interface Mapper<Value, ComputedValue, MappedValue> {
+        (computedValue: ComputedValue, value: Value): MappedValue;
+      }
+    }
+  }
+
+  //#endregion Proxy
 
   //#endregion Transform
 }

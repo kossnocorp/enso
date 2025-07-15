@@ -9,8 +9,8 @@ const hintSymbol = Symbol();
 
 export declare class Field<
     Value,
-    Qualifier extends Atom.Qualifier = never,
-    Parent extends Atom.Parent.Constraint<Value> = never,
+    Qualifier extends Atom.Qualifier = Atom.Qualifier.Default,
+    Parent extends Atom.Parent.Constraint<Value> = Atom.Parent.Default,
   >
   extends Atom<"field" | "invariant", Value, Qualifier, Parent>
   implements
@@ -25,8 +25,8 @@ export declare class Field<
 
   static create<
     Value,
-    Qualifier extends Atom.Qualifier = never,
-    Parent extends Atom.Parent.Constraint<Value> = never,
+    Qualifier extends Atom.Qualifier = Atom.Qualifier.Default,
+    Parent extends Atom.Parent.Constraint<Value> = Atom.Parent.Default,
   >(
     value: Value,
     parent?: Atom.Parent.Def<"field", Parent>,
@@ -70,8 +70,8 @@ export namespace Field {
   export type Envelop<
     Type extends Atom.Type,
     Value,
-    Qualifier extends Atom.Qualifier = never,
-    Parent extends Atom.Parent.Constraint<Value> = never,
+    Qualifier extends Atom.Qualifier = Atom.Qualifier.Default,
+    Parent extends Atom.Parent.Constraint<Value> = Atom.Parent.Default,
   > = "immutable" extends Type
     ? Immutable<Value, Qualifier, Parent>
     : "common" extends Type
@@ -84,16 +84,16 @@ export namespace Field {
 
   export interface Invariant<
     Value,
-    Qualifier extends Atom.Qualifier = never,
-    Parent extends Atom.Parent.Constraint<Value> = never,
+    Qualifier extends Atom.Qualifier = Atom.Qualifier.Default,
+    Parent extends Atom.Parent.Constraint<Value> = Atom.Parent.Default,
   > extends Hint,
       Atom.Invariant<"field" | "invariant", Value, Qualifier, Parent>,
       ImmutableBase<Value> {}
 
   export interface Common<
     Value,
-    Qualifier extends Atom.Qualifier = never,
-    Parent extends Atom.Parent.Constraint<Value> = never,
+    Qualifier extends Atom.Qualifier = Atom.Qualifier.Default,
+    Parent extends Atom.Parent.Constraint<Value> = Atom.Parent.Default,
   > extends Hint,
       Atom.Common<"field" | "common", Value, Qualifier, Parent>,
       ImmutableBase<Value> {}
@@ -102,8 +102,8 @@ export namespace Field {
     export type Discriminated<
       Value,
       Discriminator extends Atom.Discriminate.Discriminator<Value>,
-      Qualifier extends Atom.Qualifier = never,
-      Parent extends Atom.Parent.Constraint<Value> = never,
+      Qualifier extends Atom.Qualifier = Atom.Qualifier.Default,
+      Parent extends Atom.Parent.Constraint<Value> = Atom.Parent.Default,
     > = Atom.Discriminate.Result<
       "field" | "common",
       Value,
@@ -115,8 +115,8 @@ export namespace Field {
 
   export interface Immutable<
     Value,
-    Qualifier extends Atom.Qualifier = never,
-    Parent extends Atom.Parent.Constraint<Value> = never,
+    Qualifier extends Atom.Qualifier = Atom.Qualifier.Default,
+    Parent extends Atom.Parent.Constraint<Value> = Atom.Parent.Default,
   > extends Hint,
       Atom.Immutable<"field" | "immutable", Value, Qualifier, Parent>,
       ImmutableBase<Value> {}
@@ -125,8 +125,8 @@ export namespace Field {
     export type Discriminated<
       Value,
       Discriminator extends Atom.Discriminate.Discriminator<Value>,
-      Qualifier extends Atom.Qualifier = never,
-      Parent extends Atom.Parent.Constraint<Value> = never,
+      Qualifier extends Atom.Qualifier = Atom.Qualifier.Default,
+      Parent extends Atom.Parent.Constraint<Value> = Atom.Parent.Default,
     > = Atom.Discriminate.Result<
       "field" | "immutable",
       Value,
@@ -181,15 +181,15 @@ export namespace Field {
 
   export type Decomposed<
     Value,
-    Qualifier extends Atom.Qualifier = never,
-    Parent extends Atom.Parent.Constraint<Value> = never,
+    Qualifier extends Atom.Qualifier = Atom.Qualifier.Default,
+    Parent extends Atom.Parent.Constraint<Value> = Atom.Parent.Default,
   > = Atom.Decompose.Result<"field", Value, Qualifier, Parent>;
 
   export type Discriminated<
     Value,
     Discriminator extends Atom.Discriminate.Discriminator<Value>,
-    Qualifier extends Atom.Qualifier = never,
-    Parent extends Atom.Parent.Constraint<Value> = never,
+    Qualifier extends Atom.Qualifier = Atom.Qualifier.Default,
+    Parent extends Atom.Parent.Constraint<Value> = Atom.Parent.Default,
   > = Atom.Discriminate.Result<
     "field" | "invariant",
     Value,
@@ -197,6 +197,8 @@ export namespace Field {
     Qualifier,
     Parent
   >;
+
+  export type Proxied<SourceValue = any> = Atom.Proxy.Qualifier<SourceValue>;
 
   //#endregion Transform
 
@@ -293,5 +295,5 @@ export namespace Field {
 
   //#endregion Input
 
-  //#endregion
+  //#endregion Control
 }

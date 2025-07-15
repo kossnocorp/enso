@@ -87,7 +87,6 @@ describe(Field, () => {
 
       it.skip("computed fields returns unique ids", () => {
         const field = new Field({ name: { first: "Sasha" } });
-        // @ts-expect-error -- TODO: Types revamp
         const computed = field.$.name.$.first.into(toCodes).from(fromCodes);
         expect(computed.id).not.toBe(field.$.name.$.first.id);
       });
@@ -1473,7 +1472,6 @@ describe(Field, () => {
 
       it.skip("returns the source parent for computed fields", () => {
         const field = new Field({ name: { first: "Sasha" } });
-        // @ts-expect-error -- WIP: Types revamp
         const computed = field.$.name.$.first.into(toCodes).from(fromCodes);
         expect(computed.parent).toBe(field.$.name);
       });
@@ -1492,7 +1490,6 @@ describe(Field, () => {
 
       it.skip("returns the source key for computed fields", () => {
         const field = new Field({ name: { first: "Sasha" } });
-        // @ts-expect-error -- WIP: Types revamp
         const computed = field.$.name.$.first.into(toCodes).from(fromCodes);
         expect(computed.key).toBe("first");
       });
@@ -1523,7 +1520,6 @@ describe(Field, () => {
 
       it.skip("returns the source path for computed fields", () => {
         const field = new Field({ name: { first: "Sasha" } });
-        // @ts-expect-error -- WIP: Types revamp
         const computed = field.$.name.$.first.into(toCodes).from(fromCodes);
         expect(computed.path).toEqual(["name", "first"]);
       });
@@ -1544,7 +1540,6 @@ describe(Field, () => {
 
       it.skip("returns the source name for computed fields", () => {
         const field = new Field({ name: { first: "Sasha" } });
-        // @ts-expect-error -- WIP: Types revamp
         const computed = field.$.name.$.first.into(toCodes).from(fromCodes);
         expect(computed.name).toEqual("name.first");
       });
