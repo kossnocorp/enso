@@ -92,6 +92,10 @@ export declare class Atom<
 
   useCollection: Atom.UseCollectionProp<Type, Value, Qualifier, Parent>;
 
+  insert: Atom.Insert.Prop<Type, Value, Qualifier, Parent>;
+
+  push: Atom.Push.Prop<Type, Value, Qualifier, Parent>;
+
   //#endregion Type
 
   //#region Tree
@@ -451,6 +455,10 @@ export namespace Atom {
     //#region Type
 
     remove: RemoveProp<Type, Value>;
+
+    insert: Insert.Prop<Type, Value, Qualifier, Parent>;
+
+    push: Push.Prop<Type, Value, Qualifier, Parent>;
 
     //#endregion
 
@@ -1259,6 +1267,63 @@ export namespace Atom {
   > = Value extends object
     ? () => Envelop<Type, Value, Qualifier | "bound", Parent>
     : never;
+
+  export namespace Insert {
+    export type Prop<
+      Type extends Atom.Type,
+      Value,
+      Qualifier extends Atom.Qualifier = Atom.Qualifier.Default,
+      Parent extends Atom.Parent.Constraint<Value> = Atom.Parent.Default,
+    > = Value extends Utils.Tuple
+      ? never
+      : Value extends unknown[]
+        ? Fn<Type, Value, Qualifier, Parent>
+        : never;
+
+    export interface Fn<
+      Type extends Atom.Type,
+      Value extends unknown[],
+      Qualifier extends Atom.Qualifier = Atom.Qualifier.Default,
+      Parent extends Atom.Parent.Constraint<Value> = Atom.Parent.Default,
+    > {
+      (
+        index: number,
+        value: Value[number],
+      ): Envelop<
+        Child.Type<Type>,
+        Value[number],
+        Child.Qualifier<Value, number>
+      >;
+    }
+  }
+
+  export namespace Push {
+    export type Prop<
+      Type extends Atom.Type,
+      Value,
+      Qualifier extends Atom.Qualifier = Atom.Qualifier.Default,
+      Parent extends Atom.Parent.Constraint<Value> = Atom.Parent.Default,
+    > = Value extends Utils.Tuple
+      ? never
+      : Value extends unknown[]
+        ? Fn<Type, Value, Qualifier, Parent>
+        : never;
+
+    export interface Fn<
+      Type extends Atom.Type,
+      Value extends unknown[],
+      Qualifier extends Atom.Qualifier = Atom.Qualifier.Default,
+      Parent extends Atom.Parent.Constraint<Value> = Atom.Parent.Default,
+    > {
+      (
+        value: Value[number],
+      ): Envelop<
+        Child.Type<Type>,
+        Value[number],
+        Child.Qualifier<Value, number>
+      >;
+    }
+  }
 
   //#endregion
 
