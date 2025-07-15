@@ -1,4 +1,4 @@
-import type { ChangesEvent } from "../change/index.ts";
+import type { ChangesEvent, FieldChange } from "../change/index.ts";
 import type { DetachedValue } from "../detached/index.ts";
 import { State } from "../state/index.ts";
 import { Field } from "./index.js";
@@ -438,24 +438,6 @@ import { Field } from "./index.js";
   }
 }
 //#endregion
-
-//#region Field.useCastString
-{
-  const field = new Field("hello") as Field<string | undefined | null>;
-
-  const result = Field.useCastString(field);
-  result satisfies Field<string>;
-  // @ts-expect-error
-  result.any;
-
-  Field.useCastString({} as Field<string>);
-  Field.useCastString({} as Field<string | undefined>);
-  Field.useCastString({} as Field<string | null>);
-  // @ts-expect-error
-  Field.useCastString({} as Field<number>);
-  // @ts-expect-error
-  Field.useCastString({} as Field<string | number>);
-}
 
 //#endregion
 
@@ -2961,6 +2943,73 @@ const unionField = new Field({ hello: "world", world: true }) as
     result satisfies Field.Immutable<number, Field.Proxied<number>>;
     // @ts-expect-error
     result satisfies Field<number, Field.Proxied<string>>;
+  }
+}
+//#endregion
+
+//#region Field#useDefined
+{
+  // String
+  {
+    // Basic
+    {
+      const field = new Field("hello") as Field<string | undefined | null>;
+
+      const result = field.useDefined("string");
+      result satisfies Field<string>;
+      // @ts-expect-error
+      result.any;
+    }
+
+    // Defined
+    {
+      const field = new Field("hello") as Field<string>;
+
+      const result = field.useDefined("string");
+      result satisfies Field<string>;
+      // @ts-expect-error
+      result.any;
+    }
+
+    // Mixed
+    {
+      const field = new Field("hello") as Field<string | number>;
+
+      // @ts-expect-error
+      field.useDefined("string");
+    }
+
+    // Number
+    {
+      const field = new Field(0) as Field<number | undefined>;
+
+      // @ts-expect-error
+      field.useDefined("string");
+    }
+
+    // Common
+    {
+      const field = new Field("hello") as Field.Common<string>;
+
+      const result = field.useDefined("string");
+      result satisfies Field.Common<string>;
+      // @ts-expect-error
+      result satisfies Field<string>;
+      // @ts-expect-error
+      result.any;
+    }
+
+    // Immutable
+    {
+      const field = new Field("hello") as Field.Common<string>;
+
+      const result = field.useDefined("string");
+      result satisfies Field.Common<string>;
+      // @ts-expect-error
+      result satisfies Field<string>;
+      // @ts-expect-error
+      result.any;
+    }
   }
 }
 //#endregion
