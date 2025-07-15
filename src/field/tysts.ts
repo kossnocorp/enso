@@ -2505,6 +2505,107 @@ const unionField = new Field({ hello: "world", world: true }) as
 }
 //#endregion
 
+//#region Field["useInto"]
+{
+  // Invariant
+  {
+    const field = new Field("hello");
+    const result = field
+      .useInto((value) => {
+        value satisfies string;
+        // @ts-expect-error
+        value.any;
+
+        return value.length;
+      }, [])
+      .from((sizeValue, value) => {
+        sizeValue satisfies number;
+        // @ts-expect-error
+        sizeValue.any;
+
+        value satisfies string;
+        // @ts-expect-error
+        value.any;
+
+        return value.slice(0, sizeValue);
+      }, []);
+
+    result satisfies Field<number, Field.Proxied<string>>;
+    result satisfies Field<number>;
+    result satisfies Field<number, Field.Proxied<any>>;
+    result satisfies Field<number, Field.Proxied<unknown>>;
+    // @ts-expect-error
+    result satisfies Field<number, Field.Proxied<number>>;
+  }
+
+  // Common
+  {
+    const field = new Field("hello") as Field.Common<string>;
+    const result = field
+      .useInto((value) => {
+        value satisfies string;
+        // @ts-expect-error
+        value.any;
+
+        return value.length;
+      }, [])
+      .from((sizeValue, value) => {
+        sizeValue satisfies number;
+        // @ts-expect-error
+        sizeValue.any;
+
+        value satisfies string;
+        // @ts-expect-error
+        value.any;
+
+        return value.slice(0, sizeValue);
+      }, []);
+
+    result satisfies Field.Common<number, Field.Proxied<string>>;
+    result satisfies Field.Common<number>;
+    result satisfies Field.Common<number, Field.Proxied<any>>;
+    result satisfies Field.Common<number, Field.Proxied<unknown>>;
+    // @ts-expect-error
+    result satisfies Field.Common<number, Field.Proxied<number>>;
+    // @ts-expect-error
+    result satisfies Field<number, Field.Proxied<string>>;
+  }
+
+  // Immutable
+  {
+    const field = new Field("hello") as Field.Immutable<string>;
+    const result = field
+      .into((value) => {
+        value satisfies string;
+        // @ts-expect-error
+        value.any;
+
+        return value.length;
+      })
+      .from((sizeValue, value) => {
+        sizeValue satisfies number;
+        // @ts-expect-error
+        sizeValue.any;
+
+        value satisfies string;
+        // @ts-expect-error
+        value.any;
+
+        return value.slice(0, sizeValue);
+      });
+
+    result satisfies Field.Immutable<number, Field.Proxied<string>>;
+    result satisfies Field.Immutable<number>;
+    result satisfies Field.Immutable<number, Field.Proxied<any>>;
+    result satisfies Field.Immutable<number, Field.Proxied<unknown>>;
+    // @ts-expect-error
+    result satisfies Field.Immutable<number, Field.Proxied<number>>;
+    // @ts-expect-error
+    result satisfies Field<number, Field.Proxied<string>>;
+  }
+}
+//#endregion
+
 //#endregion Transform
 
 //#region Helpers

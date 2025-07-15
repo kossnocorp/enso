@@ -140,6 +140,8 @@ export declare class Atom<
 
   into: Atom.Proxy.Into.Prop<Type, Value, Qualifier, Parent>;
 
+  useInto: Atom.Proxy.Into.Use.Prop<Type, Value, Qualifier, Parent>;
+
   //#endregion Transform
 }
 
@@ -655,6 +657,8 @@ export namespace Atom {
     useDiscriminate: Discriminate.Prop<Type, Value, Qualifier, Parent>;
 
     into: Proxy.Into.Prop<Type, Value, Qualifier, Parent>;
+
+    useInto: Proxy.Into.Use.Prop<Type, Value, Qualifier, Parent>;
 
     //#endregion Transform
   }
@@ -1540,15 +1544,7 @@ export namespace Atom {
         (value: Value): ComputedValue;
       }
 
-      export type Result<
-        Type extends Atom.Type,
-        Value,
-        ComputedValue,
-        Qualifier extends Atom.Qualifier = Atom.Qualifier.Default,
-        Parent extends Atom.Parent.Constraint<Value> = Atom.Parent.Default,
-      > = Obj<Type, Value, ComputedValue, Qualifier, Parent>;
-
-      export interface Obj<
+      export interface Result<
         Type extends Atom.Type,
         Value,
         ComputedValue,
@@ -1556,6 +1552,43 @@ export namespace Atom {
         Parent extends Atom.Parent.Constraint<Value> = Atom.Parent.Default,
       > {
         from: From.Fn<Type, Value, ComputedValue, Qualifier, Parent>;
+      }
+
+      export namespace Use {
+        export type Prop<
+          Type extends Atom.Type,
+          Value,
+          Qualifier extends Atom.Qualifier = Atom.Qualifier.Default,
+          Parent extends Atom.Parent.Constraint<Value> = Atom.Parent.Default,
+        > = Fn<Type, Value, Qualifier, Parent>;
+
+        export interface Fn<
+          Type extends Atom.Type,
+          Value,
+          Qualifier extends Atom.Qualifier = Atom.Qualifier.Default,
+          Parent extends Atom.Parent.Constraint<Value> = Atom.Parent.Default,
+        > {
+          <ComputedValue>(
+            intoMapper: Proxy.Into.Mapper<Value, ComputedValue>,
+            deps: DependencyList,
+          ): Result<Type, Value, ComputedValue, Qualifier, Parent>;
+        }
+
+        export interface Result<
+          Type extends Atom.Type,
+          Value,
+          ComputedValue,
+          Qualifier extends Atom.Qualifier = Atom.Qualifier.Default,
+          Parent extends Atom.Parent.Constraint<Value> = Atom.Parent.Default,
+        > {
+          from: Proxy.From.Use.Fn<
+            Type,
+            Value,
+            ComputedValue,
+            Qualifier,
+            Parent
+          >;
+        }
       }
     }
 
@@ -1568,12 +1601,27 @@ export namespace Atom {
         Parent extends Atom.Parent.Constraint<Value> = Atom.Parent.Default,
       > {
         <MappedValue extends Value>(
-          mapper: Mapper<Value, ComputedValue, MappedValue>,
+          fromMapper: Mapper<Value, ComputedValue, MappedValue>,
         ): Envelop<Type, Value, ComputedValue, Qualifier, Parent>;
       }
 
       export interface Mapper<Value, ComputedValue, MappedValue> {
         (computedValue: ComputedValue, value: Value): MappedValue;
+      }
+
+      export namespace Use {
+        export interface Fn<
+          Type extends Atom.Type,
+          Value,
+          ComputedValue,
+          Qualifier extends Atom.Qualifier = Atom.Qualifier.Default,
+          Parent extends Atom.Parent.Constraint<Value> = Atom.Parent.Default,
+        > {
+          <MappedValue extends Value>(
+            fromMapper: Mapper<Value, ComputedValue, MappedValue>,
+            deps: DependencyList,
+          ): Envelop<Type, Value, ComputedValue, Qualifier, Parent>;
+        }
       }
     }
   }
