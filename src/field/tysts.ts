@@ -1,3 +1,4 @@
+import { ChangesEvent } from "../change/index.ts";
 import { State } from "../state/index.ts";
 import { Field } from "./index.js";
 
@@ -1647,6 +1648,46 @@ const prim = new Field<string | boolean>("hello");
 //#endregion Collection
 
 //#endregion Type
+
+//#region Events
+
+//#region `Field["watch"]`
+{
+  const field = new Field("hello");
+  const off = field.watch((newValue, event) => {
+    newValue satisfies string;
+    // @ts-expect-error
+    newValue.any;
+
+    event satisfies ChangesEvent;
+    // @ts-expect-error
+    event.any;
+  });
+
+  off();
+  // @ts-expect-error
+  off.any;
+}
+//#endregion
+
+//#region `Field["useWatch"]`
+{
+  const field = new Field("hello");
+  const off = field.useWatch((newValue, event) => {
+    newValue satisfies string;
+    // @ts-expect-error
+    newValue.any;
+
+    event satisfies ChangesEvent;
+    // @ts-expect-error
+    event.any;
+  }, []);
+
+  off();
+  // @ts-expect-error
+  off.any;
+}
+//#endregion
 
 //#region Transform
 
