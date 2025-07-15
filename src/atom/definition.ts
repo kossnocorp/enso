@@ -126,12 +126,12 @@ export declare class Atom<
 
   eventsTree: EventsTree<Extract<Type, Atom.Shell>>;
 
-  watch(callback: Atom.Watch.Callback<Value>): Atom.Off;
+  watch(callback: Atom.Watch.Callback<Value>): Atom.Unwatch;
 
   useWatch(
     callback: Atom.Watch.Callback<Value>,
     deps: DependencyList,
-  ): Atom.Off;
+  ): Atom.Unwatch;
 
   trigger(changes: FieldChange, notifyParents?: boolean): void;
 
@@ -655,9 +655,9 @@ export namespace Atom {
 
     eventsTree: EventsTree<Extract<Type, Atom.Shell>>;
 
-    watch(callback: Watch.Callback<Value>): Off;
+    watch(callback: Watch.Callback<Value>): Unwatch;
 
-    useWatch(callback: Watch.Callback<Value>, deps: DependencyList): Off;
+    useWatch(callback: Watch.Callback<Value>, deps: DependencyList): Unwatch;
 
     trigger(changes: FieldChange, notifyParents?: boolean): void;
 
@@ -1438,7 +1438,7 @@ export namespace Atom {
     }
   }
 
-  export type Off = () => void;
+  export type Unwatch = () => void;
 
   //#endregion
 
