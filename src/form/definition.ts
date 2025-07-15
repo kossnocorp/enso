@@ -86,12 +86,12 @@ export declare class Form<Value> implements Form.Interface<Value> {
 
   //#region Events
 
-  watch(callback: Atom.Watch.Callback<Value>): Atom.Off;
+  watch(callback: Atom.Watch.Callback<Value>): Atom.Unwatch;
 
   useWatch(
     callback: Atom.Watch.Callback<Value>,
     deps: DependencyList,
-  ): Atom.Off;
+  ): Atom.Unwatch;
 
   //#endregion
 }
@@ -136,12 +136,12 @@ export namespace Form {
 
     //#region Events
 
-    watch(callback: Atom.Watch.Callback<Value>): Atom.Off;
+    watch(callback: Atom.Watch.Callback<Value>): Atom.Unwatch;
 
     useWatch(
       callback: Atom.Watch.Callback<Value>,
       deps: DependencyList,
-    ): Atom.Off;
+    ): Atom.Unwatch;
 
     //#endregion
   }

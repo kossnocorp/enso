@@ -249,11 +249,6 @@ export namespace Field {
 
   //#endregion
 
-  export type Parent<
-    ParentValue,
-    Key extends keyof ParentValue,
-  > = Atom.Parent.Interface<ParentValue, Key>;
-
   //#region Value
 
   export namespace Value {
@@ -281,6 +276,21 @@ export namespace Field {
 
     export interface Object<Value> extends Atom.Value.Object<"field", Value> {}
   }
+
+  //#endregion
+
+  //#region Tree
+
+  export type Parent<
+    ParentValue,
+    Key extends keyof ParentValue,
+  > = Atom.Parent.Interface<ParentValue, Key>;
+
+  //#endregion
+
+  //#region Events
+
+  export type Unwatch = Atom.Unwatch;
 
   //#endregion
 
