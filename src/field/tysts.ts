@@ -1647,6 +1647,120 @@ const prim = new Field<string | boolean>("hello");
 
 //#endregion Collection
 
+//#region Array
+
+//#region `Field["insert"]`
+{
+  // Array
+  {
+    const field = new Field<string[]>([]);
+
+    const result = field.insert(0, "hello");
+
+    result satisfies Field<string, "detachable">;
+    /// @ts-expect-error
+    result satisfies Field<string, "bound">;
+    /// @ts-expect-error
+    result.any;
+
+    // @ts-expect-error
+    field.insert(123, 2);
+  }
+
+  // Tuple
+  {
+    const field = new Field([1, 2, 3] as const);
+    // @ts-expect-error
+    field.insert(0, 4);
+  }
+
+  // Object
+  {
+    const field = new Field({ a: 1, b: 2 });
+    // @ts-expect-error
+    field.insert("a", 4);
+  }
+
+  // Primitive
+  {
+    const field = new Field("") as Field.Common<string>;
+    // @ts-expect-error
+    field.insert("length", 0);
+  }
+
+  // Common
+  {
+    const field = new Field([]) as Field.Common<string[]>;
+    // @ts-expect-error
+    field.insert(0, "hello");
+  }
+
+  // Immutable
+  {
+    const field = new Field([]) as Field.Immutable<string[]>;
+    // @ts-expect-error
+    field.insert(0, "hello");
+  }
+}
+//#endregion
+
+//#region `Field["push"]`
+{
+  // Array
+  {
+    const field = new Field<string[]>([]);
+
+    const result = field.push("hello");
+
+    result satisfies Field<string, "detachable">;
+    /// @ts-expect-error
+    result satisfies Field<string, "bound">;
+    /// @ts-expect-error
+    result.any;
+
+    // @ts-expect-error
+    field.push(2);
+  }
+
+  // Tuple
+  {
+    const field = new Field([1, 2, 3] as const);
+    // @ts-expect-error
+    field.push(4);
+  }
+
+  // Object
+  {
+    const field = new Field({ a: 1, b: 2 });
+    // @ts-expect-error
+    field.push(4);
+  }
+
+  // Primitive
+  {
+    const field = new Field("") as Field.Common<string>;
+    // @ts-expect-error
+    field.push("hello");
+  }
+
+  // Common
+  {
+    const field = new Field([]) as Field.Common<string[]>;
+    // @ts-expect-error
+    field.push("hello");
+  }
+
+  // Immutable
+  {
+    const field = new Field([]) as Field.Immutable<string[]>;
+    // @ts-expect-error
+    field.push("hello");
+  }
+}
+//#endregion
+
+//#endregion
+
 //#endregion Type
 
 //#region Events
