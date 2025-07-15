@@ -151,6 +151,8 @@ export declare class Atom<
 
   useInto: Atom.Proxy.Into.Use.Prop<Type, Value, Qualifier, Parent>;
 
+  useDefined: Atom.Defined.Prop<Type, Value, Qualifier, Parent>;
+
   //#endregion Transform
 }
 
@@ -674,6 +676,8 @@ export namespace Atom {
     into: Proxy.Into.Prop<Type, Value, Qualifier, Parent>;
 
     useInto: Proxy.Into.Use.Prop<Type, Value, Qualifier, Parent>;
+
+    useDefined: Defined.Prop<Type, Value, Qualifier, Parent>;
 
     //#endregion Transform
   }
@@ -1710,6 +1714,33 @@ export namespace Atom {
   }
 
   //#endregion Proxy
+
+  //#region Defined
+
+  export namespace Defined {
+    export type Prop<
+      Type extends Atom.Type,
+      Value,
+      Qualifier extends Atom.Qualifier = Atom.Qualifier.Default,
+      Parent extends Atom.Parent.Constraint<Value> = Atom.Parent.Default,
+    > =
+      Exclude<Value, string | Utils.Nullish> extends never
+        ? Value extends string | Utils.Nullish
+          ? FnString<Type, Value, Qualifier, Parent>
+          : never
+        : never;
+
+    export interface FnString<
+      Type extends Atom.Type,
+      Value extends string | Utils.Nullish,
+      Qualifier extends Atom.Qualifier = Atom.Qualifier.Default,
+      Parent extends Atom.Parent.Constraint<Value> = Atom.Parent.Default,
+    > {
+      (to: "string"): Envelop<Type, string, Qualifier, Parent>;
+    }
+  }
+
+  //#endregion
 
   //#endregion Transform
 }

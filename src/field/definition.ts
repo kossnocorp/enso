@@ -64,10 +64,6 @@ export declare class Field<
     map?: Field.Ensure.Mapper<FieldType, MappedValue>,
   ): Field.Ensure.Result<FieldType, MappedValue>;
 
-  static useCastString<Value extends string | Utils.Nullish>(
-    field: Field<Value>,
-  ): Field<string>;
-
   //#endregion Static
 
   //#region Instance
