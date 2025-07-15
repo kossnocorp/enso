@@ -1,1 +1,1 @@
-export class AtomProxy<Value> {}
+export class AtomDouble<Value> {}

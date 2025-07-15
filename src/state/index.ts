@@ -7,8 +7,8 @@ const hintSymbol = Symbol();
 
 export class State<
     Value,
-    Qualifier extends Atom.Qualifier = never,
-    Parent extends Atom.Parent.Constraint<Value> = never,
+    Qualifier extends Atom.Qualifier = Atom.Qualifier.Default,
+    Parent extends Atom.Parent.Constraint<Value> = Atom.Parent.Default,
   >
   extends Atom<"state", Value, Qualifier, Parent>
   implements
@@ -22,8 +22,8 @@ export class State<
 
   static create<
     Value,
-    Qualifier extends Atom.Qualifier = never,
-    Parent extends Atom.Parent.Constraint<Value> = never,
+    Qualifier extends Atom.Qualifier = Atom.Qualifier.Default,
+    Parent extends Atom.Parent.Constraint<Value> = Atom.Parent.Default,
   >(
     value: Value,
     parent?: Atom.Parent.Def<"state", Parent>,
@@ -57,8 +57,8 @@ export namespace State {
   export type Envelop<
     Type extends Atom.Type,
     Value,
-    Qualifier extends Atom.Qualifier = never,
-    Parent extends Atom.Parent.Constraint<Value> = never,
+    Qualifier extends Atom.Qualifier = Atom.Qualifier.Default,
+    Parent extends Atom.Parent.Constraint<Value> = Atom.Parent.Default,
   > = "immutable" extends Type
     ? Immutable<Value, Qualifier, Parent>
     : "common" extends Type
@@ -69,22 +69,22 @@ export namespace State {
 
   export interface Invariant<
     Value,
-    Qualifier extends Atom.Qualifier = never,
-    Parent extends Atom.Parent.Constraint<Value> = never,
+    Qualifier extends Atom.Qualifier = Atom.Qualifier.Default,
+    Parent extends Atom.Parent.Constraint<Value> = Atom.Parent.Default,
   > extends Hint,
       Atom.Invariant<"state" | "invariant", Value, Qualifier, Parent> {}
 
   export interface Common<
     Value,
-    Qualifier extends Atom.Qualifier = never,
-    Parent extends Atom.Parent.Constraint<Value> = never,
+    Qualifier extends Atom.Qualifier = Atom.Qualifier.Default,
+    Parent extends Atom.Parent.Constraint<Value> = Atom.Parent.Default,
   > extends Hint,
       Atom.Common<"state" | "common", Value, Qualifier, Parent> {}
 
   export interface Immutable<
     Value,
-    Qualifier extends Atom.Qualifier = never,
-    Parent extends Atom.Parent.Constraint<Value> = never,
+    Qualifier extends Atom.Qualifier = Atom.Qualifier.Default,
+    Parent extends Atom.Parent.Constraint<Value> = Atom.Parent.Default,
   > extends Hint,
       Atom.Immutable<"state" | "immutable", Value, Qualifier, Parent> {}
 

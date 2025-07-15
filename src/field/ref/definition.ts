@@ -4,19 +4,19 @@ import type { FieldRefGhost } from "./ghost/definition.ts";
 
 export * from "./old.ts";
 
-const refHintSymbol = Symbol();
+const hintSymbol = Symbol();
 
 export declare class FieldRef<
     Value,
     Qualifier extends AtomRef.Qualifier = never,
-    Parent extends Atom.Parent.Constraint<Value> = never,
+    Parent extends Atom.Parent.Constraint<Value> = Atom.Parent.Default,
   >
   extends AtomRef<"field" | "ref", Value, Qualifier, Parent>
   implements FieldRef.Interface<Value, Qualifier, Parent>
 {
   //#region Instance
 
-  [refHintSymbol]: true;
+  [hintSymbol]: true;
 
   constructor(atom: Atom.Envelop<"field", Value, Qualifier, Parent>);
 
@@ -30,7 +30,7 @@ export namespace FieldRef {
     Type extends AtomRef.Type,
     Value,
     Qualifier extends AtomRef.Qualifier = never,
-    Parent extends Atom.Parent.Constraint<Value> = never,
+    Parent extends Atom.Parent.Constraint<Value> = Atom.Parent.Default,
   > = Type extends "ref"
     ? FieldRef<Value, Qualifier, Parent>
     : Type extends "ref-ghost"
@@ -41,16 +41,16 @@ export namespace FieldRef {
 
   //#region Interface
 
+  export interface Hint {
+    [hintSymbol]: true;
+  }
+
   export interface Interface<
     Value,
     Qualifier extends AtomRef.Qualifier = never,
-    Parent extends Atom.Parent.Constraint<Value> = never,
+    Parent extends Atom.Parent.Constraint<Value> = Atom.Parent.Default,
   > extends Hint,
       AtomRef.Interface<"field" | "ref", Value, Qualifier, Parent> {}
-
-  export interface Hint {
-    [refHintSymbol]: true;
-  }
 
   //#endregion Interface
 }

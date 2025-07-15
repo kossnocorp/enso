@@ -30,6 +30,23 @@ import { Atom } from "./index.js";
       tyst<AnyProp>({} as unknown);
     }
 
+    // Mixed
+    {
+      type AnyProp = Atom.ValueProp<Entity | number>;
+
+      tyst<AnyProp>({} as Entity);
+      tyst<AnyProp>({} as number);
+      tyst<AnyProp>({} as Atom.ValueProp<User>);
+      tyst<AnyProp>({} as Account);
+      tyst<AnyProp>({} as any);
+      // @ts-expect-error
+      tyst<AnyProp>({} as Hello);
+      // @ts-expect-error
+      tyst<AnyProp>(string);
+      // @ts-expect-error
+      tyst<AnyProp>({} as unknown);
+    }
+
     // Any
     {
       type AnyProp = Atom.ValueProp<any>;
