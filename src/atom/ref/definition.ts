@@ -11,7 +11,7 @@ export declare class AtomRef<
 {
   //#region Value
 
-  value: Atom.ValueProp<Value>;
+  value: Atom.Value.Prop<Value>;
 
   //#endregion Value
 
@@ -129,7 +129,7 @@ export namespace AtomRef {
   > {
     //#region Value
 
-    value: Atom.ValueProp<Value>;
+    value: Atom.Value.Prop<Value>;
 
     //#endregion Value
 
