@@ -942,26 +942,30 @@ export namespace Atom {
 
   //#region Remove
 
-  export type RemoveProp<
-    Type extends Atom.Type,
-    Value,
-  > = Value extends unknown[]
-    ? RemoveArray<Type, Value>
-    : Value extends object
-      ? RemoveObject<Type, Value>
-      : never;
+  export type RemoveProp<Type extends Atom.Type, Value> =
+    Utils.IsReadonlyArray<Value> extends true
+      ? never
+      : Value extends Utils.Tuple
+        ? never
+        : Value extends unknown[]
+          ? RemoveArray<Type, Value>
+          : Value extends object
+            ? Value extends Utils.BrandedPrimitive
+              ? never
+              : RemoveObject<Type, Value>
+            : never;
 
   export interface RemoveArray<
     Type extends Atom.Type,
     Value extends unknown[],
   > {
-    (item: number): Envelop<Type, Value[number], "detachable">;
+    (item: number): Envelop<Type, DetachedValue | Value[number], "detachable">;
   }
 
   export interface RemoveObject<Type extends Atom.Type, Value extends object> {
     <Key extends Enso.DetachableKeys<Value>>(
       key: Key,
-    ): Envelop<Type, Value[Key], "detachable">;
+    ): Envelop<Type, DetachedValue | Value[Key], "detachable">;
   }
 
   //#endregion Remove
