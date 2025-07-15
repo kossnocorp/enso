@@ -1,4 +1,5 @@
 import { ChangesEvent } from "../change/index.ts";
+import { DetachedValue } from "../detached/index.ts";
 import { State } from "../state/index.ts";
 import { Field } from "./index.js";
 
@@ -1645,6 +1646,69 @@ const prim = new Field<string | boolean>("hello");
 }
 //#endregion
 
+//#region `Field["remove"]`
+{
+  // Array
+  {
+    const field = new Field<string[]>(["hello", "world"]);
+
+    const result = field.remove(0);
+
+    result satisfies Field<DetachedValue | string, "detachable">;
+    // @ts-expect-error
+    result satisfies Field<string, "detachable">;
+    // @ts-expect-error
+    result.any;
+
+    // @ts-expect-error
+    field.remove("hello");
+  }
+
+  // Object
+  {
+    const field = new Field<{ a: 1; b?: 2 }>({ a: 1, b: 2 });
+
+    const result = field.remove("b");
+    result satisfies Field<DetachedValue | 2 | undefined, "detachable">;
+    // @ts-expect-error
+    result satisfies Field<2 | undefined, "detachable">;
+
+    // @ts-expect-error
+    field.remove("a");
+    // @ts-expect-error
+    field.remove(1);
+  }
+
+  // Readonly array
+  {
+    const field = new Field<readonly string[]>([]);
+    // @ts-expect-error
+    field.remove.apply;
+  }
+
+  // Tuple
+  {
+    const field = new Field<[1, 2, 3]>([1, 2, 3]);
+    // @ts-expect-error
+    field.remove.apply;
+  }
+
+  // Primitive
+  {
+    const field = new Field(1);
+    // @ts-expect-error
+    field.remove.apply;
+  }
+
+  // Branded
+  {
+    const field = new Field(1 as Branded<number>);
+    // @ts-expect-error
+    field.remove.apply;
+  }
+}
+//#endregion
+
 //#endregion Collection
 
 //#region Array
@@ -2802,6 +2866,9 @@ interface Container {
 interface Organization {
   owner: User;
 }
+
+type Branded<Type> = Type & { [brand]: true };
+declare const brand: unique symbol;
 
 type ContainerParent = Field.Parent<Container, "entity">;
 

@@ -1,19 +1,5 @@
 export namespace EnsoUtils {
   /**
-   * Any brand type that can be mixed with string number or symbol to create
-   * opaque primitive.
-   */
-  export type AnyBrand = { [key: string | number | symbol]: any };
-
-  /**
-   * Removes brand from the given type.
-   */
-  export type Debrand<Type> = Type extends infer _Brand extends AnyBrand &
-    (infer Debranded extends string | number | symbol)
-    ? Debranded
-    : Type;
-
-  /**
    * Removes indexed fields leaving only statically defined.
    */
   export type PickIndexed<Payload> = {
@@ -99,7 +85,17 @@ export namespace EnsoUtils {
 
   export type NonTuple<Type> = Type extends Tuple ? never : Type;
 
-  export type Tuple = [unknown, ...unknown[]];
+  export type Tuple =
+    | [unknown, ...unknown[]]
+    | readonly [unknown, ...unknown[]];
+
+  export type ReadonlyArray = readonly unknown[];
+
+  export type IsReadonlyArray<Type> = Type extends readonly unknown[]
+    ? Type extends unknown[]
+      ? false
+      : true
+    : false;
 
   // export type KeyOfTuple<Type> = Type extends Tuple
   //   ? Exclude<keyof Type, keyof unknown[]>
@@ -256,6 +252,39 @@ export namespace EnsoUtils {
   ) extends (key: infer Intersection) => void
     ? Intersection
     : never;
+
+  //#endregion
+
+  //#region Primitive
+
+  export type Primitive =
+    | string
+    | number
+    | boolean
+    | undefined
+    | null
+    | symbol
+    | bigint;
+
+  export type BrandedPrimitive = Primitive & AnyBrand;
+
+  //#endregion
+
+  //#region Brand
+
+  /**
+   * Any brand type that can be mixed with string number or symbol to create
+   * opaque primitive.
+   */
+  export type AnyBrand = { [key: keyof any]: any };
+
+  /**
+   * Removes brand from the given type.
+   */
+  export type Debrand<Type> = Type extends infer _Brand extends AnyBrand &
+    (infer Debranded extends Primitive)
+    ? Debranded
+    : Type;
 
   //#endregion
 }
