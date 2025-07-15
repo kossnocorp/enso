@@ -1,12 +1,12 @@
 import { Atom } from "./index.js";
 
-// `Atom.ValueProp`
+//#region Atom.Value
 {
   // Variance
   {
     // Primitive
     {
-      type NumberProp = Atom.ValueProp<number>;
+      type NumberProp = Atom.Value<number>;
 
       tyst<NumberProp>({} as number);
       // @ts-expect-error
@@ -17,11 +17,11 @@ import { Atom } from "./index.js";
 
     // Object
     {
-      type AnyProp = Atom.ValueProp<Entity>;
+      type AnyProp = Atom.Value<Entity>;
 
       tyst<AnyProp>({} as Entity);
       tyst<AnyProp>({} as User);
-      tyst<AnyProp>({} as Atom.ValueProp<User>);
+      tyst<AnyProp>({} as Atom.Value<User>);
       tyst<AnyProp>({} as Account);
       tyst<AnyProp>({} as any);
       // @ts-expect-error
@@ -32,11 +32,11 @@ import { Atom } from "./index.js";
 
     // Mixed
     {
-      type AnyProp = Atom.ValueProp<Entity | number>;
+      type AnyProp = Atom.Value<Entity | number>;
 
       tyst<AnyProp>({} as Entity);
       tyst<AnyProp>({} as number);
-      tyst<AnyProp>({} as Atom.ValueProp<User>);
+      tyst<AnyProp>({} as Atom.Value<User>);
       tyst<AnyProp>({} as Account);
       tyst<AnyProp>({} as any);
       // @ts-expect-error
@@ -49,7 +49,7 @@ import { Atom } from "./index.js";
 
     // Any
     {
-      type AnyProp = Atom.ValueProp<any>;
+      type AnyProp = Atom.Value<any>;
 
       tyst<AnyProp>({} as number);
       tyst<AnyProp>({} as unknown);
@@ -57,7 +57,7 @@ import { Atom } from "./index.js";
 
     // Unknown
     {
-      type AnyProp = Atom.ValueProp<unknown>;
+      type AnyProp = Atom.Value<unknown>;
 
       // @ts-expect-error
       tyst<AnyProp>({} as any);
@@ -66,14 +66,14 @@ import { Atom } from "./index.js";
       // @ts-expect-error
       tyst<AnyProp>({} as unknown);
       // @ts-expect-error
-      tyst<AnyProp>({} as Atom.ValueProp<number>);
+      tyst<AnyProp>({} as Atom.Value<number>);
       // @ts-expect-error
-      tyst<AnyProp>({} as Atom.ValueProp<User>);
+      tyst<AnyProp>({} as Atom.Value<User>);
     }
 
     // Union
     {
-      type UnionProp = Atom.ValueProp<string | number>;
+      type UnionProp = Atom.Value<string | number>;
 
       tyst<UnionProp>({} as string | number);
       tyst<UnionProp>({} as number);
@@ -81,14 +81,14 @@ import { Atom } from "./index.js";
       // @ts-expect-error
       tyst<UnionProp>({} as unknown);
       // @ts-expect-error
-      tyst<UnionProp>({} as Atom.ValueProp<boolean>);
+      tyst<UnionProp>({} as Atom.Value<boolean>);
       // @ts-expect-error
-      tyst<UnionProp>({} as Atom.ValueProp<User>);
+      tyst<UnionProp>({} as Atom.Value<User>);
     }
 
     // Nullish
     {
-      type NullishProp = Atom.ValueProp<string | undefined | null>;
+      type NullishProp = Atom.Value<string | undefined | null>;
 
       tyst<NullishProp>({} as string | undefined | null);
       tyst<NullishProp>({} as string);
@@ -97,9 +97,9 @@ import { Atom } from "./index.js";
       // @ts-expect-error
       tyst<NullishProp>({} as unknown);
       // @ts-expect-error
-      tyst<NullishProp>({} as Atom.ValueProp<boolean>);
+      tyst<NullishProp>({} as Atom.Value<boolean>);
       // @ts-expect-error
-      tyst<NullishProp>({} as Atom.ValueProp<User>);
+      tyst<NullishProp>({} as Atom.Value<User>);
     }
 
     // Branded
@@ -108,7 +108,7 @@ import { Atom } from "./index.js";
 
       // Number
       {
-        type NumberProp = Atom.ValueProp<Branded<number>>;
+        type NumberProp = Atom.Value<Branded<number>>;
 
         tyst<NumberProp>({} as Branded<number>);
         tyst<number>({} as NumberProp);
@@ -122,7 +122,7 @@ import { Atom } from "./index.js";
 
       // String
       {
-        type StringProp = Atom.ValueProp<Branded<string>>;
+        type StringProp = Atom.Value<Branded<string>>;
 
         tyst<StringProp>({} as Branded<string>);
         tyst<string>({} as StringProp);
@@ -136,7 +136,7 @@ import { Atom } from "./index.js";
 
       // Boolean
       {
-        type BooleanProp = Atom.ValueProp<Branded<boolean>>;
+        type BooleanProp = Atom.Value<Branded<boolean>>;
 
         tyst<BooleanProp>({} as Branded<boolean>);
         tyst<boolean>({} as BooleanProp);
@@ -150,7 +150,7 @@ import { Atom } from "./index.js";
 
       // Symbol
       {
-        type SymbolProp = Atom.ValueProp<Branded<symbol>>;
+        type SymbolProp = Atom.Value<Branded<symbol>>;
 
         tyst<SymbolProp>({} as Branded<symbol>);
         tyst<symbol>({} as SymbolProp);
@@ -164,6 +164,7 @@ import { Atom } from "./index.js";
     }
   }
 }
+//#endregion
 
 // `Atom.$Prop`
 {

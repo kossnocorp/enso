@@ -3,6 +3,8 @@ import type { Atom } from "../atom/definition.ts";
 import { Field } from "../field/definition.ts";
 import { FieldValidation } from "../field/validation/index.ts";
 
+const hintSymbol = Symbol();
+
 export declare class Form<Value> implements Form.Interface<Value> {
   //#region Static
 
@@ -20,20 +22,128 @@ export declare class Form<Value> implements Form.Interface<Value> {
 
   //#region Instance
 
+  [hintSymbol]: true;
+
   constructor(id: string, initialValue: Value, options?: Form.Options<Value>);
 
   //#endregion Instance
 
-  //#region Field
+  //#region Attributes
+
+  get id(): string;
 
   get field(): Field<Value>;
+
+  //#endregion
+
+  //#region Value
+
+  get value(): Atom.Value.Prop<Value>;
+
+  useValue(): Atom.Value<Value>;
+
+  set: Atom.Set.Prop<"field" | "invariant", Value>;
+
+  get dirty(): boolean;
+
+  useDirty(): boolean;
+
+  commit(): void;
+
+  reset(): void;
+
+  //#endregion
+
+  //#region Tree
+
+  get $(): Atom.$Prop<"field", Value>;
+
+  at: Atom.AtProp<"field", Value>;
+
+  try: Atom.TryProp<"field", Value>;
+
+  //#endregion
+
+  //#region Status
+
+  get submitting(): boolean;
+
+  useSubmitting(): boolean;
+
+  //#endregion
+
+  //#region Validation
+
+  get errors(): Field.Error[];
+
+  useErrors(): Field.Error[];
+
+  get valid(): boolean;
+
+  useValid(): boolean;
+
+  //#endregion
+
+  //#region Events
+
+  watch(callback: Atom.Watch.Callback<Value>): Atom.Off;
+
+  useWatch(
+    callback: Atom.Watch.Callback<Value>,
+    deps: DependencyList,
+  ): Atom.Off;
 
   //#endregion
 }
 
 export namespace Form {
-  export interface Interface<Value> {
+  export interface Interface<Value>
+    extends Field.Ish.Value,
+      Field.Ish.Validation {
+    //#region Instance
+
+    [hintSymbol]: true;
+
+    //#endregion
+
+    //#region Attributes
+
+    id: string;
+
     field: Field<Value>;
+
+    //#endregion
+
+    //#region Value
+
+    value: Atom.Value.Prop<Value>;
+
+    useValue(): Atom.Value<Value>;
+
+    set: Atom.Set.Prop<"field" | "invariant", Value>;
+
+    //#endregion
+
+    //#region Tree
+
+    get $(): Atom.$Prop<"field", Value>;
+
+    at: Atom.AtProp<"field", Value>;
+
+    try: Atom.TryProp<"field", Value>;
+
+    //#endregion
+
+    //#region Events
+
+    watch(callback: Atom.Watch.Callback<Value>): Atom.Off;
+
+    useWatch(
+      callback: Atom.Watch.Callback<Value>,
+      deps: DependencyList,
+    ): Atom.Off;
+
+    //#endregion
   }
 
   export interface Options<Value> {

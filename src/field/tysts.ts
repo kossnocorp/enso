@@ -1,5 +1,5 @@
-import { ChangesEvent } from "../change/index.ts";
-import { DetachedValue } from "../detached/index.ts";
+import type { ChangesEvent } from "../change/index.ts";
+import type { DetachedValue } from "../detached/index.ts";
 import { State } from "../state/index.ts";
 import { Field } from "./index.js";
 
@@ -573,6 +573,61 @@ import { Field } from "./index.js";
   result.any;
 
   result = field.useCompute((value) => value > 0, []);
+}
+//#endregion
+
+//#region Field#dirty
+{
+  const field = new Field("hello") as
+    | Field<string>
+    | Field.Common<string>
+    | Field.Immutable<string>;
+
+  field.dirty satisfies boolean;
+  // @ts-expect-error
+  field.dirty.any;
+}
+//#endregion
+
+//#region Field#useDirty
+{
+  const field = new Field("hello") as
+    | Field<string>
+    | Field.Common<string>
+    | Field.Immutable<string>;
+
+  const result = field.useDirty();
+  result satisfies boolean;
+  // @ts-expect-error
+  result.any;
+}
+//#endregion
+
+//#region Field#commit
+{
+  const field = new Field("hello") as
+    | Field<string>
+    | Field.Common<string>
+    | Field.Immutable<string>;
+
+  const result = field.commit();
+  result satisfies void;
+  // @ts-expect-error
+  result.any;
+}
+//#endregion
+
+//#region Field#reset
+{
+  const field = new Field("hello") as
+    | Field<string>
+    | Field.Common<string>
+    | Field.Immutable<string>;
+
+  const result = field.reset();
+  result satisfies void;
+  // @ts-expect-error
+  result.any;
 }
 //#endregion
 
@@ -2826,6 +2881,64 @@ const unionField = new Field({ hello: "world", world: true }) as
 //#endregion
 
 //#endregion Transform
+
+//#region Validation
+
+//#region Field#errors
+{
+  const field = new Field("hello") as
+    | Field<string>
+    | Field.Common<string>
+    | Field.Immutable<string>;
+
+  field.errors satisfies Field.Error[];
+  // @ts-expect-error
+  field.errors.any;
+}
+//#endregion
+
+//#region Field#useErrors
+{
+  const field = new Field("hello") as
+    | Field<string>
+    | Field.Common<string>
+    | Field.Immutable<string>;
+
+  const result = field.useErrors();
+  result satisfies Field.Error[];
+  // @ts-expect-error
+  result.any;
+}
+//#endregion
+
+//#region Field#valid
+{
+  const field = new Field("hello") as
+    | Field<string>
+    | Field.Common<string>
+    | Field.Immutable<string>;
+
+  field.valid satisfies boolean;
+  // @ts-expect-error
+  field.valid.any;
+}
+//#endregion
+
+//#region Field#useValid
+{
+  const field = new Field("hello") as
+    | Field<string>
+    | Field.Common<string>
+    | Field.Immutable<string>;
+
+  const result = field.useValid();
+  result satisfies boolean;
+  // @ts-expect-error
+  result.any;
+}
+//#endregion
+
+//#endregion
 
 //#region Helpers
 

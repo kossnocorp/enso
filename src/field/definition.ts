@@ -1,4 +1,4 @@
-import React, { DependencyList, FocusEventHandler } from "react";
+import React, { DependencyList, FocusEventHandler, ReactElement } from "react";
 import { Atom } from "../atom/index.js";
 import type { EnsoUtils as Utils } from "../utils.ts";
 import { Static } from "./util.ts";
@@ -18,8 +18,7 @@ export declare class Field<
       typeof Field<Value, Qualifier, Parent>,
       Atom.StaticSubclass<"field">
     >,
-    Field.Invariant<Value, Qualifier, Parent>,
-    Field.ImmutableBase<Value>
+    Field.Invariant<Value, Qualifier, Parent>
 {
   //#region Static
 
@@ -55,7 +54,7 @@ export declare class Field<
       ErrorsEnable,
       ValidEnable
     >,
-  ): React.ReactNode;
+  ): ReactElement<HTMLElement>;
 
   //#endregion Static
 
@@ -63,7 +62,31 @@ export declare class Field<
 
   [hintSymbol]: true;
 
-  //#endregion Instance
+  //#endregion
+
+  //#region Value
+
+  get dirty(): boolean;
+
+  useDirty(): boolean;
+
+  commit(): void;
+
+  reset(): void;
+
+  //#endregion
+
+  //#region Validation
+
+  get errors(): Field.Error[];
+
+  useErrors(): Field.Error[];
+
+  get valid(): boolean;
+
+  useValid(): boolean;
+
+  //#endregion
 }
 
 export namespace Field {
@@ -86,19 +109,32 @@ export namespace Field {
     Value,
     Qualifier extends Atom.Qualifier = Atom.Qualifier.Default,
     Parent extends Atom.Parent.Constraint<Value> = Atom.Parent.Default,
-  > extends Hint,
-      Atom.Invariant<"field" | "invariant", Value, Qualifier, Parent>,
-      ImmutableBase<Value> {}
+  > extends Invariant.Interface<"invariant", Value, Qualifier, Parent> {}
+
+  export namespace Invariant {
+    export interface Interface<
+      Variant extends Atom.Variant,
+      Value,
+      Qualifier extends Atom.Qualifier = Atom.Qualifier.Default,
+      Parent extends Atom.Parent.Constraint<Value> = Atom.Parent.Default,
+    > extends Atom.Invariant<"field" | Variant, Value, Qualifier, Parent>,
+        Common.Interface<Variant, Value, Qualifier, Parent> {}
+  }
 
   export interface Common<
     Value,
     Qualifier extends Atom.Qualifier = Atom.Qualifier.Default,
     Parent extends Atom.Parent.Constraint<Value> = Atom.Parent.Default,
-  > extends Hint,
-      Atom.Common<"field" | "common", Value, Qualifier, Parent>,
-      ImmutableBase<Value> {}
+  > extends Common.Interface<"common", Value, Qualifier, Parent> {}
 
   export namespace Common {
+    export interface Interface<
+      Variant extends Atom.Variant,
+      Value,
+      Qualifier extends Atom.Qualifier = Atom.Qualifier.Default,
+      Parent extends Atom.Parent.Constraint<Value> = Atom.Parent.Default,
+    > extends Immutable.Interface<Variant, Value, Qualifier, Parent> {}
+
     export type Discriminated<
       Value,
       Discriminator extends Atom.Discriminate.Discriminator<Value>,
@@ -117,11 +153,20 @@ export namespace Field {
     Value,
     Qualifier extends Atom.Qualifier = Atom.Qualifier.Default,
     Parent extends Atom.Parent.Constraint<Value> = Atom.Parent.Default,
-  > extends Hint,
-      Atom.Immutable<"field" | "immutable", Value, Qualifier, Parent>,
-      ImmutableBase<Value> {}
+  > extends Immutable.Interface<"immutable", Value, Qualifier, Parent> {}
 
   export namespace Immutable {
+    export interface Interface<
+      Variant extends Atom.Variant,
+      Value,
+      Qualifier extends Atom.Qualifier = Atom.Qualifier.Default,
+      Parent extends Atom.Parent.Constraint<Value> = Atom.Parent.Default,
+    > extends Ish.Value,
+        Ish.Validation,
+        Atom.Immutable<"field" | Variant, Value, Qualifier, Parent> {
+      [hintSymbol]: true;
+    }
+
     export type Discriminated<
       Value,
       Discriminator extends Atom.Discriminate.Discriminator<Value>,
@@ -136,10 +181,26 @@ export namespace Field {
     >;
   }
 
-  export interface ImmutableBase<Value> {}
+  export namespace Ish {
+    export interface Value {
+      dirty: boolean;
 
-  export interface Hint {
-    [hintSymbol]: true;
+      useDirty(): boolean;
+
+      commit(): void;
+
+      reset(): void;
+    }
+
+    export interface Validation {
+      errors: Field.Error[];
+
+      useErrors(): Field.Error[];
+
+      valid: boolean;
+
+      useValid(): boolean;
+    }
   }
 
   //#endregion
@@ -293,7 +354,16 @@ export namespace Field {
     export type OnChange<Value> = (value: Value) => void;
   }
 
-  //#endregion Input
+  //#endregion
 
-  //#endregion Control
+  //#endregion
+
+  //#region Validation
+
+  export interface Error {
+    type?: string | undefined;
+    message: string;
+  }
+
+  //#endregion
 }
