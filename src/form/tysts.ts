@@ -5,7 +5,7 @@ import { Form } from "./index.js";
 
 //#region Form#id
 {
-  const form = new Form("id", "hello");
+  const form = new Form("hello");
 
   form.id satisfies string;
   // @ts-expect-error
@@ -15,7 +15,7 @@ import { Form } from "./index.js";
 
 //#region Form#field
 {
-  const form = new Form("id", "hello");
+  const form = new Form("hello");
 
   form.field satisfies Field<string>;
   // @ts-expect-error
@@ -29,7 +29,7 @@ import { Form } from "./index.js";
 
 //#region Form#value
 {
-  const form = new Form("id", "hello");
+  const form = new Form("hello");
 
   form.value satisfies typeof form.field.value;
   // @ts-expect-error
@@ -39,7 +39,7 @@ import { Form } from "./index.js";
 
 //#region Form#useValue
 {
-  const form = new Form("id", "hello");
+  const form = new Form("hello");
 
   const result = form.useValue();
   result satisfies typeof form.field.value;
@@ -50,7 +50,7 @@ import { Form } from "./index.js";
 
 //#region Form.set
 {
-  const form = new Form("id", {} as { a: 1; b?: 2 });
+  const form = new Form({} as { a: 1; b?: 2 });
 
   form.set satisfies typeof form.field.set;
   // @ts-expect-error
@@ -60,7 +60,7 @@ import { Form } from "./index.js";
 
 //#region Form#dirty
 {
-  const form = new Form("id", "hello");
+  const form = new Form("hello");
 
   form.dirty satisfies boolean;
   // @ts-expect-error
@@ -70,7 +70,7 @@ import { Form } from "./index.js";
 
 //#region Form#useDirty
 {
-  const form = new Form("id", "hello");
+  const form = new Form("hello");
 
   const result = form.useDirty();
   result satisfies boolean;
@@ -81,7 +81,7 @@ import { Form } from "./index.js";
 
 //#region Form#commit
 {
-  const form = new Form("id", "hello");
+  const form = new Form("hello");
 
   const result = form.commit();
   result satisfies void;
@@ -92,7 +92,7 @@ import { Form } from "./index.js";
 
 //#region Form#reset
 {
-  const form = new Form("id", "hello");
+  const form = new Form("hello");
 
   const result = form.reset();
   result satisfies void;
@@ -107,7 +107,7 @@ import { Form } from "./index.js";
 
 //#region Form.$
 {
-  const form = new Form("id", "hello");
+  const form = new Form("hello");
 
   form.$ satisfies typeof form.field.value;
   // @ts-expect-error
@@ -117,7 +117,7 @@ import { Form } from "./index.js";
 
 //#region Form.at
 {
-  const form = new Form("id", {} as { a: 1; b?: 2 });
+  const form = new Form({} as { a: 1; b?: 2 });
 
   form.at satisfies typeof form.field.at;
   // @ts-expect-error
@@ -127,7 +127,7 @@ import { Form } from "./index.js";
 
 //#region Form.try
 {
-  const form = new Form("id", {} as { a: 1; b?: 2 });
+  const form = new Form({} as { a: 1; b?: 2 });
 
   form.try satisfies typeof form.field.try;
   // @ts-expect-error
@@ -141,7 +141,7 @@ import { Form } from "./index.js";
 
 //#region Form.watch
 {
-  const form = new Form("id", "hello");
+  const form = new Form("hello");
 
   form.watch satisfies typeof form.field.watch;
   // @ts-expect-error
@@ -151,7 +151,7 @@ import { Form } from "./index.js";
 
 //#region Form.useWatch
 {
-  const form = new Form("id", "hello");
+  const form = new Form("hello");
 
   form.useWatch satisfies typeof form.field.useWatch;
   // @ts-expect-error
@@ -165,7 +165,7 @@ import { Form } from "./index.js";
 
 //#region Form#submitting
 {
-  const form = new Form("id", "hello");
+  const form = new Form("hello");
 
   form.submitting satisfies boolean;
   // @ts-expect-error
@@ -175,7 +175,7 @@ import { Form } from "./index.js";
 
 //#region Form#useSubmitting
 {
-  const form = new Form("id", "hello");
+  const form = new Form("hello");
 
   const result = form.useSubmitting();
   result satisfies boolean;
@@ -190,7 +190,7 @@ import { Form } from "./index.js";
 
 //#region Form#errors
 {
-  const form = new Form("id", "hello");
+  const form = new Form("hello");
 
   form.errors satisfies Field.Error[];
   // @ts-expect-error
@@ -200,7 +200,7 @@ import { Form } from "./index.js";
 
 //#region Form#useErrors
 {
-  const form = new Form("id", "hello");
+  const form = new Form("hello");
 
   const result = form.useErrors();
   result satisfies Field.Error[];
@@ -211,7 +211,7 @@ import { Form } from "./index.js";
 
 //#region Form#valid
 {
-  const form = new Form("id", "hello");
+  const form = new Form("hello");
 
   form.valid satisfies boolean;
   // @ts-expect-error
@@ -221,7 +221,7 @@ import { Form } from "./index.js";
 
 //#region Form#useValid
 {
-  const form = new Form("id", "hello");
+  const form = new Form("hello");
 
   const result = form.useValid();
   result satisfies boolean;

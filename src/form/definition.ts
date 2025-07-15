@@ -24,7 +24,7 @@ export declare class Form<Value> implements Form.Interface<Value> {
 
   [hintSymbol]: true;
 
-  constructor(id: string, initialValue: Value, options?: Form.Options<Value>);
+  constructor(initialValue: Value, options?: Form.Options<Value>);
 
   //#endregion Instance
 
@@ -147,6 +147,7 @@ export namespace Form {
   }
 
   export interface Options<Value> {
+    id?: string;
     validate?: FieldValidation.Validator<Value, undefined>;
   }
 
