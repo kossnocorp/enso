@@ -56,6 +56,18 @@ export declare class Field<
     >,
   ): ReactElement<HTMLElement>;
 
+  static useEnsure<
+    FieldType extends Field<any> | Utils.Nullish,
+    MappedValue = undefined,
+  >(
+    field: FieldType,
+    map?: Field.Ensure.Mapper<FieldType, MappedValue>,
+  ): Field.Ensure.Result<FieldType, MappedValue>;
+
+  static useCastString<Value extends string | Utils.Nullish>(
+    field: Field<Value>,
+  ): Field<string>;
+
   //#endregion Static
 
   //#region Instance
@@ -205,6 +217,42 @@ export namespace Field {
 
   //#endregion
 
+  //#region Static
+
+  export namespace Ensure {
+    export interface Mapper<
+      FieldType extends Field<any> | Utils.Nullish,
+      MappedValue,
+    > {
+      (field: Field<FieldValue<FieldType>>): Field<MappedValue>;
+    }
+
+    export type FieldValue<FieldType extends Field<any> | Utils.Nullish> =
+      FieldType extends Field<infer Value> ? Value : never;
+
+    export type Result<
+      FieldType extends Field<unknown> | Utils.Nullish,
+      MappedValue,
+    > = MappedValue extends undefined
+      ? ResultDirect<FieldType>
+      : ResultMapped<FieldType, MappedValue>;
+
+    export type ResultDirect<FieldType extends Field<unknown> | Utils.Nullish> =
+      Field<
+        | (FieldType extends Utils.Nullish ? undefined : never)
+        | FieldValue<FieldType>
+      >;
+
+    export type ResultMapped<
+      FieldType extends Field<unknown> | Utils.Nullish,
+      MappedValue,
+    > = Field<
+      (FieldType extends Utils.Nullish ? undefined : never) | MappedValue
+    >;
+  }
+
+  //#endregion
+
   export type Parent<
     ParentValue,
     Key extends keyof ParentValue,
@@ -213,6 +261,8 @@ export namespace Field {
   //#region Value
 
   export namespace Value {
+    // WIP: Remove vvv
+
     export type Variable<Value> = Value extends Utils.Tuple
       ? Tuple<Value>
       : Value extends unknown[]

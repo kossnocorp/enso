@@ -306,6 +306,8 @@ import { Field } from "./index.js";
 }
 //#endregion
 
+//#region Static
+
 //#region Field.common
 {
   // Basic
@@ -372,6 +374,89 @@ import { Field } from "./index.js";
     }
   }
 }
+//#endregion
+
+//#region Field.useEnsure
+{
+  // Basic
+  {
+    const field = new Field("hello") as Field<string> | undefined;
+
+    const result = Field.useEnsure(field);
+    result satisfies Field<string | undefined>;
+    // @ts-expect-error
+    result.any;
+  }
+
+  // Mapped
+  {
+    interface Parent {
+      child: Child;
+    }
+
+    interface Child {
+      hello: "world";
+    }
+
+    const field = new Field({}) as unknown as Field<Parent> | undefined;
+
+    const result = Field.useEnsure(field, (field) => field.$.child);
+    result satisfies Field<Child | undefined>;
+    // @ts-expect-error
+    result.any;
+  }
+
+  // Defined
+  {
+    // Basic
+    {
+      const field = new Field("hello");
+
+      const result = Field.useEnsure(field);
+      result satisfies Field<string>;
+      // @ts-expect-error
+      result.any;
+    }
+
+    // Mapped
+    {
+      interface Parent {
+        child: Child;
+      }
+
+      interface Child {
+        hello: "world";
+      }
+
+      const field = new Field({}) as unknown as Field<Parent>;
+
+      const result = Field.useEnsure(field, (field) => field.$.child);
+      result satisfies Field<Child>;
+      // @ts-expect-error
+      result.any;
+    }
+  }
+}
+//#endregion
+
+//#region Field.useCastString
+{
+  const field = new Field("hello") as Field<string | undefined | null>;
+
+  const result = Field.useCastString(field);
+  result satisfies Field<string>;
+  // @ts-expect-error
+  result.any;
+
+  Field.useCastString({} as Field<string>);
+  Field.useCastString({} as Field<string | undefined>);
+  Field.useCastString({} as Field<string | null>);
+  // @ts-expect-error
+  Field.useCastString({} as Field<number>);
+  // @ts-expect-error
+  Field.useCastString({} as Field<string | number>);
+}
+
 //#endregion
 
 //#region Value
