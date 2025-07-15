@@ -16,7 +16,7 @@ export class Form<Payload> implements Enso.InterfaceSystem {
     options?: Form.Options<Payload>,
   ): Form<Payload> {
     const id = useId();
-    const form = useMemo(() => new Form(id, value, options), [id]);
+    const form = useMemo(() => new Form(value, { ...options, id }), [id]);
     useEffect(() => () => form.deconstruct(), [form]);
     const rerender = useRerender();
 
@@ -65,8 +65,8 @@ export class Form<Payload> implements Enso.InterfaceSystem {
   #id: string;
   #field: FieldOld<Payload>;
 
-  constructor(id: string, initial: Payload, options?: Form.Options<Payload>) {
-    this.#id = id;
+  constructor(initial: Payload, options?: Form.Options<Payload>) {
+    this.#id = options?.id || nanoid();
     this.#field = new FieldOld(initial);
     this.#validator = options?.validate;
 
@@ -87,14 +87,6 @@ export class Form<Payload> implements Enso.InterfaceSystem {
   // TODO: Tests
   deconstruct() {
     this.#field.deconstruct();
-  }
-
-  static create<Payload>(
-    initial: Payload,
-    options?: Form.Options<Payload>,
-  ): Form<Payload> {
-    const id = nanoid();
-    return new Form(id, initial, options);
   }
 
   //#region Attributes
@@ -310,6 +302,7 @@ export class Form<Payload> implements Enso.InterfaceSystem {
 
 export namespace Form {
   export interface Options<Payload> {
+    id?: string;
     validate?: FieldOld.Validator<Payload, undefined>;
   }
 
