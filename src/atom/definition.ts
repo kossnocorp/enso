@@ -1385,7 +1385,11 @@ export namespace Atom {
     // respectively, so we have to have special case for them to account for
     // invariance.
     Utils.IsNotTop<Value> extends true
-      ? { [Key in keyof Value]-?: Child<Type, Value, Key, "indexed"> }
+      ? Value extends object
+        ? Value extends Utils.BrandedPrimitive
+          ? never
+          : { [Key in keyof Value]-?: Child<Type, Value, Key, "indexed"> }
+        : never
       : Utils.ResolveTop<Value>;
 
   //#endregion
