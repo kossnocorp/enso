@@ -269,7 +269,7 @@ export namespace Atom {
   export namespace Qualifier {
     export type Default = never;
 
-    export type Map<Qualifier extends Atom.Qualifier = never> =
+    export type Map<Qualifier extends Atom.Qualifier = Default> =
       Utils.NeverDefault<
         MapChunk<Qualifier, "root"> &
           MapChunk<Qualifier, "detachable"> &
@@ -777,7 +777,7 @@ export namespace Atom {
     export interface Detachable<
       Type extends Atom.Type,
       Value,
-      Qualifier extends Atom.Qualifier | "detachable" = never,
+      Qualifier extends Atom.Qualifier | "detachable" = Atom.Qualifier.Default,
       Parent extends Atom.Parent.Constraint<Value> = Atom.Parent.Default,
     > extends Common<Type, Value, Qualifier, Parent> {
       (value: DetachedValue): Envelop<Type, DetachedValue, Qualifier, Parent>;
