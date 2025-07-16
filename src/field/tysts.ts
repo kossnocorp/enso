@@ -1100,6 +1100,8 @@ const tupleOrNum = new Field<[string, boolean, symbol] | number>([
   Symbol("3"),
 ]);
 
+const readonlyArr = new Field<readonly (string | boolean)[]>([]);
+
 const arr = new Field<Array<string | boolean>>([]);
 const arrOrUnd = new Field<Array<string | boolean> | undefined>([]);
 const arrOrNum = new Field<Array<string | boolean> | number>([]);
@@ -1113,6 +1115,7 @@ const objOrUnd = new Field<Ok | undefined>({ ok: true });
 
 const rec = new Field<Record<string, string | boolean>>({});
 const prim = new Field<string | boolean>("hello");
+const brandedPrim = new Field({} as Branded<string>);
 
 //#region `Field["size"]`
 {
@@ -1390,42 +1393,116 @@ const prim = new Field<string | boolean>("hello");
 }
 //#endregion
 
-//#region `Field["find"]`
+//#region Field#find
 {
+  // Readonly array
+  {
+    const result = readonlyArr.find((item, index) => {
+      item satisfies Field.Common<string | boolean>;
+      // @ts-expect-error
+      item satisfies Field.Common<string | boolean, "detachable">;
+      // @ts-expect-error
+      item satisfies Field<string | boolean>;
+      index satisfies number;
+      return item.value === "hello";
+    });
+
+    result satisfies Field.Common<string | boolean> | undefined;
+    // @ts-expect-error
+    result satisfies Field.Common<string | boolean, "detachable"> | undefined;
+    // @ts-expect-error
+    result satisfies Field<string | boolean> | undefined;
+    // @ts-expect-error
+    result satisfies Field.Common<string> | Field<boolean, "detachable">;
+    // @ts-expect-error
+    result satisfies Field.Common<string | boolean>;
+    // @ts-expect-error
+    result satisfies undefined;
+    // @ts-expect-error
+    result.any;
+
+    readonlyArr.find((item) => {
+      item satisfies Field.Common<string | boolean>;
+      // @ts-expect-error
+      item satisfies Field.Common<string | boolean, "detachable">;
+      // @ts-expect-error
+      item satisfies Field<string | boolean>;
+      return true;
+    });
+    readonlyArr.find(() => true);
+
+    readonlyArr.find((_item) => 0);
+    readonlyArr.find((_item) => "");
+    readonlyArr.find((_item) => null);
+    // @ts-expect-error
+    readonlyArr.find((item) => item.value.toExponential());
+  }
+
+  // Tuple
+  {
+    const result = tuple.find((item, index) => {
+      item satisfies Field<string> | Field<boolean> | Field<symbol>;
+      index satisfies 0 | 1 | 2;
+
+      if (index === 1) {
+        item.value satisfies boolean;
+        // @ts-expect-error
+        item.value satisfies string;
+        return true;
+      }
+
+      return false;
+    });
+
+    result satisfies Field<string> | Field<boolean> | Field<symbol> | undefined;
+    // @ts-expect-error
+    result satisfies Field<string> | Field<boolean> | Field<symbol>;
+    // @ts-expect-error
+    result satisfies undefined;
+    // @ts-expect-error
+    result.any;
+
+    tuple.find((item) => {
+      item satisfies Field<string> | Field<boolean> | Field<symbol>;
+      return true;
+    });
+    tuple.find(() => true);
+    tuple.find((_item) => 0);
+    tuple.find((_item) => "");
+    tuple.find((_item) => null);
+    // @ts-expect-error
+    tuple.find((item) => item.value.toExponential());
+  }
+
   // Array
   {
-    // Regular
-    {
-      const result = arr.find((item, index) => {
-        item satisfies Field<string | boolean, "detachable">;
-        index satisfies number;
-        return item.value === "hello";
-      });
+    const result = arr.find((item, index) => {
+      item satisfies Field<string | boolean, "detachable">;
+      index satisfies number;
+      return item.value === "hello";
+    });
 
-      result satisfies Field<string | boolean, "detachable"> | undefined;
-      // @ts-expect-error
-      result satisfies
-        | Field<string, "detachable">
-        | Field<boolean, "detachable">;
-      // @ts-expect-error
-      result satisfies Field<string | boolean, "detachable">;
-      // @ts-expect-error
-      result satisfies undefined;
-      // @ts-expect-error
-      result.any;
+    result satisfies Field<string | boolean, "detachable"> | undefined;
+    // @ts-expect-error
+    result satisfies Field<string, "detachable"> | Field<boolean, "detachable">;
+    // @ts-expect-error
+    result satisfies Field<string | boolean, "detachable">;
+    // @ts-expect-error
+    result satisfies undefined;
+    // @ts-expect-error
+    result.any;
 
-      arr.find((item) => {
-        item satisfies Field<string | boolean, "detachable">;
-        return true;
-      });
-      arr.find(() => true);
+    arr.find((item) => {
+      item satisfies Field<string | boolean, "detachable">;
+      return true;
+    });
+    arr.find(() => true);
 
-      arr.find((_item) => 0);
-      arr.find((_item) => "");
-      arr.find((_item) => null);
-      // @ts-expect-error
-      arr.find((item) => item.value.toExponential());
-    }
+    arr.find((_item) => 0);
+    arr.find((_item) => "");
+    arr.find((_item) => null);
+    // @ts-expect-error
+    arr.find((item) => item.value.toExponential());
   }
 
   // Object
@@ -1522,53 +1599,102 @@ const prim = new Field<string | boolean>("hello");
     }
   }
 
-  // Tuple
+  // Primitive
   {
-    // Regular
-    {
-      const result = tuple.find((item, index) => {
-        item satisfies Field<string> | Field<boolean> | Field<symbol>;
-        index satisfies 0 | 1 | 2;
+    // @ts-expect-error
+    prim.find((item, index) => {});
+  }
 
-        if (index === 1) {
-          item.value satisfies boolean;
-          // @ts-expect-error
-          item.value satisfies string;
-          return true;
-        }
-
-        return false;
-      });
-
-      result satisfies
-        | Field<string>
-        | Field<boolean>
-        | Field<symbol>
-        | undefined;
-      // @ts-expect-error
-      result satisfies Field<string> | Field<boolean> | Field<symbol>;
-      // @ts-expect-error
-      result satisfies undefined;
-      // @ts-expect-error
-      result.any;
-
-      tuple.find((item) => {
-        item satisfies Field<string> | Field<boolean> | Field<symbol>;
-        return true;
-      });
-      tuple.find(() => true);
-      tuple.find((_item) => 0);
-      tuple.find((_item) => "");
-      tuple.find((_item) => null);
-      // @ts-expect-error
-      tuple.find((item) => item.value.toExponential());
-    }
+  // Branded primitive
+  {
+    // @ts-expect-error
+    brandedPrim.find((item, index) => {});
   }
 }
 //#endregion
 
-//#region `Field["filter"]`
+//#region Field#filter
 {
+  // Array
+  {
+    const result = readonlyArr.find((item, index) => {
+      item satisfies Field.Common<string | boolean>;
+      // @ts-expect-error
+      item satisfies Field.Common<string | boolean, "detachable">;
+      // @ts-expect-error
+      item satisfies Field<string | boolean, "detachable">;
+      index satisfies number;
+      return item.value === "hello";
+    });
+
+    result satisfies Field.Common<string | boolean> | undefined;
+    // @ts-expect-error
+    result satisfies Field.Common<string | boolean, "detachable"> | undefined;
+    // @ts-expect-error
+    result satisfies Field<string | boolean> | undefined;
+    // @ts-expect-error
+    result satisfies Field.Common<string> | Field.Common<boolean>;
+    // @ts-expect-error
+    result satisfies Field.Common<string | boolean>;
+    // @ts-expect-error
+    result satisfies undefined;
+    // @ts-expect-error
+    result.any;
+
+    arr.find((item) => {
+      item satisfies Field.Common<string | boolean>;
+      return true;
+    });
+    arr.find(() => true);
+
+    arr.find((_item) => 0);
+    arr.find((_item) => "");
+    arr.find((_item) => null);
+    // @ts-expect-error
+    arr.find((item) => item.value.toExponential());
+  }
+
+  // Tuple
+  {
+    const result = tuple.filter((item, index) => {
+      item satisfies Field<string> | Field<boolean> | Field<symbol>;
+      // @ts-expect-error
+      item satisfies
+        | Field<string, "detachable">
+        | Field<boolean, "detachable">
+        | Field<symbol, "detachable">;
+      index satisfies 0 | 1 | 2;
+      if (index === 1) {
+        item.value satisfies boolean;
+        // @ts-expect-error
+        item.value.any;
+      }
+      return false;
+    });
+    result satisfies Array<Field<string> | Field<boolean> | Field<symbol>>;
+    // @ts-expect-error
+    result satisfies Array<
+      | Field<string, "detachable">
+      | Field<boolean, "detachable">
+      | Field<symbol, "detachable">
+    >;
+    // @ts-expect-error
+    result satisfies Array<Field<string | boolean | symbol>>;
+    // @ts-expect-error
+    result.any;
+
+    tuple.filter((item) => {
+      item satisfies Field<string> | Field<boolean> | Field<symbol>;
+      return true;
+    });
+    tuple.filter(() => true);
+    tuple.filter((_item) => 0);
+    tuple.filter((_item) => "");
+    tuple.filter((_item) => null);
+    // @ts-expect-error
+    tuple.filter((item) => item.value.toExponential());
+  }
+
   // Array
   {
     const result = arr.filter((item, index) => {
@@ -1676,48 +1802,16 @@ const prim = new Field<string | boolean>("hello");
     }
   }
 
-  // Tuple
+  // Primitive
   {
-    // Regular
-    {
-      const result = tuple.filter((item, index) => {
-        item satisfies Field<string> | Field<boolean> | Field<symbol>;
-        // @ts-expect-error
-        item satisfies
-          | Field<string, "detachable">
-          | Field<boolean, "detachable">
-          | Field<symbol, "detachable">;
-        index satisfies 0 | 1 | 2;
-        if (index === 1) {
-          item.value satisfies boolean;
-          // @ts-expect-error
-          item.value.any;
-        }
-        return false;
-      });
-      result satisfies Array<Field<string> | Field<boolean> | Field<symbol>>;
-      // @ts-expect-error
-      result satisfies Array<
-        | Field<string, "detachable">
-        | Field<boolean, "detachable">
-        | Field<symbol, "detachable">
-      >;
-      // @ts-expect-error
-      result satisfies Array<Field<string | boolean | symbol>>;
-      // @ts-expect-error
-      result.any;
+    // @ts-expect-error
+    prim.filter((item, index) => {});
+  }
 
-      tuple.filter((item) => {
-        item satisfies Field<string> | Field<boolean> | Field<symbol>;
-        return true;
-      });
-      tuple.filter(() => true);
-      tuple.filter((_item) => 0);
-      tuple.filter((_item) => "");
-      tuple.filter((_item) => null);
-      // @ts-expect-error
-      tuple.filter((item) => item.value.toExponential());
-    }
+  // Branded primitive
+  {
+    // @ts-expect-error
+    brandedPrim.filter((item, index) => {});
   }
 }
 //#endregion
