@@ -948,7 +948,11 @@ export namespace Atom {
 
   //#endregion
 
-  export type SizeProp<Value> = Value extends object ? number : never;
+  export type SizeProp<Value> = Value extends object
+    ? Value extends Utils.BrandedPrimitive
+      ? never
+      : number
+    : never;
 
   //#region Remove
 
