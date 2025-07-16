@@ -169,10 +169,21 @@ import { Atom } from "./index.js";
   {
     type NumberProp = Atom.$Prop<"field", number>;
 
-    tyst<NumberProp>({} as number);
-    tyst<NumberProp>({} as Atom.$Prop<"field", any>);
-    // @ts-expect-error
-    tyst<NumberProp>({} as string);
+    const _test = {} as NumberProp;
+    _test satisfies never;
+
+    tyst<NumberProp>({} as Atom.$Prop<"field", number>);
+    tyst<NumberProp>({} as Atom.$Prop<"field", Branded<number>>);
+  }
+
+  // Branded primitive
+  {
+    type BrandedProp = Atom.$Prop<"field", Branded<number>>;
+
+    const _test = {} as BrandedProp;
+    _test satisfies never;
+
+    tyst<BrandedProp>({} as Atom.$Prop<"field", string>);
   }
 
   // Object
@@ -210,8 +221,6 @@ import { Atom } from "./index.js";
     tyst<UnknownProp>({} as unknown);
     // @ts-expect-error
     tyst<UnknownProp>({} as string);
-    // @ts-expect-error
-    tyst<UnknownProp>({} as Atom.$Prop<"field", string>);
   }
 }
 //#endregion
@@ -273,6 +282,7 @@ interface User extends Entity {
   email?: string;
 }
 
+type Branded<Type> = Type & { [brand]: true };
 declare const brand: unique symbol;
 
 //#endregion
