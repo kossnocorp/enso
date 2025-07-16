@@ -241,6 +241,7 @@ describe(Field, () => {
                 name: { first: "Sasha" },
               });
               expect(
+                // @ts-expect-error -- TODO: Types revamp
                 field.$.name.set(detachedValue).lastChanges,
               ).toMatchChanges(change.field.detach);
             });
@@ -538,6 +539,7 @@ describe(Field, () => {
         it("does not trigger update when setting undefined value to undefined value", () => {
           const field = new Field<number[]>([1, 2, 3, 4]);
           const child = field.at(5);
+          // @ts-expect-error -- TODO: Types revamp
           child.set(detachedValue);
           expect(child.lastChanges).toBe(0n);
         });
@@ -622,6 +624,7 @@ describe(Field, () => {
 
             it("assigns detach change when detaching", () => {
               const field = new Field<number[]>([1, 2, 3]);
+              // @ts-expect-error -- TODO: Types revamp
               expect(field.at(2).set(detachedValue).lastChanges).toMatchChanges(
                 change.field.detach,
               );
@@ -827,6 +830,7 @@ describe(Field, () => {
 
           it("assigns detach change when setting to detached value", () => {
             const field = new Field<Map<any, any>, "detachable">(new Map());
+            // @ts-expect-error -- TODO: Types revamp
             expect(field.set(detachedValue).lastChanges).toMatchChanges(
               change.field.detach,
             );

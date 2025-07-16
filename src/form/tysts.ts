@@ -52,7 +52,12 @@ import { Form } from "./index.js";
 {
   const form = new Form({} as { a: 1; b?: 2 });
 
-  form.set satisfies typeof form.field.set;
+  form.set({ a: 1 });
+  form.set({ a: 1, b: 2 });
+  // @ts-expect-error
+  form.set({ a: 1, b: 1 });
+  // @ts-expect-error
+  form.set({ b: 1 });
   // @ts-expect-error
   form.set.any;
 }
