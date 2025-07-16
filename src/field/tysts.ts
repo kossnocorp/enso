@@ -2250,6 +2250,17 @@ const brandedPrim = new Field({} as Branded<string>);
     result.any;
   }
 
+  // Record
+  {
+    const field = new Field({} as Record<string, string | boolean>);
+    const result = field.useCollection();
+    result satisfies Field<Record<string, string | boolean>, "bound">;
+    // @ts-expect-error
+    result satisfies Field<Record<string, string>, "bound">;
+    // @ts-expect-error
+    result.any;
+  }
+
   // Qualifier
   {
     const field = {} as Field<Hello, "detachable">;
@@ -2393,9 +2404,9 @@ const brandedPrim = new Field({} as Branded<string>);
     const result = field.insert(0, "hello");
 
     result satisfies Field<string, "detachable">;
-    /// @ts-expect-error
+    // @ts-expect-error
     result satisfies Field<string, "bound">;
-    /// @ts-expect-error
+    // @ts-expect-error
     result.any;
 
     // @ts-expect-error
@@ -2419,6 +2430,13 @@ const brandedPrim = new Field({} as Branded<string>);
   // Object
   {
     const field = new Field({ a: 1, b: 2 });
+    // @ts-expect-error
+    field.insert("a", 4);
+  }
+
+  // Record
+  {
+    const field = new Field({} as Record<string, number>);
     // @ts-expect-error
     field.insert("a", 4);
   }
@@ -2462,9 +2480,9 @@ const brandedPrim = new Field({} as Branded<string>);
     const result = field.push("hello");
 
     result satisfies Field<string, "detachable">;
-    /// @ts-expect-error
+    // @ts-expect-error
     result satisfies Field<string, "bound">;
-    /// @ts-expect-error
+    // @ts-expect-error
     result.any;
 
     // @ts-expect-error
@@ -2488,6 +2506,13 @@ const brandedPrim = new Field({} as Branded<string>);
   // Object
   {
     const field = new Field({ a: 1, b: 2 });
+    // @ts-expect-error
+    field.push(4);
+  }
+
+  // Record
+  {
+    const field = new Field({} as Record<string, number>);
     // @ts-expect-error
     field.push(4);
   }
