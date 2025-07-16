@@ -1816,8 +1816,30 @@ const brandedPrim = new Field({} as Branded<string>);
 }
 //#endregion
 
-//#region `Field["useCollection"]`
+//#region Field#useCollection
 {
+  // Readonly array
+  {
+    const field = new Field({} as readonly string[]);
+    const result = field.useCollection();
+    result satisfies Field<readonly string[], "bound">;
+    // @ts-expect-error
+    result satisfies Field<string[], "bound">;
+    // @ts-expect-error
+    result.any;
+  }
+
+  // Tuple
+  {
+    const field = new Field({} as ["a", "b", "c"]);
+    const result = field.useCollection();
+    result satisfies Field<["a", "b", "c"], "bound">;
+    // @ts-expect-error
+    result satisfies Field<string[], "bound">;
+    // @ts-expect-error
+    result.any;
+  }
+
   // Array
   {
     const field = new Field<string[]>([]);
@@ -1856,6 +1878,13 @@ const brandedPrim = new Field({} as Branded<string>);
   // Primitive
   {
     const field = new Field("hello");
+    // @ts-expect-error
+    field.useCollection();
+  }
+
+  // Branded primitive
+  {
+    const field = new Field({} as Branded<string>);
     // @ts-expect-error
     field.useCollection();
   }
