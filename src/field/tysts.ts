@@ -229,6 +229,12 @@ import { Field } from "./index.js";
       tystField({} as Field<"a" | "b" | "c">);
       tystField({} as Field<Branded<string>>);
       tystField({} as Field<"a" | "b" | "c", "bound">);
+      tystField(
+        {} as Field<
+          "a" | "b" | "c",
+          Field.Proxied<{ abc: "a" | "b" | "c"; id: Branded<string> }>
+        >,
+      );
     }
   }
 
@@ -3387,6 +3393,29 @@ const unionField = new Field({ hello: "world", world: true }) as
     result satisfies Field<number, Field.Proxied<unknown>>;
     // @ts-expect-error
     result satisfies Field<number, Field.Proxied<number>>;
+
+    const nestedResult = result
+      .into((value) => {
+        value satisfies number;
+        // @ts-expect-error
+        value.any;
+
+        return value.toString();
+      })
+      .from((stringifiedValue, value) => {
+        stringifiedValue satisfies string;
+        // @ts-expect-error
+        stringifiedValue.any;
+
+        value satisfies number;
+        // @ts-expect-error
+        value.any;
+
+        return Number(stringifiedValue);
+      });
+    nestedResult satisfies Field<string, Field.Proxied<number>>;
+    // @ts-expect-error
+    nestedResult.any;
   }
 
   // Common
@@ -3420,6 +3449,29 @@ const unionField = new Field({ hello: "world", world: true }) as
     result satisfies Field.Common<number, Field.Proxied<number>>;
     // @ts-expect-error
     result satisfies Field<number, Field.Proxied<string>>;
+
+    const nestedResult = result
+      .into((value) => {
+        value satisfies number;
+        // @ts-expect-error
+        value.any;
+
+        return value.toString();
+      })
+      .from((stringifiedValue, value) => {
+        stringifiedValue satisfies string;
+        // @ts-expect-error
+        stringifiedValue.any;
+
+        value satisfies number;
+        // @ts-expect-error
+        value.any;
+
+        return Number(stringifiedValue);
+      });
+    nestedResult satisfies Field.Common<string, Field.Proxied<number>>;
+    // @ts-expect-error
+    nestedResult.any;
   }
 
   // Immutable
@@ -3453,6 +3505,57 @@ const unionField = new Field({ hello: "world", world: true }) as
     result satisfies Field.Immutable<number, Field.Proxied<number>>;
     // @ts-expect-error
     result satisfies Field<number, Field.Proxied<string>>;
+
+    const nestedResult = result
+      .into((value) => {
+        value satisfies number;
+        // @ts-expect-error
+        value.any;
+
+        return value.toString();
+      })
+      .from((stringifiedValue, value) => {
+        stringifiedValue satisfies string;
+        // @ts-expect-error
+        stringifiedValue.any;
+
+        value satisfies number;
+        // @ts-expect-error
+        value.any;
+
+        return Number(stringifiedValue);
+      });
+    nestedResult satisfies Field.Immutable<string, Field.Proxied<number>>;
+    // @ts-expect-error
+    nestedResult.any;
+  }
+
+  // Qualifiers
+  {
+    const field = new Field("hello") as Field<string, "detachable" | "bound">;
+    const result = field
+      .into((value) => {
+        value satisfies string;
+        // @ts-expect-error
+        value.any;
+
+        return value.length;
+      })
+      .from((sizeValue, value) => {
+        sizeValue satisfies number;
+        // @ts-expect-error
+        sizeValue.any;
+
+        value satisfies string;
+        // @ts-expect-error
+        value.any;
+
+        return value.slice(0, sizeValue);
+      });
+
+    result satisfies Field<number, Field.Proxied<string>>;
+    // @ts-expect-error
+    result.any;
   }
 }
 //#endregion

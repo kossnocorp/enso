@@ -269,28 +269,25 @@ export namespace Atom {
   export namespace Qualifier {
     export type Default = never;
 
-    export type Map<Qualifier extends Atom.Qualifier = Default> =
-      Utils.NeverDefault<
-        MapChunkBasic<Qualifier, "root"> &
-          MapChunkBasic<Qualifier, "detachable"> &
-          MapChunkBasic<Qualifier, "tried"> &
-          MapChunkBasic<Qualifier, "bound"> &
-          MapChunkProxy<Qualifier>,
-        {}
-      >;
+    export type Map<Qualifier extends Atom.Qualifier> = Utils.NeverDefault<
+      MapChunkBasic<Qualifier, "root"> &
+        MapChunkBasic<Qualifier, "detachable"> &
+        MapChunkBasic<Qualifier, "tried"> &
+        MapChunkBasic<Qualifier, "bound"> &
+        MapChunkProxy<Qualifier>,
+      {}
+    >;
 
     export type MapChunkBasic<
       // WIP: Try to make it reusable this inside Ref
       Qualifier extends Atom.Qualifier,
       TestQualifier extends keyof any,
-    > = {
-      [Key in TestQualifier]: Key extends Qualifier ? true : unknown;
-    };
+    > = TestQualifier extends Qualifier ? { [Key in TestQualifier]: true } : {};
 
     export type MapChunkProxy<Qualifier extends Atom.Qualifier> =
       Qualifier extends Proxy.Qualifier<infer SourceValue>
         ? { proxy: SourceValue }
-        : { proxy: unknown };
+        : {};
   }
 
   //#endregion Qualifier
@@ -1619,12 +1616,7 @@ export namespace Atom {
       ComputedValue,
       Qualifier extends Atom.Qualifier = Atom.Qualifier.Default,
       Parent extends Atom.Parent.Constraint<Value> = Atom.Parent.Default,
-    > = Atom.Envelop<
-      Type,
-      ComputedValue,
-      Qualifier | Proxy.Qualifier<Value>,
-      Parent
-    >;
+    > = Atom.Envelop<Type, ComputedValue, Proxy.Qualifier<Value>, Parent>;
 
     export namespace Into {
       export type Prop<
