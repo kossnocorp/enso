@@ -41,12 +41,7 @@ export declare class Atom<
 
   [AtomPrivate.qualifiersPhantom](): Atom.Qualifier.Map<Qualifier>;
 
-  [AtomPrivate.valueInvariantPhantom]: Atom.Value.Phantom<
-    Type,
-    Value,
-    Qualifier,
-    Parent
-  >;
+  [AtomPrivate.valueInvariantPhantom]: Atom.Value.Phantom<Value>;
 
   [AtomPrivate.parentInvariantPhantom]: Atom.Parent.Phantom<Value, Parent>;
 
@@ -444,12 +439,7 @@ export namespace Atom {
 
     // NOTE: The purpose of this is to cause invariance and break compatibility
     // with subtypes.
-    [AtomPrivate.valueInvariantPhantom]: Atom.Value.Phantom<
-      Type,
-      Value,
-      Qualifier,
-      Parent
-    >;
+    [AtomPrivate.valueInvariantPhantom]: Atom.Value.Phantom<Value>;
 
     lastChanges: FieldChange;
 
@@ -753,16 +743,9 @@ export namespace Atom {
 
   export namespace Value {
     export type Prop<Value> = Atom.Value<Value>;
-  }
 
-  export namespace Value {
-    export interface Phantom<
-      Type extends Atom.Type,
-      Value,
-      Qualifier extends Atom.Qualifier = Atom.Qualifier.Default,
-      Parent extends Atom.Parent.Constraint<Value> = Atom.Parent.Default,
-    > {
-      (value: Value): Atom.Envelop<Type, Value, Qualifier, Parent>;
+    export interface Phantom<Value> {
+      (value: Value): void;
     }
 
     //#region WIP
