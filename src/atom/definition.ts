@@ -271,25 +271,26 @@ export namespace Atom {
 
     export type Map<Qualifier extends Atom.Qualifier = Default> =
       Utils.NeverDefault<
-        MapChunk<Qualifier, "root"> &
-          MapChunk<Qualifier, "detachable"> &
-          MapChunk<Qualifier, "tried"> &
-          MapChunk<Qualifier, "bound"> &
-          (Qualifier extends Proxy.Qualifier<infer SourceValue>
-            ? { proxy: SourceValue }
-            : {}),
+        MapChunkBasic<Qualifier, "root"> &
+          MapChunkBasic<Qualifier, "detachable"> &
+          MapChunkBasic<Qualifier, "tried"> &
+          MapChunkBasic<Qualifier, "bound"> &
+          MapChunkProxy<Qualifier>,
         {}
       >;
 
-    export type MapChunk<
+    export type MapChunkBasic<
       // WIP: Try to make it reusable this inside Ref
       Qualifier extends Atom.Qualifier,
       TestQualifier extends keyof any,
-    > = TestQualifier extends Qualifier
-      ? {
-          [Key in TestQualifier]: true;
-        }
-      : {};
+    > = {
+      [Key in TestQualifier]: Key extends Qualifier ? true : unknown;
+    };
+
+    export type MapChunkProxy<Qualifier extends Atom.Qualifier> =
+      Qualifier extends Proxy.Qualifier<infer SourceValue>
+        ? { proxy: SourceValue }
+        : { proxy: unknown };
   }
 
   //#endregion Qualifier

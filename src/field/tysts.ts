@@ -214,6 +214,22 @@ import { Field } from "./index.js";
       // @ts-expect-error
       _organization = {} as Field<User, never, ContainerParent>;
     }
+
+    // Primitives
+    {
+      let _field: Field<string>;
+
+      // @ts-expect-error
+      _field = {} as Field<"a" | "b" | "c">;
+      // @ts-expect-error
+      _field = {} as Field<Branded<string>>;
+
+      function tystField<Value extends string>(_arg: Field<Value>): void {}
+
+      tystField({} as Field<"a" | "b" | "c">);
+      tystField({} as Field<Branded<string>>);
+      tystField({} as Field<"a" | "b" | "c", "bound">);
+    }
   }
 
   // `Field.Common` as `Field`

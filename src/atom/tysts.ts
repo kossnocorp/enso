@@ -216,6 +216,42 @@ import { Atom } from "./index.js";
 }
 //#endregion
 
+//#region Atom.Qualifier.Map
+{
+  // Basic
+  {
+    tyst<Atom.Qualifier.Map<Atom.Qualifier.Default>>(
+      {} as Atom.Qualifier.Map<"bound">,
+    );
+    tyst<Atom.Qualifier.Map<"bound">>(
+      // @ts-expect-error
+      {} as Atom.Qualifier.Map<Atom.Qualifier.Default>,
+    );
+  }
+
+  // Proxied
+  {
+    tyst<Atom.Qualifier.Map<Atom.Qualifier.Default>>(
+      {} as Atom.Qualifier.Map<Atom.Proxy.Qualifier<string>>,
+    );
+    tyst<Atom.Qualifier.Map<Atom.Proxy.Qualifier<string>>>(
+      {} as Atom.Qualifier.Map<Atom.Proxy.Qualifier<any>>,
+    );
+    tyst<Atom.Qualifier.Map<Atom.Proxy.Qualifier<any>>>(
+      {} as Atom.Qualifier.Map<Atom.Proxy.Qualifier<unknown>>,
+    );
+    tyst<Atom.Qualifier.Map<Atom.Proxy.Qualifier<string>>>(
+      // @ts-expect-error
+      {} as Atom.Qualifier.Map<Atom.Proxy.Qualifier<number>>,
+    );
+    tyst<Atom.Qualifier.Map<Atom.Proxy.Qualifier<any> | "bound">>(
+      // @ts-expect-error
+      {} as Atom.Qualifier.Map<Atom.Proxy.Qualifier<string>>,
+    );
+  }
+}
+//#endregion
+
 //#region Helpers
 
 function tyst<Type>(_arg: Type): void {}
