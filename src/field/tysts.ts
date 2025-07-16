@@ -1117,8 +1117,24 @@ const rec = new Field<Record<string, string | boolean>>({});
 const prim = new Field<string | boolean>("hello");
 const brandedPrim = new Field({} as Branded<string>);
 
-//#region `Field["size"]`
+//#region Field#size
 {
+  // Readonly array
+  {
+    const field = new Field([] as readonly string[]);
+    field.size satisfies number;
+    // @ts-expect-error
+    field.size.any;
+  }
+
+  // Tuple
+  {
+    const field = new Field({} as [1, 2, 3]);
+    field.size satisfies number;
+    // @ts-expect-error
+    field.size.any;
+  }
+
   // Array
   {
     const field = new Field([] as string[]);
@@ -1138,6 +1154,12 @@ const brandedPrim = new Field({} as Branded<string>);
   // Primitive
   {
     const field = new Field(1);
+    field.size satisfies never;
+  }
+
+  // Branded primitive
+  {
+    const field = new Field({} as Branded<string>);
     field.size satisfies never;
   }
 }
