@@ -362,9 +362,10 @@ export namespace Atom {
     Type extends Atom.Type,
     ParentValue,
     Key extends keyof ParentValue,
+    Access extends Child.Access,
   > = Envelop<
     Child.Type<Type, ParentValue>,
-    Child.Value<ParentValue, Key>,
+    Child.Value<ParentValue, Key, Access>,
     Child.Qualifier<ParentValue, Key>
   >;
 
@@ -373,24 +374,16 @@ export namespace Atom {
       Type extends Atom.Type,
       ParentValue,
       Key extends keyof ParentValue,
+      Access extends Child.Access,
     > = Key extends Key
       ? Atom.Every<
           Child.Type<Type, ParentValue>,
-          Child.Value<ParentValue, Key>,
+          Child.Value<ParentValue, Key, Access>,
           Child.Qualifier<ParentValue, Key>
         >
       : never;
 
-    // WIP: Merge with Child?!
-    export type Iterated<
-      Type extends Atom.Type,
-      ParentValue,
-      Key extends keyof ParentValue,
-    > = Envelop<
-      Child.Type<Type, ParentValue>,
-      ParentValue[Key],
-      Child.Qualifier<ParentValue, Key>
-    >;
+    export type Access = "indexed" | "iterated";
 
     export type Type<Type extends Atom.Type, ParentValue> =
       | Extract<Type, Shell>
@@ -404,11 +397,17 @@ export namespace Atom {
               : Variant
           : never);
 
-    export type Value<ParentValue, ParentKey extends keyof ParentValue> =
+    export type Value<
+      ParentValue,
+      ParentKey extends keyof ParentValue,
+      Access extends Child.Access,
+    > =
       | ParentValue[ParentKey]
-      | (Utils.IsStaticKey<ParentValue, ParentKey> extends true
-          ? never
-          : undefined);
+      | (Access extends "indexed"
+          ? Utils.IsStaticKey<ParentValue, ParentKey> extends true
+            ? never
+            : undefined
+          : never);
 
     export type Qualifier<
       ParentValue,
@@ -836,7 +835,10 @@ export namespace Atom {
       Result = void,
     > = (
       ...args: {
-        [Key in Utils.IndexOfTuple<Value>]: [Child<Shell, Value, Key>, Key];
+        [Key in Utils.IndexOfTuple<Value>]: [
+          Child<Shell, Value, Key, "indexed">,
+          Key,
+        ];
       }[Utils.IndexOfTuple<Value>]
     ) => Result;
 
@@ -1005,8 +1007,7 @@ export namespace Atom {
       (
         ...args: {
           [Key in Utils.IndexOfTuple<Value>]: [
-            // Envelop<Child.Type<Type, Value>, Value[Key]>,
-            Child.Iterated<Type, Value, Key>,
+            Child<Type, Value, Key, "iterated">,
             Key,
           ];
         }[Utils.IndexOfTuple<Value>]
@@ -1037,7 +1038,7 @@ export namespace Atom {
       Value extends Utils.ArrayConstraint,
       Result = void,
     > {
-      (item: Child.Iterated<Type, Value, number>, index: number): Result;
+      (item: Child<Type, Value, number, "iterated">, index: number): Result;
     }
 
     // Object
@@ -1059,7 +1060,7 @@ export namespace Atom {
         ...args: Exclude<
           {
             [Key in Utils.CovariantifyKeyof<Value>]: [
-              Child<Type, Value, Key>,
+              Child<Type, Value, Key, "iterated">,
               Key,
             ];
           }[Utils.CovariantifyKeyof<Value>],
@@ -1077,7 +1078,9 @@ export namespace Atom {
         // Exclude is needed to remove undefined that appears when there're
         // optional fields in the object.
         item: Exclude<
-          { [Key in keyof Value]: Child<Type, Value, Key> }[keyof Value],
+          {
+            [Key in keyof Value]: Child<Type, Value, Key, "iterated">;
+          }[keyof Value],
           undefined
         >,
       ): Result;
@@ -1087,7 +1090,9 @@ export namespace Atom {
       Type extends Atom.Type,
       Value extends object,
     > = Exclude<
-      { [Key in keyof Value]: Child<Type, Value, Key> }[keyof Value],
+      {
+        [Key in keyof Value]: Child<Type, Value, Key, "iterated">;
+      }[keyof Value],
       undefined
     >;
 
@@ -1248,7 +1253,7 @@ export namespace Atom {
       > {
         (
           callback: Collection.ArrayHandler<Type, Value, unknown>,
-        ): Result<SelectorType, Child.Iterated<Type, Value, number>>;
+        ): Result<SelectorType, Child<Type, Value, number, "iterated">>;
       }
 
       // Object
@@ -1382,9 +1387,7 @@ export namespace Atom {
     // respectively, so we have to have special case for them to account for
     // invariance.
     Utils.IsNotTop<Value> extends true
-      ? {
-          [Key in keyof Value]-?: Child<Type, Value, Key>;
-        }
+      ? { [Key in keyof Value]-?: Child<Type, Value, Key, "indexed"> }
       : Utils.ResolveTop<Value>;
 
   //#endregion
@@ -1399,7 +1402,7 @@ export namespace Atom {
     : never;
 
   export interface At<Type extends Atom.Type, Value, Key extends keyof Value> {
-    <ArgKey extends Key>(key: ArgKey): Child<Type, Value, ArgKey>;
+    <ArgKey extends Key>(key: ArgKey): Child<Type, Value, ArgKey, "indexed">;
   }
 
   //#endregion

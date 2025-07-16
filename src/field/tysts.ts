@@ -1322,6 +1322,14 @@ const brandedPrim = new Field({} as Branded<string>);
     field.size.any;
   }
 
+  // Record
+  {
+    const field = new Field({} as Record<string, string>);
+    field.size satisfies number;
+    // @ts-expect-error
+    field.size.any;
+  }
+
   // Primitive
   {
     const field = new Field(1);
@@ -1496,6 +1504,27 @@ const brandedPrim = new Field({} as Branded<string>);
     }
   }
 
+  // Record
+  {
+    const result = rec.forEach((item, key) => {
+      item satisfies Field<string | boolean>;
+      // @ts-expect-error
+      item.any;
+
+      key satisfies string;
+      // @ts-expect-error
+      key.any;
+    });
+    result satisfies void;
+
+    rec.forEach((item) => {
+      item satisfies Field<string | boolean>;
+      // @ts-expect-error
+      item.any;
+    });
+    rec.forEach(() => {});
+  }
+
   // Primitive
   {
     // @ts-expect-error
@@ -1619,6 +1648,7 @@ const brandedPrim = new Field({} as Branded<string>);
         }
       });
       result satisfies number[];
+
       obj.map((item) => {
         item satisfies Field<string> | Field<boolean>;
         // @ts-expect-error
@@ -1652,14 +1682,37 @@ const brandedPrim = new Field({} as Branded<string>);
         }
       });
       resultOpt satisfies number[];
+
       objPart.map((item) => {
         item satisfies Field<boolean> | Field<string | undefined>;
         // @ts-expect-error
         item.any;
-        return 0;
       });
       objPart.map(() => 0);
     }
+  }
+
+  // Record
+  {
+    const result = rec.map((item, key) => {
+      item satisfies Field<string | boolean, "detachable">;
+      // @ts-expect-error
+      item.any;
+
+      key satisfies string;
+      // @ts-expect-error
+      key.any;
+
+      return 0;
+    });
+    result satisfies number[];
+
+    rec.map((item) => {
+      item satisfies Field<string | boolean, "detachable">;
+      // @ts-expect-error
+      item.any;
+    });
+    obj.map(() => 0);
   }
 
   // Primitive
@@ -1882,6 +1935,27 @@ const brandedPrim = new Field({} as Branded<string>);
     }
   }
 
+  // Record
+  {
+    const result = rec.find((item, key) => {
+      item satisfies Field<string | boolean>;
+      // @ts-expect-error
+      item.any;
+
+      key satisfies string;
+      // @ts-expect-error
+      key.any;
+    });
+
+    result satisfies Field<string | boolean> | undefined;
+    // @ts-expect-error
+    result satisfies Field<string> | Field<boolean> | undefined;
+    // @ts-expect-error
+    result satisfies undefined;
+    // @ts-expect-error
+    result.any;
+  }
+
   // Primitive
   {
     // @ts-expect-error
@@ -2085,6 +2159,37 @@ const brandedPrim = new Field({} as Branded<string>);
     }
   }
 
+  // Record
+  {
+    const result = rec.filter((item, key) => {
+      item satisfies Field<string | boolean, "detachable">;
+      // @ts-expect-error
+      item satisfies Field<string, "detachable"> | Field<boolean, "detachable">;
+      // @ts-expect-error
+      item.any;
+
+      key satisfies string;
+      // @ts-expect-error
+      key.any;
+    });
+    result satisfies Array<Field<string | boolean>>;
+    // @ts-expect-error
+    result.any;
+
+    rec.filter((item) => {
+      item satisfies Field<string | boolean, "detachable">;
+      // @ts-expect-error
+      item.any;
+      return true;
+    });
+    rec.filter(() => true);
+    rec.filter((_item) => 0);
+    rec.filter((_item) => "");
+    rec.filter((_item) => null);
+    // @ts-expect-error
+    rec.filter((item) => item.value.toExponential());
+  }
+
   // Primitive
   {
     // @ts-expect-error
@@ -2203,6 +2308,19 @@ const brandedPrim = new Field({} as Branded<string>);
 
     // @ts-expect-error
     field.remove("a");
+    // @ts-expect-error
+    field.remove(1);
+  }
+
+  // Record
+  {
+    const field = new Field({} as Record<string, string>);
+
+    const result = field.remove("key");
+    result satisfies Field<DetachedValue | string, "detachable">;
+    // @ts-expect-error
+    result satisfies Field<DetachedValue | string | undefined, "detachable">;
+
     // @ts-expect-error
     field.remove(1);
   }
