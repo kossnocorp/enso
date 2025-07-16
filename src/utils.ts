@@ -89,40 +89,13 @@ export namespace EnsoUtils {
     | [unknown, ...unknown[]]
     | readonly [unknown, ...unknown[]];
 
-  export type ReadonlyArray = readonly unknown[];
+  export type ReadonlyArrayConstraint = readonly unknown[];
 
   export type IsReadonlyArray<Type> = Type extends readonly unknown[]
     ? Type extends unknown[]
       ? false
       : true
     : false;
-
-  // export type KeyOfTuple<Type> = Type extends Tuple
-  //   ? Exclude<keyof Type, keyof unknown[]>
-  //   : never;
-
-  // export type KeyOfArray<Type> = Type extends Tuple
-  //   ? never
-  //   : Type extends unknown[]
-  //     ? number
-  //     : never;
-
-  // // Exclude<
-  // //   keyof Type,
-  // //   keyof unknown[]
-  // // > : never
-
-  // export type KeyOfObject<Type> = Type extends Tuple
-  //   ? never
-  //   : Type extends unknown[]
-  //     ? never
-  //     : Type extends object
-  //       ? keyof Type
-  //       : never;
-
-  // type Asd = KeyOfTuple<{ a: 1; b: 2 }>;
-  // type Asd2 = KeyOfTuple<string[]>;
-  // type Asd3 = KeyOfTuple<["a", "b"]>;
 
   export type IndexOfTuple<Type extends Tuple> =
     Exclude<keyof Type, keyof any[]> extends infer Key

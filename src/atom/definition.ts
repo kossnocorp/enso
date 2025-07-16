@@ -985,6 +985,29 @@ export namespace Atom {
   export namespace Collection {
     //#region Handler
 
+    // Readonly array
+
+    export interface ReadonlyArrayHandler<
+      Type extends Atom.Type,
+      Value extends Utils.ReadonlyArrayConstraint,
+      Result = void,
+    > {
+      (item: ReadonlyArrayItem<Type, Value>, index: number): Result;
+    }
+
+    export type ReadonlyArrayItem<
+      Type extends Atom.Type,
+      Value extends Utils.ReadonlyArrayConstraint,
+    > = Envelop<ReadonlyArrayItemType<Type>, Value[number]>;
+
+    export type ReadonlyArrayItemType<Type extends Atom.Type> =
+      | Extract<Type, Shell>
+      | (ExtractVariant<Type> extends infer Variant extends Atom.Variant
+          ? Variant extends "immutable"
+            ? "immutable"
+            : "common"
+          : never);
+
     // Tuple
 
     // NOTE: We have to have two separate overloads for objects `TuplePair`
@@ -1191,13 +1214,20 @@ export namespace Atom {
       Type extends Atom.Type,
       Value,
       SelectorType extends Selector.Type,
-    > = Value extends Utils.Tuple
-      ? Selector.Tuple<Type, Value, SelectorType>
-      : Value extends unknown[]
-        ? Selector.Array<Type, Value, SelectorType>
-        : Value extends object
-          ? Selector.Object<Type, Value, SelectorType>
-          : never;
+    > =
+      Utils.IsReadonlyArray<Value> extends true
+        ? Value extends Utils.ReadonlyArrayConstraint
+          ? Selector.ReadonlyArray<Type, Value, SelectorType>
+          : never
+        : Value extends Utils.Tuple
+          ? Selector.Tuple<Type, Value, SelectorType>
+          : Value extends unknown[]
+            ? Selector.Array<Type, Value, SelectorType>
+            : Value extends object
+              ? Value extends Utils.BrandedPrimitive
+                ? never
+                : Selector.Object<Type, Value, SelectorType>
+              : never;
 
     export namespace Selector {
       export type Type = "find" | "filter";
@@ -1206,6 +1236,20 @@ export namespace Atom {
         SelectorType extends Selector.Type,
         Result,
       > = SelectorType extends "find" ? Result | undefined : Result[];
+
+      // Readonly Array
+
+      export interface ReadonlyArray<
+        Type extends Atom.Type,
+        Value extends Utils.ReadonlyArrayConstraint,
+        SelectorType extends Selector.Type,
+      > {
+        (
+          callback: Collection.ReadonlyArrayHandler<Type, Value, unknown>,
+        ): Result<SelectorType, Collection.ReadonlyArrayItem<Type, Value>>;
+      }
+
+      // Tuple
 
       export interface Tuple<
         Type extends Atom.Type,
@@ -1221,6 +1265,8 @@ export namespace Atom {
         ): Result<SelectorType, Collection.TupleItem<Type, Value>>;
       }
 
+      // Array
+
       export interface Array<
         Type extends Atom.Type,
         Value extends unknown[],
@@ -1230,6 +1276,8 @@ export namespace Atom {
           callback: Collection.ArrayHandler<Type, Value, unknown>,
         ): Result<SelectorType, Collection.ArrayItem<Type, Value>>;
       }
+
+      // Object
 
       export interface Object<
         Type extends Atom.Type,
