@@ -42,7 +42,7 @@ export declare class Form<Value> implements Form.Interface<Value> {
 
   useValue(): Atom.Value<Value>;
 
-  set: Atom.Set.Prop<"field" | "invariant", Value>;
+  set(value: Value): void;
 
   get dirty(): boolean;
 
@@ -120,7 +120,7 @@ export namespace Form {
 
     useValue(): Atom.Value<Value>;
 
-    set: Atom.Set.Prop<"field" | "invariant", Value>;
+    set(value: Value): void;
 
     //#endregion
 

@@ -11,8 +11,8 @@ import type { EnsoUtils as Utils } from "../utils.ts";
 export declare class Atom<
     Type extends Atom.Type,
     Value,
-    Qualifier extends Atom.Qualifier = Atom.Qualifier.Default,
-    Parent extends Atom.Parent.Constraint<Value> = Atom.Parent.Default,
+    Qualifier extends Atom.Qualifier,
+    Parent extends Atom.Parent.Constraint<Value>,
   >
   implements
     Static<typeof Atom<Type, Value, Qualifier, Parent>, Atom.Static<any>>,
@@ -68,7 +68,9 @@ export declare class Atom<
 
   useCompute: Atom.Compute.UseProp<Value>;
 
-  set: Atom.Set.Prop<Type, Value, Qualifier, Parent>;
+  set<NewValue extends Value>(
+    value: NewValue,
+  ): Atom.Envelop<Type, NewValue, Qualifier, Parent>;
 
   get lastChanges(): FieldChange;
 
@@ -436,7 +438,9 @@ export namespace Atom {
   > extends Common<Type, Value, Qualifier, Parent> {
     //#region Value
 
-    set: Set.Prop<Type, Value, Qualifier, Parent>;
+    set<NewValue extends Value>(
+      value: NewValue,
+    ): Atom.Envelop<Type, NewValue, Qualifier, Parent>;
 
     // NOTE: The purpose of this is to cause invariance and break compatibility
     // with subtypes.
@@ -749,37 +753,6 @@ export namespace Atom {
 
   export namespace Value {
     export type Prop<Value> = Atom.Value<Value>;
-  }
-
-  export namespace Set {
-    export type Prop<
-      Type extends Atom.Type,
-      Value,
-      Qualifier extends Atom.Qualifier = Atom.Qualifier.Default,
-      Parent extends Atom.Parent.Constraint<Value> = Atom.Parent.Default,
-    > = "detachable" extends Qualifier
-      ? Detachable<Type, Value, Qualifier, Parent>
-      : Common<Type, Value, Qualifier, Parent>;
-
-    export interface Common<
-      Type extends Atom.Type,
-      Value,
-      Qualifier extends Atom.Qualifier = Atom.Qualifier.Default,
-      Parent extends Atom.Parent.Constraint<Value> = Atom.Parent.Default,
-    > {
-      <NewValue extends Value>(
-        value: NewValue,
-      ): Envelop<Type, NewValue, Qualifier, Parent>;
-    }
-
-    export interface Detachable<
-      Type extends Atom.Type,
-      Value,
-      Qualifier extends Atom.Qualifier | "detachable" = Atom.Qualifier.Default,
-      Parent extends Atom.Parent.Constraint<Value> = Atom.Parent.Default,
-    > extends Common<Type, Value, Qualifier, Parent> {
-      (value: DetachedValue): Envelop<Type, DetachedValue, Qualifier, Parent>;
-    }
   }
 
   export namespace Value {
