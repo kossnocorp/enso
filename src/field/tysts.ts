@@ -738,17 +738,21 @@ import { Field } from "./index.js";
   {
     const field = {} as Field<readonly number[]>;
 
-    field.$[0] satisfies Field.Common<number | undefined> | undefined;
+    field.$[0]?.$;
     // @ts-expect-error
-    field.$[0] satisfies Field<number | undefined> | undefined;
+    field.$[0].$;
+
+    field.$[0] satisfies Field.Common<number | undefined> | undefined;
     // @ts-expect-error
     field.$[0] satisfies
       | Field.Common<number | undefined, "detachable">
       | undefined;
     // @ts-expect-error
+    field.$[0] satisfies Field<number | undefined> | undefined;
+    // @ts-expect-error
     field.$[0] satisfies Field.Common<number>;
     // @ts-expect-error
-    field.$[0] satisfies Field.Common<number> | undefined;
+    field.$[0] satisfies Field.Common<number>;
     // @ts-expect-error
     field.$[0] satisfies Field.Common<number | undefined>;
   }
@@ -757,162 +761,297 @@ import { Field } from "./index.js";
   {
     const field = {} as Field<number[]>;
 
+    field.$[0]?.$;
+    // @ts-expect-error
+    field.$[0].$;
+
     field.$[0] satisfies Field<number | undefined, "detachable"> | undefined;
     // @ts-expect-error
-    field.$[0] satisfies Field<number, "detachable">;
+    field.$[0] satisfies Field<number>;
     // @ts-expect-error
-    field.$[0] satisfies Field<number, "detachable"> | undefined;
+    field.$[0] satisfies Field<number> | undefined;
     // @ts-expect-error
-    field.$[0] satisfies Field<number | undefined, "detachable">;
+    field.$[0] satisfies Field<number | undefined>;
+  }
+
+  // Record
+  {
+    const field = {} as Field<Record<string, number>>;
+
+    field.$["key"]?.$;
+    // @ts-expect-error
+    field.$["key"].$;
+
+    field.$["key"] satisfies
+      | Field<number | undefined, "detachable">
+      | undefined;
+    // @ts-expect-error
+    field.$["key"] satisfies Field<number>;
   }
 
   // Object
   {
-    const user = {} as Field<User>;
+    const field = {} as Field<User>;
 
-    user.$.age satisfies Field<number>;
-    // @ts-expect-error
-    user.$.age satisfies State<number>;
-    // @ts-expect-error
-    user.$.age satisfies Field<string>;
+    field.at("age").$;
 
-    user.$.email satisfies Field<string | undefined> | undefined;
+    field.$.age satisfies Field<number>;
     // @ts-expect-error
-    user.$.name satisfies State<string | undefined> | undefined;
+    field.$.age satisfies State<number>;
     // @ts-expect-error
-    user.$.email satisfies Field<string>;
+    field.$.age satisfies Field<string>;
+
+    field.$.email satisfies Field<string | undefined> | undefined;
+    // @ts-expect-error
+    field.$.name satisfies State<string | undefined> | undefined;
+    // @ts-expect-error
+    field.$.email satisfies Field<string>;
   }
 
   // Union value
   {
-    const entity = {} as Field<User | Account>;
+    const field = {} as Field<User | Account>;
 
-    entity.$.name satisfies Field<string>;
+    field.$.name satisfies Field<string>;
     // @ts-expect-error
-    entity.$.name satisfies State<string>;
+    field.$.name satisfies State<string>;
     // @ts-expect-error
-    entity.$.name satisfies Field<number>;
+    field.$.name satisfies Field<number>;
   }
 
   // Union field
   {
-    const entity = {} as Field<User> | Field<Account>;
+    const field = {} as Field<User> | Field<Account>;
 
-    entity.$.name satisfies Field<string>;
+    field.$.name satisfies Field<string>;
     // @ts-expect-error
-    entity.$.name satisfies State<string>;
+    field.$.name satisfies State<string>;
     // @ts-expect-error
-    entity.$.name satisfies Field<number>;
+    field.$.name satisfies Field<number>;
   }
 }
 //#endregion
 
 //#region Field#at
 {
-  // Basic
+  // Readonly array
   {
-    const user = {} as Field<User>;
+    const field = {} as Field<readonly number[]>;
 
-    user.at("age") satisfies Field<number>;
-    // @ts-expect-error
-    user.at("age") satisfies State<number>;
-    // @ts-expect-error
-    user.at("age") satisfies Field<string>;
+    field.at(0).$;
 
-    user.at("email") satisfies Field<string | undefined, "detachable">;
+    field.at(0) satisfies Field.Common<number | undefined>;
     // @ts-expect-error
-    user.at("email") satisfies State<string | undefined, "detachable">;
+    field.at(0) satisfies undefined;
     // @ts-expect-error
-    user.at("email") satisfies Field<string, "detachable">;
+    field.at(0) satisfies Field.Common<number | undefined, "detachable">;
+    // @ts-expect-error
+    field.at(0) satisfies Field.Common<number> | undefined;
+    // @ts-expect-error
+    field.at(0) satisfies State.Common<number>;
+    // @ts-expect-error
+    field.at(0) satisfies Field.Common<string>;
+  }
+
+  // Array
+  {
+    const field = {} as Field<number[]>;
+
+    field.at(0).$;
+
+    field.at(0) satisfies Field<number | undefined, "detachable">;
+    // @ts-expect-error
+    field.at(0) satisfies undefined;
+    // @ts-expect-error
+    field.at(0) satisfies Field<number> | undefined;
+    // @ts-expect-error
+    field.at(0) satisfies State<number>;
+    // @ts-expect-error
+    field.at(0) satisfies Field<string>;
+  }
+
+  // Object
+  {
+    const field = {} as Field<User>;
+
+    field.at("age").$;
+
+    field.at("age") satisfies Field<number>;
+    // @ts-expect-error
+    field.at("age") satisfies undefined;
+    // @ts-expect-error
+    field.at("age") satisfies State<number>;
+    // @ts-expect-error
+    field.at("age") satisfies Field<string>;
+
+    field.at("email") satisfies Field<string | undefined, "detachable">;
+    // @ts-expect-error
+    field.at("email") satisfies undefined;
+    // @ts-expect-error
+    field.at("email") satisfies State<string | undefined, "detachable">;
+    // @ts-expect-error
+    field.at("email") satisfies Field<string, "detachable">;
+  }
+
+  // Record
+  {
+    const field = {} as Field<Record<string, number>>;
+
+    field.at("key").$;
+
+    field.at("key") satisfies Field<number | undefined, "detachable">;
+    // @ts-expect-error
+    field.at("key") satisfies undefined;
+    // @ts-expect-error
+    field.at("key") satisfies Field<number>;
   }
 
   // Immutable
   {
-    const user = {} as Field.Immutable<User>;
+    const field = {} as Field.Immutable<User>;
 
-    user.at("age") satisfies Field.Immutable<number>;
+    field.at("age") satisfies Field.Immutable<number>;
     // @ts-expect-error
-    user.at("age") satisfies State.Immutable<number>;
+    field.at("age") satisfies State.Immutable<number>;
     // @ts-expect-error
-    user.at("age") satisfies Field.Immutable<string>;
+    field.at("age") satisfies Field.Immutable<string>;
 
-    user.at("email") satisfies Field.Immutable<
+    field.at("email") satisfies Field.Immutable<
       string | undefined,
       "detachable"
     >;
     // @ts-expect-error
-    user.at("email") satisfies State.Immutable<
+    field.at("email") satisfies State.Immutable<
       string | undefined,
       "detachable"
     >;
     // @ts-expect-error
-    user.at("email") satisfies Field.Immutable<string, "detachable">;
+    field.at("email") satisfies Field.Immutable<string, "detachable">;
   }
 
   // Union value
   {
-    const entity = {} as Field<User | Account>;
+    const field = {} as Field<User | Account>;
 
-    entity.at("name") satisfies Field<string>;
+    field.at("name") satisfies Field<string>;
     // @ts-expect-error
-    entity.at("name") satisfies State<string>;
+    field.at("name") satisfies State<string>;
     // @ts-expect-error
-    entity.at("name") satisfies Field<number>;
+    field.at("name") satisfies Field<number>;
   }
 
   // Union field
   {
-    const entity = {} as Field<User> | Field<Account>;
+    const field = {} as Field<User> | Field<Account>;
 
-    Field.common(entity).at("name") satisfies Field<string>;
+    Field.common(field).at("name") satisfies Field<string>;
     // @ts-expect-error
-    Field.common(entity).at("name") satisfies State<string>;
+    Field.common(field).at("name") satisfies State<string>;
     // @ts-expect-error
-    Field.common(entity).at("name") satisfies Field<number>;
+    Field.common(field).at("name") satisfies Field<number>;
   }
 }
 //#endregion
 
 //#region Field#try
 {
-  // Basic
+  // Readonly array
   {
-    const user = {} as Field<User>;
+    const field = {} as Field<readonly number[]>;
 
-    user.try("age") satisfies Field<number, "tried">;
-    user.try("age").id;
+    field.try(0)?.$;
     // @ts-expect-error
-    user.try("age") satisfies State<number, "tried">;
+    field.try(0).$;
 
-    user.try("email") satisfies
+    field.try(0) satisfies Field.Common<number, "tried"> | undefined;
+    // @ts-expect-error
+    field.try(0) satisfies Field.Common<number>;
+    // @ts-expect-error
+    field.try(0) satisfies undefined;
+    // @ts-expect-error
+    field.try(0) satisfies
+      | Field.Common<number, "tried" | "detachable">
+      | undefined;
+    // @ts-expect-error
+    field.try(0) satisfies State.Common<number>;
+    // @ts-expect-error
+    field.try(0) satisfies Field.Common<string>;
+  }
+
+  // Array
+  {
+    const field = {} as Field<number[]>;
+
+    field.try(0)?.$;
+    // @ts-expect-error
+    field.try(0).$;
+
+    field.try(0) satisfies Field<number, "tried" | "detachable"> | undefined;
+    // @ts-expect-error
+    field.try(0) satisfies Field<number, "tried" | "detachable">;
+    // @ts-expect-error
+    field.try(0) satisfies undefined;
+    // @ts-expect-error
+    field.try(0) satisfies State<number>;
+    // @ts-expect-error
+    field.try(0) satisfies Field<string>;
+  }
+
+  // Object
+  {
+    const field = {} as Field<User>;
+
+    field.try("age") satisfies Field<number, "tried">;
+    field.try("age").id;
+    // @ts-expect-error
+    field.try("age") satisfies State<number, "tried">;
+
+    field.try("email") satisfies
       | Field<string, "detachable" | "tried">
       | undefined;
     // @ts-expect-error
-    user.try("email").id;
+    field.try("email").id;
     // @ts-expect-error
-    user.try("email") satisfies
+    field.try("email") satisfies
       | State<string, "detachable" | "tried">
       | undefined;
   }
 
   // Immutable
   {
-    const user = {} as Field.Immutable<User>;
+    const field = {} as Field.Immutable<User>;
 
-    user.try("age") satisfies Field.Immutable<number, "tried">;
-    user.try("age").id;
+    field.try("age") satisfies Field.Immutable<number, "tried">;
+    field.try("age").id;
     // @ts-expect-error
-    user.try("age") satisfies State.Immutable<number, "tried">;
+    field.try("age") satisfies State.Immutable<number, "tried">;
 
-    user.try("email") satisfies
+    field.try("email") satisfies
       | Field.Immutable<string, "detachable" | "tried">
       | undefined;
     // @ts-expect-error
-    user.try("email").id;
+    field.try("email").id;
     // @ts-expect-error
-    user.try("email") satisfies
+    field.try("email") satisfies
       | State.Immutable<string, "detachable" | "tried">
       | undefined;
+  }
+
+  // Record
+  {
+    const field = {} as Field<Record<string, number>>;
+
+    field.try("key")?.$;
+    // @ts-expect-error
+    field.try("key").$;
+
+    field.try("key") satisfies
+      | Field<number, "tried" | "detachable">
+      | undefined;
+    // @ts-expect-error
+    field.try("key") satisfies Field<number>;
+    // @ts-expect-error
+    field.try("key") satisfies undefined;
   }
 
   // Union value
@@ -937,26 +1076,26 @@ import { Field } from "./index.js";
 
   // Union field
   {
-    const entity = {} as Field<User> | Field<Account>;
+    const field = {} as Field<User> | Field<Account>;
 
-    Field.common(entity).try("name") satisfies Field<string, "tried">;
-    Field.common(entity).try("name").id;
+    Field.common(field).try("name") satisfies Field<string, "tried">;
+    Field.common(field).try("name").id;
     // @ts-expect-error
-    Field.common(entity).try("name") satisfies State<string, "tried">;
+    Field.common(field).try("name") satisfies State<string, "tried">;
     // @ts-expect-error
-    Field.common(entity).try("name") satisfies Field<number, "tried">;
+    Field.common(field).try("name") satisfies Field<number, "tried">;
 
-    Field.common(entity).try("flag") satisfies
+    Field.common(field).try("flag") satisfies
       | Field<boolean, "detachable" | "tried">
       | undefined;
     // @ts-expect-error
-    Field.common(entity).try("flag").id;
+    Field.common(field).try("flag").id;
     // @ts-expect-error
-    Field.common(entity).try("flag") satisfies
+    Field.common(field).try("flag") satisfies
       | State<boolean, "detachable" | "tried">
       | undefined;
     // @ts-expect-error
-    Field.common(entity).try("flag") satisfies Field<
+    Field.common(field).try("flag") satisfies Field<
       number,
       "detachable" | "tried"
     >;
@@ -2094,6 +2233,31 @@ const brandedPrim = new Field({} as Branded<string>);
     const field = new Field(1 as Branded<number>);
     // @ts-expect-error
     field.remove.apply;
+  }
+}
+//#endregion
+
+//#region Field#self.remove
+{
+  // Detachable
+  {
+    const field = new Field("hello") as Field<string, "detachable">;
+
+    const result = field.self.remove();
+
+    result satisfies Field<DetachedValue, "detachable">;
+    // @ts-expect-error
+    result satisfies Field<string, "detachable">;
+    // @ts-expect-error
+    result.any;
+  }
+
+  // Non-detachable
+  {
+    const field = new Field("hello") as Field<string>;
+
+    // @ts-expect-error
+    field.self.remove();
   }
 }
 //#endregion
