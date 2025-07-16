@@ -1327,7 +1327,9 @@ export namespace Atom {
     Qualifier extends Atom.Qualifier = Atom.Qualifier.Default,
     Parent extends Atom.Parent.Constraint<Value> = Atom.Parent.Default,
   > = Value extends object
-    ? () => Envelop<Type, Value, Qualifier | "bound", Parent>
+    ? Value extends Utils.BrandedPrimitive
+      ? never
+      : () => Envelop<Type, Value, Qualifier | "bound", Parent>
     : never;
 
   export namespace Insert {
