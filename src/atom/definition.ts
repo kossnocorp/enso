@@ -1130,13 +1130,20 @@ export namespace Atom {
       Type extends Atom.Type,
       Value,
       ProcessorType extends Mapper.ResultType,
-    > = Value extends Utils.Tuple
-      ? Mapper.Tuple<Type, Value, ProcessorType>
-      : Value extends unknown[]
-        ? Mapper.Array<Type, Value, ProcessorType>
-        : Value extends object
-          ? Mapper.Object<Type, Value, ProcessorType>
-          : never;
+    > =
+      Utils.IsReadonlyArray<Value> extends true
+        ? Value extends Utils.ReadonlyArrayConstraint
+          ? Mapper.ReadonlyArray<Type, Value, ProcessorType>
+          : never
+        : Value extends Utils.Tuple
+          ? Mapper.Tuple<Type, Value, ProcessorType>
+          : Value extends unknown[]
+            ? Mapper.Array<Type, Value, ProcessorType>
+            : Value extends object
+              ? Value extends Utils.BrandedPrimitive
+                ? never
+                : Mapper.Object<Type, Value, ProcessorType>
+              : never;
 
     export namespace Mapper {
       export type ResultType = "each" | "map";
@@ -1150,6 +1157,24 @@ export namespace Atom {
         ProcessorType extends Mapper.ResultType,
         Result,
       > = ProcessorType extends "each" ? void : Result[];
+
+      // Readonly array
+
+      export interface ReadonlyArray<
+        Type extends Atom.Type,
+        Value extends Utils.ReadonlyArrayConstraint,
+        ProcessorType extends Mapper.ResultType,
+      > {
+        <Result>(
+          callback: Collection.ReadonlyArrayHandler<
+            Type,
+            Value,
+            CallbackResult<ProcessorType, Result>
+          >,
+        ): Mapper.Result<ProcessorType, Result>;
+      }
+
+      // Tuple
 
       export interface Tuple<
         Type extends Atom.Type,
@@ -1173,6 +1198,8 @@ export namespace Atom {
         ): Mapper.Result<ProcessorType, Result>;
       }
 
+      // Array
+
       export interface Array<
         Type extends Atom.Type,
         Value extends unknown[],
@@ -1186,6 +1213,8 @@ export namespace Atom {
           >,
         ): Mapper.Result<ProcessorType, Result>;
       }
+
+      // Object
 
       export interface Object<
         Type extends Atom.Type,

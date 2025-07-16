@@ -1165,8 +1165,37 @@ const brandedPrim = new Field({} as Branded<string>);
 }
 //#endregion
 
-//#region `Field["forEach"]`
+//#region Field#forEach
 {
+  // Readonly array
+  {
+    const result = readonlyArr.forEach((item, index) => {
+      item satisfies Field.Common<string | boolean>;
+      // @ts-expect-error
+      item satisfies Field.Common<string | boolean, "detachable">;
+      // @ts-expect-error
+      item satisfies Field<string | boolean>;
+      // @ts-expect-error
+      item.any;
+
+      index satisfies number;
+      // @ts-expect-error
+      index.any;
+    });
+    result satisfies void;
+
+    readonlyArr.forEach((item) => {
+      item satisfies Field.Common<string | boolean>;
+      // @ts-expect-error
+      item satisfies Field.Common<string | boolean, "detachable">;
+      // @ts-expect-error
+      item satisfies Field<string | boolean>;
+      // @ts-expect-error
+      item.any;
+    });
+    arr.forEach(() => {});
+  }
+
   // Tuple
   {
     const result = tuple.forEach((item, index) => {
@@ -1216,6 +1245,7 @@ const brandedPrim = new Field({} as Branded<string>);
       index.any;
     });
     result satisfies void;
+
     arr.forEach((item) => {
       item satisfies Field<string | boolean, "detachable">;
       // @ts-expect-error
@@ -1294,11 +1324,82 @@ const brandedPrim = new Field({} as Branded<string>);
       objPart.forEach(() => {});
     }
   }
+
+  // Primitive
+  {
+    // @ts-expect-error
+    prim.forEach((item, index) => {});
+  }
+
+  // Branded primitive
+  {
+    // @ts-expect-error
+    brandedPrim.forEach((item, index) => {});
+  }
 }
 //#endregion
 
-//#region `Field["map"]`
+//#region Field#map
 {
+  // Readonly array
+  {
+    const result = readonlyArr.map((item, index) => {
+      item satisfies Field.Common<string | boolean>;
+      // @ts-expect-error
+      item satisfies Field.Common<string | boolean, "detachable">;
+      // @ts-expect-error
+      item satisfies Field<string | boolean>;
+      // @ts-expect-error
+      item.any;
+
+      index satisfies number;
+      // @ts-expect-error
+      index.any;
+
+      return Number(item.value);
+    });
+    result satisfies number[];
+
+    readonlyArr.map((item) => {
+      item satisfies Field.Common<string | boolean>;
+      // @ts-expect-error
+      item satisfies Field.Common<string | boolean, "detachable">;
+      // @ts-expect-error
+      item satisfies Field<string | boolean>;
+      // @ts-expect-error
+      item.any;
+    });
+  }
+
+  // Tuple
+  {
+    const result = tuple.map((item, index) => {
+      item satisfies Field<string> | Field<boolean> | Field<symbol>;
+      // @ts-expect-error
+      item.any;
+
+      index satisfies 0 | 1 | 2;
+      // @ts-expect-error
+      index.any;
+
+      if (index === 1) {
+        item.value satisfies boolean;
+        // @ts-expect-error
+        item.value satisfies string;
+      }
+
+      return 0;
+    });
+    result satisfies number[];
+
+    tuple.map((item) => {
+      item satisfies Field<string> | Field<boolean> | Field<symbol>;
+      // @ts-expect-error
+      item.any;
+    });
+    arr.map(() => {});
+  }
+
   // Array
   {
     const result = arr.map((item, index) => {
@@ -1313,6 +1414,12 @@ const brandedPrim = new Field({} as Branded<string>);
       return Number(item.value);
     });
     result satisfies number[];
+
+    arr.map((item) => {
+      item satisfies Field<string | boolean, "detachable">;
+      // @ts-expect-error
+      item.any;
+    });
   }
 
   // Object
@@ -1384,33 +1491,16 @@ const brandedPrim = new Field({} as Branded<string>);
     }
   }
 
-  // Tuple
+  // Primitive
   {
-    const result = tuple.map((item, index) => {
-      item satisfies Field<string> | Field<boolean> | Field<symbol>;
-      // @ts-expect-error
-      item.any;
+    // @ts-expect-error
+    prim.map((item, index) => {});
+  }
 
-      index satisfies 0 | 1 | 2;
-      // @ts-expect-error
-      index.any;
-
-      if (index === 1) {
-        item.value satisfies boolean;
-        // @ts-expect-error
-        item.value satisfies string;
-      }
-
-      return 0;
-    });
-    result satisfies number[];
-
-    tuple.map((item) => {
-      item satisfies Field<string> | Field<boolean> | Field<symbol>;
-      // @ts-expect-error
-      item.any;
-    });
-    arr.map(() => {});
+  // Branded primitive
+  {
+    // @ts-expect-error
+    brandedPrim.map((item, index) => {});
   }
 }
 //#endregion
