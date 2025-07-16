@@ -358,31 +358,12 @@ export namespace Atom {
 
   //#region Child
 
-  export type ChildType<Type extends Atom.Type> =
-    | Extract<Type, Shell>
-    | (ExtractVariant<Type> extends infer Variant extends Atom.Variant
-        ? Variant extends "common"
-          ? "invariant"
-          : Variant
-        : never);
-
-  export type ChildValue<Value, Key extends keyof Value> =
-    | Value[Key]
-    | (Utils.IsStaticKey<Value, Key> extends true ? never : undefined);
-
-  export type ChildQualifier<Value, Key extends keyof Utils.NonNullish<Value>> =
-    Utils.IsStaticKey<Value, Key> extends true
-      ? Utils.IsOptionalKey<Value, Key> extends true
-        ? "detachable"
-        : never
-      : "detachable";
-
   export type Child<
     Type extends Atom.Type,
     ParentValue,
     Key extends keyof ParentValue,
   > = Envelop<
-    Child.Type<Type>,
+    Child.Type<Type, ParentValue>,
     Child.Value<ParentValue, Key>,
     Child.Qualifier<ParentValue, Key>
   >;
@@ -394,18 +375,33 @@ export namespace Atom {
       Key extends keyof ParentValue,
     > = Key extends Key
       ? Atom.Every<
-          Child.Type<Type>,
+          Child.Type<Type, ParentValue>,
           Child.Value<ParentValue, Key>,
           Child.Qualifier<ParentValue, Key>
         >
       : never;
 
-    export type Type<Type extends Atom.Type> =
+    // WIP: Merge with Child?!
+    export type Iterated<
+      Type extends Atom.Type,
+      ParentValue,
+      Key extends keyof ParentValue,
+    > = Envelop<
+      Child.Type<Type, ParentValue>,
+      ParentValue[Key],
+      Child.Qualifier<ParentValue, Key>
+    >;
+
+    export type Type<Type extends Atom.Type, ParentValue> =
       | Extract<Type, Shell>
       | (ExtractVariant<Type> extends infer Variant extends Atom.Variant
-          ? Variant extends "common"
-            ? "invariant"
-            : Variant
+          ? Utils.IsReadonlyArray<ParentValue> extends true
+            ? Variant extends "immutable"
+              ? "immutable"
+              : "common"
+            : Variant extends "common"
+              ? "invariant"
+              : Variant
           : never);
 
     export type Value<ParentValue, ParentKey extends keyof ParentValue> =
@@ -422,7 +418,11 @@ export namespace Atom {
         ? Utils.IsOptionalKey<ParentValue, ParentKey> extends true
           ? "detachable"
           : never
-        : "detachable";
+        : Utils.IsReadonlyArray<ParentValue> extends true
+          ? never
+          : ParentValue extends Utils.Tuple
+            ? never
+            : "detachable";
   }
 
   //#endregion Child
@@ -989,29 +989,6 @@ export namespace Atom {
   export namespace Collection {
     //#region Handler
 
-    // Readonly array
-
-    export interface ReadonlyArrayHandler<
-      Type extends Atom.Type,
-      Value extends Utils.ReadonlyArrayConstraint,
-      Result = void,
-    > {
-      (item: ReadonlyArrayItem<Type, Value>, index: number): Result;
-    }
-
-    export type ReadonlyArrayItem<
-      Type extends Atom.Type,
-      Value extends Utils.ReadonlyArrayConstraint,
-    > = Envelop<ReadonlyArrayItemType<Type>, Value[number]>;
-
-    export type ReadonlyArrayItemType<Type extends Atom.Type> =
-      | Extract<Type, Shell>
-      | (ExtractVariant<Type> extends infer Variant extends Atom.Variant
-          ? Variant extends "immutable"
-            ? "immutable"
-            : "common"
-          : never);
-
     // Tuple
 
     // NOTE: We have to have two separate overloads for objects `TuplePair`
@@ -1028,7 +1005,8 @@ export namespace Atom {
       (
         ...args: {
           [Key in Utils.IndexOfTuple<Value>]: [
-            Envelop<Child.Type<Type>, Value[Key]>,
+            // Envelop<Child.Type<Type, Value>, Value[Key]>,
+            Child.Iterated<Type, Value, Key>,
             Key,
           ];
         }[Utils.IndexOfTuple<Value>]
@@ -1056,20 +1034,11 @@ export namespace Atom {
 
     export interface ArrayHandler<
       Type extends Atom.Type,
-      Value extends unknown[],
+      Value extends Utils.ArrayConstraint,
       Result = void,
     > {
-      (item: ArrayItem<Type, Value>, index: number): Result;
+      (item: Child.Iterated<Type, Value, number>, index: number): Result;
     }
-
-    export type ArrayItem<
-      Type extends Atom.Type,
-      Value extends unknown[],
-    > = Envelop<
-      Child.Type<Type>,
-      Value[number],
-      Child.Qualifier<Value, number>
-    >;
 
     // Object
 
@@ -1133,7 +1102,7 @@ export namespace Atom {
     > =
       Utils.IsReadonlyArray<Value> extends true
         ? Value extends Utils.ReadonlyArrayConstraint
-          ? Mapper.ReadonlyArray<Type, Value, ProcessorType>
+          ? Mapper.Array<Type, Value, ProcessorType>
           : never
         : Value extends Utils.Tuple
           ? Mapper.Tuple<Type, Value, ProcessorType>
@@ -1157,22 +1126,6 @@ export namespace Atom {
         ProcessorType extends Mapper.ResultType,
         Result,
       > = ProcessorType extends "each" ? void : Result[];
-
-      // Readonly array
-
-      export interface ReadonlyArray<
-        Type extends Atom.Type,
-        Value extends Utils.ReadonlyArrayConstraint,
-        ProcessorType extends Mapper.ResultType,
-      > {
-        <Result>(
-          callback: Collection.ReadonlyArrayHandler<
-            Type,
-            Value,
-            CallbackResult<ProcessorType, Result>
-          >,
-        ): Mapper.Result<ProcessorType, Result>;
-      }
 
       // Tuple
 
@@ -1202,7 +1155,7 @@ export namespace Atom {
 
       export interface Array<
         Type extends Atom.Type,
-        Value extends unknown[],
+        Value extends Utils.ArrayConstraint,
         ProcessorType extends Mapper.ResultType,
       > {
         <Result>(
@@ -1250,7 +1203,7 @@ export namespace Atom {
     > =
       Utils.IsReadonlyArray<Value> extends true
         ? Value extends Utils.ReadonlyArrayConstraint
-          ? Selector.ReadonlyArray<Type, Value, SelectorType>
+          ? Selector.Array<Type, Value, SelectorType>
           : never
         : Value extends Utils.Tuple
           ? Selector.Tuple<Type, Value, SelectorType>
@@ -1269,18 +1222,6 @@ export namespace Atom {
         SelectorType extends Selector.Type,
         Result,
       > = SelectorType extends "find" ? Result | undefined : Result[];
-
-      // Readonly Array
-
-      export interface ReadonlyArray<
-        Type extends Atom.Type,
-        Value extends Utils.ReadonlyArrayConstraint,
-        SelectorType extends Selector.Type,
-      > {
-        (
-          callback: Collection.ReadonlyArrayHandler<Type, Value, unknown>,
-        ): Result<SelectorType, Collection.ReadonlyArrayItem<Type, Value>>;
-      }
 
       // Tuple
 
@@ -1302,12 +1243,12 @@ export namespace Atom {
 
       export interface Array<
         Type extends Atom.Type,
-        Value extends unknown[],
+        Value extends Utils.ArrayConstraint,
         SelectorType extends Selector.Type,
       > {
         (
           callback: Collection.ArrayHandler<Type, Value, unknown>,
-        ): Result<SelectorType, Collection.ArrayItem<Type, Value>>;
+        ): Result<SelectorType, Child.Iterated<Type, Value, number>>;
       }
 
       // Object
@@ -1371,7 +1312,7 @@ export namespace Atom {
       Value,
       Qualifier extends Atom.Qualifier = Atom.Qualifier.Default,
       Parent extends Atom.Parent.Constraint<Value> = Atom.Parent.Default,
-    > = Value extends Utils.Tuple
+    > = Value extends Utils.StaticArray
       ? never
       : Value extends unknown[]
         ? Fn<Type, Value, Qualifier, Parent>
@@ -1387,7 +1328,7 @@ export namespace Atom {
         index: number,
         value: Value[number],
       ): Envelop<
-        Child.Type<Type>,
+        Child.Type<Type, Value>,
         Value[number],
         Child.Qualifier<Value, number>
       >;
@@ -1415,7 +1356,7 @@ export namespace Atom {
       (
         value: Value[number],
       ): Envelop<
-        Child.Type<Type>,
+        Child.Type<Type, Value>,
         Value[number],
         Child.Qualifier<Value, number>
       >;
@@ -1442,11 +1383,7 @@ export namespace Atom {
     // invariance.
     Utils.IsNotTop<Value> extends true
       ? {
-          [Key in keyof Value]-?: Envelop<
-            ChildType<Type>,
-            ChildValue<Value, Key>,
-            ChildQualifier<Value, Key>
-          >;
+          [Key in keyof Value]-?: Child<Type, Value, Key>;
         }
       : Utils.ResolveTop<Value>;
 
@@ -1462,13 +1399,7 @@ export namespace Atom {
     : never;
 
   export interface At<Type extends Atom.Type, Value, Key extends keyof Value> {
-    <ArgKey extends Key>(
-      key: ArgKey,
-    ): Envelop<
-      ChildType<Type>,
-      ChildValue<Value, ArgKey>,
-      ChildQualifier<Value, ArgKey>
-    >;
+    <ArgKey extends Key>(key: ArgKey): Child<Type, Value, ArgKey>;
   }
 
   //#endregion
@@ -1487,7 +1418,7 @@ export namespace Atom {
     Value,
     Key extends keyof Utils.NonNullish<Value>,
   > =
-    | TryAtom<Type, Utils.NonNullish<Value>[Key], ChildQualifier<Value, Key>>
+    | TryAtom<Type, Utils.NonNullish<Value>[Key], Child.Qualifier<Value, Key>>
     // Add undefined if the key is not static (i.e. a record key).
     | (Utils.IsStaticKey<Utils.NonNullish<Value>, Key> extends true
         ? never
@@ -1504,7 +1435,7 @@ export namespace Atom {
     | (undefined extends Value ? undefined : never)
     // Resolve branded field without null or undefined
     | Envelop<
-        ChildType<Type>,
+        Child.Type<Type, Value>,
         Utils.NonNullish<Value>,
         ChildQualifier | "tried"
       >;

@@ -443,7 +443,7 @@ import { Field } from "./index.js";
 
 //#region Value
 
-//#region `Field["value"]` / `Field["useValue"]`
+//#region Field#value & Field#useValue
 {
   function _value(field: Field<Hello>): Hello {
     return Math.random() > 0.5 ? field.value : field.useValue();
@@ -627,7 +627,7 @@ import { Field } from "./index.js";
 }
 //#endregion
 
-//#region `Field["compute"]` / `Field["useCompute"]`
+//#region Field#compute & Field#useCompute
 {
   const field = {} as Field<number>;
 
@@ -698,9 +698,9 @@ import { Field } from "./index.js";
 }
 //#endregion
 
-//#endregion Value
+//#endregion
 
-//#region `Field["root"]`
+//#region Field#root
 {
   // Immutability
   {
@@ -713,7 +713,7 @@ import { Field } from "./index.js";
 }
 //#endregion
 
-//#region `Field["parent"]`
+//#region Field#parent
 {
   // Immutability
   {
@@ -732,9 +732,41 @@ import { Field } from "./index.js";
 }
 //#endregion
 
-//#region `Field["$"]`
+//#region Field#$
 {
-  // Basic
+  // Readonly array
+  {
+    const field = {} as Field<readonly number[]>;
+
+    field.$[0] satisfies Field.Common<number | undefined> | undefined;
+    // @ts-expect-error
+    field.$[0] satisfies Field<number | undefined> | undefined;
+    // @ts-expect-error
+    field.$[0] satisfies
+      | Field.Common<number | undefined, "detachable">
+      | undefined;
+    // @ts-expect-error
+    field.$[0] satisfies Field.Common<number>;
+    // @ts-expect-error
+    field.$[0] satisfies Field.Common<number> | undefined;
+    // @ts-expect-error
+    field.$[0] satisfies Field.Common<number | undefined>;
+  }
+
+  // Array
+  {
+    const field = {} as Field<number[]>;
+
+    field.$[0] satisfies Field<number | undefined, "detachable"> | undefined;
+    // @ts-expect-error
+    field.$[0] satisfies Field<number, "detachable">;
+    // @ts-expect-error
+    field.$[0] satisfies Field<number, "detachable"> | undefined;
+    // @ts-expect-error
+    field.$[0] satisfies Field<number | undefined, "detachable">;
+  }
+
+  // Object
   {
     const user = {} as Field<User>;
 
@@ -775,7 +807,7 @@ import { Field } from "./index.js";
 }
 //#endregion
 
-//#region `Field["at"]`
+//#region Field#at
 {
   // Basic
   {
@@ -841,7 +873,7 @@ import { Field } from "./index.js";
 }
 //#endregion
 
-//#region `Field["try"]`
+//#region Field#try
 {
   // Basic
   {
@@ -932,7 +964,7 @@ import { Field } from "./index.js";
 }
 //#endregion
 
-//#region `Field["self"]["try"]`
+//#region Field#self#try
 {
   // Basic
   {
@@ -2003,7 +2035,7 @@ const brandedPrim = new Field({} as Branded<string>);
 }
 //#endregion
 
-//#region `Field["remove"]`
+//#region Field#remove
 {
   // Array
   {
@@ -2066,11 +2098,11 @@ const brandedPrim = new Field({} as Branded<string>);
 }
 //#endregion
 
-//#endregion Collection
+//#endregion
 
 //#region Array
 
-//#region `Field["insert"]`
+//#region Field#insert
 {
   // Array
   {
@@ -2086,6 +2118,13 @@ const brandedPrim = new Field({} as Branded<string>);
 
     // @ts-expect-error
     field.insert(123, 2);
+  }
+
+  // Readonly array
+  {
+    const field = new Field([] as readonly number[]);
+    // @ts-expect-error
+    field.insert(0, 4);
   }
 
   // Tuple
@@ -2104,7 +2143,14 @@ const brandedPrim = new Field({} as Branded<string>);
 
   // Primitive
   {
-    const field = new Field("") as Field.Common<string>;
+    const field = new Field("") as Field<string>;
+    // @ts-expect-error
+    field.insert("length", 0);
+  }
+
+  // Branded primitive
+  {
+    const field = new Field({} as Field<Branded<string>>);
     // @ts-expect-error
     field.insert("length", 0);
   }
@@ -2125,7 +2171,7 @@ const brandedPrim = new Field({} as Branded<string>);
 }
 //#endregion
 
-//#region `Field["push"]`
+//#region Field#push
 {
   // Array
   {
@@ -2141,6 +2187,13 @@ const brandedPrim = new Field({} as Branded<string>);
 
     // @ts-expect-error
     field.push(2);
+  }
+
+  // Readonly array
+  {
+    const field = new Field([] as readonly number[]);
+    // @ts-expect-error
+    field.push(4);
   }
 
   // Tuple
@@ -2182,11 +2235,11 @@ const brandedPrim = new Field({} as Branded<string>);
 
 //#endregion
 
-//#endregion Type
+//#endregion
 
 //#region Events
 
-//#region `Field["watch"]`
+//#region Field#watch
 {
   const field = new Field("hello");
   const off = field.watch((newValue, event) => {
@@ -2205,7 +2258,7 @@ const brandedPrim = new Field({} as Branded<string>);
 }
 //#endregion
 
-//#region `Field["useWatch"]`
+//#region Field#useWatch
 {
   const field = new Field("hello");
   const off = field.useWatch((newValue, event) => {
@@ -2231,7 +2284,7 @@ const unionField = new Field({ hello: "world", world: true }) as
   | Field<Hello>
   | Field<Blah>;
 
-//#region `Field["decompose"]`
+//#region Field#decompose
 {
   // Value union
   {
@@ -2304,7 +2357,7 @@ const unionField = new Field({ hello: "world", world: true }) as
 }
 //#endregion
 
-//#region `Field["useDecompose"]`
+//#region Field#useDecompose
 {
   // Value union
   {
@@ -3249,7 +3302,7 @@ const unionField = new Field({ hello: "world", world: true }) as
 }
 //#endregion
 
-//#endregion Transform
+//#endregion
 
 //#region Validation
 

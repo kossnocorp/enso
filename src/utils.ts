@@ -85,6 +85,10 @@ export namespace EnsoUtils {
 
   export type NonTuple<Type> = Type extends Tuple ? never : Type;
 
+  export type ArrayConstraint = unknown[] | ReadonlyArrayConstraint;
+
+  export type StaticArray = Tuple;
+
   export type Tuple =
     | [unknown, ...unknown[]]
     | readonly [unknown, ...unknown[]];
