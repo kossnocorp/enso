@@ -692,6 +692,71 @@ import { Field } from "./index.js";
 }
 //#endregion
 
+//#region Field#pave
+{
+  interface Settings {
+    user?: UserSettings;
+  }
+
+  interface UserSettings {
+    email: string;
+    security?: SecuritySettings;
+  }
+
+  interface SecuritySettings {
+    public?: boolean;
+    twoFactor?: boolean;
+  }
+
+  // Basic
+  {
+    const field = new Field({} as Settings);
+
+    const userResult = field.$.user.pave({ email: "user@example.com" });
+    userResult satisfies Field<UserSettings>;
+    // @ts-expect-error
+    userResult.any;
+
+    // @ts-expect-error
+    field.$.user.pave({});
+    // @ts-expect-error
+    field.$.user.pave({ hello: "world" });
+    // @ts-expect-error
+    field.$.user.pave(undefined);
+
+    const securityResult = userResult.$.security.pave({
+      public: true,
+    });
+    securityResult satisfies Field<SecuritySettings>;
+    // @ts-expect-error
+    securityResult.any;
+
+    // @ts-expect-error
+    securityResult.pave({ email: "user@example.com" });
+    // @ts-expect-error
+    securityResult.pave(undefined);
+  }
+
+  // Union value
+  {
+    interface GlobalSettings extends Settings {
+      global: true;
+    }
+
+    interface LocalSettings extends Settings {
+      local: true;
+    }
+
+    const field = {} as Field<GlobalSettings | LocalSettings | undefined>;
+
+    const result = field.pave({ global: true });
+    result satisfies Field<GlobalSettings>;
+    // @ts-expect-error
+    result.any;
+  }
+}
+//#endregion
+
 //#region Field#commit
 {
   const field = new Field("hello") as
