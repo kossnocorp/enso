@@ -67,6 +67,10 @@ export declare class Atom<
     value: NewValue,
   ): Atom.Envelop<Type, NewValue, Qualifier, Parent>;
 
+  pave<PavedValue extends Utils.NonNullish<Value>>(
+    value: PavedValue,
+  ): Atom.Envelop<Type, Atom.Pave.Value<Value, PavedValue>, Qualifier, Parent>;
+
   get lastChanges(): FieldChange;
 
   //#endregion Value
@@ -497,7 +501,11 @@ export namespace Atom {
 
     set<NewValue extends Value>(
       value: NewValue,
-    ): Atom.Envelop<Type, NewValue, Qualifier, Parent>;
+    ): Envelop<Type, NewValue, Qualifier, Parent>;
+
+    pave<PavedValue extends Utils.NonNullish<Value>>(
+      value: PavedValue,
+    ): Envelop<Type, Pave.Value<Value, PavedValue>, Qualifier, Parent>;
 
     // NOTE: The purpose of this is to cause invariance and break compatibility
     // with subtypes.
@@ -931,7 +939,18 @@ export namespace Atom {
 
     //#endregion
 
-    //#endregion WIP
+    //#endregion
+  }
+
+  export namespace Pave {
+    export type Value<
+      Value,
+      PavedValue extends Utils.NonNullish<Value>,
+    > = Value extends Value
+      ? PavedValue extends Value
+        ? Value
+        : never
+      : never;
   }
 
   //#endregion Value
