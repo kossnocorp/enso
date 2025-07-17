@@ -218,36 +218,6 @@ export namespace Field {
 
   //#endregion
 
-  //#region Value
-
-  export namespace Value {
-    // WIP: Remove vvv
-
-    export type Variable<Value> = Value extends Utils.Tuple
-      ? Tuple<Value>
-      : Value extends unknown[]
-        ? Array<Value>
-        : Value extends object
-          ? Object<Value>
-          : Primitive<Value>;
-
-    export interface Primitive<Value>
-      extends Atom.Value.Primitive<"field", Value> {}
-
-    export interface Collection<Value>
-      extends Atom.Value.Collection<"field", Value> {}
-
-    export interface Array<Value extends unknown[]>
-      extends Atom.Value.Array<"field", Value> {}
-
-    export interface Tuple<Value extends Utils.Tuple>
-      extends Atom.Value.Tuple<"field", Value> {}
-
-    export interface Object<Value> extends Atom.Value.Object<"field", Value> {}
-  }
-
-  //#endregion
-
   //#region Tree
 
   export type Parent<

@@ -6,7 +6,7 @@ import {
   useTypedMemo,
 } from "../../hooks/index.ts";
 import { useRerender } from "../../hooks/rerender.ts";
-import { Enso } from "../../types.ts";
+import type { Atom } from "../index.js";
 
 export function useAtomHook<Payload, Value, Result = Value>(
   props: UseFieldHook.Props<Payload, Value, Result>,
@@ -117,7 +117,7 @@ export namespace UseFieldHook {
     rerender: () => void;
   }
 
-  export type Watch<Value> = (props: WatchProps<Value>) => Enso.Unwatch;
+  export type Watch<Value> = (props: WatchProps<Value>) => Atom.Unwatch;
 
   export type ToResult<Value, Result> = (
     value: Value | undefined,

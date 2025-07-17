@@ -104,34 +104,6 @@ export namespace State {
     Value,
     Key
   >;
-
-  //#region Value
-
-  export namespace Value {
-    export type Variable<Value> = Value extends Utils.Tuple
-      ? Tuple<Value>
-      : Value extends unknown[]
-        ? Array<Value>
-        : Value extends object
-          ? Object<Value>
-          : Primitive<Value>;
-
-    export interface Primitive<Value>
-      extends Atom.Value.Primitive<"state", Value> {}
-
-    export interface Collection<Value>
-      extends Atom.Value.Collection<"state", Value> {}
-
-    export interface Array<Value extends unknown[]>
-      extends Atom.Value.Array<"state", Value> {}
-
-    export interface Tuple<Value extends Utils.Tuple>
-      extends Atom.Value.Tuple<"state", Value> {}
-
-    export interface Object<Value> extends Atom.Value.Object<"state", Value> {}
-  }
-
-  //#endregion
 }
 
 export namespace AsState {
