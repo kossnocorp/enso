@@ -36,7 +36,7 @@ export declare class Field<
 
   static common<Envelop extends Field<any>>(
     field: Envelop,
-  ): Atom.Common.Join<"field", Envelop>;
+  ): Atom.Common.Result<"field", Envelop>;
 
   static use<Value>(
     initialValue: Value,
@@ -131,7 +131,7 @@ export namespace Field {
       Qualifier extends Atom.Qualifier = Atom.Qualifier.Default,
       Parent extends Atom.Parent.Constraint<Value> = Atom.Parent.Default,
     > extends Atom.Invariant<"field" | Variant, Value, Qualifier, Parent>,
-        Common.Interface<Variant, Value, Qualifier, Parent> {}
+        Immutable.Interface<Variant, Value, Qualifier, Parent> {}
   }
 
   export interface Common<
