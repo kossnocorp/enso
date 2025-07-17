@@ -3,8 +3,18 @@ import { ChangesEvent, FieldChange } from "./change/index.ts";
 import { EventsTree } from "./events/index.ts";
 import { EnsoUtils as Utils } from "./utils.ts";
 
+declare const safeNullish: unique symbol;
+
 export namespace Enso {
-  //#region Base
+  //#region Basics
+
+  export type SafeNullish<Type> = Utils.Branded<
+    Type | Utils.Nullish,
+    typeof safeNullish
+  >;
+
+  export type Denullish<Type> =
+    Type extends SafeNullish<infer DenullishedType> ? DenullishedType : Type;
 
   export type Path = readonly (string | number)[];
 

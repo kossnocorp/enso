@@ -15,21 +15,21 @@ export declare class Atom<
     Parent extends Atom.Parent.Constraint<Value>,
   >
   implements
-    Static<typeof Atom<Type, Value, Qualifier, Parent>, Atom.Static<any>>,
+    Static<typeof Atom<Type, Value, Qualifier, Parent>, Atom.Static>,
     Atom.Invariant<Type, Value, Qualifier, Parent>
 {
   //#region Static
 
-  static use<Value>(
-    initialValue: Value,
-    deps: DependencyList,
-  ): Atom.Envelop<any, Value>;
+  static safeNullish<Type>(value: Type | Utils.Nullish): Enso.SafeNullish<Type>;
 
   //#endregion Static
 
   //#region Instance
 
-  constructor(value: Value, parent?: Atom.Parent.Def<Type, Parent>);
+  constructor(
+    value: Value,
+    parent?: Atom.Parent.Def<Exclude<Type, Atom.Variant>, Parent>,
+  );
 
   deconstruct(): void;
 
@@ -99,15 +99,15 @@ export declare class Atom<
 
   get root(): Atom.Root<Type>;
 
-  get parent(): Atom.Parent.Prop<Type, Value, Parent>;
+  get parent(): Atom.Parent.Prop<Exclude<Type, Atom.Variant>, Value, Parent>;
 
   get key(): string;
 
-  get $(): Atom.$Prop<Type, Value>;
+  get $(): Atom.$.Prop<Type, Value>;
 
-  at: Atom.AtProp<Type, Value>;
+  at: Atom.At.Prop<Type, Value>;
 
-  try: Atom.TryProp<Type, Value>;
+  try: Atom.Try.Prop<Type, Value>;
 
   get path(): string[];
 
@@ -154,28 +154,90 @@ export declare class Atom<
 }
 
 export namespace Atom {
+  //#region Basics
+
+  export type Path = readonly (keyof any)[];
+
+  //#endregion
+
   //#region Static
 
-  export interface Static<Shell extends Atom.Shell> {
-    use<Value>(
-      initialValue: Value,
-      deps: DependencyList,
-    ): Atom.Envelop<Shell | "invariant", Value>;
+  export interface Static {
+    safeNullish<Type>(value: Type | Utils.Nullish): Enso.SafeNullish<Type>;
   }
 
-  export interface StaticSubclass<Type extends Atom.Type> {
-    create<
-      Value,
-      Qualifier extends Atom.Qualifier = Atom.Qualifier.Default,
-      Parent extends Atom.Parent.Constraint<Value> = Atom.Parent.Default,
-    >(
-      value: Value,
-      parent?: Parent.Def<Type, Parent>,
-    ): Envelop<Type, Value, Qualifier, Parent>;
+  export namespace Static {
+    export interface Subclass<Shell extends Atom.Shell> {
+      create<
+        Value,
+        Qualifier extends Atom.Qualifier = Atom.Qualifier.Default,
+        Parent extends Atom.Parent.Constraint<Value> = Atom.Parent.Default,
+      >(
+        value: Value,
+        parent?: Parent.Def<Shell, Parent>,
+      ): Envelop<Shell | "invariant", Value, Qualifier, Parent>;
 
-    common<Envelop extends Atom.Common.Envelop<Type, unknown>>(
-      atom: Envelop,
-    ): Atom.Common.Join<Type, Envelop>;
+      // TODO: Ideally it should go into Static and utilize create
+
+      common<Envelop extends Atom.Envelop<Shell, any>>(
+        atom: Envelop,
+      ): Atom.Common.Join<Shell, Envelop>;
+
+      use<Value>(
+        initialValue: Value,
+        deps: DependencyList,
+      ): Atom.Envelop<Shell | "invariant", Value>;
+
+      useEnsure<
+        AtomType extends Atom.Envelop<Shell, any> | Utils.Nullish,
+        MappedValue = undefined,
+      >(
+        atom: AtomType,
+        map?: Ensure.Mapper<Shell, AtomType, MappedValue>,
+      ): Ensure.Result<Shell, AtomType, MappedValue>;
+    }
+
+    export namespace Ensure {
+      export interface Mapper<
+        Shell extends Atom.Shell,
+        AtomType extends Envelop<Shell, any> | Utils.Nullish,
+        MappedValue,
+      > {
+        (
+          atom: Envelop<Shell, AtomValue<Shell, AtomType>>,
+        ): Envelop<Shell, MappedValue>;
+      }
+
+      export type AtomValue<
+        Shell extends Atom.Shell,
+        AtomType extends Envelop<Shell, any> | Utils.Nullish,
+      > = AtomType extends Envelop<Shell, infer Value> ? Value : never;
+
+      export type Result<
+        Shell extends Atom.Shell,
+        AtomType extends Envelop<Shell, any> | Utils.Nullish,
+        MappedValue,
+      > = MappedValue extends undefined
+        ? ResultDirect<Shell, AtomType>
+        : ResultMapped<Shell, AtomType, MappedValue>;
+
+      export type ResultDirect<
+        Shell extends Atom.Shell,
+        AtomType extends Envelop<Shell, any> | Utils.Nullish,
+      > = Field<
+        | (AtomType extends Utils.Nullish ? undefined : never)
+        | AtomValue<Shell, AtomType>
+      >;
+
+      export type ResultMapped<
+        Shell extends Atom.Shell,
+        AtomType extends Envelop<Shell, any> | Utils.Nullish,
+        MappedValue,
+      > = Envelop<
+        Shell,
+        (AtomType extends Utils.Nullish ? undefined : never) | MappedValue
+      >;
+    }
   }
 
   //#endregion
@@ -297,36 +359,36 @@ export namespace Atom {
     export type Phantom<ChildValue, Parent extends Constraint<ChildValue>> =
       Utils.IsNever<Parent> extends true ? unknown : { parent: Parent };
 
-    export type Envelop<Type extends Atom.Type, ParentValue> = Atom.Envelop<
-      Exclude<Type, Variant> | "immutable",
+    export type Envelop<Shell extends Atom.Shell, ParentValue> = Atom.Envelop<
+      Shell | "immutable",
       Utils.IsNever<ParentValue> extends true ? any : ParentValue
     >;
 
     export type Prop<
-      Type extends Atom.Type,
+      Shell extends Atom.Shell,
       ChildValue,
       Parent extends Atom.Parent.Constraint<ChildValue>,
     > = Def<
-      Type,
+      Shell,
       Utils.IsNever<Parent> extends true ? Interface<any, any> : Parent
     >;
 
     export type Def<
-      Type extends Atom.Type,
+      Shell extends Atom.Shell,
       Parent extends Atom.Parent.Constraint<any>,
     > =
       Parent extends Interface<infer ParentValue, infer Key>
         ?
-            | Parent.Direct<Type, ParentValue, Key>
-            | Parent.Source<Type, ParentValue>
+            | Parent.Direct<Shell, ParentValue, Key>
+            | Parent.Source<Shell, ParentValue>
         : never;
 
     export interface Direct<
-      Type extends Atom.Type,
+      Shell extends Atom.Shell,
       ParentValue,
       Key extends keyof ParentValue,
     > {
-      field: Envelop<Type, ParentValue>;
+      field: Envelop<Shell, ParentValue>;
       key: Key;
     }
 
@@ -335,8 +397,8 @@ export namespace Atom {
       key: Key;
     }
 
-    export interface Source<Type extends Atom.Type, ParentValue> {
-      source: Envelop<Type, ParentValue>;
+    export interface Source<Shell extends Atom.Shell, ParentValue> {
+      source: Envelop<Shell, ParentValue>;
     }
 
     export type Constraint<ChildValue> = Type<Interface<any, any>, ChildValue>;
@@ -517,13 +579,9 @@ export namespace Atom {
     > extends Immutable.Self<Type, Value, Qualifier, Parent> {}
 
     export type Join<
-      Type extends Atom.Type,
-      Envelop extends Atom.Common.Envelop<Type, any>,
-    > = Atom.Common.Envelop<
-      Type,
-      Common.Value<Envelop>,
-      Common.Qualifier<Envelop>
-    >;
+      Shell extends Atom.Shell,
+      Envelop extends Atom.Envelop<Shell, any>,
+    > = Atom.Common.Envelop<Shell, Value<Envelop>, Qualifier<Envelop>>;
 
     export type Value<Envelop extends Atom.Envelop<any, any>> =
       Envelop extends Atom.Envelop<any, infer Value> ? Value : never;
@@ -608,7 +666,7 @@ export namespace Atom {
 
     root: Root<Type>;
 
-    parent: Parent.Prop<Type, Value, Parent>;
+    parent: Parent.Prop<Exclude<Type, Atom.Variant>, Value, Parent>;
 
     readonly key: string;
 
@@ -616,11 +674,11 @@ export namespace Atom {
 
     readonly name: string;
 
-    $: $Prop<Type, Value>;
+    $: $.Prop<Type, Value>;
 
-    at: AtProp<Type, Value>;
+    at: At.Prop<Type, Value>;
 
-    try: Atom.TryProp<Type, Value>;
+    try: Atom.Try.Prop<Type, Value>;
 
     self: Utils.CovariantifyProperty<SelfEnvelop<Type, Value, Qualifier>>;
 
@@ -674,7 +732,7 @@ export namespace Atom {
   }
 
   export namespace Immutable {
-    export type Phantom<Type extends Atom.Type, Value> = $Prop<
+    export type Phantom<Type extends Atom.Type, Value> = $.Prop<
       Extract<Type, Shell> | "common",
       Value
     >;
@@ -1336,54 +1394,113 @@ export namespace Atom {
 
   //#region $
 
-  export type $Prop<Type extends Atom.Type, Value> =
-    // Mapped unknown and any are resolved to `{}` and `Record<string, any>`
-    // respectively, so we have to have special case for them to account for
-    // invariance.
-    Utils.IsNotTop<Value> extends true
-      ? Value extends object
-        ? Value extends Utils.BrandedPrimitive
-          ? never
-          : { [Key in keyof Value]-?: Child<Type, Value, Key, "indexed"> }
-        : never
-      : Utils.ResolveTop<Value>;
+  export namespace $ {
+    export type Prop<Type extends Atom.Type, Value> =
+      // Mapped unknown and any are resolved to `{}` and `Record<string, any>`
+      // respectively, so we have to have special case for them to account for
+      // invariance.
+      Utils.IsNotTop<Value> extends true
+        ? Value extends object
+          ? Value extends Utils.BrandedPrimitive
+            ? never
+            : { [Key in keyof Value]-?: Child<Type, Value, Key, "indexed"> }
+          : never
+        : Utils.ResolveTop<Value>;
+  }
 
   //#endregion
 
   //#region At
 
-  export type AtProp<
-    Type extends Atom.Type,
-    Value,
-  > = keyof Value extends infer Key extends keyof Value
-    ? At<Type, Value, Key>
-    : never;
+  export namespace At {
+    export type Prop<
+      Type extends Atom.Type,
+      Value,
+    > = keyof Value extends infer Key extends keyof Value
+      ? Fn<Type, Value, Key>
+      : never;
 
-  export interface At<Type extends Atom.Type, Value, Key extends keyof Value> {
-    <ArgKey extends Key>(key: ArgKey): Child<Type, Value, ArgKey, "indexed">;
+    export interface Fn<
+      Type extends Atom.Type,
+      Value,
+      Key extends keyof Value,
+    > {
+      <ArgKey extends Key>(
+        key: ArgKey | Enso.SafeNullish<ArgKey>,
+      ): Child<Type, Value, ArgKey>;
+    }
+
+    export type Child<
+      Type extends Atom.Type,
+      Value,
+      Key extends keyof Value,
+    > = Key extends Key ? Atom.Child<Type, Value, Key, "indexed"> : never;
   }
 
   //#endregion
 
   //#region Try
 
-  export type TryProp<
-    Type extends Atom.Type,
-    Value,
-  > = keyof Value extends infer Key extends keyof Value
-    ? <ArgKey extends Key>(key: ArgKey) => TryKey<Type, Value, ArgKey>
-    : never;
+  export namespace Try {
+    export type Prop<
+      Type extends Atom.Type,
+      Value,
+    > = keyof Value extends infer Key extends keyof Value
+      ? <ArgKey extends Key>(
+          key: ArgKey | Enso.SafeNullish<ArgKey>,
+        ) => Child<Type, Value, ArgKey>
+      : never;
+
+    export type Child<
+      Type extends Atom.Type,
+      Value,
+      Key extends keyof Utils.NonNullish<Value>,
+    > = Key extends Key
+      ?
+          | Envelop<
+              Type,
+              Utils.NonNullish<Value>[Key],
+              Child.Qualifier<Value, Key>
+            >
+          // Add undefined if the key is not static (i.e. a record key).
+          | (Utils.IsStaticKey<Utils.NonNullish<Value>, Key> extends true
+              ? never
+              : undefined)
+      : never;
+
+    export type Envelop<
+      Type extends Atom.Type,
+      Value,
+      Qualifier extends Atom.Qualifier,
+    > =
+      // Add null to the union
+      | (null extends Value ? null : never)
+      // Add undefined to the union
+      | (undefined extends Value ? undefined : never)
+      // Resolve branded field without null or undefined
+      | Atom.Envelop<
+          Child.Type<Type, Value>,
+          Utils.NonNullish<Value>,
+          Qualifier | "tried"
+        >;
+  }
 
   export type TryKey<
     Type extends Atom.Type,
     Value,
     Key extends keyof Utils.NonNullish<Value>,
-  > =
-    | TryAtom<Type, Utils.NonNullish<Value>[Key], Child.Qualifier<Value, Key>>
-    // Add undefined if the key is not static (i.e. a record key).
-    | (Utils.IsStaticKey<Utils.NonNullish<Value>, Key> extends true
-        ? never
-        : undefined);
+  > = Key extends Key
+    ?
+        | TryAtom<
+            Type,
+            Utils.NonNullish<Value>[Key],
+            Child.Qualifier<Value, Key>
+          >
+        // Add undefined if the key is not static (i.e. a record key).
+        | (Utils.IsStaticKey<Utils.NonNullish<Value>, Key> extends true
+            ? never
+            : undefined)
+    : never;
 
   export type TryAtom<
     Type extends Atom.Type,

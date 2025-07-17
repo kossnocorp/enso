@@ -10,15 +10,17 @@ export class State<
     Qualifier extends Atom.Qualifier = Atom.Qualifier.Default,
     Parent extends Atom.Parent.Constraint<Value> = Atom.Parent.Default,
   >
-  extends Atom<"state", Value, Qualifier, Parent>
+  extends Atom<"state" | "invariant", Value, Qualifier, Parent>
   implements
     Static<
       typeof State<Value, Qualifier, Parent>,
-      Atom.StaticSubclass<"state">
+      Atom.Static.Subclass<"state">
     >,
     State.Invariant<Value, Qualifier, Parent>
 {
   //#region Static
+
+  // Atom
 
   static create<
     Value,
@@ -31,16 +33,26 @@ export class State<
     return void 0 as any;
   }
 
-  static common<Envelop extends State.Common<any>>(
+  static common<Envelop extends State<any>>(
     atom: Envelop,
   ): Atom.Common.Join<"state", Envelop> {
     return void 0 as any;
   }
 
-  static override use<Value>(
+  static use<Value>(
     initialValue: Value,
     deps: DependencyList,
   ): State.Invariant<Value> {
+    return void 0 as any;
+  }
+
+  static useEnsure<
+    StateType extends State<any> | Utils.Nullish,
+    MappedValue = undefined,
+  >(
+    field: StateType,
+    map?: Atom.Static.Ensure.Mapper<"state", StateType, MappedValue>,
+  ): Atom.Static.Ensure.Result<"state", StateType, MappedValue> {
     return void 0 as any;
   }
 
@@ -48,10 +60,6 @@ export class State<
 
   [hintSymbol]: true = true;
 }
-
-// ^^^^^^^^^^^^^^^^^^^ PROCESSED ^^^^^^^^^^^^^^^^^^^
-
-// vvvvvvvvvvvvvvvvvvv  PENDING  vvvvvvvvvvvvvvvvvvv
 
 export namespace State {
   export type Envelop<
