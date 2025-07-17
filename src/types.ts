@@ -13,12 +13,11 @@ export namespace Enso {
     typeof safeNullish
   >;
 
-  export type Denullish<Type> =
-    Type extends SafeNullish<infer DenullishedType> ? DenullishedType : Type;
+  //#endregion
+
+  //#region KILL:
 
   export type Path = readonly (string | number)[];
-
-  //#endregion
 
   // TODO: Brands and Flags are State properties, but I don't want to force
   // State right now, until there is a good reason to do so.
@@ -198,12 +197,6 @@ export namespace Enso {
     deconstruct(): void;
   }
 
-  export interface InterfaceBound {
-    [interfaceBoundBrand]: true;
-  }
-
-  declare const interfaceBoundBrand: unique symbol;
-
   //#endregion
 
   //#region Value
@@ -308,6 +301,8 @@ export namespace Enso {
     Enable extends boolean | undefined,
     Type,
   > = Enable extends true | undefined ? Type : undefined;
+
+  //#endregion
 
   //#endregion
 }
