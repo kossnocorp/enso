@@ -246,14 +246,12 @@ export namespace Atom {
 
   //#endregion
 
-  //#region Shell
+  //#region Flavor
 
   // WIP: Try to find a better name for this type, so region can be more precise.
   export type Type = Shell | Variant;
 
   export type Shell = "state" | "field";
-
-  export type Variant = "immutable" | "common" | "invariant";
 
   // WIP: Try to get rid of it. The purpose is to have symmetry with Ref but it
   // might be simple Extract, however I can't check until I stabilize tysts.
@@ -320,6 +318,16 @@ export namespace Atom {
 
   //#endregion Shell
 
+  //#region Variant
+
+  export type Variant = "immutable" | "common" | "shared" | "invariant";
+
+  export namespace Variant {
+    export type Qualifier<Variant extends Atom.Variant> = Variant;
+  }
+
+  //#endregion
+
   //#region Qualifier
 
   export type Qualifier =
@@ -327,7 +335,8 @@ export namespace Atom {
     | "detachable"
     | "tried"
     | "bound"
-    | Proxy.Qualifier<unknown>;
+    | Proxy.Qualifier<unknown>
+    | Variant.Qualifier<any>;
 
   export namespace Qualifier {
     export type Default = never;
