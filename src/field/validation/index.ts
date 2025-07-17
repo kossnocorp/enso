@@ -6,17 +6,17 @@ import type { FieldRef } from "../ref/definition.ts";
 
 export function validateField<Value, Context>(
   field: Field<Value>,
-  validator: FieldValidation.Validator<Value, Context>,
+  validator: Field.Validator<Value, Context>,
 ): Promise<void>;
 
 export function validateField<Value>(
   field: Field<Value>,
-  validator: FieldValidation.Validator<Value, undefined>,
+  validator: Field.Validator<Value, undefined>,
 ): Promise<void>;
 
 export async function validateField<Value, Context = undefined>(
   field: Field<Value>,
-  validator: FieldValidation.Validator<Value, Context>,
+  validator: Field.Validator<Value, Context>,
   context?: Context,
 ): Promise<void> {}
 
@@ -40,9 +40,3 @@ export function fieldValidationTree(field: Field<unknown>): ValidationTree {
 }
 
 //#endregion fieldValidationTree
-
-export namespace FieldValidation {
-  export type Validator<Value, Context = undefined> = undefined extends Context
-    ? (payload: FieldRef<Value>) => Promise<void> | void
-    : (payload: FieldRef<Value>, context: Context) => Promise<void> | void;
-}

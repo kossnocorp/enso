@@ -1,7 +1,6 @@
 import { DependencyList, FormEvent, ReactElement } from "react";
 import type { Atom } from "../atom/definition.ts";
 import { Field } from "../field/definition.ts";
-import { FieldValidation } from "../field/validation/index.ts";
 
 const hintSymbol = Symbol();
 
@@ -148,7 +147,7 @@ export namespace Form {
 
   export interface Options<Value> {
     id?: string;
-    validate?: FieldValidation.Validator<Value, undefined>;
+    validate?: Field.Validator<Value, undefined>;
   }
 
   export namespace Component {

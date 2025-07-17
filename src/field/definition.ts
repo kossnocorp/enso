@@ -2,6 +2,7 @@ import React, { DependencyList, FocusEventHandler, ReactElement } from "react";
 import { Atom } from "../atom/index.js";
 import type { EnsoUtils as Utils } from "../utils.ts";
 import { Static } from "./util.ts";
+import { FieldRef } from "./definition.ts";
 
 export * from "./ref/index.js";
 
@@ -388,6 +389,10 @@ export namespace Field {
     type?: string | undefined;
     message: string;
   }
+
+  export type Validator<Value, Context = undefined> = undefined extends Context
+    ? (payload: FieldRef<Value>) => Promise<void> | void
+    : (payload: FieldRef<Value>, context: Context) => Promise<void> | void;
 
   //#endregion
 }
