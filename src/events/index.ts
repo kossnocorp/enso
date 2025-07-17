@@ -1,11 +1,10 @@
-import { Atom } from "../atom/definition.ts";
+import type { Atom } from "../atom/definition.ts";
 import { FieldChange, shiftChildChanges } from "../change/index.ts";
-import type { Enso } from "../types.ts";
 
 export class EventsTree<Shell extends Atom.Shell> {
   #tree: EventsTree.Node<Shell> = EventsTree.node();
 
-  at(path: Enso.Path): Atom.Invariant.Envelop<Shell, any>[] {
+  at(path: Atom.Path): Atom.Invariant.Envelop<Shell, any>[] {
     let node: EventsTree.Node<Shell> | undefined = this.#tree;
     for (const key of path) {
       node = node.children[key];
@@ -14,11 +13,11 @@ export class EventsTree<Shell extends Atom.Shell> {
     return Array.from(node.atoms);
   }
 
-  traverse(path: Enso.Path, callback: EventsTree.TraverseCallback<Shell>) {
+  traverse(path: Atom.Path, callback: EventsTree.TraverseCallback<Shell>) {
     const queue = [];
     let node: EventsTree.Node<Shell> | undefined = this.#tree;
     const pathQueue = [...path];
-    let curPath: Enso.Path = [];
+    let curPath: Atom.Path = [];
     while (true) {
       const atoms = node ? Array.from(node.atoms) : [];
       queue.push([curPath, atoms] as const);
@@ -30,7 +29,7 @@ export class EventsTree<Shell extends Atom.Shell> {
     queue.reverse().forEach(([path, atoms]) => callback(path, atoms));
   }
 
-  add(path: Enso.Path, atom: Atom.Invariant.Envelop<Shell, any>) {
+  add(path: Atom.Path, atom: Atom.Invariant.Envelop<Shell, any>) {
     let node = this.#tree;
     for (const key of path) {
       node = node.children[key] ??= EventsTree.node();
@@ -38,7 +37,7 @@ export class EventsTree<Shell extends Atom.Shell> {
     node.atoms.add(atom);
   }
 
-  delete(path: Enso.Path, atom: Atom.Invariant.Envelop<Shell, any>): boolean {
+  delete(path: Atom.Path, atom: Atom.Invariant.Envelop<Shell, any>): boolean {
     let node: EventsTree.Node<Shell> | undefined = this.#tree;
     for (const key of path) {
       node = node?.children[key];
@@ -48,8 +47,8 @@ export class EventsTree<Shell extends Atom.Shell> {
   }
 
   move(
-    from: Enso.Path,
-    to: Enso.Path,
+    from: Atom.Path,
+    to: Atom.Path,
     atom: Atom.Invariant.Envelop<Shell, any>,
   ): boolean {
     if (this.delete(from, atom)) {
@@ -63,7 +62,7 @@ export class EventsTree<Shell extends Atom.Shell> {
     return { atoms: new Set(), children: {} };
   }
 
-  trigger(path: Enso.Path, changes: FieldChange) {
+  trigger(path: Atom.Path, changes: FieldChange) {
     let curChanges = changes;
     this.traverse(path, (_, atoms) => {
       atoms.forEach((atom) => {
@@ -77,11 +76,11 @@ export class EventsTree<Shell extends Atom.Shell> {
 export namespace EventsTree {
   export interface Node<Shell extends Atom.Shell> {
     atoms: Set<Atom.Invariant.Envelop<Shell, unknown>>;
-    children: Record<string, Node<Shell>>;
+    children: Record<keyof any, Node<Shell>>;
   }
 
   export type TraverseCallback<Shell extends Atom.Shell> = (
-    path: Enso.Path,
+    path: Atom.Path,
     atoms: Atom.Invariant.Envelop<Shell, unknown>[],
   ) => void;
 }

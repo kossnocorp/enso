@@ -851,6 +851,16 @@ import { Field } from "./index.js";
     // @ts-expect-error
     field.$.name satisfies Field<number>;
   }
+
+  // Key union
+  {
+    const field = {} as Field<Entity>;
+
+    const result = field.$[{} as keyof Entity];
+    result satisfies Field<string> | Field<boolean | undefined>;
+    // @ts-expect-error
+    result.any;
+  }
 }
 //#endregion
 
@@ -971,6 +981,42 @@ import { Field } from "./index.js";
     Field.common(field).at("name") satisfies State<string>;
     // @ts-expect-error
     Field.common(field).at("name") satisfies Field<number>;
+  }
+
+  // Key union
+  {
+    const field = {} as Field<Entity>;
+
+    const result = field.at({} as keyof Entity);
+    result satisfies Field<string> | Field<boolean | undefined>;
+    // @ts-expect-error
+    result.any;
+  }
+
+  // Safe nullish key
+  {
+    const field = {} as Field<User>;
+
+    field.at(Field.safeNullish({} as keyof User | undefined | null));
+    field.at(Field.safeNullish({} as keyof User | null));
+    field.at(Field.safeNullish({} as keyof User | undefined));
+    field.at(Field.safeNullish({} as keyof User));
+
+    // @ts-expect-error
+    field.at({} as keyof User | undefined | null);
+    // @ts-expect-error
+    field.at({} as "nope" | undefined);
+    // @ts-expect-error
+    field.at(undefined);
+    // @ts-expect-error
+    field.at(null);
+
+    const result = field.at(
+      Field.safeNullish({} as keyof Entity | undefined | null),
+    );
+    result satisfies Field<string> | Field<boolean | undefined>;
+    // @ts-expect-error
+    result.any;
   }
 }
 //#endregion
@@ -1121,6 +1167,50 @@ import { Field } from "./index.js";
       number,
       "detachable" | "tried"
     >;
+  }
+
+  // Key union
+  {
+    const field = {} as Field<Entity>;
+
+    const result = field.try({} as keyof Entity);
+    result satisfies
+      | Field<string, "tried">
+      | Field<boolean, "tried">
+      | undefined;
+    // @ts-expect-error
+    result.any;
+  }
+
+  // Safe nullish key
+  {
+    const field = {} as Field<Entity>;
+
+    field.try(Field.safeNullish(undefined));
+    field.try(Field.safeNullish(null));
+    field.try(Field.safeNullish({} as keyof Entity | undefined | null));
+    field.try(Field.safeNullish({} as keyof Entity | null));
+    field.try(Field.safeNullish({} as keyof Entity | undefined));
+    field.try(Field.safeNullish({} as keyof Entity));
+
+    // @ts-expect-error
+    field.try({} as keyof Entity | undefined | null);
+    // @ts-expect-error
+    field.try({} as "nope" | undefined);
+    // @ts-expect-error
+    field.try(undefined);
+    // @ts-expect-error
+    field.try(null);
+
+    const result = field.try(
+      Field.safeNullish({} as keyof Entity | undefined | null),
+    );
+    result satisfies
+      | Field<string, "tried">
+      | Field<boolean, "tried">
+      | undefined;
+    // @ts-expect-error
+    result.any;
   }
 }
 //#endregion

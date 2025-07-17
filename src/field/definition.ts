@@ -16,11 +16,13 @@ export declare class Field<
   implements
     Static<
       typeof Field<Value, Qualifier, Parent>,
-      Atom.StaticSubclass<"field">
+      Atom.Static.Subclass<"field">
     >,
     Field.Invariant<Value, Qualifier, Parent>
 {
   //#region Static
+
+  // Atom
 
   static create<
     Value,
@@ -29,16 +31,26 @@ export declare class Field<
   >(
     value: Value,
     parent?: Atom.Parent.Def<"field", Parent>,
-  ): Field<Value, Qualifier, Parent>;
+  ): Atom.Envelop<"field" | "invariant", Value, Qualifier, Parent>;
 
-  static common<Envelop extends Field.Common<any>>(
-    atom: Envelop,
+  static common<Envelop extends Field<any>>(
+    field: Envelop,
   ): Atom.Common.Join<"field", Envelop>;
 
   static use<Value>(
     initialValue: Value,
     deps: DependencyList,
   ): Field.Invariant<Value>;
+
+  static useEnsure<
+    FieldType extends Field<any> | Utils.Nullish,
+    MappedValue = undefined,
+  >(
+    field: FieldType,
+    map?: Atom.Static.Ensure.Mapper<"field", FieldType, MappedValue>,
+  ): Atom.Static.Ensure.Result<"field", FieldType, MappedValue>;
+
+  // Field
 
   static Component<
     Payload,
@@ -55,14 +67,6 @@ export declare class Field<
       ValidEnable
     >,
   ): ReactElement<HTMLElement>;
-
-  static useEnsure<
-    FieldType extends Field<any> | Utils.Nullish,
-    MappedValue = undefined,
-  >(
-    field: FieldType,
-    map?: Field.Ensure.Mapper<FieldType, MappedValue>,
-  ): Field.Ensure.Result<FieldType, MappedValue>;
 
   //#endregion Static
 
@@ -209,42 +213,6 @@ export namespace Field {
 
       useValid(): boolean;
     }
-  }
-
-  //#endregion
-
-  //#region Static
-
-  export namespace Ensure {
-    export interface Mapper<
-      FieldType extends Field<any> | Utils.Nullish,
-      MappedValue,
-    > {
-      (field: Field<FieldValue<FieldType>>): Field<MappedValue>;
-    }
-
-    export type FieldValue<FieldType extends Field<any> | Utils.Nullish> =
-      FieldType extends Field<infer Value> ? Value : never;
-
-    export type Result<
-      FieldType extends Field<unknown> | Utils.Nullish,
-      MappedValue,
-    > = MappedValue extends undefined
-      ? ResultDirect<FieldType>
-      : ResultMapped<FieldType, MappedValue>;
-
-    export type ResultDirect<FieldType extends Field<unknown> | Utils.Nullish> =
-      Field<
-        | (FieldType extends Utils.Nullish ? undefined : never)
-        | FieldValue<FieldType>
-      >;
-
-    export type ResultMapped<
-      FieldType extends Field<unknown> | Utils.Nullish,
-      MappedValue,
-    > = Field<
-      (FieldType extends Utils.Nullish ? undefined : never) | MappedValue
-    >;
   }
 
   //#endregion

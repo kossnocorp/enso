@@ -249,6 +249,10 @@ export namespace EnsoUtils {
 
   //#region Brand
 
+  export type Branded<Type, Symbol extends symbol> = Type & {
+    [Key in Symbol]: true;
+  };
+
   /**
    * Any brand type that can be mixed with string number or symbol to create
    * opaque primitive.
