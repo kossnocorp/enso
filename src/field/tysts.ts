@@ -722,6 +722,8 @@ import { Field } from "./index.js";
 
 //#endregion
 
+//#region Tree
+
 //#region Field#root
 {
   // Immutability
@@ -1365,6 +1367,8 @@ import { Field } from "./index.js";
     >;
   }
 }
+//#endregion
+
 //#endregion
 
 //#region Type
@@ -2694,6 +2698,8 @@ const brandedPrim = new Field({} as Branded<string>);
   // @ts-expect-error
   off.any;
 }
+//#endregion
+
 //#endregion
 
 //#region Transform
