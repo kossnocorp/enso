@@ -191,6 +191,74 @@ import { Atom } from "./index.js";
 }
 //#endregion
 
+//#region Atom.Common.Value.Base
+{
+  type BaseValue = Atom.Common.Value.Base<
+    Atom.Envelop<any, Account> | Atom.Envelop<any, User>
+  >;
+
+  tyst<BaseValue>({} as Account);
+  tyst<BaseValue>({} as User);
+  // @ts-expect-error
+  tyst<BaseValue>({} as Entity);
+  // @ts-expect-error
+  tyst<BaseValue>(unknown);
+}
+//#endregion
+
+//#region Atom.Common.Value.Shared
+{
+  type NoSharedValue = Atom.Common.Value.Shared<
+    Atom.Envelop<any, Account> | Atom.Envelop<any, User>
+  >;
+
+  tyst<never>({} as NoSharedValue);
+  // @ts-expect-error
+  tyst<NoSharedValue>({} as any);
+
+  type SharedValue = Atom.Common.Value.Shared<
+    Atom.Envelop<any, User | undefined> | Atom.Envelop<any, User>
+  >;
+
+  tyst<SharedValue>({} as User);
+  // @ts-expect-error
+  tyst<SharedValue>({} as User | undefined);
+  // @ts-expect-error
+  tyst<SharedValue>({} as undefined);
+  // @ts-expect-error
+  tyst<SharedValue>({} as Account);
+  // @ts-expect-error
+  tyst<SharedValue>({} as Entity);
+  // @ts-expect-error
+  tyst<SharedValue>(unknown);
+}
+//#endregion
+
+//#region Atom.Common.Qualifier.Shared
+{
+  type NoSharedQualifier = Atom.Common.Qualifier.Shared<
+    Atom.Envelop<any, any, "bound"> | Atom.Envelop<any, any, "detachable">
+  >;
+
+  tyst<never>({} as NoSharedQualifier);
+  // @ts-expect-error
+  tyst<NoSharedQualifier>({} as any);
+
+  type SharedQualifier = Atom.Common.Qualifier.Shared<
+    | Atom.Envelop<any, any, "bound">
+    | Atom.Envelop<any, any, "bound" | "detachable">
+  >;
+
+  tyst<SharedQualifier>("bound");
+  // @ts-expect-error
+  tyst<SharedQualifier>("bound" | "detachable");
+  // @ts-expect-error
+  tyst<SharedQualifier>("detachable");
+  // @ts-expect-error
+  tyst<SharedQualifier>(unknown);
+}
+//#endregion
+
 //#region Atom.$.Prop
 {
   // Primitive

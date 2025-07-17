@@ -183,9 +183,9 @@ export namespace Atom {
 
       // TODO: Ideally it should go into Static and utilize create
 
-      common<Envelop extends Atom.Envelop<Shell, any>>(
-        atom: Envelop,
-      ): Atom.Common.Join<Shell, Envelop>;
+      common<EnvelopType extends Atom.Envelop<Shell, any>>(
+        atom: EnvelopType,
+      ): Atom.Common.Result<Shell, EnvelopType>;
 
       use<Value>(
         initialValue: Value,
@@ -193,53 +193,53 @@ export namespace Atom {
       ): Atom.Envelop<Shell | "invariant", Value>;
 
       useEnsure<
-        AtomType extends Atom.Envelop<Shell, any> | Utils.Nullish,
+        EnvelopType extends Atom.Envelop<Shell, any> | Utils.Nullish,
         MappedValue = undefined,
       >(
-        atom: AtomType,
-        map?: Ensure.Mapper<Shell, AtomType, MappedValue>,
-      ): Ensure.Result<Shell, AtomType, MappedValue>;
+        atom: EnvelopType,
+        map?: Ensure.Mapper<Shell, EnvelopType, MappedValue>,
+      ): Ensure.Result<Shell, EnvelopType, MappedValue>;
     }
 
     export namespace Ensure {
       export interface Mapper<
         Shell extends Atom.Shell,
-        AtomType extends Envelop<Shell, any> | Utils.Nullish,
+        EnvelopType extends Envelop<Shell, any> | Utils.Nullish,
         MappedValue,
       > {
         (
-          atom: Envelop<Shell, AtomValue<Shell, AtomType>>,
+          atom: Envelop<Shell, AtomValue<Shell, EnvelopType>>,
         ): Envelop<Shell, MappedValue>;
       }
 
       export type AtomValue<
         Shell extends Atom.Shell,
-        AtomType extends Envelop<Shell, any> | Utils.Nullish,
-      > = AtomType extends Envelop<Shell, infer Value> ? Value : never;
+        EnvelopType extends Envelop<Shell, any> | Utils.Nullish,
+      > = EnvelopType extends Envelop<Shell, infer Value> ? Value : never;
 
       export type Result<
         Shell extends Atom.Shell,
-        AtomType extends Envelop<Shell, any> | Utils.Nullish,
+        EnvelopType extends Envelop<Shell, any> | Utils.Nullish,
         MappedValue,
       > = MappedValue extends undefined
-        ? ResultDirect<Shell, AtomType>
-        : ResultMapped<Shell, AtomType, MappedValue>;
+        ? ResultDirect<Shell, EnvelopType>
+        : ResultMapped<Shell, EnvelopType, MappedValue>;
 
       export type ResultDirect<
         Shell extends Atom.Shell,
-        AtomType extends Envelop<Shell, any> | Utils.Nullish,
+        EnvelopType extends Envelop<Shell, any> | Utils.Nullish,
       > = Field<
-        | (AtomType extends Utils.Nullish ? undefined : never)
-        | AtomValue<Shell, AtomType>
+        | (EnvelopType extends Utils.Nullish ? undefined : never)
+        | AtomValue<Shell, EnvelopType>
       >;
 
       export type ResultMapped<
         Shell extends Atom.Shell,
-        AtomType extends Envelop<Shell, any> | Utils.Nullish,
+        EnvelopType extends Envelop<Shell, any> | Utils.Nullish,
         MappedValue,
       > = Envelop<
         Shell,
-        (AtomType extends Utils.Nullish ? undefined : never) | MappedValue
+        (EnvelopType extends Utils.Nullish ? undefined : never) | MappedValue
       >;
     }
   }
@@ -496,7 +496,7 @@ export namespace Atom {
     Value,
     Qualifier extends Atom.Qualifier = Atom.Qualifier.Default,
     Parent extends Atom.Parent.Constraint<Value> = Atom.Parent.Default,
-  > extends Common<Type, Value, Qualifier, Parent> {
+  > extends Immutable<Type, Value, Qualifier, Parent> {
     //#region Value
 
     set<NewValue extends Value>(
@@ -550,7 +550,7 @@ export namespace Atom {
       Value,
       Qualifier extends Atom.Qualifier = Atom.Qualifier.Default,
       Parent extends Atom.Parent.Constraint<Value> = Atom.Parent.Default,
-    > extends Common.Self<Type, Value, Qualifier> {
+    > extends Immutable.Self<Type, Value, Qualifier> {
       remove: Atom.Self.RemoveProp<Type, Value, Qualifier, Parent>;
     }
   }
@@ -579,46 +579,65 @@ export namespace Atom {
           ? Field.Common<Value, Qualifier, Parent>
           : never;
 
+    export type Result<
+      Shell extends Atom.Shell,
+      EnvelopType extends Atom.Envelop<Shell, any>,
+    > = Atom.Common.Envelop<
+      Shell,
+      Value.Base<EnvelopType>,
+      Qualifier.Shared<EnvelopType>
+    >;
+
+    export namespace Value {
+      export type Base<EnvelopType extends Atom.Envelop<any, any>> =
+        EnvelopType extends Atom.Envelop<any, infer Value> ? Value : never;
+
+      export type Shared<
+        EnvelopType extends Atom.Envelop<any, any>,
+        Value = Atom.Value.FromEnvelop<EnvelopType>,
+      > = Value extends Value
+        ? IsShared<EnvelopType, Value> extends true
+          ? Value
+          : never
+        : never;
+
+      export type IsShared<EnvelopType, Value> =
+        EnvelopType extends Atom.Envelop<any, infer EnvelopTypeValue>
+          ? Value extends EnvelopTypeValue
+            ? true
+            : false
+          : false;
+    }
+
+    export namespace Qualifier {
+      export type Shared<
+        EnvelopType,
+        Qualifier = Union<EnvelopType>,
+      > = Qualifier extends Qualifier
+        ? IsShared<EnvelopType, Qualifier> extends true
+          ? Qualifier
+          : never
+        : never;
+
+      export type Union<EnvelopType> =
+        EnvelopType extends Atom.Envelop<any, any, infer Qualifier>
+          ? Qualifier
+          : never;
+
+      export type IsShared<EnvelopType, QualifierUnion> =
+        EnvelopType extends Atom.Envelop<any, any, infer EnvelopTypeQualifier>
+          ? QualifierUnion extends EnvelopTypeQualifier
+            ? true
+            : false
+          : false;
+    }
+
     export interface Self<
       Type extends Atom.Type,
       Value,
       Qualifier extends Atom.Qualifier = Atom.Qualifier.Default,
       Parent extends Atom.Parent.Constraint<Value> = Atom.Parent.Default,
     > extends Immutable.Self<Type, Value, Qualifier, Parent> {}
-
-    export type Join<
-      Shell extends Atom.Shell,
-      Envelop extends Atom.Envelop<Shell, any>,
-    > = Atom.Common.Envelop<Shell, Value<Envelop>, Qualifier<Envelop>>;
-
-    export type Value<Envelop extends Atom.Envelop<any, any>> =
-      Envelop extends Atom.Envelop<any, infer Value> ? Value : never;
-
-    export type Qualifier<Envelop extends Atom.Envelop<any, any>> =
-      Qualifier.Common<Envelop>;
-
-    export namespace Qualifier {
-      export type Common<
-        Envelop,
-        Qualifier = All<Envelop>,
-      > = Qualifier extends string
-        ? IsCommon<Qualifier, Envelop> extends true
-          ? Qualifier
-          : never
-        : never;
-
-      export type All<Envelop> =
-        Envelop extends Atom.Envelop<any, any, infer Qualifier>
-          ? Qualifier
-          : never;
-
-      export type IsCommon<Qualifier, Envelop> =
-        Envelop extends Atom.Envelop<any, any, infer EnvelopQualifier>
-          ? Qualifier extends EnvelopQualifier
-            ? true
-            : false
-          : false;
-    }
   }
 
   //#endregion Common
@@ -813,6 +832,9 @@ export namespace Atom {
     export interface Phantom<Value> {
       (value: Value): void;
     }
+
+    export type FromEnvelop<EnvelopType extends Atom.Envelop<any, any>> =
+      EnvelopType extends Atom.Envelop<any, infer Value> ? Value : never;
 
     //#region WIP
 

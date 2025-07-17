@@ -35,7 +35,7 @@ export class State<
 
   static common<Envelop extends State<any>>(
     atom: Envelop,
-  ): Atom.Common.Join<"state", Envelop> {
+  ): Atom.Common.Result<"state", Envelop> {
     return void 0 as any;
   }
 
