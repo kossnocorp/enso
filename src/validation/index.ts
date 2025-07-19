@@ -1,11 +1,12 @@
-import type { FieldOld } from "../field/old.tsx";
+import { Atom } from "../atom/index.js";
+import { Field } from "../field/definition.ts";
 import { Enso } from "../types.ts";
 
 export class ValidationTree {
-  #errors: FieldOld.Error[] = [];
+  #errors: Field.Error[] = [];
   #tree: ValidationTree.Node = ValidationTree.node();
 
-  at(path: Enso.Path): FieldOld.Error[] {
+  at(path: Enso.Path): Field.Error[] {
     let node = this.#tree;
     for (const key of path) {
       if (!node.children[key]) return [];
@@ -52,7 +53,7 @@ export class ValidationTree {
     });
   }
 
-  add(path: Enso.Path, error: FieldOld.Error): ValidationTree.Index {
+  add(path: Enso.Path, error: Field.Error): ValidationTree.Index {
     const index = (this.#errors.push(error) - 1) as ValidationTree.Index;
 
     let node = this.#tree;
@@ -103,5 +104,5 @@ export namespace ValidationTree {
 
   export type ErrorsMap = Map<Index, boolean>;
 
-  export type ErrorsList = Array<[Enso.Path, FieldOld.Error]>;
+  export type ErrorsList = Array<[Atom.Path, Field.Error]>;
 }
