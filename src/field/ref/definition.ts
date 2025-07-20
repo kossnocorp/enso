@@ -24,7 +24,7 @@ export declare class FieldRef<
 }
 
 export namespace FieldRef {
-  //#region Shell
+  //#region Kind
 
   export type Envelop<
     Type extends AtomRef.Type,
@@ -37,7 +37,7 @@ export namespace FieldRef {
       ? FieldRefGhost<Value, Qualifier, Parent>
       : never;
 
-  //#endregion Shell
+  //#endregion Kind
 
   //#region Interface
 
