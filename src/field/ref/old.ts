@@ -3,7 +3,6 @@ import { Enso } from "../../types.ts";
 import { EnsoUtils as Utils } from "../../utils.ts";
 import { AsCollection, AsCollectionRead } from "../collection/index.ts";
 import { FieldOld } from "../old.tsx";
-import { staticImplements } from "../util.ts";
 
 /**
  * @internal
@@ -20,9 +19,6 @@ const refHintSymbolOld = Symbol();
  * allows to change the metadata of the field, such as validation errors, but
  * never the value.
  */
-@staticImplements<AsCollectionRead>()
-// TODO: Try making this work or remove:
-// Static<typeof FieldRef<unknown>, AsCollectionRead>,
 export class FieldRefOld<Payload> implements FieldRefOld.Hint {
   static get<Payload>(field: FieldOld<Payload>): FieldRefOld<Payload> {
     // @ts-ignore: TODO:
@@ -570,9 +566,6 @@ const maybeRefHintSymbolOld = Symbol();
  * state (e.g. parent is a actually a `number` but was accessed as an object in
  * `number | { a?: string }`).
  */
-@staticImplements<AsCollectionRead>()
-// TODO: Try making this work or remove:
-// Static<typeof MaybeFieldRef<unknown>, AsCollectionRead>,
 export class MaybeFieldRefOld<Payload> implements MaybeFieldRefOld.Hint {
   #target: MaybeFieldRefOld.Target<Payload>;
 

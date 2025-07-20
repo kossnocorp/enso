@@ -1,6 +1,5 @@
 import { EnsoUtils as Utils } from "../../utils.ts";
-import { FieldOld } from "../old.tsx";
-import type { StaticImplements } from "../util.ts";
+import { FieldOld, StaticImplementsOld } from "../old.tsx";
 
 // NOTE: Following interfaces roughly define shape of classes that expose
 // collection and array methods. While it provides enough type-safety for
@@ -117,7 +116,7 @@ export namespace AsCollection {
 }
 
 export const fieldEach = ((
-  field: Utils.Nullish<StaticImplements<AsCollectionRead>>,
+  field: Utils.Nullish<StaticImplementsOld<AsCollectionRead>>,
   callback: (...args: any[]) => any,
 ) =>
   field?.constructor
@@ -129,7 +128,7 @@ export const fieldEach = ((
 export interface FieldEach {}
 
 export const fieldMap = ((
-  field: Utils.Nullish<StaticImplements<AsCollectionRead>>,
+  field: Utils.Nullish<StaticImplementsOld<AsCollectionRead>>,
   callback: (...args: any[]) => any,
 ) =>
   field?.constructor
@@ -141,13 +140,13 @@ export const fieldMap = ((
 export interface FieldMap {}
 
 export const fieldSize = ((
-  field: Utils.Nullish<StaticImplements<AsCollectionRead>>,
+  field: Utils.Nullish<StaticImplementsOld<AsCollectionRead>>,
 ) => field?.constructor.asCollection(field)?.size()) as unknown as FieldSize;
 
 export interface FieldSize {}
 
 export const fieldFind = ((
-  field: Utils.Nullish<StaticImplements<AsCollectionRead>>,
+  field: Utils.Nullish<StaticImplementsOld<AsCollectionRead>>,
   predicate: any,
 ) =>
   field?.constructor.fromField(
@@ -157,7 +156,7 @@ export const fieldFind = ((
 export interface FieldFind {}
 
 export const fieldFilter = ((
-  field: Utils.Nullish<StaticImplements<AsCollectionRead>>,
+  field: Utils.Nullish<StaticImplementsOld<AsCollectionRead>>,
   predicate: any,
 ) =>
   field?.constructor
@@ -170,14 +169,14 @@ export const fieldFilter = ((
 export interface FieldFilter {}
 
 export const fieldPush = ((
-  field: Utils.Nullish<StaticImplements<AsCollection>>,
+  field: Utils.Nullish<StaticImplementsOld<AsCollection>>,
   item: any,
 ) => field?.constructor.asArray(field)?.push(item)) as unknown as FieldPush;
 
 export interface FieldPush {}
 
 export const fieldInsert = ((
-  field: Utils.Nullish<StaticImplements<AsCollection>>,
+  field: Utils.Nullish<StaticImplementsOld<AsCollection>>,
   index: number,
   item: any,
 ) =>
@@ -188,7 +187,7 @@ export const fieldInsert = ((
 export interface FieldInsert {}
 
 export const fieldRemove = ((
-  field: Utils.Nullish<StaticImplements<AsCollection>>,
+  field: Utils.Nullish<StaticImplementsOld<AsCollection>>,
   key?: any,
 ) =>
   key === undefined

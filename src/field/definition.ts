@@ -1,7 +1,6 @@
 import React, { DependencyList, FocusEventHandler, ReactElement } from "react";
 import { Atom } from "../atom/index.js";
 import type { EnsoUtils as Utils } from "../utils.ts";
-import { Static } from "./util.ts";
 import { FieldRef } from "./definition.ts";
 
 export * from "./ref/index.js";
@@ -15,7 +14,7 @@ export declare class Field<
   >
   extends Atom<"field" | "exact", Value, Qualifier, Parent>
   implements
-    Static<
+    Utils.StaticImplements<
       typeof Field<Value, Qualifier, Parent>,
       Atom.Static.Subclass<"field">
     >,
@@ -104,15 +103,15 @@ export declare class Field<
 
 export namespace Field {
   export type Envelop<
-    Type extends Atom.Type,
+    Flavor extends Atom.Flavor,
     Value,
     Qualifier extends Atom.Qualifier = Atom.Qualifier.Default,
     Parent extends Atom.Parent.Constraint<Value> = Atom.Parent.Default,
-  > = "immutable" extends Type
+  > = "immutable" extends Flavor
     ? Immutable<Value, Qualifier, Parent>
-    : "base" extends Type
+    : "base" extends Flavor
       ? Base<Value, Qualifier, Parent>
-      : "exact" extends Type
+      : "exact" extends Flavor
         ? Exact<Value, Qualifier, Parent>
         : never;
 
