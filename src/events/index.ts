@@ -1,7 +1,7 @@
 import type { Atom } from "../atom/definition.ts";
 import { FieldChange, shiftChildChanges } from "../change/index.ts";
 
-export class EventsTree<Shell extends Atom.Shell> {
+export class EventsTree<Shell extends Atom.Flavor.Shell> {
   #tree: EventsTree.Node<Shell> = EventsTree.node();
 
   at(path: Atom.Path): Atom.Exact.Envelop<Shell, any>[] {
@@ -58,7 +58,7 @@ export class EventsTree<Shell extends Atom.Shell> {
     return false;
   }
 
-  static node<Shell extends Atom.Shell>(): EventsTree.Node<Shell> {
+  static node<Shell extends Atom.Flavor.Shell>(): EventsTree.Node<Shell> {
     return { atoms: new Set(), children: {} };
   }
 
@@ -74,12 +74,12 @@ export class EventsTree<Shell extends Atom.Shell> {
 }
 
 export namespace EventsTree {
-  export interface Node<Shell extends Atom.Shell> {
+  export interface Node<Shell extends Atom.Flavor.Shell> {
     atoms: Set<Atom.Exact.Envelop<Shell, unknown>>;
     children: Record<keyof any, Node<Shell>>;
   }
 
-  export type TraverseCallback<Shell extends Atom.Shell> = (
+  export type TraverseCallback<Shell extends Atom.Flavor.Shell> = (
     path: Atom.Path,
     atoms: Atom.Exact.Envelop<Shell, unknown>[],
   ) => void;

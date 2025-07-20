@@ -103,7 +103,7 @@ export declare class Field<
 
 export namespace Field {
   export type Envelop<
-    Flavor extends Atom.Flavor,
+    Flavor extends Atom.Flavor.Constraint,
     Value,
     Qualifier extends Atom.Qualifier = Atom.Qualifier.Default,
     Parent extends Atom.Parent.Constraint<Value> = Atom.Parent.Default,
@@ -125,7 +125,7 @@ export namespace Field {
 
   export namespace Exact {
     export interface Interface<
-      Variant extends Atom.Variant,
+      Variant extends Atom.Flavor.Variant,
       Value,
       Qualifier extends Atom.Qualifier = Atom.Qualifier.Default,
       Parent extends Atom.Parent.Constraint<Value> = Atom.Parent.Default,
@@ -141,7 +141,7 @@ export namespace Field {
 
   export namespace Base {
     export interface Interface<
-      Variant extends Atom.Variant,
+      Variant extends Atom.Flavor.Variant,
       Value,
       Qualifier extends Atom.Qualifier = Atom.Qualifier.Default,
       Parent extends Atom.Parent.Constraint<Value> = Atom.Parent.Default,
@@ -169,7 +169,7 @@ export namespace Field {
 
   export namespace Immutable {
     export interface Interface<
-      Variant extends Atom.Variant,
+      Variant extends Atom.Flavor.Variant,
       Value,
       Qualifier extends Atom.Qualifier = Atom.Qualifier.Default,
       Parent extends Atom.Parent.Constraint<Value> = Atom.Parent.Default,

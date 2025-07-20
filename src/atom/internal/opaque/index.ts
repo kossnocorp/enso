@@ -4,7 +4,7 @@ import type { Atom } from "../../definition.ts";
 import { AtomValue } from "../base/index.ts";
 
 export class AtomValuePrimitive<
-  Shell extends Atom.Shell,
+  Shell extends Atom.Flavor.Shell,
   Value,
 > extends AtomValue<Shell, Value> {
   #value;

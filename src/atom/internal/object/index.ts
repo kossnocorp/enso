@@ -7,10 +7,10 @@ import { UndefinedStateRegistry } from "../../../detached/index.ts";
 import type { Atom } from "../../definition.ts";
 import { AtomValue, externalSymbol } from "../base/index.ts";
 
-export class AtomValueObject<Shell extends Atom.Shell, Value> extends AtomValue<
-  Shell,
-  Value
-> {
+export class AtomValueObject<
+  Shell extends Atom.Flavor.Shell,
+  Value,
+> extends AtomValue<Shell, Value> {
   #children = new Map();
   #undefined;
 
