@@ -1262,7 +1262,7 @@ describe(Field, () => {
 
   describe("type", () => {
     describe("collection", () => {
-      describe(Field.prototype.remove, () => {
+      describe("#remove", () => {
         describe(Array, () => {
           it("removes a field by index", () => {
             const field = new Field([1, 2, 3]);
@@ -1430,7 +1430,7 @@ describe(Field, () => {
         });
       });
 
-      describe(Field.prototype.forEach, () => {
+      describe("#forEach", () => {
         describe(Array, () => {
           it("iterates items", () => {
             const field = new Field([1, 2, 3]);
