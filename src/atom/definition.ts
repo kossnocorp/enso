@@ -65,15 +65,20 @@ export declare class Atom<
 
   useCompute: Atom.Compute.UseProp<Value>;
 
-  set<NewValue extends Value>(
+  set<NewValue extends Atom.Value.Write<Value>>(
     value: NewValue,
-  ): Atom.Envelop<Flavor, NewValue, Qualifier, Parent>;
+  ): Atom.Envelop<
+    Flavor,
+    Atom.Set.Value<Atom.Value.Write<Value>, NewValue>,
+    Qualifier,
+    Parent
+  >;
 
-  pave<PavedValue extends Utils.NonNullish<Value>>(
+  pave<PavedValue extends Utils.NonNullish<Atom.Value.Write<Value>>>(
     value: PavedValue,
   ): Atom.Envelop<
     Flavor,
-    Atom.Pave.Value<Value, PavedValue>,
+    Atom.Pave.Value<Atom.Value.Write<Value>, PavedValue>,
     Qualifier,
     Parent
   >;
@@ -533,13 +538,23 @@ export namespace Atom {
   > extends Immutable<Flavor, Value, Qualifier, Parent> {
     //#region Value
 
-    set<NewValue extends Value>(
+    set<NewValue extends Value.Write<Value>>(
       value: NewValue,
-    ): Envelop<Flavor, NewValue, Qualifier, Parent>;
+    ): Envelop<
+      Flavor,
+      Atom.Set.Value<Value.Write<Value>, NewValue>,
+      Qualifier,
+      Parent
+    >;
 
-    pave<PavedValue extends Utils.NonNullish<Value>>(
+    pave<PavedValue extends Utils.NonNullish<Atom.Value.Write<Value>>>(
       value: PavedValue,
-    ): Envelop<Flavor, Pave.Value<Value, PavedValue>, Qualifier, Parent>;
+    ): Envelop<
+      Flavor,
+      Pave.Value<Atom.Value.Write<Value>, PavedValue>,
+      Qualifier,
+      Parent
+    >;
 
     // NOTE: The purpose of this is to cause invariance and break compatibility
     // with subtypes.
@@ -820,7 +835,7 @@ export namespace Atom {
       Value,
       Qualifier extends Atom.Qualifier.Constraint,
     > =
-      Value.Resolve<Value> extends infer Value
+      Value.Read<Value> extends infer Value
         ? // Add null to the union
           | (null extends Value ? null : never)
             // Add undefined to the union
@@ -857,6 +872,26 @@ export namespace Atom {
           ? ValueTuple[Index]
           : never
         : never;
+
+      export type Intersection<ValueTuple> =
+        Union<ValueTuple> extends infer Value
+          ? ValueTuple extends Utils.Tuple
+            ? Utils.IndexOfTuple<ValueTuple> extends infer Index extends
+                keyof ValueTuple
+              ? Value extends Value
+                ? (
+                    Index extends Index
+                      ? Value extends ValueTuple[Index]
+                        ? true
+                        : false
+                      : never
+                  ) extends true
+                  ? Value
+                  : never
+                : never
+              : never
+            : never
+          : never;
     }
 
     export interface Prop<
@@ -990,19 +1025,32 @@ export namespace Atom {
           : Value;
 
   export namespace Value {
-    export type Resolve<Value> =
+    export type Read<Value> =
       Value extends Shared.Value<infer ValueTuple>
         ? Shared.Value.Union<ValueTuple>
+        : Value;
+
+    export type Write<Value> =
+      Value extends Shared.Value<infer ValueTuple>
+        ? Shared.Value.Intersection<ValueTuple>
         : Value;
 
     export type Prop<Value> = Atom.Value<Value>;
 
     export interface Phantom<Value> {
-      (value: Value.Resolve<Value>): void;
+      (value: Value.Read<Value>): void;
     }
 
     export type FromEnvelop<EnvelopType extends Atom.Envelop<any, any>> =
       EnvelopType extends Atom.Envelop<any, infer Value> ? Value : never;
+  }
+
+  export namespace Set {
+    export type Value<Value, NewValue extends Value> = Value extends Value
+      ? NewValue extends Value
+        ? Value
+        : never
+      : never;
   }
 
   export namespace Pave {
@@ -1072,7 +1120,7 @@ export namespace Atom {
   //#region Remove
 
   export type RemoveProp<Flavor extends Atom.Flavor.Constraint, Value> =
-    Value.Resolve<Value> extends infer Value
+    Value.Read<Value> extends infer Value
       ? Value extends unknown[] | readonly unknown[]
         ? Utils.IsReadonlyArray<Value> extends true
           ? Empty
@@ -1230,7 +1278,7 @@ export namespace Atom {
       Value,
       ProcessorType extends Mapper.ResultType,
     > =
-      Value.Resolve<Value> extends infer Value
+      Value.Read<Value> extends infer Value
         ? Utils.IsReadonlyArray<Value> extends true
           ? Value extends Utils.ReadonlyArrayConstraint
             ? Mapper.Array<Flavor, Value, ProcessorType>
@@ -1333,7 +1381,7 @@ export namespace Atom {
       Value,
       SelectorType extends Selector.Type,
     > =
-      Value.Resolve<Value> extends infer Value
+      Value.Read<Value> extends infer Value
         ? Utils.IsReadonlyArray<Value> extends true
           ? Value extends Utils.ReadonlyArrayConstraint
             ? Selector.Array<Flavor, Value, SelectorType>
@@ -1431,7 +1479,7 @@ export namespace Atom {
     Qualifier extends Atom.Qualifier.Constraint = Atom.Qualifier.Default,
     Parent extends Atom.Parent.Constraint<Value> = Atom.Parent.Default,
   > =
-    Value.Resolve<Value> extends infer Value
+    Value.Read<Value> extends infer Value
       ? Value extends object
         ? Value extends Utils.BrandedPrimitive
           ? Empty
@@ -1446,7 +1494,7 @@ export namespace Atom {
       Qualifier extends Atom.Qualifier.Constraint = Atom.Qualifier.Default,
       Parent extends Atom.Parent.Constraint<Value> = Atom.Parent.Default,
     > =
-      Value.Resolve<Value> extends infer Value
+      Value.Read<Value> extends infer Value
         ? Value extends Utils.StaticArray
           ? Empty
           : Value extends unknown[]
@@ -1478,7 +1526,7 @@ export namespace Atom {
       Qualifier extends Atom.Qualifier.Constraint = Atom.Qualifier.Default,
       Parent extends Atom.Parent.Constraint<Value> = Atom.Parent.Default,
     > =
-      Value.Resolve<Value> extends infer Value
+      Value.Read<Value> extends infer Value
         ? Value extends Utils.Tuple
           ? Empty
           : Value extends unknown[]
@@ -1518,7 +1566,7 @@ export namespace Atom {
 
   export namespace $ {
     export type Prop<Flavor extends Atom.Flavor.Constraint, Value> =
-      Value.Resolve<Value> extends infer Value
+      Value.Read<Value> extends infer Value
         ? // Mapped unknown and any are resolved to `{}` and `Record<string, any>`
           // respectively, so we have to have special case for them to account for
           // invariance.
@@ -1547,7 +1595,7 @@ export namespace Atom {
 
   export namespace At {
     export type Prop<Flavor extends Atom.Flavor.Constraint, Value> =
-      Value.Resolve<Value> extends infer Value
+      Value.Read<Value> extends infer Value
         ? keyof Value extends infer Key extends keyof Value
           ? Fn<Flavor, Value, Key>
           : never
@@ -1576,7 +1624,7 @@ export namespace Atom {
 
   export namespace Try {
     export type Prop<Flavor extends Atom.Flavor.Constraint, Value> =
-      Value.Resolve<Value> extends infer Value
+      Value.Read<Value> extends infer Value
         ? keyof Value extends infer Key extends keyof Value
           ? <ArgKey extends Key>(
               key: ArgKey | Enso.SafeNullish<ArgKey>,
@@ -1626,7 +1674,7 @@ export namespace Atom {
 
   export namespace Watch {
     export interface Callback<Value> {
-      (value: Value.Resolve<Value>, event: ChangesEvent): void;
+      (value: Value.Read<Value>, event: ChangesEvent): void;
     }
   }
 
@@ -1644,7 +1692,7 @@ export namespace Atom {
     }
 
     export interface Callback<Value, Result> {
-      (value: Value.Resolve<Value>): Result;
+      (value: Value.Read<Value>): Result;
     }
 
     export interface UseProp<Value> {
@@ -1672,7 +1720,7 @@ export namespace Atom {
       Qualifier extends Atom.Qualifier.Constraint = Atom.Qualifier.Default,
       Parent extends Atom.Parent.Constraint<Value> = Atom.Parent.Default,
     > =
-      Value.Resolve<Value> extends infer Value
+      Value.Read<Value> extends infer Value
         ?
             | (Value extends Value
                 ? {
@@ -1712,8 +1760,8 @@ export namespace Atom {
       }
 
       export type Callback<Value> = (
-        newValue: Value.Resolve<Value>,
-        prevValue: Value.Resolve<Value>,
+        newValue: Value.Read<Value>,
+        prevValue: Value.Read<Value>,
       ) => boolean;
     }
   }
@@ -1735,7 +1783,7 @@ export namespace Atom {
     }
 
     export type Discriminator<Value> = keyof Utils.NonUndefined<
-      Value.Resolve<Value>
+      Value.Read<Value>
     >;
 
     export type Result<
@@ -1753,7 +1801,7 @@ export namespace Atom {
       Qualifier extends Atom.Qualifier.Constraint = Atom.Qualifier.Default,
       Parent extends Atom.Parent.Constraint<Value> = Atom.Parent.Default,
     > =
-      Value.Resolve<Value> extends infer Value
+      Value.Read<Value> extends infer Value
         ?
             | (Value extends Value
                 ? Discriminator extends keyof Value
@@ -1827,7 +1875,7 @@ export namespace Atom {
       }
 
       export interface Mapper<Value, ComputedValue> {
-        (value: Value.Resolve<Value>): ComputedValue;
+        (value: Value.Read<Value>): ComputedValue;
       }
 
       export interface Result<
@@ -1886,16 +1934,13 @@ export namespace Atom {
         Qualifier extends Atom.Qualifier.Constraint = Atom.Qualifier.Default,
         Parent extends Atom.Parent.Constraint<Value> = Atom.Parent.Default,
       > {
-        <MappedValue extends Value.Resolve<Value>>(
+        <MappedValue extends Value.Read<Value>>(
           fromMapper: Mapper<Value, ComputedValue, MappedValue>,
         ): Envelop<Flavor, Value, ComputedValue, Qualifier, Parent>;
       }
 
       export interface Mapper<Value, ComputedValue, MappedValue> {
-        (
-          computedValue: ComputedValue,
-          value: Value.Resolve<Value>,
-        ): MappedValue;
+        (computedValue: ComputedValue, value: Value.Read<Value>): MappedValue;
       }
 
       export namespace Use {
@@ -1906,7 +1951,7 @@ export namespace Atom {
           Qualifier extends Atom.Qualifier.Constraint = Atom.Qualifier.Default,
           Parent extends Atom.Parent.Constraint<Value> = Atom.Parent.Default,
         > {
-          <MappedValue extends Value.Resolve<Value>>(
+          <MappedValue extends Value.Read<Value>>(
             fromMapper: Mapper<Value, ComputedValue, MappedValue>,
             deps: DependencyList,
           ): Envelop<Flavor, Value, ComputedValue, Qualifier, Parent>;
@@ -1926,7 +1971,7 @@ export namespace Atom {
       Qualifier extends Atom.Qualifier.Constraint = Atom.Qualifier.Default,
       Parent extends Atom.Parent.Constraint<Value> = Atom.Parent.Default,
     > =
-      Value.Resolve<Value> extends infer Value
+      Value.Read<Value> extends infer Value
         ? Exclude<Value, string | Utils.Nullish> extends never
           ? Value extends string | Utils.Nullish
             ? FnString<Flavor, Value, Qualifier, Parent>

@@ -1,3 +1,4 @@
+import { U } from "vitest/dist/chunks/environment.d.cL3nLXbE.js";
 import { Atom } from "../atom/index.js";
 import type { ChangesEvent, FieldChange } from "../change/index.ts";
 import type { DetachedValue } from "../detached/index.ts";
@@ -894,6 +895,90 @@ const unionField = new Field({ hello: "world", world: true }) as
 }
 //#endregion
 
+//#region Field#set
+{
+  // Primitive
+  {
+    const field = {} as Field<string>;
+
+    const result = field.set("world");
+    result satisfies Field<string>;
+    // @ts-expect-error
+    result.any;
+
+    // @ts-expect-error
+    field.set(0);
+  }
+
+  // Object
+  {
+    const field = {} as Field<User>;
+
+    const result = field.set({
+      name: "User Name",
+      email: "user@example.com",
+      age: 42,
+    });
+
+    result satisfies Field<User>;
+    // @ts-expect-error
+    result.any;
+  }
+
+  // Union value
+  {
+    const field = {} as Field<User | Account | undefined>;
+
+    const result = field.set({
+      name: "User Name",
+      email: "user@example.com",
+      age: 42,
+    });
+
+    result satisfies Field<User>;
+    // @ts-expect-error
+    result.any;
+
+    result.remove("email");
+
+    field.set(undefined);
+    field.set({} as Account);
+    // @ts-expect-error
+    field.set(null);
+  }
+
+  // Union field
+  {
+    const field = {} as Field<User> | Field<Account>;
+
+    // @ts-expect-error
+    field.set({
+      name: "User Name",
+      email: "user@example.com",
+      age: 42,
+    });
+  }
+
+  // Shared
+  {
+    const field = ({} as Field<User>).shared<[User, User | undefined]>();
+
+    const result = field.set({
+      name: "User Name",
+      email: "user@example.com",
+      age: 42,
+    });
+
+    result satisfies Field<User>;
+    // @ts-expect-error
+    result.any;
+
+    // @ts-expect-error
+    field.set(undefined);
+  }
+}
+//#endregion
+
 //#region Field#pave
 {
   interface Settings {
@@ -942,11 +1027,11 @@ const unionField = new Field({ hello: "world", world: true }) as
   // Union value
   {
     interface GlobalSettings extends Settings {
-      global: true;
+      global: boolean;
     }
 
     interface LocalSettings extends Settings {
-      local: true;
+      local: boolean;
     }
 
     const field = {} as Field<GlobalSettings | LocalSettings | undefined>;
@@ -955,6 +1040,30 @@ const unionField = new Field({ hello: "world", world: true }) as
     result satisfies Field<GlobalSettings>;
     // @ts-expect-error
     result.any;
+
+    result.$.global.set(false);
+  }
+
+  // Shared
+  {
+    const field = ({} as Field<SecuritySettings>).shared<
+      [SecuritySettings | Settings, SecuritySettings | undefined]
+    >();
+
+    const result = field.pave({});
+
+    result satisfies Field<SecuritySettings>;
+    // @ts-expect-error
+    result satisfies Field<undefined>;
+    // @ts-expect-error
+    result satisfies Field<Settings>;
+    // @ts-expect-error
+    result.any;
+
+    // @ts-expect-error
+    field.pave(undefined);
+    // @ts-expect-error
+    field.pave({} as Settings);
   }
 }
 //#endregion
