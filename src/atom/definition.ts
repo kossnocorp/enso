@@ -163,6 +163,8 @@ export declare class Atom<
 
   useDefined: Atom.Defined.Prop<Flavor, Value, Qualifier, Parent>;
 
+  shared: Atom.Shared.Prop<Flavor, Value, Qualifier, Parent>;
+
   //#endregion
 }
 
@@ -436,11 +438,11 @@ export namespace Atom {
       source: Envelop<Kind, ParentValue>;
     }
 
-    export type Constraint<ChildValue> = Type<Interface<any, any>, ChildValue>;
+    export type Constraint<ChildValue> = Type<ChildValue, Interface<any, any>>;
 
-    export type Type<ParentInterface, ChildValue> =
+    export type Type<Value, ParentInterface> =
       ParentInterface extends Interface<infer ParentValue, infer Key>
-        ? ChildValue extends ParentValue[Key]
+        ? Value extends ParentValue[Key]
           ? ParentInterface
           : never
         : never;
@@ -781,6 +783,8 @@ export namespace Atom {
 
     useDefined: Defined.Prop<Flavor, Value, Qualifier, Parent>;
 
+    shared: Shared.Prop<Flavor, Value, Qualifier, Parent>;
+
     //#endregion
   }
 
@@ -828,6 +832,135 @@ export namespace Atom {
 
   //#endregion
 
+  //#region Shared
+
+  export namespace Shared {
+    export type Value<ValueTuple extends Value.Tuple> = {
+      value: ValueTuple;
+      [sharedValuePhantom]: true;
+    };
+
+    declare const sharedValuePhantom: unique symbol;
+
+    export namespace Value {
+      export type Tuple =
+        | [unknown, unknown, unknown, unknown, unknown]
+        | [unknown, unknown, unknown, unknown]
+        | [unknown, unknown, unknown]
+        | [unknown, unknown];
+
+      export type Union<ValueTuple> = ValueTuple extends Utils.Tuple
+        ? Utils.IndexOfTuple<ValueTuple> extends infer Index extends
+            keyof ValueTuple
+          ? ValueTuple[Index]
+          : never
+        : never;
+    }
+
+    export interface Prop<
+      Flavor extends Flavor.Constraint,
+      Value,
+      Qualifier extends Qualifier.Constraint = Qualifier.Default,
+      Parent extends Parent.Constraint<Value> = Parent.Default,
+    > {
+      <ValueTuple extends Value.Tuple>(): Result<
+        Flavor,
+        Value,
+        ValueTuple,
+        Qualifier,
+        Parent
+      >;
+    }
+
+    export type Result<
+      Flavor extends Flavor.Constraint,
+      Value,
+      ValueTuple extends Value.Tuple,
+      Qualifier extends Qualifier.Constraint = Qualifier.Default,
+      Parent extends Parent.Constraint<Value> = Parent.Default,
+    > = Envelop<
+      Flavor,
+      Result.Tuple<Value, ValueTuple> extends infer ResultTuple extends
+        Value.Tuple
+        ? Utils.IsNever<ResultTuple> extends true
+          ? unknown
+          : Shared.Value<ResultTuple>
+        : never,
+      Qualifier,
+      Parent
+    >;
+
+    export namespace Result {
+      export type Tuple<
+        Value,
+        ValueTuple extends Value.Tuple,
+      > = ValueTuple extends [
+        infer Value1,
+        infer Value2,
+        infer Value3,
+        infer Value4,
+        infer Value5,
+      ]
+        ? Result.Tuple5<Value, Value1, Value2, Value3, Value4, Value5>
+        : ValueTuple extends [
+              infer Value1,
+              infer Value2,
+              infer Value3,
+              infer Value4,
+            ]
+          ? Result.Tuple4<Value, Value1, Value2, Value3, Value4>
+          : ValueTuple extends [infer Value1, infer Value2, infer Value3]
+            ? Result.Tuple3<Value, Value1, Value2, Value3>
+            : ValueTuple extends [infer Value1, infer Value2]
+              ? Result.Tuple2<Value, Value1, Value2>
+              : never;
+
+      export type Tuple2<Value, Value1, Value2> = [Value] extends [Value1]
+        ? [Value] extends [Value2]
+          ? [Value1, Value2]
+          : never
+        : never;
+
+      export type Tuple3<Value, Value1, Value2, Value3> = [Value] extends [
+        Value1,
+      ]
+        ? [Value] extends [Value2]
+          ? [Value] extends [Value3]
+            ? [Value1, Value2, Value3]
+            : never
+          : never
+        : never;
+
+      export type Tuple4<Value, Value1, Value2, Value3, Value4> = [
+        Value,
+      ] extends [Value1]
+        ? [Value] extends [Value2]
+          ? [Value] extends [Value3]
+            ? [Value] extends [Value4]
+              ? [Value1, Value2, Value3, Value4]
+              : never
+            : never
+          : never
+        : never;
+
+      export type Tuple5<Value, Value1, Value2, Value3, Value4, Value5> = [
+        Value,
+      ] extends [Value1]
+        ? [Value] extends [Value2]
+          ? [Value] extends [Value3]
+            ? [Value] extends [Value4]
+              ? [Value] extends [Value5]
+                ? [Value1, Value2, Value3, Value4, Value5]
+                : never
+              : never
+            : never
+          : never
+        : never;
+    }
+  }
+
+  //#endregion
+
   //#region Value
 
   export type Value<Value> =
@@ -835,17 +968,19 @@ export namespace Atom {
     // respectively, so we have to have special case for them to account for
     // invariance.
     Utils.IsNotTop<Value> extends true
-      ? // Preserve brand if it exists
-        Value extends string & (infer Brand extends Utils.AnyBrand)
-        ? string & Brand
-        : Value extends number & (infer Brand extends Utils.AnyBrand)
-          ? number & Brand
-          : Value extends boolean & (infer Brand extends Utils.AnyBrand)
-            ? boolean & Brand
-            : Value extends symbol & (infer Brand extends Utils.AnyBrand)
-              ? symbol & Brand
-              : // Otherwise map the value to its own type
-                { [Key in keyof Value]: Value[Key] }
+      ? Value extends Shared.Value<infer ValueTuple>
+        ? Shared.Value.Union<ValueTuple>
+        : // Preserve brand if it exists
+          Value extends string & (infer Brand extends Utils.AnyBrand)
+          ? string & Brand
+          : Value extends number & (infer Brand extends Utils.AnyBrand)
+            ? number & Brand
+            : Value extends boolean & (infer Brand extends Utils.AnyBrand)
+              ? boolean & Brand
+              : Value extends symbol & (infer Brand extends Utils.AnyBrand)
+                ? symbol & Brand
+                : // Otherwise map the value to its own type
+                  { [Key in keyof Value]: Value[Key] }
       : Utils.IsUnknown<Value> extends true
         ? never
         : Utils.IsAny<Value> extends true
@@ -853,6 +988,11 @@ export namespace Atom {
           : Value;
 
   export namespace Value {
+    export type Resolve<Value> =
+      Value extends Shared.Value<infer ValueTuple>
+        ? Shared.Value.Union<ValueTuple>
+        : Value;
+
     export type Prop<Value> = Atom.Value<Value>;
 
     export interface Phantom<Value> {
@@ -1471,7 +1611,7 @@ export namespace Atom {
     }
 
     export interface Callback<Value, Result> {
-      (value: Value): Result;
+      (value: Value.Resolve<Value>): Result;
     }
 
     export interface UseProp<Value> {

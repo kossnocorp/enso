@@ -257,6 +257,40 @@ export namespace Field {
 
   //#endregion Transform
 
+  //#region Shared
+
+  export type Shared<
+    ValueTuple extends Atom.Shared.Value.Tuple,
+    Qualifier extends Atom.Qualifier.Constraint = Atom.Qualifier.Default,
+    Parent extends Atom.Parent.Constraint<ValueTuple> = Atom.Parent.Default,
+  > = Exact.Shared<ValueTuple, Qualifier, Parent>;
+
+  export namespace Exact {
+    export type Shared<
+      ValueTuple extends Atom.Shared.Value.Tuple,
+      Qualifier extends Atom.Qualifier.Constraint = Atom.Qualifier.Default,
+      Parent extends Atom.Parent.Constraint<ValueTuple> = Atom.Parent.Default,
+    > = Field.Exact<Atom.Shared.Value<ValueTuple>, Qualifier, Parent>;
+  }
+
+  export namespace Base {
+    export type Shared<
+      ValueTuple extends Atom.Shared.Value.Tuple,
+      Qualifier extends Atom.Qualifier.Constraint = Atom.Qualifier.Default,
+      Parent extends Atom.Parent.Constraint<ValueTuple> = Atom.Parent.Default,
+    > = Field.Base<Atom.Shared.Value<ValueTuple>, Qualifier, Parent>;
+  }
+
+  export namespace Immutable {
+    export type Shared<
+      ValueTuple extends Atom.Shared.Value.Tuple,
+      Qualifier extends Atom.Qualifier.Constraint = Atom.Qualifier.Default,
+      Parent extends Atom.Parent.Constraint<ValueTuple> = Atom.Parent.Default,
+    > = Field.Immutable<Atom.Shared.Value<ValueTuple>, Qualifier, Parent>;
+  }
+
+  //#endregion
+
   //#region Meta
 
   export type Meta<Props extends Meta.Props | undefined> =
