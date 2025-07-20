@@ -39,13 +39,13 @@ export declare class Atom<
 
   //#region Phantoms
 
-  [AtomPrivate.immutableExactPhantom]: Atom.Immutable.Phantom<Flavor, Value>;
+  [AtomPrivate.immutablePhantom]: Atom.Immutable.Phantom<Flavor, Value>;
 
-  [AtomPrivate.qualifiersPhantom](): Atom.Qualifier.Map<Qualifier>;
+  [AtomPrivate.qualifierPhantom](): Atom.Qualifier.Map<Qualifier>;
 
-  [AtomPrivate.valueExactPhantom]: Atom.Value.Phantom<Value>;
+  [AtomPrivate.valuePhantom]: Atom.Value.Phantom<Value>;
 
-  [AtomPrivate.parentExactPhantom]: Atom.Parent.Phantom<Value, Parent>;
+  [AtomPrivate.parentPhantom]: Atom.Parent.Phantom<Value, Parent>;
 
   //#endregion
 
@@ -543,7 +543,7 @@ export namespace Atom {
 
     // NOTE: The purpose of this is to cause invariance and break compatibility
     // with subtypes.
-    [AtomPrivate.valueExactPhantom]: Atom.Value.Phantom<Value>;
+    [AtomPrivate.valuePhantom]: Atom.Value.Phantom<Value>;
 
     lastChanges: FieldChange;
 
@@ -689,11 +689,11 @@ export namespace Atom {
     // NOTE: As immutable atoms never resolve exact children like base,
     // we must manually provide phantom type to ensure proper variance between
     // them.
-    [AtomPrivate.immutableExactPhantom]: Immutable.Phantom<Flavor, Value>;
+    [AtomPrivate.immutablePhantom]: Immutable.Phantom<Flavor, Value>;
 
-    [AtomPrivate.qualifiersPhantom](): Atom.Qualifier.Map<Qualifier>;
+    [AtomPrivate.qualifierPhantom](): Atom.Qualifier.Map<Qualifier>;
 
-    [AtomPrivate.parentExactPhantom]: Parent.Phantom<Value, Parent>;
+    [AtomPrivate.parentPhantom]: Parent.Phantom<Value, Parent>;
 
     //#endregion
 
@@ -996,7 +996,7 @@ export namespace Atom {
     export type Prop<Value> = Atom.Value<Value>;
 
     export interface Phantom<Value> {
-      (value: Value): void;
+      (value: Value.Resolve<Value>): void;
     }
 
     export type FromEnvelop<EnvelopType extends Atom.Envelop<any, any>> =
@@ -1041,9 +1041,12 @@ export namespace Atom {
         Value,
         Qualifier extends Atom.Qualifier.Constraint = Atom.Qualifier.Default,
         Parent extends Atom.Parent.Constraint<Value> = Atom.Parent.Default,
-      > = Qualifier extends "detachable"
-        ? Fn<Flavor, Value, Qualifier, Parent>
-        : never;
+      > =
+        Utils.IsNever<Qualifier> extends true
+          ? Dummy
+          : Qualifier extends "detachable"
+            ? Fn<Flavor, Value, Qualifier, Parent>
+            : Dummy;
 
       export interface Fn<
         Flavor extends Atom.Flavor.Constraint,
@@ -1067,17 +1070,21 @@ export namespace Atom {
   //#region Remove
 
   export type RemoveProp<Flavor extends Atom.Flavor.Constraint, Value> =
-    Utils.IsReadonlyArray<Value> extends true
-      ? never
-      : Value extends Utils.Tuple
-        ? never
-        : Value extends unknown[]
-          ? RemoveArray<Flavor, Value>
-          : Value extends object
-            ? Value extends Utils.BrandedPrimitive
-              ? never
-              : RemoveObject<Flavor, Value>
-            : never;
+    Value.Resolve<Value> extends infer Value
+      ? Value extends unknown[] | readonly unknown[]
+        ? Utils.IsReadonlyArray<Value> extends true
+          ? Dummy
+          : Value extends Utils.Tuple
+            ? Dummy
+            : Value extends unknown[]
+              ? RemoveArray<Flavor, Value>
+              : never
+        : Value extends object
+          ? Value extends Utils.BrandedPrimitive
+            ? Dummy
+            : RemoveObject<Flavor, Value>
+          : Dummy
+      : never;
 
   export interface RemoveArray<
     Flavor extends Atom.Flavor.Constraint,
@@ -1221,19 +1228,21 @@ export namespace Atom {
       Value,
       ProcessorType extends Mapper.ResultType,
     > =
-      Utils.IsReadonlyArray<Value> extends true
-        ? Value extends Utils.ReadonlyArrayConstraint
-          ? Mapper.Array<Flavor, Value, ProcessorType>
-          : never
-        : Value extends Utils.Tuple
-          ? Mapper.Tuple<Flavor, Value, ProcessorType>
-          : Value extends unknown[]
+      Value.Resolve<Value> extends infer Value
+        ? Utils.IsReadonlyArray<Value> extends true
+          ? Value extends Utils.ReadonlyArrayConstraint
             ? Mapper.Array<Flavor, Value, ProcessorType>
-            : Value extends object
-              ? Value extends Utils.BrandedPrimitive
-                ? never
-                : Mapper.Object<Flavor, Value, ProcessorType>
-              : never;
+            : never
+          : Value extends Utils.Tuple
+            ? Mapper.Tuple<Flavor, Value, ProcessorType>
+            : Value extends unknown[]
+              ? Mapper.Array<Flavor, Value, ProcessorType>
+              : Value extends object
+                ? Value extends Utils.BrandedPrimitive
+                  ? Dummy
+                  : Mapper.Object<Flavor, Value, ProcessorType>
+                : Dummy
+        : never;
 
     export namespace Mapper {
       export type ResultType = "each" | "map";
@@ -1322,19 +1331,21 @@ export namespace Atom {
       Value,
       SelectorType extends Selector.Type,
     > =
-      Utils.IsReadonlyArray<Value> extends true
-        ? Value extends Utils.ReadonlyArrayConstraint
-          ? Selector.Array<Flavor, Value, SelectorType>
-          : never
-        : Value extends Utils.Tuple
-          ? Selector.Tuple<Flavor, Value, SelectorType>
-          : Value extends unknown[]
+      Value.Resolve<Value> extends infer Value
+        ? Utils.IsReadonlyArray<Value> extends true
+          ? Value extends Utils.ReadonlyArrayConstraint
             ? Selector.Array<Flavor, Value, SelectorType>
-            : Value extends object
-              ? Value extends Utils.BrandedPrimitive
-                ? never
-                : Selector.Object<Flavor, Value, SelectorType>
-              : never;
+            : never
+          : Value extends Utils.Tuple
+            ? Selector.Tuple<Flavor, Value, SelectorType>
+            : Value extends unknown[]
+              ? Selector.Array<Flavor, Value, SelectorType>
+              : Value extends object
+                ? Value extends Utils.BrandedPrimitive
+                  ? Dummy
+                  : Selector.Object<Flavor, Value, SelectorType>
+                : Dummy
+        : never;
 
     export namespace Selector {
       export type Type = "find" | "filter";
@@ -1417,11 +1428,14 @@ export namespace Atom {
     Value,
     Qualifier extends Atom.Qualifier.Constraint = Atom.Qualifier.Default,
     Parent extends Atom.Parent.Constraint<Value> = Atom.Parent.Default,
-  > = Value extends object
-    ? Value extends Utils.BrandedPrimitive
-      ? never
-      : () => Envelop<Flavor, Value, Qualifier | "bound", Parent>
-    : never;
+  > =
+    Value.Resolve<Value> extends infer Value
+      ? Value extends object
+        ? Value extends Utils.BrandedPrimitive
+          ? Dummy
+          : () => Envelop<Flavor, Value, Qualifier | "bound", Parent>
+        : Dummy
+      : never;
 
   export namespace Insert {
     export type Prop<
@@ -1429,10 +1443,13 @@ export namespace Atom {
       Value,
       Qualifier extends Atom.Qualifier.Constraint = Atom.Qualifier.Default,
       Parent extends Atom.Parent.Constraint<Value> = Atom.Parent.Default,
-    > = Value extends Utils.StaticArray
-      ? never
-      : Value extends unknown[]
-        ? Fn<Flavor, Value, Qualifier, Parent>
+    > =
+      Value.Resolve<Value> extends infer Value
+        ? Value extends Utils.StaticArray
+          ? Dummy
+          : Value extends unknown[]
+            ? Fn<Flavor, Value, Qualifier, Parent>
+            : Dummy
         : never;
 
     export interface Fn<
@@ -1458,10 +1475,13 @@ export namespace Atom {
       Value,
       Qualifier extends Atom.Qualifier.Constraint = Atom.Qualifier.Default,
       Parent extends Atom.Parent.Constraint<Value> = Atom.Parent.Default,
-    > = Value extends Utils.Tuple
-      ? never
-      : Value extends unknown[]
-        ? Fn<Flavor, Value, Qualifier, Parent>
+    > =
+      Value.Resolve<Value> extends infer Value
+        ? Value extends Utils.Tuple
+          ? Dummy
+          : Value extends unknown[]
+            ? Fn<Flavor, Value, Qualifier, Parent>
+            : Dummy
         : never;
 
     export interface Fn<
@@ -1887,11 +1907,22 @@ export namespace Atom {
   //#endregion
 
   //#endregion
+
+  //#region Utils
+
+  // NOTE: Dummy is required to break signatures compatibility of value unions
+  // such as `string[] | undefined` when used for type functions. If
+  // the function were resolve to `never`, it would act as it was just
+  // `string[]`, which is incorrect.
+
+  export interface Dummy {}
+
+  //#endregion
 }
 
 namespace AtomPrivate {
-  export declare const immutableExactPhantom: unique symbol;
-  export declare const qualifiersPhantom: unique symbol;
-  export declare const valueExactPhantom: unique symbol;
-  export declare const parentExactPhantom: unique symbol;
+  export declare const immutablePhantom: unique symbol;
+  export declare const qualifierPhantom: unique symbol;
+  export declare const valuePhantom: unique symbol;
+  export declare const parentPhantom: unique symbol;
 }
