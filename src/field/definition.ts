@@ -9,7 +9,7 @@ const hintSymbol = Symbol();
 
 export declare class Field<
     Value,
-    Qualifier extends Atom.Qualifier = Atom.Qualifier.Default,
+    Qualifier extends Atom.Qualifier.Constraint = Atom.Qualifier.Default,
     Parent extends Atom.Parent.Constraint<Value> = Atom.Parent.Default,
   >
   extends Atom<"field" | "exact", Value, Qualifier, Parent>
@@ -26,7 +26,7 @@ export declare class Field<
 
   static create<
     Value,
-    Qualifier extends Atom.Qualifier = Atom.Qualifier.Default,
+    Qualifier extends Atom.Qualifier.Constraint = Atom.Qualifier.Default,
     Parent extends Atom.Parent.Constraint<Value> = Atom.Parent.Default,
   >(
     value: Value,
@@ -105,7 +105,7 @@ export namespace Field {
   export type Envelop<
     Flavor extends Atom.Flavor.Constraint,
     Value,
-    Qualifier extends Atom.Qualifier = Atom.Qualifier.Default,
+    Qualifier extends Atom.Qualifier.Constraint = Atom.Qualifier.Default,
     Parent extends Atom.Parent.Constraint<Value> = Atom.Parent.Default,
   > = "immutable" extends Flavor
     ? Immutable<Value, Qualifier, Parent>
@@ -119,7 +119,7 @@ export namespace Field {
 
   export interface Exact<
     Value,
-    Qualifier extends Atom.Qualifier = Atom.Qualifier.Default,
+    Qualifier extends Atom.Qualifier.Constraint = Atom.Qualifier.Default,
     Parent extends Atom.Parent.Constraint<Value> = Atom.Parent.Default,
   > extends Exact.Interface<"exact", Value, Qualifier, Parent> {}
 
@@ -127,7 +127,7 @@ export namespace Field {
     export interface Interface<
       Variant extends Atom.Flavor.Variant,
       Value,
-      Qualifier extends Atom.Qualifier = Atom.Qualifier.Default,
+      Qualifier extends Atom.Qualifier.Constraint = Atom.Qualifier.Default,
       Parent extends Atom.Parent.Constraint<Value> = Atom.Parent.Default,
     > extends Atom.Exact<"field" | Variant, Value, Qualifier, Parent>,
         Immutable.Interface<Variant, Value, Qualifier, Parent> {}
@@ -135,7 +135,7 @@ export namespace Field {
 
   export interface Base<
     Value,
-    Qualifier extends Atom.Qualifier = Atom.Qualifier.Default,
+    Qualifier extends Atom.Qualifier.Constraint = Atom.Qualifier.Default,
     Parent extends Atom.Parent.Constraint<Value> = Atom.Parent.Default,
   > extends Base.Interface<"base", Value, Qualifier, Parent> {}
 
@@ -143,14 +143,14 @@ export namespace Field {
     export interface Interface<
       Variant extends Atom.Flavor.Variant,
       Value,
-      Qualifier extends Atom.Qualifier = Atom.Qualifier.Default,
+      Qualifier extends Atom.Qualifier.Constraint = Atom.Qualifier.Default,
       Parent extends Atom.Parent.Constraint<Value> = Atom.Parent.Default,
     > extends Immutable.Interface<Variant, Value, Qualifier, Parent> {}
 
     export type Discriminated<
       Value,
       Discriminator extends Atom.Discriminate.Discriminator<Value>,
-      Qualifier extends Atom.Qualifier = Atom.Qualifier.Default,
+      Qualifier extends Atom.Qualifier.Constraint = Atom.Qualifier.Default,
       Parent extends Atom.Parent.Constraint<Value> = Atom.Parent.Default,
     > = Atom.Discriminate.Result<
       "field" | "base",
@@ -163,7 +163,7 @@ export namespace Field {
 
   export interface Immutable<
     Value,
-    Qualifier extends Atom.Qualifier = Atom.Qualifier.Default,
+    Qualifier extends Atom.Qualifier.Constraint = Atom.Qualifier.Default,
     Parent extends Atom.Parent.Constraint<Value> = Atom.Parent.Default,
   > extends Immutable.Interface<"immutable", Value, Qualifier, Parent> {}
 
@@ -171,7 +171,7 @@ export namespace Field {
     export interface Interface<
       Variant extends Atom.Flavor.Variant,
       Value,
-      Qualifier extends Atom.Qualifier = Atom.Qualifier.Default,
+      Qualifier extends Atom.Qualifier.Constraint = Atom.Qualifier.Default,
       Parent extends Atom.Parent.Constraint<Value> = Atom.Parent.Default,
     > extends Ish.Value,
         Ish.Validation,
@@ -182,7 +182,7 @@ export namespace Field {
     export type Discriminated<
       Value,
       Discriminator extends Atom.Discriminate.Discriminator<Value>,
-      Qualifier extends Atom.Qualifier = Atom.Qualifier.Default,
+      Qualifier extends Atom.Qualifier.Constraint = Atom.Qualifier.Default,
       Parent extends Atom.Parent.Constraint<Value> = Atom.Parent.Default,
     > = Atom.Discriminate.Result<
       "field" | "immutable",
@@ -236,14 +236,14 @@ export namespace Field {
 
   export type Decomposed<
     Value,
-    Qualifier extends Atom.Qualifier = Atom.Qualifier.Default,
+    Qualifier extends Atom.Qualifier.Constraint = Atom.Qualifier.Default,
     Parent extends Atom.Parent.Constraint<Value> = Atom.Parent.Default,
   > = Atom.Decompose.Result<"field", Value, Qualifier, Parent>;
 
   export type Discriminated<
     Value,
     Discriminator extends Atom.Discriminate.Discriminator<Value>,
-    Qualifier extends Atom.Qualifier = Atom.Qualifier.Default,
+    Qualifier extends Atom.Qualifier.Constraint = Atom.Qualifier.Default,
     Parent extends Atom.Parent.Constraint<Value> = Atom.Parent.Default,
   > = Atom.Discriminate.Result<
     "field" | "exact",
