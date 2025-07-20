@@ -268,4 +268,13 @@ export namespace EnsoUtils {
     : Type;
 
   //#endregion
+
+  //#region Class
+
+  export type StaticImplements<
+    Class extends Interface & { new (...args: any[]): any },
+    Interface,
+  > = InstanceType<Class>;
+
+  //#endregion
 }

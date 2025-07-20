@@ -34,7 +34,6 @@ import type { EnsoUtils as Utils } from "../utils.ts";
 import { ValidationTree } from "../validation/index.ts";
 import { AsCollection } from "./collection/index.ts";
 import { FieldRefOld } from "./ref/definition.ts";
-import { staticImplements } from "./util.ts";
 import { Atom } from "../atom/index.js";
 
 export * from "./collection/index.ts";
@@ -46,9 +45,6 @@ export * from "./type/index.ts";
 const hintSymbol = Symbol();
 const externalSymbol = Symbol();
 
-@staticImplements<AsCollection>()
-// TODO: Try making this work or remove:
-// Static<typeof Field<unknown>, AsCollection>,
 export class FieldOld<Payload>
   implements
     FieldOld.Hint,
@@ -2682,3 +2678,7 @@ export function useUndefinedStringField<Type extends string>(
 function always(condition: unknown): asserts condition {
   if (!condition) throw new Error("Assertion failed");
 }
+
+export type StaticImplementsOld<Type> = {
+  constructor: Type;
+};

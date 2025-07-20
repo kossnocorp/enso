@@ -3,10 +3,10 @@ import { useAtomHook } from "../../atom/hooks/index.ts";
 import { useCallback } from "../../hooks/index.ts";
 import { AsState } from "../../state/index.ts";
 import { EnsoUtils as Utils } from "../../utils.ts";
-import { StaticImplements } from "../util.ts";
+import { StaticImplementsOld } from "../old.tsx";
 
 export const fieldDecompose = ((
-  field: Utils.Nullish<StaticImplements<AsState.Read>>,
+  field: Utils.Nullish<StaticImplementsOld<AsState.Read>>,
 ) => ({
   value: field?.constructor.asState(field).get(),
   field,
@@ -15,7 +15,7 @@ export const fieldDecompose = ((
 export interface FieldDecompose {}
 
 export const useFieldDecompose = ((
-  field: Utils.Nullish<StaticImplements<AsState.Read>>,
+  field: Utils.Nullish<StaticImplementsOld<AsState.Read>>,
   callback: any,
   deps: DependencyList,
 ) => {

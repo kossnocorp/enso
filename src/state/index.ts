@@ -1,7 +1,6 @@
 import { DependencyList } from "react";
 import { Atom } from "../atom/index.ts";
 import type { EnsoUtils as Utils } from "../utils.ts";
-import { Static } from "../field/util.ts";
 
 const hintSymbol = Symbol();
 
@@ -12,7 +11,7 @@ export class State<
   >
   extends Atom<"state" | "exact", Value, Qualifier, Parent>
   implements
-    Static<
+    Utils.StaticImplements<
       typeof State<Value, Qualifier, Parent>,
       Atom.Static.Subclass<"state">
     >,
@@ -63,15 +62,15 @@ export class State<
 
 export namespace State {
   export type Envelop<
-    Type extends Atom.Type,
+    Flavor extends Atom.Flavor,
     Value,
     Qualifier extends Atom.Qualifier = Atom.Qualifier.Default,
     Parent extends Atom.Parent.Constraint<Value> = Atom.Parent.Default,
-  > = "immutable" extends Type
+  > = "immutable" extends Flavor
     ? Immutable<Value, Qualifier, Parent>
-    : "base" extends Type
+    : "base" extends Flavor
       ? Base<Value, Qualifier, Parent>
-      : "exact" extends Type
+      : "exact" extends Flavor
         ? Exact<Value, Qualifier, Parent>
         : never;
 
