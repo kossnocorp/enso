@@ -6,7 +6,7 @@ const hintSymbol = Symbol();
 
 export class State<
     Value,
-    Qualifier extends Atom.Qualifier = Atom.Qualifier.Default,
+    Qualifier extends Atom.Qualifier.Constraint = Atom.Qualifier.Default,
     Parent extends Atom.Parent.Constraint<Value> = Atom.Parent.Default,
   >
   extends Atom<"state" | "exact", Value, Qualifier, Parent>
@@ -23,7 +23,7 @@ export class State<
 
   static create<
     Value,
-    Qualifier extends Atom.Qualifier = Atom.Qualifier.Default,
+    Qualifier extends Atom.Qualifier.Constraint = Atom.Qualifier.Default,
     Parent extends Atom.Parent.Constraint<Value> = Atom.Parent.Default,
   >(
     value: Value,
@@ -64,7 +64,7 @@ export namespace State {
   export type Envelop<
     Flavor extends Atom.Flavor.Constraint,
     Value,
-    Qualifier extends Atom.Qualifier = Atom.Qualifier.Default,
+    Qualifier extends Atom.Qualifier.Constraint = Atom.Qualifier.Default,
     Parent extends Atom.Parent.Constraint<Value> = Atom.Parent.Default,
   > = "immutable" extends Flavor
     ? Immutable<Value, Qualifier, Parent>
@@ -76,21 +76,21 @@ export namespace State {
 
   export interface Exact<
     Value,
-    Qualifier extends Atom.Qualifier = Atom.Qualifier.Default,
+    Qualifier extends Atom.Qualifier.Constraint = Atom.Qualifier.Default,
     Parent extends Atom.Parent.Constraint<Value> = Atom.Parent.Default,
   > extends Hint,
       Atom.Exact<"state" | "exact", Value, Qualifier, Parent> {}
 
   export interface Base<
     Value,
-    Qualifier extends Atom.Qualifier = Atom.Qualifier.Default,
+    Qualifier extends Atom.Qualifier.Constraint = Atom.Qualifier.Default,
     Parent extends Atom.Parent.Constraint<Value> = Atom.Parent.Default,
   > extends Hint,
       Atom.Base<"state" | "base", Value, Qualifier, Parent> {}
 
   export interface Immutable<
     Value,
-    Qualifier extends Atom.Qualifier = Atom.Qualifier.Default,
+    Qualifier extends Atom.Qualifier.Constraint = Atom.Qualifier.Default,
     Parent extends Atom.Parent.Constraint<Value> = Atom.Parent.Default,
   > extends Hint,
       Atom.Immutable<"state" | "immutable", Value, Qualifier, Parent> {}
