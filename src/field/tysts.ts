@@ -175,9 +175,9 @@ const unionField = new Field({ hello: "world", world: true }) as
 
       type AccountTuple = [Account, Account | undefined];
       let _account: Field.Base.Shared<[Account, Account | undefined]>;
+      _account = ({} as Field<Account>).shared<AccountTuple>();
       // @ts-expect-error
       _account = ({} as Field<Account | User>).shared<AccountTuple>();
-      _account = ({} as Field<Account>).shared<AccountTuple>();
       // @ts-expect-error
       _account = ({} as Field<User>).shared<AccountTuple>();
     }
@@ -294,10 +294,9 @@ const unionField = new Field({ hello: "world", world: true }) as
 
       type AccountTuple = [Account, Account | undefined];
       let _account: Field.Shared<[Account, Account | undefined]>;
+      _account = ({} as Field<Account>).shared<AccountTuple>();
       // @ts-expect-error
       _account = ({} as Field<Account | User>).shared<AccountTuple>();
-      // @ts-expect-error
-      _account = ({} as Field<Account>).shared<AccountTuple>();
       // @ts-expect-error
       _account = ({} as Field<User>).shared<AccountTuple>();
     }
@@ -466,9 +465,9 @@ const unionField = new Field({ hello: "world", world: true }) as
 
       type AccountTuple = [Account, Account | undefined];
       let _account: Field.Immutable.Shared<[Account, Account | undefined]>;
+      _account = ({} as Field<Account>).shared<AccountTuple>();
       // @ts-expect-error
       _account = ({} as Field<Account | User>).shared<AccountTuple>();
-      _account = ({} as Field<Account>).shared<AccountTuple>();
       // @ts-expect-error
       _account = ({} as Field<User>).shared<AccountTuple>();
     }
@@ -961,20 +960,36 @@ const unionField = new Field({ hello: "world", world: true }) as
 
   // Shared
   {
-    const field = ({} as Field<User>).shared<[User, User | undefined]>();
+    // Basic
+    {
+      const field = ({} as Field<User>).shared<[User, User | undefined]>();
 
-    const result = field.set({
-      name: "User Name",
-      email: "user@example.com",
-      age: 42,
-    });
+      const result = field.set({
+        name: "User Name",
+        email: "user@example.com",
+        age: 42,
+      });
 
-    result satisfies Field<User>;
-    // @ts-expect-error
-    result.any;
+      result satisfies Field<User>;
+      // @ts-expect-error
+      result.any;
 
-    // @ts-expect-error
-    field.set(undefined);
+      // @ts-expect-error
+      field.set(undefined);
+    }
+
+    // Mixed
+    {
+      const mixed = ({} as Field<User>).shared<
+        [User | Entity, User | Entity | undefined]
+      >();
+
+      mixed.set({} as User);
+      // @ts-expect-error
+      mixed.set({} as Entity);
+      // @ts-expect-error
+      mixed.set(undefined);
+    }
   }
 }
 //#endregion
@@ -5278,6 +5293,44 @@ const brandedPrim = new Field({} as Branded<string>);
     field.shared<
       [string | number, string | number | undefined, number]
     >() satisfies Field<unknown>;
+  }
+
+  // Variance
+  {
+    type ExactTuple = [User, User | undefined];
+    type EntityTuple = [Entity, Entity | undefined];
+
+    // Exact
+    {
+      const exact = ({} as Field<User>).shared<ExactTuple>();
+      exact satisfies Field<Atom.Shared.Value<ExactTuple>>;
+
+      const base = ({} as Field<User>).shared<EntityTuple>();
+      base satisfies Field<Atom.Shared.Value<ExactTuple>>;
+
+      const mixed = ({} as Field<User>).shared<
+        [User | Entity, User | Entity | undefined]
+      >();
+      mixed satisfies Field<Atom.Shared.Value<[User, User | undefined]>>;
+    }
+
+    // Base
+    {
+      const exact = ({} as Field.Base<User>).shared<ExactTuple>();
+      exact satisfies Field.Base<Atom.Shared.Value<ExactTuple>>;
+
+      const base = ({} as Field.Base<User>).shared<EntityTuple>();
+      base satisfies Field.Base<Atom.Shared.Value<EntityTuple>>;
+    }
+
+    // Immutable
+    {
+      const exact = ({} as Field.Immutable<User>).shared<ExactTuple>();
+      exact satisfies Field.Immutable<Atom.Shared.Value<ExactTuple>>;
+
+      const base = ({} as Field.Immutable<User>).shared<EntityTuple>();
+      base satisfies Field.Immutable<Atom.Shared.Value<EntityTuple>>;
+    }
   }
 }
 //#endregion
