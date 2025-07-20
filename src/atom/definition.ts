@@ -1672,21 +1672,31 @@ export namespace Atom {
       Qualifier extends Atom.Qualifier.Constraint = Atom.Qualifier.Default,
       Parent extends Atom.Parent.Constraint<Value> = Atom.Parent.Default,
     > =
-      | (Value extends Value
-          ? {
-              value: Value;
-              field: Envelop<Flavor, Value, Qualifier, Parent>;
-            }
-          : never)
-      // Add unknown option for the base and immutable variants
-      | (Flavor extends (infer Kind extends Atom.Flavor.Kind) | infer Variant
-          ? Variant extends "base" | "immutable"
-            ? {
-                value: unknown;
-                field: Envelop<Kind | Variant, unknown, Qualifier, Parent>;
-              }
-            : never
-          : never);
+      Value.Resolve<Value> extends infer Value
+        ?
+            | (Value extends Value
+                ? {
+                    value: Value;
+                    field: Envelop<Flavor, Value, Qualifier, Parent>;
+                  }
+                : never)
+            // Add unknown option for the base and immutable variants
+            | (Flavor extends
+                | (infer Kind extends Atom.Flavor.Kind)
+                | infer Variant
+                ? Variant extends "base" | "immutable"
+                  ? {
+                      value: unknown;
+                      field: Envelop<
+                        Kind | Variant,
+                        unknown,
+                        Qualifier,
+                        Parent
+                      >;
+                    }
+                  : never
+                : never)
+        : never;
 
     export namespace Use {
       export interface Prop<
@@ -1702,8 +1712,8 @@ export namespace Atom {
       }
 
       export type Callback<Value> = (
-        newValue: Value,
-        prevValue: Value,
+        newValue: Value.Resolve<Value>,
+        prevValue: Value.Resolve<Value>,
       ) => boolean;
     }
   }
@@ -1724,7 +1734,9 @@ export namespace Atom {
       ): Result<Flavor, Value, Discriminator, Qualifier, Parent>;
     }
 
-    export type Discriminator<Payload> = keyof Utils.NonUndefined<Payload>;
+    export type Discriminator<Value> = keyof Utils.NonUndefined<
+      Value.Resolve<Value>
+    >;
 
     export type Result<
       Flavor extends Atom.Flavor.Constraint,
@@ -1741,31 +1753,41 @@ export namespace Atom {
       Qualifier extends Atom.Qualifier.Constraint = Atom.Qualifier.Default,
       Parent extends Atom.Parent.Constraint<Value> = Atom.Parent.Default,
     > =
-      | (Value extends Value
-          ? Discriminator extends keyof Value
-            ? Value[Discriminator] extends infer DiscriminatorValue
-              ? DiscriminatorValue extends Value[Discriminator]
-                ? {
-                    discriminator: DiscriminatorValue;
-                    field: Envelop<Flavor, Value, Qualifier, Parent>;
-                  }
-                : never
-              : never
-            : // Add the payload type without the discriminator (i.e. undefined)
-              {
-                discriminator: undefined;
-                field: Envelop<Flavor, Value, Qualifier, Parent>;
-              }
-          : never)
-      // Add unknown option for the base and immutable variants
-      | (Flavor extends (infer Kind extends Atom.Flavor.Kind) | infer Variant
-          ? Variant extends "base" | "immutable"
-            ? {
-                discriminator: unknown;
-                field: Envelop<Kind | Variant, unknown, Qualifier, Parent>;
-              }
-            : never
-          : never);
+      Value.Resolve<Value> extends infer Value
+        ?
+            | (Value extends Value
+                ? Discriminator extends keyof Value
+                  ? Value[Discriminator] extends infer DiscriminatorValue
+                    ? DiscriminatorValue extends Value[Discriminator]
+                      ? {
+                          discriminator: DiscriminatorValue;
+                          field: Envelop<Flavor, Value, Qualifier, Parent>;
+                        }
+                      : never
+                    : never
+                  : // Add the payload type without the discriminator (i.e. undefined)
+                    {
+                      discriminator: undefined;
+                      field: Envelop<Flavor, Value, Qualifier, Parent>;
+                    }
+                : never)
+            // Add unknown option for the base and immutable variants
+            | (Flavor extends
+                | (infer Kind extends Atom.Flavor.Kind)
+                | infer Variant
+                ? Variant extends "base" | "immutable"
+                  ? {
+                      discriminator: unknown;
+                      field: Envelop<
+                        Kind | Variant,
+                        unknown,
+                        Qualifier,
+                        Parent
+                      >;
+                    }
+                  : never
+                : never)
+        : never;
   }
 
   //#endregion
@@ -1805,7 +1827,7 @@ export namespace Atom {
       }
 
       export interface Mapper<Value, ComputedValue> {
-        (value: Value): ComputedValue;
+        (value: Value.Resolve<Value>): ComputedValue;
       }
 
       export interface Result<
@@ -1864,13 +1886,16 @@ export namespace Atom {
         Qualifier extends Atom.Qualifier.Constraint = Atom.Qualifier.Default,
         Parent extends Atom.Parent.Constraint<Value> = Atom.Parent.Default,
       > {
-        <MappedValue extends Value>(
+        <MappedValue extends Value.Resolve<Value>>(
           fromMapper: Mapper<Value, ComputedValue, MappedValue>,
         ): Envelop<Flavor, Value, ComputedValue, Qualifier, Parent>;
       }
 
       export interface Mapper<Value, ComputedValue, MappedValue> {
-        (computedValue: ComputedValue, value: Value): MappedValue;
+        (
+          computedValue: ComputedValue,
+          value: Value.Resolve<Value>,
+        ): MappedValue;
       }
 
       export namespace Use {
@@ -1881,7 +1906,7 @@ export namespace Atom {
           Qualifier extends Atom.Qualifier.Constraint = Atom.Qualifier.Default,
           Parent extends Atom.Parent.Constraint<Value> = Atom.Parent.Default,
         > {
-          <MappedValue extends Value>(
+          <MappedValue extends Value.Resolve<Value>>(
             fromMapper: Mapper<Value, ComputedValue, MappedValue>,
             deps: DependencyList,
           ): Envelop<Flavor, Value, ComputedValue, Qualifier, Parent>;
@@ -1901,9 +1926,11 @@ export namespace Atom {
       Qualifier extends Atom.Qualifier.Constraint = Atom.Qualifier.Default,
       Parent extends Atom.Parent.Constraint<Value> = Atom.Parent.Default,
     > =
-      Exclude<Value, string | Utils.Nullish> extends never
-        ? Value extends string | Utils.Nullish
-          ? FnString<Flavor, Value, Qualifier, Parent>
+      Value.Resolve<Value> extends infer Value
+        ? Exclude<Value, string | Utils.Nullish> extends never
+          ? Value extends string | Utils.Nullish
+            ? FnString<Flavor, Value, Qualifier, Parent>
+            : never
           : never
         : never;
 
