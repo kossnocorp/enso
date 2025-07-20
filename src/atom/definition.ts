@@ -1626,7 +1626,7 @@ export namespace Atom {
 
   export namespace Watch {
     export interface Callback<Value> {
-      (value: Value, event: ChangesEvent): void;
+      (value: Value.Resolve<Value>, event: ChangesEvent): void;
     }
   }
 
