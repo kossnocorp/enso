@@ -89,7 +89,7 @@ export declare class Atom<
 
   //#region Type
 
-  size: Atom.SizeProp<Value>;
+  size: Atom.Size.Prop<Value>;
 
   remove: Atom.RemoveProp<Flavor, Value>;
 
@@ -231,7 +231,12 @@ export namespace Atom {
       export type AtomValue<
         Kind extends Atom.Flavor.Kind,
         EnvelopType extends Envelop<Kind, any> | Utils.Nullish,
-      > = EnvelopType extends Envelop<Kind, infer Value> ? Value : never;
+      > =
+        EnvelopType extends Envelop<Kind, infer Value>
+          ? Value extends Shared.Value<any>
+            ? unknown
+            : Value
+          : never;
 
       export type Result<
         Kind extends Atom.Flavor.Kind,
@@ -639,7 +644,11 @@ export namespace Atom {
 
     export namespace Value {
       export type Base<EnvelopType extends Atom.Envelop<any, any>> =
-        EnvelopType extends Atom.Envelop<any, infer Value> ? Value : never;
+        EnvelopType extends Atom.Envelop<any, infer Value>
+          ? Value extends Shared.Value<any>
+            ? unknown
+            : Value
+          : never;
 
       export type Shared<
         EnvelopType extends Atom.Envelop<any, any>,
@@ -756,7 +765,7 @@ export namespace Atom {
 
     //#region Type
 
-    size: SizeProp<Value>;
+    size: Size.Prop<Value>;
 
     forEach: ForEachProp<Flavor, Value>;
 
@@ -1222,11 +1231,16 @@ export namespace Atom {
 
   //#endregion
 
-  export type SizeProp<Value> = Value extends object
-    ? Value extends Utils.BrandedPrimitive
-      ? never
-      : number
-    : never;
+  export namespace Size {
+    export type Prop<Value> =
+      Value.Read<Value> extends infer Value
+        ? Value extends object
+          ? Value extends Utils.BrandedPrimitive
+            ? void
+            : number
+          : void
+        : never;
+  }
 
   //#region Remove
 
