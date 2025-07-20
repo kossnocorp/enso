@@ -812,20 +812,22 @@ export namespace Atom {
       Qualifier extends Atom.Qualifier.Constraint = Atom.Qualifier.Default,
       Parent extends Atom.Parent.Constraint<Value> = Atom.Parent.Default,
     > {
-      try(): Remove<Flavor, Value, Qualifier>;
+      try(): Try<Flavor, Value, Qualifier>;
     }
 
-    export type Remove<
+    export type Try<
       Flavor extends Atom.Flavor.Constraint,
       Value,
       Qualifier extends Atom.Qualifier.Constraint,
     > =
-      // Add null to the union
-      | (null extends Value ? null : never)
-      // Add undefined to the union
-      | (undefined extends Value ? undefined : never)
-      // Resolve branded field without null or undefined
-      | Atom.Envelop<Flavor, Utils.NonNullish<Value>, "tried" | Qualifier>;
+      Value.Resolve<Value> extends infer Value
+        ? // Add null to the union
+          | (null extends Value ? null : never)
+            // Add undefined to the union
+            | (undefined extends Value ? undefined : never)
+            // Resolve branded field without null or undefined
+            | Atom.Envelop<Flavor, Utils.NonNullish<Value>, "tried" | Qualifier>
+        : never;
   }
 
   //#endregion
@@ -1043,10 +1045,10 @@ export namespace Atom {
         Parent extends Atom.Parent.Constraint<Value> = Atom.Parent.Default,
       > =
         Utils.IsNever<Qualifier> extends true
-          ? Dummy
+          ? Empty
           : Qualifier extends "detachable"
             ? Fn<Flavor, Value, Qualifier, Parent>
-            : Dummy;
+            : Empty;
 
       export interface Fn<
         Flavor extends Atom.Flavor.Constraint,
@@ -1073,17 +1075,17 @@ export namespace Atom {
     Value.Resolve<Value> extends infer Value
       ? Value extends unknown[] | readonly unknown[]
         ? Utils.IsReadonlyArray<Value> extends true
-          ? Dummy
+          ? Empty
           : Value extends Utils.Tuple
-            ? Dummy
+            ? Empty
             : Value extends unknown[]
               ? RemoveArray<Flavor, Value>
               : never
         : Value extends object
           ? Value extends Utils.BrandedPrimitive
-            ? Dummy
+            ? Empty
             : RemoveObject<Flavor, Value>
-          : Dummy
+          : Empty
       : never;
 
   export interface RemoveArray<
@@ -1239,9 +1241,9 @@ export namespace Atom {
               ? Mapper.Array<Flavor, Value, ProcessorType>
               : Value extends object
                 ? Value extends Utils.BrandedPrimitive
-                  ? Dummy
+                  ? Empty
                   : Mapper.Object<Flavor, Value, ProcessorType>
-                : Dummy
+                : Empty
         : never;
 
     export namespace Mapper {
@@ -1342,9 +1344,9 @@ export namespace Atom {
               ? Selector.Array<Flavor, Value, SelectorType>
               : Value extends object
                 ? Value extends Utils.BrandedPrimitive
-                  ? Dummy
+                  ? Empty
                   : Selector.Object<Flavor, Value, SelectorType>
-                : Dummy
+                : Empty
         : never;
 
     export namespace Selector {
@@ -1432,9 +1434,9 @@ export namespace Atom {
     Value.Resolve<Value> extends infer Value
       ? Value extends object
         ? Value extends Utils.BrandedPrimitive
-          ? Dummy
+          ? Empty
           : () => Envelop<Flavor, Value, Qualifier | "bound", Parent>
-        : Dummy
+        : Empty
       : never;
 
   export namespace Insert {
@@ -1446,10 +1448,10 @@ export namespace Atom {
     > =
       Value.Resolve<Value> extends infer Value
         ? Value extends Utils.StaticArray
-          ? Dummy
+          ? Empty
           : Value extends unknown[]
             ? Fn<Flavor, Value, Qualifier, Parent>
-            : Dummy
+            : Empty
         : never;
 
     export interface Fn<
@@ -1478,10 +1480,10 @@ export namespace Atom {
     > =
       Value.Resolve<Value> extends infer Value
         ? Value extends Utils.Tuple
-          ? Dummy
+          ? Empty
           : Value extends unknown[]
             ? Fn<Flavor, Value, Qualifier, Parent>
-            : Dummy
+            : Empty
         : never;
 
     export interface Fn<
@@ -1516,16 +1518,27 @@ export namespace Atom {
 
   export namespace $ {
     export type Prop<Flavor extends Atom.Flavor.Constraint, Value> =
-      // Mapped unknown and any are resolved to `{}` and `Record<string, any>`
-      // respectively, so we have to have special case for them to account for
-      // invariance.
-      Utils.IsNotTop<Value> extends true
-        ? Value extends object
-          ? Value extends Utils.BrandedPrimitive
+      Value.Resolve<Value> extends infer Value
+        ? // Mapped unknown and any are resolved to `{}` and `Record<string, any>`
+          // respectively, so we have to have special case for them to account for
+          // invariance.
+          Utils.IsAny<Value> extends true
+          ? any
+          : Utils.IsUnknown<Value> extends true
             ? never
-            : { [Key in keyof Value]-?: Child<Flavor, Value, Key, "indexed"> }
-          : never
-        : Utils.ResolveTop<Value>;
+            : Value extends object
+              ? Value extends Utils.BrandedPrimitive
+                ? {}
+                : {
+                    [Key in keyof Value]-?: Child<
+                      Flavor,
+                      Value,
+                      Key,
+                      "indexed"
+                    >;
+                  }
+              : {}
+        : never;
   }
 
   //#endregion
@@ -1533,12 +1546,12 @@ export namespace Atom {
   //#region At
 
   export namespace At {
-    export type Prop<
-      Flavor extends Atom.Flavor.Constraint,
-      Value,
-    > = keyof Value extends infer Key extends keyof Value
-      ? Fn<Flavor, Value, Key>
-      : never;
+    export type Prop<Flavor extends Atom.Flavor.Constraint, Value> =
+      Value.Resolve<Value> extends infer Value
+        ? keyof Value extends infer Key extends keyof Value
+          ? Fn<Flavor, Value, Key>
+          : never
+        : never;
 
     export interface Fn<
       Flavor extends Atom.Flavor.Constraint,
@@ -1562,14 +1575,14 @@ export namespace Atom {
   //#region Try
 
   export namespace Try {
-    export type Prop<
-      Flavor extends Atom.Flavor.Constraint,
-      Value,
-    > = keyof Value extends infer Key extends keyof Value
-      ? <ArgKey extends Key>(
-          key: ArgKey | Enso.SafeNullish<ArgKey>,
-        ) => Child<Flavor, Value, ArgKey>
-      : never;
+    export type Prop<Flavor extends Atom.Flavor.Constraint, Value> =
+      Value.Resolve<Value> extends infer Value
+        ? keyof Value extends infer Key extends keyof Value
+          ? <ArgKey extends Key>(
+              key: ArgKey | Enso.SafeNullish<ArgKey>,
+            ) => Child<Flavor, Value, ArgKey>
+          : never
+        : never;
 
     export type Child<
       Flavor extends Atom.Flavor.Constraint,
@@ -1910,12 +1923,12 @@ export namespace Atom {
 
   //#region Utils
 
-  // NOTE: Dummy is required to break signatures compatibility of value unions
+  // NOTE: Empty is required to break signatures compatibility of value unions
   // such as `string[] | undefined` when used for type functions. If
-  // the function were resolve to `never`, it would act as it was just
+  // the function were to resolve to `never`, it would act as it was just
   // `string[]`, which is incorrect.
 
-  export interface Dummy {}
+  export interface Empty {}
 
   //#endregion
 }

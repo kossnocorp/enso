@@ -114,7 +114,7 @@ import { Form } from "./index.js";
 {
   const form = new Form("hello");
 
-  form.$ satisfies typeof form.field.value;
+  form.$ satisfies typeof form.field.$;
   // @ts-expect-error
   form.$.any;
 }

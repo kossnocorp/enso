@@ -266,7 +266,7 @@ import { Atom } from "./index.js";
     type NumberProp = Atom.$.Prop<"field", number>;
 
     const _test = {} as NumberProp;
-    _test satisfies never;
+    _test satisfies {};
 
     tyst<NumberProp>({} as Atom.$.Prop<"field", number>);
     tyst<NumberProp>({} as Atom.$.Prop<"field", Branded<number>>);
@@ -277,7 +277,7 @@ import { Atom } from "./index.js";
     type BrandedProp = Atom.$.Prop<"field", Branded<number>>;
 
     const _test = {} as BrandedProp;
-    _test satisfies never;
+    _test satisfies {};
 
     tyst<BrandedProp>({} as Atom.$.Prop<"field", string>);
   }
