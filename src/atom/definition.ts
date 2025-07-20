@@ -16,7 +16,7 @@ export declare class Atom<
   >
   implements
     Static<typeof Atom<Type, Value, Qualifier, Parent>, Atom.Static>,
-    Atom.Invariant<Type, Value, Qualifier, Parent>
+    Atom.Exact<Type, Value, Qualifier, Parent>
 {
   //#region Static
 
@@ -37,13 +37,13 @@ export declare class Atom<
 
   //#region Phantoms
 
-  [AtomPrivate.immutableInvariantPhantom]: Atom.Immutable.Phantom<Type, Value>;
+  [AtomPrivate.immutableExactPhantom]: Atom.Immutable.Phantom<Type, Value>;
 
   [AtomPrivate.qualifiersPhantom](): Atom.Qualifier.Map<Qualifier>;
 
-  [AtomPrivate.valueInvariantPhantom]: Atom.Value.Phantom<Value>;
+  [AtomPrivate.valueExactPhantom]: Atom.Value.Phantom<Value>;
 
-  [AtomPrivate.parentInvariantPhantom]: Atom.Parent.Phantom<Value, Parent>;
+  [AtomPrivate.parentExactPhantom]: Atom.Parent.Phantom<Value, Parent>;
 
   //#endregion
 
@@ -116,7 +116,7 @@ export declare class Atom<
   get name(): string;
 
   self: Utils.CovariantifyProperty<
-    Atom.Invariant.Self<Type, Value, Qualifier, Parent>
+    Atom.Exact.Self<Type, Value, Qualifier, Parent>
   >;
 
   //#endregion
@@ -177,18 +177,18 @@ export namespace Atom {
       >(
         value: Value,
         parent?: Parent.Def<Shell, Parent>,
-      ): Envelop<Shell | "invariant", Value, Qualifier, Parent>;
+      ): Envelop<Shell | "exact", Value, Qualifier, Parent>;
 
       // TODO: Ideally it should go into Static and utilize create
 
-      common<EnvelopType extends Atom.Envelop<Shell, any>>(
+      base<EnvelopType extends Atom.Envelop<Shell, any>>(
         atom: EnvelopType,
-      ): Atom.Common.Result<Shell, EnvelopType>;
+      ): Atom.Base.Result<Shell, EnvelopType>;
 
       use<Value>(
         initialValue: Value,
         deps: DependencyList,
-      ): Atom.Envelop<Shell | "invariant", Value>;
+      ): Atom.Envelop<Shell | "exact", Value>;
 
       useEnsure<
         EnvelopType extends Atom.Envelop<Shell, any> | Utils.Nullish,
@@ -298,7 +298,7 @@ export namespace Atom {
 
   export type ExtractVariant<Type extends Atom.Type> =
     Utils.IsNever<Exclude<Type, NonVariant>> extends true
-      ? "invariant"
+      ? "exact"
       : Type extends Variant
         ? Type
         : never;
@@ -308,17 +308,17 @@ export namespace Atom {
     Value,
     Qualifier extends Atom.Qualifier = Atom.Qualifier.Default,
     Parent extends Atom.Parent.Constraint<Value> = Atom.Parent.Default,
-  > = "invariant" extends Type
-    ? Invariant.Self<Type, Value, Qualifier, Parent>
-    : "common" extends Type
-      ? Common.Self<Type, Value, Qualifier, Parent>
+  > = "exact" extends Type
+    ? Exact.Self<Type, Value, Qualifier, Parent>
+    : "base" extends Type
+      ? Base.Self<Type, Value, Qualifier, Parent>
       : Immutable.Self<Type, Value, Qualifier, Parent>;
 
   //#endregion
 
   //#region Variant
 
-  export type Variant = "immutable" | "common" | "shared" | "invariant";
+  export type Variant = "immutable" | "base" | "shared" | "exact";
 
   export namespace Variant {
     export type Qualifier<Variant extends Atom.Variant> = Variant;
@@ -459,9 +459,9 @@ export namespace Atom {
           ? Utils.IsReadonlyArray<ParentValue> extends true
             ? Variant extends "immutable"
               ? "immutable"
-              : "common"
-            : Variant extends "common"
-              ? "invariant"
+              : "base"
+            : Variant extends "base"
+              ? "exact"
               : Variant
           : never);
 
@@ -496,9 +496,9 @@ export namespace Atom {
 
   //#region Interface
 
-  //#region Invariant
+  //#region Exact
 
-  export interface Invariant<
+  export interface Exact<
     Type extends Atom.Type,
     Value,
     Qualifier extends Atom.Qualifier = Atom.Qualifier.Default,
@@ -516,7 +516,7 @@ export namespace Atom {
 
     // NOTE: The purpose of this is to cause invariance and break compatibility
     // with subtypes.
-    [AtomPrivate.valueInvariantPhantom]: Atom.Value.Phantom<Value>;
+    [AtomPrivate.valueExactPhantom]: Atom.Value.Phantom<Value>;
 
     lastChanges: FieldChange;
 
@@ -539,7 +539,7 @@ export namespace Atom {
     //#endregion
   }
 
-  export namespace Invariant {
+  export namespace Exact {
     export type Envelop<
       Type extends Atom.Type,
       Value,
@@ -547,9 +547,9 @@ export namespace Atom {
       Parent extends Atom.Parent.Constraint<Value> = Atom.Parent.Default,
     > =
       ExtractShell<Type> extends "state"
-        ? State.Invariant<Value, Qualifier, Parent>
+        ? State.Exact<Value, Qualifier, Parent>
         : ExtractShell<Type> extends "field"
-          ? Field.Invariant<Value, Qualifier, Parent>
+          ? Field.Exact<Value, Qualifier, Parent>
           : never;
 
     export interface Self<
@@ -564,16 +564,16 @@ export namespace Atom {
 
   //#endregion
 
-  //#region Common
+  //#region Base
 
-  export interface Common<
+  export interface Base<
     Type extends Atom.Type,
     Value,
     Qualifier extends Atom.Qualifier = Atom.Qualifier.Default,
     Parent extends Atom.Parent.Constraint<Value> = Atom.Parent.Default,
   > extends Immutable<Type, Value, Qualifier, Parent> {}
 
-  export namespace Common {
+  export namespace Base {
     export type Envelop<
       Type extends Atom.Type,
       Value,
@@ -581,15 +581,15 @@ export namespace Atom {
       Parent extends Atom.Parent.Constraint<Value> = Atom.Parent.Default,
     > =
       ExtractShell<Type> extends "state"
-        ? State.Common<Value, Qualifier, Parent>
+        ? State.Base<Value, Qualifier, Parent>
         : ExtractShell<Type> extends "field"
-          ? Field.Common<Value, Qualifier, Parent>
+          ? Field.Base<Value, Qualifier, Parent>
           : never;
 
     export type Result<
       Shell extends Atom.Shell,
       EnvelopType extends Atom.Envelop<Shell, any>,
-    > = Atom.Common.Envelop<
+    > = Atom.Base.Envelop<
       Shell,
       Value.Base<EnvelopType>,
       Qualifier.Shared<EnvelopType>
@@ -659,14 +659,14 @@ export namespace Atom {
   > {
     //#region Phantoms
 
-    // NOTE: As immutable atoms never resolve invariant children like common,
+    // NOTE: As immutable atoms never resolve exact children like base,
     // we must manually provide phantom type to ensure proper variance between
     // them.
-    [AtomPrivate.immutableInvariantPhantom]: Immutable.Phantom<Type, Value>;
+    [AtomPrivate.immutableExactPhantom]: Immutable.Phantom<Type, Value>;
 
     [AtomPrivate.qualifiersPhantom](): Atom.Qualifier.Map<Qualifier>;
 
-    [AtomPrivate.parentInvariantPhantom]: Parent.Phantom<Value, Parent>;
+    [AtomPrivate.parentExactPhantom]: Parent.Phantom<Value, Parent>;
 
     //#endregion
 
@@ -761,7 +761,7 @@ export namespace Atom {
 
   export namespace Immutable {
     export type Phantom<Type extends Atom.Type, Value> = $.Prop<
-      Extract<Type, Shell> | "common",
+      Extract<Type, Shell> | "base",
       Value
     >;
 
@@ -1460,9 +1460,9 @@ export namespace Atom {
               field: Envelop<Type, Value, Qualifier, Parent>;
             }
           : never)
-      // Add unknown option for the common and immutable variants
+      // Add unknown option for the base and immutable variants
       | (Type extends (infer Shell extends Atom.Shell) | infer Variant
-          ? Variant extends "common" | "immutable"
+          ? Variant extends "base" | "immutable"
             ? {
                 value: unknown;
                 field: Envelop<Shell | Variant, unknown, Qualifier, Parent>;
@@ -1539,9 +1539,9 @@ export namespace Atom {
                 field: Envelop<Type, Value, Qualifier, Parent>;
               }
           : never)
-      // Add unknown option for the common and immutable variants
+      // Add unknown option for the base and immutable variants
       | (Type extends (infer Shell extends Atom.Shell) | infer Variant
-          ? Variant extends "common" | "immutable"
+          ? Variant extends "base" | "immutable"
             ? {
                 discriminator: unknown;
                 field: Envelop<Shell | Variant, unknown, Qualifier, Parent>;
@@ -1705,8 +1705,8 @@ export namespace Atom {
 }
 
 namespace AtomPrivate {
-  export declare const immutableInvariantPhantom: unique symbol;
+  export declare const immutableExactPhantom: unique symbol;
   export declare const qualifiersPhantom: unique symbol;
-  export declare const valueInvariantPhantom: unique symbol;
-  export declare const parentInvariantPhantom: unique symbol;
+  export declare const valueExactPhantom: unique symbol;
+  export declare const parentExactPhantom: unique symbol;
 }

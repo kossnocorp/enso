@@ -13,13 +13,13 @@ export declare class Field<
     Qualifier extends Atom.Qualifier = Atom.Qualifier.Default,
     Parent extends Atom.Parent.Constraint<Value> = Atom.Parent.Default,
   >
-  extends Atom<"field" | "invariant", Value, Qualifier, Parent>
+  extends Atom<"field" | "exact", Value, Qualifier, Parent>
   implements
     Static<
       typeof Field<Value, Qualifier, Parent>,
       Atom.Static.Subclass<"field">
     >,
-    Field.Invariant<Value, Qualifier, Parent>
+    Field.Exact<Value, Qualifier, Parent>
 {
   //#region Static
 
@@ -32,16 +32,16 @@ export declare class Field<
   >(
     value: Value,
     parent?: Atom.Parent.Def<"field", Parent>,
-  ): Atom.Envelop<"field" | "invariant", Value, Qualifier, Parent>;
+  ): Atom.Envelop<"field" | "exact", Value, Qualifier, Parent>;
 
-  static common<Envelop extends Field<any>>(
+  static base<Envelop extends Field<any>>(
     field: Envelop,
-  ): Atom.Common.Result<"field", Envelop>;
+  ): Atom.Base.Result<"field", Envelop>;
 
   static use<Value>(
     initialValue: Value,
     deps: DependencyList,
-  ): Field.Invariant<Value>;
+  ): Field.Exact<Value>;
 
   static useEnsure<
     FieldType extends Field<any> | Utils.Nullish,
@@ -110,37 +110,37 @@ export namespace Field {
     Parent extends Atom.Parent.Constraint<Value> = Atom.Parent.Default,
   > = "immutable" extends Type
     ? Immutable<Value, Qualifier, Parent>
-    : "common" extends Type
-      ? Common<Value, Qualifier, Parent>
-      : "invariant" extends Type
-        ? Invariant<Value, Qualifier, Parent>
+    : "base" extends Type
+      ? Base<Value, Qualifier, Parent>
+      : "exact" extends Type
+        ? Exact<Value, Qualifier, Parent>
         : never;
 
   //#region Interface
 
-  export interface Invariant<
+  export interface Exact<
     Value,
     Qualifier extends Atom.Qualifier = Atom.Qualifier.Default,
     Parent extends Atom.Parent.Constraint<Value> = Atom.Parent.Default,
-  > extends Invariant.Interface<"invariant", Value, Qualifier, Parent> {}
+  > extends Exact.Interface<"exact", Value, Qualifier, Parent> {}
 
-  export namespace Invariant {
+  export namespace Exact {
     export interface Interface<
       Variant extends Atom.Variant,
       Value,
       Qualifier extends Atom.Qualifier = Atom.Qualifier.Default,
       Parent extends Atom.Parent.Constraint<Value> = Atom.Parent.Default,
-    > extends Atom.Invariant<"field" | Variant, Value, Qualifier, Parent>,
+    > extends Atom.Exact<"field" | Variant, Value, Qualifier, Parent>,
         Immutable.Interface<Variant, Value, Qualifier, Parent> {}
   }
 
-  export interface Common<
+  export interface Base<
     Value,
     Qualifier extends Atom.Qualifier = Atom.Qualifier.Default,
     Parent extends Atom.Parent.Constraint<Value> = Atom.Parent.Default,
-  > extends Common.Interface<"common", Value, Qualifier, Parent> {}
+  > extends Base.Interface<"base", Value, Qualifier, Parent> {}
 
-  export namespace Common {
+  export namespace Base {
     export interface Interface<
       Variant extends Atom.Variant,
       Value,
@@ -154,7 +154,7 @@ export namespace Field {
       Qualifier extends Atom.Qualifier = Atom.Qualifier.Default,
       Parent extends Atom.Parent.Constraint<Value> = Atom.Parent.Default,
     > = Atom.Discriminate.Result<
-      "field" | "common",
+      "field" | "base",
       Value,
       Discriminator,
       Qualifier,
@@ -247,7 +247,7 @@ export namespace Field {
     Qualifier extends Atom.Qualifier = Atom.Qualifier.Default,
     Parent extends Atom.Parent.Constraint<Value> = Atom.Parent.Default,
   > = Atom.Discriminate.Result<
-    "field" | "invariant",
+    "field" | "exact",
     Value,
     Discriminator,
     Qualifier,

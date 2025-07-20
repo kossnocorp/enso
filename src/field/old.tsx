@@ -35,6 +35,7 @@ import { ValidationTree } from "../validation/index.ts";
 import { AsCollection } from "./collection/index.ts";
 import { FieldRefOld } from "./ref/definition.ts";
 import { staticImplements } from "./util.ts";
+import { Atom } from "../atom/index.js";
 
 export * from "./collection/index.ts";
 export * from "./transform/index.ts";
@@ -205,7 +206,7 @@ export class FieldOld<Payload>
         : [];
   }
 
-  static nameFromPath(path: Enso.Path): string {
+  static nameFromPath(path: Atom.Path): string {
     return path.join(".") || ".";
   }
 

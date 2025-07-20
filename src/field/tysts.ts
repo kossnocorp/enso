@@ -5,78 +5,78 @@ import { Field } from "./index.js";
 
 //#region Variance
 {
-  // `Field.Common` as `Field.Common`
+  // Field.Base as Field.Base
   {
-    let _entity: Field.Common<Entity>;
+    let _entity: Field.Base<Entity>;
 
     // Basic
     {
-      _entity = {} as Field.Common<Account | User>;
-      _entity = {} as Field.Common<Account>;
-      _entity = {} as Field.Common<User>;
+      _entity = {} as Field.Base<Account | User>;
+      _entity = {} as Field.Base<Account>;
+      _entity = {} as Field.Base<User>;
 
-      let _account: Field.Common<Account>;
+      let _account: Field.Base<Account>;
       // @ts-expect-error
-      _account = {} as Field.Common<Account | User>;
-      _account = {} as Field.Common<Account>;
+      _account = {} as Field.Base<Account | User>;
+      _account = {} as Field.Base<Account>;
       // @ts-expect-error
-      _account = {} as Field.Common<User>;
+      _account = {} as Field.Base<User>;
     }
 
     // Qualifier
     {
-      let _common: Field.Common<Entity>;
-      _common = {} as Field.Common<Account | User, "detachable">;
-      _common = {} as Field.Common<Account | User, "detachable" | "tried">;
+      let _base: Field.Base<Entity>;
+      _base = {} as Field.Base<Account | User, "detachable">;
+      _base = {} as Field.Base<Account | User, "detachable" | "tried">;
 
-      let _detachable: Field.Common<Entity, "detachable">;
-      _detachable = {} as Field.Common<Account | User, "detachable">;
-      _detachable = {} as Field.Common<Account, "detachable">;
-      _detachable = {} as Field.Common<Account, "detachable" | "tried">;
+      let _detachable: Field.Base<Entity, "detachable">;
+      _detachable = {} as Field.Base<Account | User, "detachable">;
+      _detachable = {} as Field.Base<Account, "detachable">;
+      _detachable = {} as Field.Base<Account, "detachable" | "tried">;
       // @ts-expect-error
-      _detachable = {} as Field.Common<Entity>;
+      _detachable = {} as Field.Base<Entity>;
 
-      let _mixed: Field.Common<Entity, "detachable" | "tried">;
-      _mixed = {} as Field.Common<Account | User, "detachable" | "tried">;
-      _mixed = {} as Field.Common<Account, "detachable" | "tried">;
-      _mixed = {} as Field.Common<Account, "detachable" | "tried" | "bound">;
+      let _mixed: Field.Base<Entity, "detachable" | "tried">;
+      _mixed = {} as Field.Base<Account | User, "detachable" | "tried">;
+      _mixed = {} as Field.Base<Account, "detachable" | "tried">;
+      _mixed = {} as Field.Base<Account, "detachable" | "tried" | "bound">;
       // @ts-expect-error
-      _mixed = {} as Field.Common<Entity, "detachable">;
+      _mixed = {} as Field.Base<Entity, "detachable">;
       // @ts-expect-error
-      _mixed = {} as Field.Common<Entity, "tried">;
+      _mixed = {} as Field.Base<Entity, "tried">;
     }
 
     // Parent
     {
-      _entity = {} as Field.Common<Entity, never, ContainerParent>;
-      _entity = {} as Field.Common<Entity, never, OrganizationParent>;
+      _entity = {} as Field.Base<Entity, never, ContainerParent>;
+      _entity = {} as Field.Base<Entity, never, OrganizationParent>;
 
-      let _container: Field.Common<Entity, never, ContainerParent>;
-      _container = {} as Field.Common<Entity, never, ContainerParent>;
-      _container = {} as Field.Common<Account | User, never, ContainerParent>;
-      _container = {} as Field.Common<Account, never, ContainerParent>;
+      let _container: Field.Base<Entity, never, ContainerParent>;
+      _container = {} as Field.Base<Entity, never, ContainerParent>;
+      _container = {} as Field.Base<Account | User, never, ContainerParent>;
+      _container = {} as Field.Base<Account, never, ContainerParent>;
       // @ts-expect-error
-      _container = {} as Field.Common<Account>;
+      _container = {} as Field.Base<Account>;
       // @ts-expect-error
-      _container = {} as Field.Common<Entity, never, OrganizationParent>;
+      _container = {} as Field.Base<Entity, never, OrganizationParent>;
 
-      let _organization: Field.Common<User, never, OrganizationParent>;
+      let _organization: Field.Base<User, never, OrganizationParent>;
       // @ts-expect-error
-      _organization = {} as Field.Common<Entity, never, OrganizationParent>;
+      _organization = {} as Field.Base<Entity, never, OrganizationParent>;
       // @ts-expect-error
-      _organization = {} as Field.Common<
+      _organization = {} as Field.Base<
         Account | User,
         never,
         OrganizationParent
       >;
       // @ts-expect-error
-      _organization = {} as Field.Common<User, never, ContainerParent>;
+      _organization = {} as Field.Base<User, never, ContainerParent>;
     }
   }
 
-  // `Field` as `Field.Common`
+  // Field as Field.Base
   {
-    let _entity: Field.Common<Entity>;
+    let _entity: Field.Base<Entity>;
 
     // Basic
     {
@@ -84,7 +84,7 @@ import { Field } from "./index.js";
       _entity = {} as Field<Account>;
       _entity = {} as Field<User>;
 
-      let _account: Field.Common<Account>;
+      let _account: Field.Base<Account>;
       // @ts-expect-error
       _account = {} as Field<Account | User>;
       _account = {} as Field<Account>;
@@ -94,18 +94,18 @@ import { Field } from "./index.js";
 
     // Qualifier
     {
-      let _common: Field.Common<Entity>;
-      _common = {} as Field<Account | User, "detachable">;
-      _common = {} as Field<Account | User, "detachable" | "tried">;
+      let _base: Field.Base<Entity>;
+      _base = {} as Field<Account | User, "detachable">;
+      _base = {} as Field<Account | User, "detachable" | "tried">;
 
-      let _detachable: Field.Common<Entity, "detachable">;
+      let _detachable: Field.Base<Entity, "detachable">;
       _detachable = {} as Field<Account | User, "detachable">;
       _detachable = {} as Field<Account, "detachable">;
       _detachable = {} as Field<Account, "detachable" | "tried">;
       // @ts-expect-error
       _detachable = {} as Field<Entity>;
 
-      let _mixed: Field.Common<Entity, "detachable" | "tried">;
+      let _mixed: Field.Base<Entity, "detachable" | "tried">;
       _mixed = {} as Field<Account | User, "detachable" | "tried">;
       _mixed = {} as Field<Account, "detachable" | "tried">;
       _mixed = {} as Field<Account, "detachable" | "tried" | "bound">;
@@ -120,7 +120,7 @@ import { Field } from "./index.js";
       _entity = {} as Field<Entity, never, ContainerParent>;
       _entity = {} as Field<Entity, never, OrganizationParent>;
 
-      let _container: Field.Common<Entity, never, ContainerParent>;
+      let _container: Field.Base<Entity, never, ContainerParent>;
       _container = {} as Field<Account | User, never, ContainerParent>;
       _container = {} as Field<Account, never, ContainerParent>;
       _container = {} as Field<User, never, ContainerParent>;
@@ -129,7 +129,7 @@ import { Field } from "./index.js";
       // @ts-expect-error
       _container = {} as Field<Entity, never, OrganizationParent>;
 
-      let _organization: Field.Common<User, never, OrganizationParent>;
+      let _organization: Field.Base<User, never, OrganizationParent>;
       _organization = {} as Field<User, never, OrganizationParent>;
       // @ts-expect-error
       _organization = {} as Field<Entity, never, OrganizationParent>;
@@ -140,7 +140,7 @@ import { Field } from "./index.js";
     }
   }
 
-  // `Field` as `Field`
+  // Field as Field
   {
     let _entity: Field<Entity>;
 
@@ -162,9 +162,9 @@ import { Field } from "./index.js";
 
     // Qualifier
     {
-      let _common: Field<Entity>;
-      _common = {} as Field<Entity, "detachable">;
-      _common = {} as Field<Entity, "detachable" | "tried">;
+      let _base: Field<Entity>;
+      _base = {} as Field<Entity, "detachable">;
+      _base = {} as Field<Entity, "detachable" | "tried">;
 
       let _detachable: Field<Entity, "detachable">;
       // @ts-expect-error
@@ -238,91 +238,91 @@ import { Field } from "./index.js";
     }
   }
 
-  // `Field.Common` as `Field`
+  // Field.Base as Field
   {
     let _entity: Field<Entity>;
 
     // Basic
     {
       // @ts-expect-error
-      _entity = {} as Field.Common<Account | User>;
+      _entity = {} as Field.Base<Account | User>;
       // @ts-expect-error
-      _entity = {} as Field.Common<Account>;
+      _entity = {} as Field.Base<Account>;
       // @ts-expect-error
-      _entity = {} as Field.Common<User>;
+      _entity = {} as Field.Base<User>;
 
       let _account: Field<Account>;
       // @ts-expect-error
-      _account = {} as Field.Common<Account | User>;
+      _account = {} as Field.Base<Account | User>;
       // @ts-expect-error
-      _account = {} as Field.Common<Account>;
+      _account = {} as Field.Base<Account>;
       // @ts-expect-error
-      _account = {} as Field.Common<User>;
+      _account = {} as Field.Base<User>;
     }
 
     // Qualifier
     {
-      let _common: Field<Entity>;
+      let _base: Field<Entity>;
       // @ts-expect-error
-      _common = {} as Field.Common<Entity, "detachable">;
+      _base = {} as Field.Base<Entity, "detachable">;
       // @ts-expect-error
-      _common = {} as Field.Common<Entity, "detachable" | "tried">;
+      _base = {} as Field.Base<Entity, "detachable" | "tried">;
 
       let _detachable: Field<Entity, "detachable">;
       // @ts-expect-error
-      _detachable = {} as Field.Common<Account | User, "detachable">;
+      _detachable = {} as Field.Base<Account | User, "detachable">;
       // @ts-expect-error
-      _detachable = {} as Field.Common<Account, "detachable">;
+      _detachable = {} as Field.Base<Account, "detachable">;
       // @ts-expect-error
-      _detachable = {} as Field.Common<Account, "detachable" | "tried">;
+      _detachable = {} as Field.Base<Account, "detachable" | "tried">;
       // @ts-expect-error
-      _detachable = {} as Field.Common<User, "detachable">;
+      _detachable = {} as Field.Base<User, "detachable">;
 
       let _mixed: Field<Entity, "detachable" | "tried">;
       // @ts-expect-error
-      _mixed = {} as Field.Common<Account | User, "detachable" | "tried">;
+      _mixed = {} as Field.Base<Account | User, "detachable" | "tried">;
       // @ts-expect-error
-      _mixed = {} as Field.Common<Account, "detachable" | "tried">;
+      _mixed = {} as Field.Base<Account, "detachable" | "tried">;
       // @ts-expect-error
-      _mixed = {} as Field.Common<Account, "detachable" | "tried" | "bound">;
+      _mixed = {} as Field.Base<Account, "detachable" | "tried" | "bound">;
       // @ts-expect-error
-      _mixed = {} as Field.Common<Entity, "detachable">;
+      _mixed = {} as Field.Base<Entity, "detachable">;
       // @ts-expect-error
-      _mixed = {} as Field.Common<Entity, "tried">;
+      _mixed = {} as Field.Base<Entity, "tried">;
     }
 
     // Parent
     {
       // @ts-expect-error
-      _entity = {} as Field.Common<Entity, never, ContainerParent>;
+      _entity = {} as Field.Base<Entity, never, ContainerParent>;
       // @ts-expect-error
-      _entity = {} as Field.Common<Entity, never, OrganizationParent>;
+      _entity = {} as Field.Base<Entity, never, OrganizationParent>;
 
       let _container: Field<Entity, never, ContainerParent>;
       // @ts-expect-error
-      _container = {} as Field.Common<Entity, never, ContainerParent>;
+      _container = {} as Field.Base<Entity, never, ContainerParent>;
       // @ts-expect-error
-      _container = {} as Field.Common<Account | User, never, ContainerParent>;
+      _container = {} as Field.Base<Account | User, never, ContainerParent>;
       // @ts-expect-error
-      _container = {} as Field.Common<Account, never, ContainerParent>;
+      _container = {} as Field.Base<Account, never, ContainerParent>;
       // @ts-expect-error
-      _container = {} as Field.Common<Account>;
+      _container = {} as Field.Base<Account>;
       // @ts-expect-error
-      _container = {} as Field.Common<Entity, never, OrganizationParent>;
+      _container = {} as Field.Base<Entity, never, OrganizationParent>;
 
       let _organization: Field<User, never, OrganizationParent>;
       // @ts-expect-error
-      _organization = {} as Field.Common<User, never, OrganizationParent>;
+      _organization = {} as Field.Base<User, never, OrganizationParent>;
       // @ts-expect-error
-      _organization = {} as Field.Common<Entity, never, OrganizationParent>;
+      _organization = {} as Field.Base<Entity, never, OrganizationParent>;
       // @ts-expect-error
-      _organization = {} as Field.Common<
+      _organization = {} as Field.Base<
         Account | User,
         never,
         OrganizationParent
       >;
       // @ts-expect-error
-      _organization = {} as Field.Common<User, never, ContainerParent>;
+      _organization = {} as Field.Base<User, never, ContainerParent>;
     }
   }
 }
@@ -330,19 +330,19 @@ import { Field } from "./index.js";
 
 //#region Static
 
-//#region Field.common
+//#region Field.base
 {
   // Basic
   {
     const entity = {} as Field<User> | Field<Account>;
 
-    const result = Field.common(entity);
+    const result = Field.base(entity);
 
-    result satisfies Field.Common<User | Account>;
+    result satisfies Field.Base<User | Account>;
     // @ts-expect-error
     result satisfies Field<User | Account>;
     // @ts-expect-error
-    result satisfies Field.Common<Hello>;
+    result satisfies Field.Base<Hello>;
 
     result.value satisfies User | Account;
     // @ts-expect-error
@@ -357,17 +357,17 @@ import { Field } from "./index.js";
         | Field<User, "detachable">
         | Field<Account, "detachable">;
 
-      const result = Field.common(entity);
+      const result = Field.base(entity);
 
-      result satisfies Field.Common<User | Account, "detachable">;
+      result satisfies Field.Base<User | Account, "detachable">;
       // @ts-expect-error
-      result satisfies Field.Common<User | Account, "detachable" | "bound">;
+      result satisfies Field.Base<User | Account, "detachable" | "bound">;
       // @ts-expect-error
-      result satisfies Field.Common<User | Account, "bound">;
+      result satisfies Field.Base<User | Account, "bound">;
       // @ts-expect-error
       result satisfies Field<User | Account, "detachable">;
       // @ts-expect-error
-      result satisfies Field.Common<Hello, "detachable">;
+      result satisfies Field.Base<Hello, "detachable">;
 
       result.value satisfies User | Account;
       // @ts-expect-error
@@ -380,15 +380,15 @@ import { Field } from "./index.js";
         | Field<User, "detachable">
         | Field<Account, "detachable" | "bound">;
 
-      const result = Field.common(entity);
+      const result = Field.base(entity);
 
-      result satisfies Field.Common<User | Account, "detachable">;
+      result satisfies Field.Base<User | Account, "detachable">;
       // @ts-expect-error
-      result satisfies Field.Common<User | Account, "detachable" | "bound">;
+      result satisfies Field.Base<User | Account, "detachable" | "bound">;
       // @ts-expect-error
       result satisfies Field<User | Account, "detachable">;
       // @ts-expect-error
-      result satisfies Field.Common<Hello, "detachable">;
+      result satisfies Field.Base<Hello, "detachable">;
 
       result.value satisfies User | Account;
       // @ts-expect-error
@@ -471,13 +471,13 @@ import { Field } from "./index.js";
     return Math.random() > 0.5 ? field.value : field.useValue();
   }
 
-  // `Field.Common`
+  // Field.Base
   {
     // Primitive
     {
-      const number = {} as Field.Common<number>;
-      const boolean = {} as Field.Common<boolean>;
-      const string = {} as Field.Common<string>;
+      const number = {} as Field.Base<number>;
+      const boolean = {} as Field.Base<boolean>;
+      const string = {} as Field.Base<string>;
 
       number.value satisfies number;
       boolean.value satisfies boolean;
@@ -486,9 +486,9 @@ import { Field } from "./index.js";
 
     // Object
     {
-      const entity = {} as Field.Common<Entity>;
-      const account = {} as Field.Common<Account>;
-      const user = {} as Field.Common<User>;
+      const entity = {} as Field.Base<Entity>;
+      const account = {} as Field.Base<Account>;
+      const user = {} as Field.Base<User>;
 
       entity.value satisfies Entity;
       // @ts-expect-error
@@ -508,8 +508,8 @@ import { Field } from "./index.js";
 
       // Parent
 
-      const container = {} as Field.Common<Entity, never, ContainerParent>;
-      const organization = {} as Field.Common<User, never, OrganizationParent>;
+      const container = {} as Field.Base<Entity, never, ContainerParent>;
+      const organization = {} as Field.Base<User, never, OrganizationParent>;
 
       if ("field" in container.parent) {
         container.parent.field satisfies Field.Immutable<Container>;
@@ -530,7 +530,7 @@ import { Field } from "./index.js";
 
     // Union value
     {
-      const entity = {} as Field.Common<Account | User>;
+      const entity = {} as Field.Base<Account | User>;
 
       entity.$.name satisfies Field<string>;
       // @ts-expect-error
@@ -545,7 +545,7 @@ import { Field } from "./index.js";
 
     // Union field
     {
-      const entity = {} as Field.Common<Account> | Field.Common<User>;
+      const entity = {} as Field.Base<Account> | Field.Base<User>;
 
       entity.$.name satisfies Field<string>;
       // @ts-expect-error
@@ -559,7 +559,7 @@ import { Field } from "./index.js";
     }
   }
 
-  // `Field`
+  // Field
   {
     // Primitive
     {
@@ -669,7 +669,7 @@ import { Field } from "./index.js";
 {
   const field = new Field("hello") as
     | Field<string>
-    | Field.Common<string>
+    | Field.Base<string>
     | Field.Immutable<string>;
 
   field.dirty satisfies boolean;
@@ -682,7 +682,7 @@ import { Field } from "./index.js";
 {
   const field = new Field("hello") as
     | Field<string>
-    | Field.Common<string>
+    | Field.Base<string>
     | Field.Immutable<string>;
 
   const result = field.useDirty();
@@ -761,7 +761,7 @@ import { Field } from "./index.js";
 {
   const field = new Field("hello") as
     | Field<string>
-    | Field.Common<string>
+    | Field.Base<string>
     | Field.Immutable<string>;
 
   const result = field.commit();
@@ -775,7 +775,7 @@ import { Field } from "./index.js";
 {
   const field = new Field("hello") as
     | Field<string>
-    | Field.Common<string>
+    | Field.Base<string>
     | Field.Immutable<string>;
 
   const result = field.reset();
@@ -797,7 +797,7 @@ import { Field } from "./index.js";
 
     user.root satisfies Field.Immutable<unknown, "root">;
     // @ts-expect-error
-    user.root satisfies Field.Invariant<unknown, "root">;
+    user.root satisfies Field.Exact<unknown, "root">;
   }
 }
 //#endregion
@@ -811,11 +811,11 @@ import { Field } from "./index.js";
     if ("field" in organization.parent) {
       organization.parent.field satisfies Field.Immutable<Organization>;
       // @ts-expect-error
-      organization.parent.field satisfies Field.Invariant<Organization>;
+      organization.parent.field satisfies Field.Exact<Organization>;
 
       organization.parent.field.$.owner satisfies Field.Immutable<User>;
       // @ts-expect-error
-      organization.parent.field.$.owner satisfies Field.Invariant<User>;
+      organization.parent.field.$.owner satisfies Field.Exact<User>;
     }
   }
 }
@@ -831,19 +831,19 @@ import { Field } from "./index.js";
     // @ts-expect-error
     field.$[0].$;
 
-    field.$[0] satisfies Field.Common<number | undefined> | undefined;
+    field.$[0] satisfies Field.Base<number | undefined> | undefined;
     // @ts-expect-error
     field.$[0] satisfies
-      | Field.Common<number | undefined, "detachable">
+      | Field.Base<number | undefined, "detachable">
       | undefined;
     // @ts-expect-error
     field.$[0] satisfies Field<number | undefined> | undefined;
     // @ts-expect-error
-    field.$[0] satisfies Field.Common<number>;
+    field.$[0] satisfies Field.Base<number>;
     // @ts-expect-error
-    field.$[0] satisfies Field.Common<number>;
+    field.$[0] satisfies Field.Base<number>;
     // @ts-expect-error
-    field.$[0] satisfies Field.Common<number | undefined>;
+    field.$[0] satisfies Field.Base<number | undefined>;
   }
 
   // Array
@@ -939,17 +939,17 @@ import { Field } from "./index.js";
 
     field.at(0).$;
 
-    field.at(0) satisfies Field.Common<number | undefined>;
+    field.at(0) satisfies Field.Base<number | undefined>;
     // @ts-expect-error
     field.at(0) satisfies undefined;
     // @ts-expect-error
-    field.at(0) satisfies Field.Common<number | undefined, "detachable">;
+    field.at(0) satisfies Field.Base<number | undefined, "detachable">;
     // @ts-expect-error
-    field.at(0) satisfies Field.Common<number> | undefined;
+    field.at(0) satisfies Field.Base<number> | undefined;
     // @ts-expect-error
-    field.at(0) satisfies State.Common<number>;
+    field.at(0) satisfies State.Base<number>;
     // @ts-expect-error
-    field.at(0) satisfies Field.Common<string>;
+    field.at(0) satisfies Field.Base<string>;
   }
 
   // Array
@@ -1043,11 +1043,11 @@ import { Field } from "./index.js";
   {
     const field = {} as Field<User> | Field<Account>;
 
-    Field.common(field).at("name") satisfies Field<string>;
+    Field.base(field).at("name") satisfies Field<string>;
     // @ts-expect-error
-    Field.common(field).at("name") satisfies State<string>;
+    Field.base(field).at("name") satisfies State<string>;
     // @ts-expect-error
-    Field.common(field).at("name") satisfies Field<number>;
+    Field.base(field).at("name") satisfies Field<number>;
   }
 
   // Key union
@@ -1098,19 +1098,19 @@ import { Field } from "./index.js";
     // @ts-expect-error
     field.try(0).$;
 
-    field.try(0) satisfies Field.Common<number, "tried"> | undefined;
+    field.try(0) satisfies Field.Base<number, "tried"> | undefined;
     // @ts-expect-error
-    field.try(0) satisfies Field.Common<number>;
+    field.try(0) satisfies Field.Base<number>;
     // @ts-expect-error
     field.try(0) satisfies undefined;
     // @ts-expect-error
     field.try(0) satisfies
-      | Field.Common<number, "tried" | "detachable">
+      | Field.Base<number, "tried" | "detachable">
       | undefined;
     // @ts-expect-error
-    field.try(0) satisfies State.Common<number>;
+    field.try(0) satisfies State.Base<number>;
     // @ts-expect-error
-    field.try(0) satisfies Field.Common<string>;
+    field.try(0) satisfies Field.Base<string>;
   }
 
   // Array
@@ -1213,24 +1213,24 @@ import { Field } from "./index.js";
   {
     const field = {} as Field<User> | Field<Account>;
 
-    Field.common(field).try("name") satisfies Field<string, "tried">;
-    Field.common(field).try("name").id;
+    Field.base(field).try("name") satisfies Field<string, "tried">;
+    Field.base(field).try("name").id;
     // @ts-expect-error
-    Field.common(field).try("name") satisfies State<string, "tried">;
+    Field.base(field).try("name") satisfies State<string, "tried">;
     // @ts-expect-error
-    Field.common(field).try("name") satisfies Field<number, "tried">;
+    Field.base(field).try("name") satisfies Field<number, "tried">;
 
-    Field.common(field).try("flag") satisfies
+    Field.base(field).try("flag") satisfies
       | Field<boolean, "detachable" | "tried">
       | undefined;
     // @ts-expect-error
-    Field.common(field).try("flag").id;
+    Field.base(field).try("flag").id;
     // @ts-expect-error
-    Field.common(field).try("flag") satisfies
+    Field.base(field).try("flag") satisfies
       | State<boolean, "detachable" | "tried">
       | undefined;
     // @ts-expect-error
-    Field.common(field).try("flag") satisfies Field<
+    Field.base(field).try("flag") satisfies Field<
       number,
       "detachable" | "tried"
     >;
@@ -1389,44 +1389,38 @@ import { Field } from "./index.js";
   {
     const entity = {} as Field<User> | Field<Account>;
 
-    Field.common(entity).self.try() satisfies Field.Common<
-      User | Account,
-      "tried"
-    >;
-    Field.common(entity).self.try().id;
+    Field.base(entity).self.try() satisfies Field.Base<User | Account, "tried">;
+    Field.base(entity).self.try().id;
     // @ts-expect-error
-    Field.common(entity).self.try() satisfies State.Common<
-      User | Account,
-      "tried"
-    >;
+    Field.base(entity).self.try() satisfies State.Base<User | Account, "tried">;
 
-    Field.common(entity).at("name").self.try() satisfies Field.Common<
+    Field.base(entity).at("name").self.try() satisfies Field.Base<
       string,
       "tried"
     >;
-    Field.common(entity).at("name").self.try().id;
+    Field.base(entity).at("name").self.try().id;
     // @ts-expect-error
-    Field.common(entity).at("name").self.try() satisfies State.Common<
+    Field.base(entity).at("name").self.try() satisfies State.Base<
       string,
       "tried"
     >;
     // @ts-expect-error
-    Field.common(entity).at("name").self.try() satisfies Field.Common<
+    Field.base(entity).at("name").self.try() satisfies Field.Base<
       number,
       "tried"
     >;
 
-    Field.common(entity).at("flag").self.try() satisfies
-      | Field.Common<boolean, "tried">
+    Field.base(entity).at("flag").self.try() satisfies
+      | Field.Base<boolean, "tried">
       | undefined;
     // @ts-expect-error
-    Field.common(entity).at("flag").self.try().id;
+    Field.base(entity).at("flag").self.try().id;
     // @ts-expect-error
-    Field.common(entity).at("flag").self.try() satisfies
-      | State.Common<boolean, "tried">
+    Field.base(entity).at("flag").self.try() satisfies
+      | State.Base<boolean, "tried">
       | undefined;
     // @ts-expect-error
-    Field.common(entity).at("flag").self.try() satisfies Field.Common<
+    Field.base(entity).at("flag").self.try() satisfies Field.Base<
       number,
       "tried"
     >;
@@ -1530,9 +1524,9 @@ const brandedPrim = new Field({} as Branded<string>);
   // Readonly array
   {
     const result = readonlyArr.forEach((item, index) => {
-      item satisfies Field.Common<string | boolean>;
+      item satisfies Field.Base<string | boolean>;
       // @ts-expect-error
-      item satisfies Field.Common<string | boolean, "detachable">;
+      item satisfies Field.Base<string | boolean, "detachable">;
       // @ts-expect-error
       item satisfies Field<string | boolean>;
       // @ts-expect-error
@@ -1545,9 +1539,9 @@ const brandedPrim = new Field({} as Branded<string>);
     result satisfies void;
 
     readonlyArr.forEach((item) => {
-      item satisfies Field.Common<string | boolean>;
+      item satisfies Field.Base<string | boolean>;
       // @ts-expect-error
-      item satisfies Field.Common<string | boolean, "detachable">;
+      item satisfies Field.Base<string | boolean, "detachable">;
       // @ts-expect-error
       item satisfies Field<string | boolean>;
       // @ts-expect-error
@@ -1725,9 +1719,9 @@ const brandedPrim = new Field({} as Branded<string>);
   // Readonly array
   {
     const result = readonlyArr.map((item, index) => {
-      item satisfies Field.Common<string | boolean>;
+      item satisfies Field.Base<string | boolean>;
       // @ts-expect-error
-      item satisfies Field.Common<string | boolean, "detachable">;
+      item satisfies Field.Base<string | boolean, "detachable">;
       // @ts-expect-error
       item satisfies Field<string | boolean>;
       // @ts-expect-error
@@ -1742,9 +1736,9 @@ const brandedPrim = new Field({} as Branded<string>);
     result satisfies number[];
 
     readonlyArr.map((item) => {
-      item satisfies Field.Common<string | boolean>;
+      item satisfies Field.Base<string | boolean>;
       // @ts-expect-error
-      item satisfies Field.Common<string | boolean, "detachable">;
+      item satisfies Field.Base<string | boolean, "detachable">;
       // @ts-expect-error
       item satisfies Field<string | boolean>;
       // @ts-expect-error
@@ -1915,33 +1909,33 @@ const brandedPrim = new Field({} as Branded<string>);
   // Readonly array
   {
     const result = readonlyArr.find((item, index) => {
-      item satisfies Field.Common<string | boolean>;
+      item satisfies Field.Base<string | boolean>;
       // @ts-expect-error
-      item satisfies Field.Common<string | boolean, "detachable">;
+      item satisfies Field.Base<string | boolean, "detachable">;
       // @ts-expect-error
       item satisfies Field<string | boolean>;
       index satisfies number;
       return item.value === "hello";
     });
 
-    result satisfies Field.Common<string | boolean> | undefined;
+    result satisfies Field.Base<string | boolean> | undefined;
     // @ts-expect-error
-    result satisfies Field.Common<string | boolean, "detachable"> | undefined;
+    result satisfies Field.Base<string | boolean, "detachable"> | undefined;
     // @ts-expect-error
     result satisfies Field<string | boolean> | undefined;
     // @ts-expect-error
-    result satisfies Field.Common<string> | Field<boolean, "detachable">;
+    result satisfies Field.Base<string> | Field<boolean, "detachable">;
     // @ts-expect-error
-    result satisfies Field.Common<string | boolean>;
+    result satisfies Field.Base<string | boolean>;
     // @ts-expect-error
     result satisfies undefined;
     // @ts-expect-error
     result.any;
 
     readonlyArr.find((item) => {
-      item satisfies Field.Common<string | boolean>;
+      item satisfies Field.Base<string | boolean>;
       // @ts-expect-error
-      item satisfies Field.Common<string | boolean, "detachable">;
+      item satisfies Field.Base<string | boolean, "detachable">;
       // @ts-expect-error
       item satisfies Field<string | boolean>;
       return true;
@@ -2156,31 +2150,31 @@ const brandedPrim = new Field({} as Branded<string>);
   // Array
   {
     const result = readonlyArr.find((item, index) => {
-      item satisfies Field.Common<string | boolean>;
+      item satisfies Field.Base<string | boolean>;
       // @ts-expect-error
-      item satisfies Field.Common<string | boolean, "detachable">;
+      item satisfies Field.Base<string | boolean, "detachable">;
       // @ts-expect-error
       item satisfies Field<string | boolean, "detachable">;
       index satisfies number;
       return item.value === "hello";
     });
 
-    result satisfies Field.Common<string | boolean> | undefined;
+    result satisfies Field.Base<string | boolean> | undefined;
     // @ts-expect-error
-    result satisfies Field.Common<string | boolean, "detachable"> | undefined;
+    result satisfies Field.Base<string | boolean, "detachable"> | undefined;
     // @ts-expect-error
     result satisfies Field<string | boolean> | undefined;
     // @ts-expect-error
-    result satisfies Field.Common<string> | Field.Common<boolean>;
+    result satisfies Field.Base<string> | Field.Base<boolean>;
     // @ts-expect-error
-    result satisfies Field.Common<string | boolean>;
+    result satisfies Field.Base<string | boolean>;
     // @ts-expect-error
     result satisfies undefined;
     // @ts-expect-error
     result.any;
 
     arr.find((item) => {
-      item satisfies Field.Common<string | boolean>;
+      item satisfies Field.Base<string | boolean>;
       return true;
     });
     arr.find(() => true);
@@ -2636,9 +2630,9 @@ const brandedPrim = new Field({} as Branded<string>);
     field.insert("length", 0);
   }
 
-  // Common
+  // Base
   {
-    const field = new Field([]) as Field.Common<string[]>;
+    const field = new Field([]) as Field.Base<string[]>;
     // @ts-expect-error
     field.insert(0, "hello");
   }
@@ -2700,14 +2694,14 @@ const brandedPrim = new Field({} as Branded<string>);
 
   // Primitive
   {
-    const field = new Field("") as Field.Common<string>;
+    const field = new Field("") as Field.Base<string>;
     // @ts-expect-error
     field.push("hello");
   }
 
-  // Common
+  // Base
   {
-    const field = new Field([]) as Field.Common<string[]>;
+    const field = new Field([]) as Field.Base<string[]>;
     // @ts-expect-error
     field.push("hello");
   }
@@ -3022,7 +3016,7 @@ const unionField = new Field({ hello: "world", world: true }) as
 
     if (result.discriminator === "user") {
       result.field satisfies Field<User>;
-      result.field satisfies Field.Common<User>;
+      result.field satisfies Field.Base<User>;
       // @ts-expect-error
       result.field satisfies Field<Organization>;
       // @ts-expect-error
@@ -3032,13 +3026,13 @@ const unionField = new Field({ hello: "world", world: true }) as
     }
 
     const _manual1: Field.Discriminated<User | Organization, "type"> = result;
-    const _manual2: Field.Common.Discriminated<User | Organization, "type"> =
+    const _manual2: Field.Base.Discriminated<User | Organization, "type"> =
       result;
     const _manual3: Field.Discriminated<
       User | Organization | Unrelated,
       "type"
     > = result;
-    const _manual4: Field.Common.Discriminated<
+    const _manual4: Field.Base.Discriminated<
       User | Organization | Unrelated,
       "type"
     > = result;
@@ -3055,67 +3049,67 @@ const unionField = new Field({ hello: "world", world: true }) as
 
   // Field union
   {
-    const result = Field.common(unionField).discriminate("type");
+    const result = Field.base(unionField).discriminate("type");
 
     result satisfies
       | {
           discriminator: "user";
-          field: Field.Common<User>;
+          field: Field.Base<User>;
         }
       | {
           discriminator: "organization";
-          field: Field.Common<Organization>;
+          field: Field.Base<Organization>;
         }
       | {
           discriminator: unknown;
-          field: Field.Common<unknown>;
+          field: Field.Base<unknown>;
         };
     // @ts-expect-error
     result satisfies
       | {
           discriminator: "user";
-          field: Field.Common<User, "detachable">;
+          field: Field.Base<User, "detachable">;
         }
       | {
           discriminator: "organization";
-          field: Field.Common<Organization, "detachable">;
+          field: Field.Base<Organization, "detachable">;
         }
       | {
           discriminator: unknown;
-          field: Field.Common<unknown>;
+          field: Field.Base<unknown>;
         };
     // @ts-expect-error
     result satisfies
       | {
           discriminator: "user";
-          field: Field.Common<User, "tried">;
+          field: Field.Base<User, "tried">;
         }
       | {
           discriminator: "organization";
-          field: Field.Common<Organization, "tried">;
+          field: Field.Base<Organization, "tried">;
         }
       | {
           discriminator: unknown;
-          field: Field.Common<unknown>;
+          field: Field.Base<unknown>;
         };
     // @ts-expect-error
     result.any;
 
     if (result.discriminator === "user") {
-      result.field satisfies Field.Common<User>;
+      result.field satisfies Field.Base<User>;
       // @ts-expect-error
       result.field satisfies Field<User>;
       // @ts-expect-error
-      result.field satisfies Field.Common<Organization>;
+      result.field satisfies Field.Base<Organization>;
       // @ts-expect-error
       result.field.any;
 
       result.field.value satisfies User;
     }
 
-    const _manual1: Field.Common.Discriminated<User | Organization, "type"> =
+    const _manual1: Field.Base.Discriminated<User | Organization, "type"> =
       result;
-    const _manual2: Field.Common.Discriminated<
+    const _manual2: Field.Base.Discriminated<
       User | Organization | Unrelated,
       "type"
     > = result;
@@ -3123,11 +3117,11 @@ const unionField = new Field({ hello: "world", world: true }) as
     const _manualWrong1: Field.Discriminated<User | Organization, "type"> =
       result;
     // @ts-expect-error
-    const _manualWrong2: Field.Common.Discriminated<User, "type"> = result;
+    const _manualWrong2: Field.Base.Discriminated<User, "type"> = result;
     // @ts-expect-error
-    const _manualWrong4: Field.Common.Discriminated<Unrelated, "type"> = result;
+    const _manualWrong4: Field.Base.Discriminated<Unrelated, "type"> = result;
     // @ts-expect-error
-    const _manualWrong5: Field.Common.Discriminated<Named, "type"> = result;
+    const _manualWrong5: Field.Base.Discriminated<Named, "type"> = result;
 
     // @ts-expect-error
     unionField.discriminate("paid");
@@ -3185,7 +3179,7 @@ const unionField = new Field({ hello: "world", world: true }) as
 
     if (result.discriminator === "user") {
       result.field satisfies Field<User>;
-      result.field satisfies Field.Common<User>;
+      result.field satisfies Field.Base<User>;
       // @ts-expect-error
       result.field satisfies Field<Organization>;
       // @ts-expect-error
@@ -3198,11 +3192,11 @@ const unionField = new Field({ hello: "world", world: true }) as
       User | Organization | undefined,
       "type"
     > = result;
-    const _manual2: Field.Common.Discriminated<
+    const _manual2: Field.Base.Discriminated<
       User | Organization | undefined,
       "type"
     > = result;
-    const _manual3: Field.Common.Discriminated<
+    const _manual3: Field.Base.Discriminated<
       User | Organization | undefined | Unrelated,
       "type"
     > = result;
@@ -3253,7 +3247,7 @@ const unionField = new Field({ hello: "world", world: true }) as
 
     if (result.discriminator === "user") {
       result.field satisfies Field<User, "detachable">;
-      result.field satisfies Field.Common<User, "detachable">;
+      result.field satisfies Field.Base<User, "detachable">;
       // @ts-expect-error
       result.field satisfies Field<User, "bound">;
       // @ts-expect-error
@@ -3270,7 +3264,7 @@ const unionField = new Field({ hello: "world", world: true }) as
       "detachable"
     > = result;
     const _manual2: Field.Discriminated<User | Organization, "type"> = result;
-    const _manual3: Field.Common.Discriminated<
+    const _manual3: Field.Base.Discriminated<
       User | Organization,
       "type",
       "detachable"
@@ -3280,7 +3274,7 @@ const unionField = new Field({ hello: "world", world: true }) as
       "type",
       "detachable"
     > = result;
-    const _manual5: Field.Common.Discriminated<
+    const _manual5: Field.Base.Discriminated<
       User | Organization | Unrelated,
       "type",
       "detachable"
@@ -3304,7 +3298,7 @@ const unionField = new Field({ hello: "world", world: true }) as
 
   // Mixed
   {
-    const result = Field.common(
+    const result = Field.base(
       unionField as
         | Field<User, "detachable" | "tried">
         | Field<Organization, "detachable">,
@@ -3313,29 +3307,29 @@ const unionField = new Field({ hello: "world", world: true }) as
     result satisfies
       | {
           discriminator: "user";
-          field: Field.Common<User, "detachable">;
+          field: Field.Base<User, "detachable">;
         }
       | {
           discriminator: "organization";
-          field: Field.Common<Organization, "detachable">;
+          field: Field.Base<Organization, "detachable">;
         }
       | {
           discriminator: unknown;
-          field: Field.Common<unknown, "detachable">;
+          field: Field.Base<unknown, "detachable">;
         };
     // @ts-expect-error
     result satisfies
       | {
           discriminator: "user";
-          field: Field.Common<User, "detachable" | "tried">;
+          field: Field.Base<User, "detachable" | "tried">;
         }
       | {
           discriminator: "organization";
-          field: Field.Common<Organization, "detachable" | "tried">;
+          field: Field.Base<Organization, "detachable" | "tried">;
         }
       | {
           discriminator: unknown;
-          field: Field.Common<unknown, "detachable" | "tried">;
+          field: Field.Base<unknown, "detachable" | "tried">;
         };
     // @ts-expect-error
     result satisfies
@@ -3349,37 +3343,37 @@ const unionField = new Field({ hello: "world", world: true }) as
         }
       | {
           discriminator: unknown;
-          field: Field.Common<unknown, "detachable">;
+          field: Field.Base<unknown, "detachable">;
         };
     // @ts-expect-error
     result.any;
 
     if (result.discriminator === "user") {
-      result.field satisfies Field.Common<User, "detachable">;
+      result.field satisfies Field.Base<User, "detachable">;
       // @ts-expect-error
       result.field satisfies Field<User, "detachable">;
       // @ts-expect-error
-      result.field satisfies Field.Common<User, "tried">;
+      result.field satisfies Field.Base<User, "tried">;
       // @ts-expect-error
-      result.field satisfies Field.Common<Organization, "detachable">;
+      result.field satisfies Field.Base<Organization, "detachable">;
       // @ts-expect-error
       result.field.any;
 
       result.field.value satisfies User;
     }
 
-    const _manual1: Field.Common.Discriminated<
+    const _manual1: Field.Base.Discriminated<
       User | Organization,
       "type",
       "detachable"
     > = result;
-    const _manual2: Field.Common.Discriminated<
+    const _manual2: Field.Base.Discriminated<
       User | Organization | Unrelated,
       "type",
       "detachable"
     > = result;
     // @ts-expect-error
-    const _manualWrong1: Field.Common.Discriminated<
+    const _manualWrong1: Field.Base.Discriminated<
       User | Organization,
       "type",
       "bound"
@@ -3391,23 +3385,17 @@ const unionField = new Field({ hello: "world", world: true }) as
       "detachable"
     > = result;
     // @ts-expect-error
-    const _manualWrong3: Field.Common.Discriminated<
-      User,
-      "type",
-      "detachable"
-    > = result;
+    const _manualWrong3: Field.Base.Discriminated<User, "type", "detachable"> =
+      result;
     // @ts-expect-error
-    const _manualWrong5: Field.Common.Discriminated<
+    const _manualWrong5: Field.Base.Discriminated<
       Unrelated,
       "type",
       "detachable"
     > = result;
     // @ts-expect-error
-    const _manualWrong6: Field.Common.Discriminated<
-      Named,
-      "type",
-      "detachable"
-    > = result;
+    const _manualWrong6: Field.Base.Discriminated<Named, "type", "detachable"> =
+      result;
   }
 
   // Immutable
@@ -3447,15 +3435,15 @@ const unionField = new Field({ hello: "world", world: true }) as
     result satisfies
       | {
           discriminator: "user";
-          field: Field.Common<User, "detachable">;
+          field: Field.Base<User, "detachable">;
         }
       | {
           discriminator: "organization";
-          field: Field.Common<Organization, "detachable">;
+          field: Field.Base<Organization, "detachable">;
         }
       | {
           discriminator: unknown;
-          field: Field.Common<unknown, "detachable">;
+          field: Field.Base<unknown, "detachable">;
         };
     // @ts-expect-error
     result satisfies
@@ -3479,7 +3467,7 @@ const unionField = new Field({ hello: "world", world: true }) as
       // @ts-expect-error
       result.field satisfies Field<User>;
       // @ts-expect-error
-      result.field satisfies Field.Common<User>;
+      result.field satisfies Field.Base<User>;
       // @ts-expect-error
       result.field satisfies Field.Immutable<Organization>;
       // @ts-expect-error
@@ -3525,7 +3513,7 @@ const unionField = new Field({ hello: "world", world: true }) as
 
 //#region Field["into"]
 {
-  // Invariant
+  // Exact
   {
     const field = new Field("hello");
     const result = field
@@ -3579,9 +3567,9 @@ const unionField = new Field({ hello: "world", world: true }) as
     nestedResult.any;
   }
 
-  // Common
+  // Base
   {
-    const field = new Field("hello") as Field.Common<string>;
+    const field = new Field("hello") as Field.Base<string>;
     const result = field
       .into((value) => {
         value satisfies string;
@@ -3602,12 +3590,12 @@ const unionField = new Field({ hello: "world", world: true }) as
         return value.slice(0, sizeValue);
       });
 
-    result satisfies Field.Common<number, Field.Proxied<string>>;
-    result satisfies Field.Common<number>;
-    result satisfies Field.Common<number, Field.Proxied<any>>;
-    result satisfies Field.Common<number, Field.Proxied<unknown>>;
+    result satisfies Field.Base<number, Field.Proxied<string>>;
+    result satisfies Field.Base<number>;
+    result satisfies Field.Base<number, Field.Proxied<any>>;
+    result satisfies Field.Base<number, Field.Proxied<unknown>>;
     // @ts-expect-error
-    result satisfies Field.Common<number, Field.Proxied<number>>;
+    result satisfies Field.Base<number, Field.Proxied<number>>;
     // @ts-expect-error
     result satisfies Field<number, Field.Proxied<string>>;
 
@@ -3630,7 +3618,7 @@ const unionField = new Field({ hello: "world", world: true }) as
 
         return Number(stringifiedValue);
       });
-    nestedResult satisfies Field.Common<string, Field.Proxied<number>>;
+    nestedResult satisfies Field.Base<string, Field.Proxied<number>>;
     // @ts-expect-error
     nestedResult.any;
   }
@@ -3723,7 +3711,7 @@ const unionField = new Field({ hello: "world", world: true }) as
 
 //#region Field["useInto"]
 {
-  // Invariant
+  // Exact
   {
     const field = new Field("hello");
     const result = field
@@ -3754,9 +3742,9 @@ const unionField = new Field({ hello: "world", world: true }) as
     result satisfies Field<number, Field.Proxied<number>>;
   }
 
-  // Common
+  // Base
   {
-    const field = new Field("hello") as Field.Common<string>;
+    const field = new Field("hello") as Field.Base<string>;
     const result = field
       .useInto((value) => {
         value satisfies string;
@@ -3777,12 +3765,12 @@ const unionField = new Field({ hello: "world", world: true }) as
         return value.slice(0, sizeValue);
       }, []);
 
-    result satisfies Field.Common<number, Field.Proxied<string>>;
-    result satisfies Field.Common<number>;
-    result satisfies Field.Common<number, Field.Proxied<any>>;
-    result satisfies Field.Common<number, Field.Proxied<unknown>>;
+    result satisfies Field.Base<number, Field.Proxied<string>>;
+    result satisfies Field.Base<number>;
+    result satisfies Field.Base<number, Field.Proxied<any>>;
+    result satisfies Field.Base<number, Field.Proxied<unknown>>;
     // @ts-expect-error
-    result satisfies Field.Common<number, Field.Proxied<number>>;
+    result satisfies Field.Base<number, Field.Proxied<number>>;
     // @ts-expect-error
     result satisfies Field<number, Field.Proxied<string>>;
   }
@@ -3862,12 +3850,12 @@ const unionField = new Field({ hello: "world", world: true }) as
       field.useDefined("string");
     }
 
-    // Common
+    // Base
     {
-      const field = new Field("hello") as Field.Common<string>;
+      const field = new Field("hello") as Field.Base<string>;
 
       const result = field.useDefined("string");
-      result satisfies Field.Common<string>;
+      result satisfies Field.Base<string>;
       // @ts-expect-error
       result satisfies Field<string>;
       // @ts-expect-error
@@ -3876,10 +3864,10 @@ const unionField = new Field({ hello: "world", world: true }) as
 
     // Immutable
     {
-      const field = new Field("hello") as Field.Common<string>;
+      const field = new Field("hello") as Field.Base<string>;
 
       const result = field.useDefined("string");
-      result satisfies Field.Common<string>;
+      result satisfies Field.Base<string>;
       // @ts-expect-error
       result satisfies Field<string>;
       // @ts-expect-error
@@ -3897,7 +3885,7 @@ const unionField = new Field({ hello: "world", world: true }) as
 {
   const field = new Field("hello") as
     | Field<string>
-    | Field.Common<string>
+    | Field.Base<string>
     | Field.Immutable<string>;
 
   field.errors satisfies Field.Error[];
@@ -3910,7 +3898,7 @@ const unionField = new Field({ hello: "world", world: true }) as
 {
   const field = new Field("hello") as
     | Field<string>
-    | Field.Common<string>
+    | Field.Base<string>
     | Field.Immutable<string>;
 
   const result = field.useErrors();
@@ -3924,7 +3912,7 @@ const unionField = new Field({ hello: "world", world: true }) as
 {
   const field = new Field("hello") as
     | Field<string>
-    | Field.Common<string>
+    | Field.Base<string>
     | Field.Immutable<string>;
 
   field.valid satisfies boolean;
@@ -3937,7 +3925,7 @@ const unionField = new Field({ hello: "world", world: true }) as
 {
   const field = new Field("hello") as
     | Field<string>
-    | Field.Common<string>
+    | Field.Base<string>
     | Field.Immutable<string>;
 
   const result = field.useValid();

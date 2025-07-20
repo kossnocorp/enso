@@ -191,9 +191,9 @@ import { Atom } from "./index.js";
 }
 //#endregion
 
-//#region Atom.Common.Value.Base
+//#region Atom.Base.Value.Base
 {
-  type BaseValue = Atom.Common.Value.Base<
+  type BaseValue = Atom.Base.Value.Base<
     Atom.Envelop<any, Account> | Atom.Envelop<any, User>
   >;
 
@@ -206,9 +206,9 @@ import { Atom } from "./index.js";
 }
 //#endregion
 
-//#region Atom.Common.Value.Shared
+//#region Atom.Base.Value.Shared
 {
-  type NoSharedValue = Atom.Common.Value.Shared<
+  type NoSharedValue = Atom.Base.Value.Shared<
     Atom.Envelop<any, Account> | Atom.Envelop<any, User>
   >;
 
@@ -216,7 +216,7 @@ import { Atom } from "./index.js";
   // @ts-expect-error
   tyst<NoSharedValue>({} as any);
 
-  type SharedValue = Atom.Common.Value.Shared<
+  type SharedValue = Atom.Base.Value.Shared<
     Atom.Envelop<any, User | undefined> | Atom.Envelop<any, User>
   >;
 
@@ -234,9 +234,9 @@ import { Atom } from "./index.js";
 }
 //#endregion
 
-//#region Atom.Common.Qualifier.Shared
+//#region Atom.Base.Qualifier.Shared
 {
-  type NoSharedQualifier = Atom.Common.Qualifier.Shared<
+  type NoSharedQualifier = Atom.Base.Qualifier.Shared<
     Atom.Envelop<any, any, "bound"> | Atom.Envelop<any, any, "detachable">
   >;
 
@@ -244,7 +244,7 @@ import { Atom } from "./index.js";
   // @ts-expect-error
   tyst<NoSharedQualifier>({} as any);
 
-  type SharedQualifier = Atom.Common.Qualifier.Shared<
+  type SharedQualifier = Atom.Base.Qualifier.Shared<
     | Atom.Envelop<any, any, "bound">
     | Atom.Envelop<any, any, "bound" | "detachable">
   >;

@@ -4,7 +4,7 @@ import { FieldChange, shiftChildChanges } from "../change/index.ts";
 export class EventsTree<Shell extends Atom.Shell> {
   #tree: EventsTree.Node<Shell> = EventsTree.node();
 
-  at(path: Atom.Path): Atom.Invariant.Envelop<Shell, any>[] {
+  at(path: Atom.Path): Atom.Exact.Envelop<Shell, any>[] {
     let node: EventsTree.Node<Shell> | undefined = this.#tree;
     for (const key of path) {
       node = node.children[key];
@@ -29,7 +29,7 @@ export class EventsTree<Shell extends Atom.Shell> {
     queue.reverse().forEach(([path, atoms]) => callback(path, atoms));
   }
 
-  add(path: Atom.Path, atom: Atom.Invariant.Envelop<Shell, any>) {
+  add(path: Atom.Path, atom: Atom.Exact.Envelop<Shell, any>) {
     let node = this.#tree;
     for (const key of path) {
       node = node.children[key] ??= EventsTree.node();
@@ -37,7 +37,7 @@ export class EventsTree<Shell extends Atom.Shell> {
     node.atoms.add(atom);
   }
 
-  delete(path: Atom.Path, atom: Atom.Invariant.Envelop<Shell, any>): boolean {
+  delete(path: Atom.Path, atom: Atom.Exact.Envelop<Shell, any>): boolean {
     let node: EventsTree.Node<Shell> | undefined = this.#tree;
     for (const key of path) {
       node = node?.children[key];
@@ -49,7 +49,7 @@ export class EventsTree<Shell extends Atom.Shell> {
   move(
     from: Atom.Path,
     to: Atom.Path,
-    atom: Atom.Invariant.Envelop<Shell, any>,
+    atom: Atom.Exact.Envelop<Shell, any>,
   ): boolean {
     if (this.delete(from, atom)) {
       this.add(to, atom);
@@ -75,12 +75,12 @@ export class EventsTree<Shell extends Atom.Shell> {
 
 export namespace EventsTree {
   export interface Node<Shell extends Atom.Shell> {
-    atoms: Set<Atom.Invariant.Envelop<Shell, unknown>>;
+    atoms: Set<Atom.Exact.Envelop<Shell, unknown>>;
     children: Record<keyof any, Node<Shell>>;
   }
 
   export type TraverseCallback<Shell extends Atom.Shell> = (
     path: Atom.Path,
-    atoms: Atom.Invariant.Envelop<Shell, unknown>[],
+    atoms: Atom.Exact.Envelop<Shell, unknown>[],
   ) => void;
 }

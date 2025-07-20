@@ -5,7 +5,7 @@
     // TODO
   }
 
-  // It allows to read common fields
+  // It allows to read base fields
   {
     // TODO
   }
@@ -33,7 +33,7 @@
     // TODO
   }
 
-  // It allows to read common fields
+  // It allows to read base fields
   {
     // TODO
   }
