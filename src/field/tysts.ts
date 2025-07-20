@@ -3736,39 +3736,83 @@ const brandedPrim = new Field({} as Branded<string>);
 
 //#region Field#watch
 {
-  const field = new Field("hello");
-  const off = field.watch((newValue, event) => {
-    newValue satisfies string;
-    // @ts-expect-error
-    newValue.any;
+  // Basic
+  {
+    const field = new Field("hello");
+    const off = field.watch((newValue, event) => {
+      newValue satisfies string;
+      // @ts-expect-error
+      newValue.any;
 
-    event satisfies ChangesEvent;
-    // @ts-expect-error
-    event.any;
-  });
+      event satisfies ChangesEvent;
+      // @ts-expect-error
+      event.any;
+    });
 
-  off();
-  // @ts-expect-error
-  off.any;
+    off();
+    // @ts-expect-error
+    off.any;
+  }
+
+  // Shared
+  {
+    const field = ({} as Field<string>).shared<[string, string | undefined]>();
+
+    const off = field.watch((newValue, event) => {
+      newValue satisfies string | undefined;
+      // @ts-expect-error
+      newValue.any;
+
+      event satisfies ChangesEvent;
+      // @ts-expect-error
+      event.any;
+    });
+
+    off();
+    // @ts-expect-error
+    off.any;
+  }
 }
 //#endregion
 
 //#region Field#useWatch
 {
-  const field = new Field("hello");
-  const off = field.useWatch((newValue, event) => {
-    newValue satisfies string;
-    // @ts-expect-error
-    newValue.any;
+  // Basic
+  {
+    const field = new Field("hello");
+    const off = field.useWatch((newValue, event) => {
+      newValue satisfies string;
+      // @ts-expect-error
+      newValue.any;
 
-    event satisfies ChangesEvent;
-    // @ts-expect-error
-    event.any;
-  }, []);
+      event satisfies ChangesEvent;
+      // @ts-expect-error
+      event.any;
+    }, []);
 
-  off();
-  // @ts-expect-error
-  off.any;
+    off();
+    // @ts-expect-error
+    off.any;
+  }
+
+  // Shared
+  {
+    const field = ({} as Field<string>).shared<[string, string | undefined]>();
+
+    const off = field.useWatch((newValue, event) => {
+      newValue satisfies string | undefined;
+      // @ts-expect-error
+      newValue.any;
+
+      event satisfies ChangesEvent;
+      // @ts-expect-error
+      event.any;
+    }, []);
+
+    off();
+    // @ts-expect-error
+    off.any;
+  }
 }
 //#endregion
 
