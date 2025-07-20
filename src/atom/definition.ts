@@ -131,9 +131,7 @@ export declare class Atom<
 
   get name(): string;
 
-  self: Utils.CovariantifyProperty<
-    Atom.Self.Envelop<Flavor, Value, Qualifier, Parent>
-  >;
+  self: Atom.Self.Envelop<Flavor, Value, Qualifier, Parent>;
 
   //#endregion
 
@@ -759,7 +757,7 @@ export namespace Atom {
 
     try: Atom.Try.Prop<Flavor, Value>;
 
-    self: Utils.CovariantifyProperty<Self.Envelop<Flavor, Value, Qualifier>>;
+    self: Self.Envelop<Flavor, Value, Qualifier>;
 
     //#endregion
 
@@ -1701,7 +1699,7 @@ export namespace Atom {
             ? never
             : Value extends object
               ? Value extends Utils.BrandedPrimitive
-                ? {}
+                ? Empty
                 : {
                     [Key in keyof Value]-?: Child<
                       Flavor,
@@ -1710,7 +1708,7 @@ export namespace Atom {
                       "indexed"
                     >;
                   }
-              : {}
+              : Empty
         : never;
   }
 
@@ -2125,7 +2123,7 @@ export namespace Atom {
   // the function were to resolve to `never`, it would act as it was just
   // `string[]`, which is incorrect.
 
-  export interface Empty {}
+  export type Empty = {};
 
   //#endregion
 }
