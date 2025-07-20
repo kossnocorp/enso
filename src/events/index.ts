@@ -1,11 +1,11 @@
 import type { Atom } from "../atom/definition.ts";
 import { FieldChange, shiftChildChanges } from "../change/index.ts";
 
-export class EventsTree<Shell extends Atom.Flavor.Shell> {
-  #tree: EventsTree.Node<Shell> = EventsTree.node();
+export class EventsTree<Kind extends Atom.Flavor.Kind> {
+  #tree: EventsTree.Node<Kind> = EventsTree.node();
 
-  at(path: Atom.Path): Atom.Exact.Envelop<Shell, any>[] {
-    let node: EventsTree.Node<Shell> | undefined = this.#tree;
+  at(path: Atom.Path): Atom.Exact.Envelop<Kind, any>[] {
+    let node: EventsTree.Node<Kind> | undefined = this.#tree;
     for (const key of path) {
       node = node.children[key];
       if (!node) return [];
@@ -13,9 +13,9 @@ export class EventsTree<Shell extends Atom.Flavor.Shell> {
     return Array.from(node.atoms);
   }
 
-  traverse(path: Atom.Path, callback: EventsTree.TraverseCallback<Shell>) {
+  traverse(path: Atom.Path, callback: EventsTree.TraverseCallback<Kind>) {
     const queue = [];
-    let node: EventsTree.Node<Shell> | undefined = this.#tree;
+    let node: EventsTree.Node<Kind> | undefined = this.#tree;
     const pathQueue = [...path];
     let curPath: Atom.Path = [];
     while (true) {
@@ -29,7 +29,7 @@ export class EventsTree<Shell extends Atom.Flavor.Shell> {
     queue.reverse().forEach(([path, atoms]) => callback(path, atoms));
   }
 
-  add(path: Atom.Path, atom: Atom.Exact.Envelop<Shell, any>) {
+  add(path: Atom.Path, atom: Atom.Exact.Envelop<Kind, any>) {
     let node = this.#tree;
     for (const key of path) {
       node = node.children[key] ??= EventsTree.node();
@@ -37,8 +37,8 @@ export class EventsTree<Shell extends Atom.Flavor.Shell> {
     node.atoms.add(atom);
   }
 
-  delete(path: Atom.Path, atom: Atom.Exact.Envelop<Shell, any>): boolean {
-    let node: EventsTree.Node<Shell> | undefined = this.#tree;
+  delete(path: Atom.Path, atom: Atom.Exact.Envelop<Kind, any>): boolean {
+    let node: EventsTree.Node<Kind> | undefined = this.#tree;
     for (const key of path) {
       node = node?.children[key];
       if (!node) return false;
@@ -49,7 +49,7 @@ export class EventsTree<Shell extends Atom.Flavor.Shell> {
   move(
     from: Atom.Path,
     to: Atom.Path,
-    atom: Atom.Exact.Envelop<Shell, any>,
+    atom: Atom.Exact.Envelop<Kind, any>,
   ): boolean {
     if (this.delete(from, atom)) {
       this.add(to, atom);
@@ -58,7 +58,7 @@ export class EventsTree<Shell extends Atom.Flavor.Shell> {
     return false;
   }
 
-  static node<Shell extends Atom.Flavor.Shell>(): EventsTree.Node<Shell> {
+  static node<Kind extends Atom.Flavor.Kind>(): EventsTree.Node<Kind> {
     return { atoms: new Set(), children: {} };
   }
 
@@ -74,13 +74,13 @@ export class EventsTree<Shell extends Atom.Flavor.Shell> {
 }
 
 export namespace EventsTree {
-  export interface Node<Shell extends Atom.Flavor.Shell> {
-    atoms: Set<Atom.Exact.Envelop<Shell, unknown>>;
-    children: Record<keyof any, Node<Shell>>;
+  export interface Node<Kind extends Atom.Flavor.Kind> {
+    atoms: Set<Atom.Exact.Envelop<Kind, unknown>>;
+    children: Record<keyof any, Node<Kind>>;
   }
 
-  export type TraverseCallback<Shell extends Atom.Flavor.Shell> = (
+  export type TraverseCallback<Kind extends Atom.Flavor.Kind> = (
     path: Atom.Path,
-    atoms: Atom.Exact.Envelop<Shell, unknown>[],
+    atoms: Atom.Exact.Envelop<Kind, unknown>[],
   ) => void;
 }

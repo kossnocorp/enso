@@ -4,12 +4,12 @@ import type { Atom } from "../../definition.ts";
 import { AtomValue } from "../base/index.ts";
 
 export class AtomValuePrimitive<
-  Shell extends Atom.Flavor.Shell,
+  Kind extends Atom.Flavor.Kind,
   Value,
-> extends AtomValue<Shell, Value> {
+> extends AtomValue<Kind, Value> {
   #value;
 
-  constructor(atom: Atom.Envelop<Shell, Value>, value: Value) {
+  constructor(atom: Atom.Envelop<Kind, Value>, value: Value) {
     super(atom, value);
     this.#value = value;
   }

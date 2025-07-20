@@ -134,7 +134,7 @@ export declare class Atom<
 
   //#region Events
 
-  eventsTree: EventsTree<Extract<Flavor, Atom.Flavor.Shell>>;
+  eventsTree: EventsTree<Extract<Flavor, Atom.Flavor.Kind>>;
 
   watch(callback: Atom.Watch.Callback<Value>): Atom.Unwatch;
 
@@ -180,74 +180,74 @@ export namespace Atom {
   }
 
   export namespace Static {
-    export interface Subclass<Shell extends Atom.Flavor.Shell> {
+    export interface Subclass<Kind extends Atom.Flavor.Kind> {
       create<
         Value,
         Qualifier extends Atom.Qualifier = Atom.Qualifier.Default,
         Parent extends Atom.Parent.Constraint<Value> = Atom.Parent.Default,
       >(
         value: Value,
-        parent?: Parent.Def<Shell, Parent>,
-      ): Envelop<Shell | "exact", Value, Qualifier, Parent>;
+        parent?: Parent.Def<Kind, Parent>,
+      ): Envelop<Kind | "exact", Value, Qualifier, Parent>;
 
       // TODO: Ideally it should go into Static and utilize create
 
-      base<EnvelopType extends Atom.Envelop<Shell, any>>(
+      base<EnvelopType extends Atom.Envelop<Kind, any>>(
         atom: EnvelopType,
-      ): Atom.Base.Result<Shell, EnvelopType>;
+      ): Atom.Base.Result<Kind, EnvelopType>;
 
       use<Value>(
         initialValue: Value,
         deps: DependencyList,
-      ): Atom.Envelop<Shell | "exact", Value>;
+      ): Atom.Envelop<Kind | "exact", Value>;
 
       useEnsure<
-        EnvelopType extends Atom.Envelop<Shell, any> | Utils.Nullish,
+        EnvelopType extends Atom.Envelop<Kind, any> | Utils.Nullish,
         MappedValue = undefined,
       >(
         atom: EnvelopType,
-        map?: Ensure.Mapper<Shell, EnvelopType, MappedValue>,
-      ): Ensure.Result<Shell, EnvelopType, MappedValue>;
+        map?: Ensure.Mapper<Kind, EnvelopType, MappedValue>,
+      ): Ensure.Result<Kind, EnvelopType, MappedValue>;
     }
 
     export namespace Ensure {
       export interface Mapper<
-        Shell extends Atom.Flavor.Shell,
-        EnvelopType extends Envelop<Shell, any> | Utils.Nullish,
+        Kind extends Atom.Flavor.Kind,
+        EnvelopType extends Envelop<Kind, any> | Utils.Nullish,
         MappedValue,
       > {
         (
-          atom: Envelop<Shell, AtomValue<Shell, EnvelopType>>,
-        ): Envelop<Shell, MappedValue>;
+          atom: Envelop<Kind, AtomValue<Kind, EnvelopType>>,
+        ): Envelop<Kind, MappedValue>;
       }
 
       export type AtomValue<
-        Shell extends Atom.Flavor.Shell,
-        EnvelopType extends Envelop<Shell, any> | Utils.Nullish,
-      > = EnvelopType extends Envelop<Shell, infer Value> ? Value : never;
+        Kind extends Atom.Flavor.Kind,
+        EnvelopType extends Envelop<Kind, any> | Utils.Nullish,
+      > = EnvelopType extends Envelop<Kind, infer Value> ? Value : never;
 
       export type Result<
-        Shell extends Atom.Flavor.Shell,
-        EnvelopType extends Envelop<Shell, any> | Utils.Nullish,
+        Kind extends Atom.Flavor.Kind,
+        EnvelopType extends Envelop<Kind, any> | Utils.Nullish,
         MappedValue,
       > = MappedValue extends undefined
-        ? ResultDirect<Shell, EnvelopType>
-        : ResultMapped<Shell, EnvelopType, MappedValue>;
+        ? ResultDirect<Kind, EnvelopType>
+        : ResultMapped<Kind, EnvelopType, MappedValue>;
 
       export type ResultDirect<
-        Shell extends Atom.Flavor.Shell,
-        EnvelopType extends Envelop<Shell, any> | Utils.Nullish,
+        Kind extends Atom.Flavor.Kind,
+        EnvelopType extends Envelop<Kind, any> | Utils.Nullish,
       > = Field<
         | (EnvelopType extends Utils.Nullish ? undefined : never)
-        | AtomValue<Shell, EnvelopType>
+        | AtomValue<Kind, EnvelopType>
       >;
 
       export type ResultMapped<
-        Shell extends Atom.Flavor.Shell,
-        EnvelopType extends Envelop<Shell, any> | Utils.Nullish,
+        Kind extends Atom.Flavor.Kind,
+        EnvelopType extends Envelop<Kind, any> | Utils.Nullish,
         MappedValue,
       > = Envelop<
-        Shell,
+        Kind,
         (EnvelopType extends Utils.Nullish ? undefined : never) | MappedValue
       >;
     }
@@ -258,18 +258,18 @@ export namespace Atom {
   //#region Flavor
 
   export namespace Flavor {
-    // NOTE: We wrap those into a namespace, as Flavor, Shell and Variant are
+    // NOTE: We wrap those into a namespace, as Flavor, Kind and Variant are
     // used as generic param names, so to avoid a situation when we forget to
     // define a flavor param and use it the constraint instead, e.g.:
     //
-    //   type Generic<Value> = Shell extends "field" ? Field<Value> : never
+    //   type Generic<Value> = Kind extends "field" ? Field<Value> : never
     //
-    // If Shell was defined at Atom.Shell, it would produce incorrect type,
-    // where we meant to have `type Generic<Shell, Value> = ...`.
+    // If Kind was defined at Atom.Kind, it would produce incorrect type,
+    // where we meant to have `type Generic<Kind, Value> = ...`.
 
-    export type Constraint = Shell | Variant;
+    export type Constraint = Kind | Variant;
 
-    export type Shell = "state" | "field";
+    export type Kind = "state" | "field";
 
     export type Variant = "immutable" | "base" | "exact";
   }
@@ -283,14 +283,14 @@ export namespace Atom {
     Qualifier extends Atom.Qualifier = Atom.Qualifier.Default,
     Parent extends Atom.Parent.Constraint<Value> = Atom.Parent.Default,
   > =
-    ExtractShell<Flavor> extends "state"
+    ExtractKind<Flavor> extends "state"
       ? State.Envelop<
           "state" | ExtractVariant<Flavor>,
           Value,
           Qualifier,
           Parent
         >
-      : ExtractShell<Flavor> extends "field"
+      : ExtractKind<Flavor> extends "field"
         ? Field.Envelop<
             "field" | ExtractVariant<Flavor>,
             Value,
@@ -315,15 +315,15 @@ export namespace Atom {
           : never
         : never);
 
-  export type ExtractShell<Flavor extends Atom.Flavor.Constraint> =
+  export type ExtractKind<Flavor extends Atom.Flavor.Constraint> =
     Utils.IsNever<Exclude<Flavor, Atom.Flavor.Variant>> extends true
       ? unknown
-      : Flavor extends Atom.Flavor.Shell
+      : Flavor extends Atom.Flavor.Kind
         ? Flavor
         : never;
 
   export type ExtractVariant<Flavor extends Atom.Flavor.Constraint> =
-    Utils.IsNever<Exclude<Flavor, Atom.Flavor.Shell>> extends true
+    Utils.IsNever<Exclude<Flavor, Atom.Flavor.Kind>> extends true
       ? "exact"
       : Flavor extends Atom.Flavor.Variant
         ? Flavor
@@ -395,38 +395,38 @@ export namespace Atom {
       Utils.IsNever<Parent> extends true ? unknown : { parent: Parent };
 
     export type Envelop<
-      Shell extends Atom.Flavor.Shell,
+      Kind extends Atom.Flavor.Kind,
       ParentValue,
     > = Atom.Envelop<
-      Shell | "immutable",
+      Kind | "immutable",
       Utils.IsNever<ParentValue> extends true ? any : ParentValue
     >;
 
     export type Prop<
-      Shell extends Atom.Flavor.Shell,
+      Kind extends Atom.Flavor.Kind,
       ChildValue,
       Parent extends Atom.Parent.Constraint<ChildValue>,
     > = Def<
-      Shell,
+      Kind,
       Utils.IsNever<Parent> extends true ? Interface<any, any> : Parent
     >;
 
     export type Def<
-      Shell extends Atom.Flavor.Shell,
+      Kind extends Atom.Flavor.Kind,
       Parent extends Atom.Parent.Constraint<any>,
     > =
       Parent extends Interface<infer ParentValue, infer Key>
         ?
-            | Parent.Direct<Shell, ParentValue, Key>
-            | Parent.Source<Shell, ParentValue>
+            | Parent.Direct<Kind, ParentValue, Key>
+            | Parent.Source<Kind, ParentValue>
         : never;
 
     export interface Direct<
-      Shell extends Atom.Flavor.Shell,
+      Kind extends Atom.Flavor.Kind,
       ParentValue,
       Key extends keyof ParentValue,
     > {
-      field: Envelop<Shell, ParentValue>;
+      field: Envelop<Kind, ParentValue>;
       key: Key;
     }
 
@@ -435,8 +435,8 @@ export namespace Atom {
       key: Key;
     }
 
-    export interface Source<Shell extends Atom.Flavor.Shell, ParentValue> {
-      source: Envelop<Shell, ParentValue>;
+    export interface Source<Kind extends Atom.Flavor.Kind, ParentValue> {
+      source: Envelop<Kind, ParentValue>;
     }
 
     export type Constraint<ChildValue> = Type<Interface<any, any>, ChildValue>;
@@ -481,7 +481,7 @@ export namespace Atom {
     export type Access = "indexed" | "iterated";
 
     export type Type<Flavor extends Atom.Flavor.Constraint, ParentValue> =
-      | Extract<Flavor, Atom.Flavor.Shell>
+      | Extract<Flavor, Atom.Flavor.Kind>
       | (ExtractVariant<Flavor> extends infer Variant extends
           Atom.Flavor.Variant
           ? Utils.IsReadonlyArray<ParentValue> extends true
@@ -574,9 +574,9 @@ export namespace Atom {
       Qualifier extends Atom.Qualifier = Atom.Qualifier.Default,
       Parent extends Atom.Parent.Constraint<Value> = Atom.Parent.Default,
     > =
-      ExtractShell<Flavor> extends "state"
+      ExtractKind<Flavor> extends "state"
         ? State.Exact<Value, Qualifier, Parent>
-        : ExtractShell<Flavor> extends "field"
+        : ExtractKind<Flavor> extends "field"
           ? Field.Exact<Value, Qualifier, Parent>
           : never;
 
@@ -608,17 +608,17 @@ export namespace Atom {
       Qualifier extends Atom.Qualifier = Atom.Qualifier.Default,
       Parent extends Atom.Parent.Constraint<Value> = Atom.Parent.Default,
     > =
-      ExtractShell<Flavor> extends "state"
+      ExtractKind<Flavor> extends "state"
         ? State.Base<Value, Qualifier, Parent>
-        : ExtractShell<Flavor> extends "field"
+        : ExtractKind<Flavor> extends "field"
           ? Field.Base<Value, Qualifier, Parent>
           : never;
 
     export type Result<
-      Shell extends Atom.Flavor.Shell,
-      EnvelopType extends Atom.Envelop<Shell, any>,
+      Kind extends Atom.Flavor.Kind,
+      EnvelopType extends Atom.Envelop<Kind, any>,
     > = Atom.Base.Envelop<
-      Shell,
+      Kind,
       Value.Base<EnvelopType>,
       Qualifier.Shared<EnvelopType>
     >;
@@ -758,7 +758,7 @@ export namespace Atom {
 
     //#region Events
 
-    eventsTree: EventsTree<Extract<Flavor, Atom.Flavor.Shell>>;
+    eventsTree: EventsTree<Extract<Flavor, Atom.Flavor.Kind>>;
 
     watch(callback: Watch.Callback<Value>): Unwatch;
 
@@ -789,7 +789,7 @@ export namespace Atom {
 
   export namespace Immutable {
     export type Phantom<Flavor extends Atom.Flavor.Constraint, Value> = $.Prop<
-      Extract<Flavor, Flavor.Shell> | "base",
+      Extract<Flavor, Flavor.Kind> | "base",
       Value
     >;
 
@@ -799,9 +799,9 @@ export namespace Atom {
       Qualifier extends Atom.Qualifier = Atom.Qualifier.Default,
       Parent extends Atom.Parent.Constraint<Value> = Atom.Parent.Default,
     > =
-      ExtractShell<Flavor> extends "state"
+      ExtractKind<Flavor> extends "state"
         ? State.Immutable<Value, Qualifier, Parent>
-        : ExtractShell<Flavor> extends "field"
+        : ExtractKind<Flavor> extends "field"
           ? Field.Immutable<Value, Qualifier, Parent>
           : never;
 
@@ -1493,11 +1493,11 @@ export namespace Atom {
             }
           : never)
       // Add unknown option for the base and immutable variants
-      | (Flavor extends (infer Shell extends Atom.Flavor.Shell) | infer Variant
+      | (Flavor extends (infer Kind extends Atom.Flavor.Kind) | infer Variant
           ? Variant extends "base" | "immutable"
             ? {
                 value: unknown;
-                field: Envelop<Shell | Variant, unknown, Qualifier, Parent>;
+                field: Envelop<Kind | Variant, unknown, Qualifier, Parent>;
               }
             : never
           : never);
@@ -1572,11 +1572,11 @@ export namespace Atom {
               }
           : never)
       // Add unknown option for the base and immutable variants
-      | (Flavor extends (infer Shell extends Atom.Flavor.Shell) | infer Variant
+      | (Flavor extends (infer Kind extends Atom.Flavor.Kind) | infer Variant
           ? Variant extends "base" | "immutable"
             ? {
                 discriminator: unknown;
-                field: Envelop<Shell | Variant, unknown, Qualifier, Parent>;
+                field: Envelop<Kind | Variant, unknown, Qualifier, Parent>;
               }
             : never
           : never);

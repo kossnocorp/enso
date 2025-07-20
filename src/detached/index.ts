@@ -4,16 +4,16 @@ export const detachedValue = Symbol();
 
 export type DetachedValue = typeof detachedValue;
 
-export class UndefinedStateRegistry<Shell extends Atom.Flavor.Shell> {
+export class UndefinedStateRegistry<Kind extends Atom.Flavor.Kind> {
   #external;
   #refsMap = new Map();
   #registry = new FinalizationRegistry((key) => this.#refsMap.delete(key));
 
-  constructor(external: Atom.Envelop<Shell, any>) {
+  constructor(external: Atom.Envelop<Kind, any>) {
     this.#external = external;
   }
 
-  register(key: string, field: Atom.Envelop<Shell, any>) {
+  register(key: string, field: Atom.Envelop<Kind, any>) {
     const fieldRef = new WeakRef(field);
     this.#refsMap.set(key, fieldRef);
     this.#registry.register(fieldRef, key);

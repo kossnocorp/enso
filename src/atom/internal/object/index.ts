@@ -8,13 +8,13 @@ import type { Atom } from "../../definition.ts";
 import { AtomValue, externalSymbol } from "../base/index.ts";
 
 export class AtomValueObject<
-  Shell extends Atom.Flavor.Shell,
+  Kind extends Atom.Flavor.Kind,
   Value,
-> extends AtomValue<Shell, Value> {
+> extends AtomValue<Kind, Value> {
   #children = new Map();
   #undefined;
 
-  constructor(external: Atom.Envelop<Shell, Value>, value: Value) {
+  constructor(external: Atom.Envelop<Kind, Value>, value: Value) {
     super(external, value);
     this.#undefined = new UndefinedStateRegistry(external);
   }

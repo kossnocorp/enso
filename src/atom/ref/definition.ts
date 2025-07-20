@@ -23,19 +23,19 @@ export declare class AtomRef<
 }
 
 export namespace AtomRef {
-  //#region Shell
+  //#region Kind
 
   // WIP: Try to find a better name for this type, so region can be more precise.
-  export type Type = Atom.Flavor.Constraint | Shell | Variant;
+  export type Type = Atom.Flavor.Constraint | Kind | Variant;
 
-  export type Shell = "ref" | "ref-ghost";
+  export type Kind = "ref" | "ref-ghost";
 
   export type Variant = never;
 
   // WIP: Try to get rid of it. The purpose is to have symmetry with Atom but it
   // might be simple Extract, however I can't check until I stabilize tysts.
 
-  export type NonShell = Exclude<Type, Atom.Flavor.Constraint | Shell>;
+  export type NonKind = Exclude<Type, Atom.Flavor.Constraint | Kind>;
 
   export type NonVariant = Exclude<Type, Atom.Flavor.Constraint | Variant>;
 
@@ -45,7 +45,7 @@ export namespace AtomRef {
     Qualifier extends AtomRef.Qualifier = never,
     Parent extends Atom.Parent.Constraint<Value> = Atom.Parent.Default,
   > =
-    Extract<Type, Atom.Flavor.Shell> extends "field"
+    Extract<Type, Atom.Flavor.Kind> extends "field"
       ? FieldRef.Envelop<Type, Value, Qualifier, Parent>
       : never;
 
@@ -63,16 +63,16 @@ export namespace AtomRef {
           : never
         : never);
 
-  export type ExtractShell<Type extends AtomRef.Type> =
-    Utils.IsNever<Exclude<Type, NonShell>> extends true
+  export type ExtractKind<Type extends AtomRef.Type> =
+    Utils.IsNever<Exclude<Type, NonKind>> extends true
       ? unknown
-      : Type extends Shell
+      : Type extends Kind
         ? Type
         : never;
 
   export type ExtractVariant<_Type extends AtomRef.Type> = never;
 
-  //#endregion Shell
+  //#endregion Kind
 
   //#region Qualifier
 
@@ -85,22 +85,22 @@ export namespace AtomRef {
   //#region Child
 
   export type Child<
-    Shell extends AtomRef.Type,
+    Kind extends AtomRef.Type,
     ParentValue,
     Key extends keyof ParentValue,
   > = Envelop<
-    Child.Type<Shell>,
+    Child.Type<Kind>,
     Child.Value<ParentValue, Key>,
     Child.Qualifier<ParentValue, Key>
   >;
 
   export namespace Child {
     export type Every<
-      Shell extends AtomRef.Type,
+      Kind extends AtomRef.Type,
       ParentValue,
       Key extends keyof ParentValue,
     > = AtomRef.Every<
-      Shell,
+      Kind,
       Child.Value<ParentValue, Key>,
       Child.Qualifier<ParentValue, Key>
     >;
