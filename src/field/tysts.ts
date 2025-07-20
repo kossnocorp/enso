@@ -1,3 +1,4 @@
+import { Atom } from "../atom/index.js";
 import type { ChangesEvent, FieldChange } from "../change/index.ts";
 import type { DetachedValue } from "../detached/index.ts";
 import { State } from "../state/index.ts";
@@ -72,6 +73,24 @@ import { Field } from "./index.js";
       // @ts-expect-error
       _organization = {} as Field.Base<User, never, ContainerParent>;
     }
+
+    // Shared
+    {
+      type EntityTuple = [Entity, Entity | undefined];
+      let _entity: Field.Base.Shared<[Entity, Entity | undefined]>;
+      _entity = ({} as Field.Base<Entity>).shared<EntityTuple>();
+      _entity = ({} as Field.Base<Account | User>).shared<EntityTuple>();
+      _entity = ({} as Field.Base<Account>).shared<EntityTuple>();
+      _entity = ({} as Field.Base<User>).shared<EntityTuple>();
+
+      type AccountTuple = [Account, Account | undefined];
+      let _account: Field.Base.Shared<[Account, Account | undefined]>;
+      // @ts-expect-error
+      _account = ({} as Field.Base<Account | User>).shared<AccountTuple>();
+      _account = ({} as Field.Base<Account>).shared<AccountTuple>();
+      // @ts-expect-error
+      _account = ({} as Field.Base<User>).shared<AccountTuple>();
+    }
   }
 
   // Field as Field.Base
@@ -137,6 +156,24 @@ import { Field } from "./index.js";
       _organization = {} as Field<Account | User, never, OrganizationParent>;
       // @ts-expect-error
       _organization = {} as Field<User, never, ContainerParent>;
+    }
+
+    // Shared
+    {
+      type EntityTuple = [Entity, Entity | undefined];
+      let _entity: Field.Base.Shared<[Entity, Entity | undefined]>;
+      _entity = ({} as Field<Entity>).shared<EntityTuple>();
+      _entity = ({} as Field<Account | User>).shared<EntityTuple>();
+      _entity = ({} as Field<Account>).shared<EntityTuple>();
+      _entity = ({} as Field<User>).shared<EntityTuple>();
+
+      type AccountTuple = [Account, Account | undefined];
+      let _account: Field.Base.Shared<[Account, Account | undefined]>;
+      // @ts-expect-error
+      _account = ({} as Field<Account | User>).shared<AccountTuple>();
+      _account = ({} as Field<Account>).shared<AccountTuple>();
+      // @ts-expect-error
+      _account = ({} as Field<User>).shared<AccountTuple>();
     }
   }
 
@@ -236,6 +273,28 @@ import { Field } from "./index.js";
         >,
       );
     }
+
+    // Shared
+    {
+      type EntityTuple = [Entity, Entity | undefined];
+      let _entity: Field.Shared<[Entity, Entity | undefined]>;
+      _entity = ({} as Field<Entity>).shared<EntityTuple>();
+      // @ts-expect-error
+      _entity = ({} as Field<Account | User>).shared<EntityTuple>();
+      // @ts-expect-error
+      _entity = ({} as Field<Account>).shared<EntityTuple>();
+      // @ts-expect-error
+      _entity = ({} as Field<User>).shared<EntityTuple>();
+
+      type AccountTuple = [Account, Account | undefined];
+      let _account: Field.Shared<[Account, Account | undefined]>;
+      // @ts-expect-error
+      _account = ({} as Field<Account | User>).shared<AccountTuple>();
+      // @ts-expect-error
+      _account = ({} as Field<Account>).shared<AccountTuple>();
+      // @ts-expect-error
+      _account = ({} as Field<User>).shared<AccountTuple>();
+    }
   }
 
   // Field.Base as Field
@@ -323,6 +382,89 @@ import { Field } from "./index.js";
       >;
       // @ts-expect-error
       _organization = {} as Field.Base<User, never, ContainerParent>;
+    }
+  }
+
+  // Field as Field.Immutable
+  {
+    let _entity: Field.Immutable<Entity>;
+
+    // Basic
+    {
+      _entity = {} as Field<Account | User>;
+      _entity = {} as Field<Account>;
+      _entity = {} as Field<User>;
+
+      let _account: Field.Base<Account>;
+      // @ts-expect-error
+      _account = {} as Field<Account | User>;
+      _account = {} as Field<Account>;
+      // @ts-expect-error
+      _account = {} as Field<User>;
+    }
+
+    // Qualifier
+    {
+      let _base: Field.Immutable<Entity>;
+      _base = {} as Field<Account | User, "detachable">;
+      _base = {} as Field<Account | User, "detachable" | "tried">;
+
+      let _detachable: Field.Immutable<Entity, "detachable">;
+      _detachable = {} as Field<Account | User, "detachable">;
+      _detachable = {} as Field<Account, "detachable">;
+      _detachable = {} as Field<Account, "detachable" | "tried">;
+      // @ts-expect-error
+      _detachable = {} as Field<Entity>;
+
+      let _mixed: Field.Immutable<Entity, "detachable" | "tried">;
+      _mixed = {} as Field<Account | User, "detachable" | "tried">;
+      _mixed = {} as Field<Account, "detachable" | "tried">;
+      _mixed = {} as Field<Account, "detachable" | "tried" | "bound">;
+      // @ts-expect-error
+      _mixed = {} as Field<Entity, "detachable">;
+      // @ts-expect-error
+      _mixed = {} as Field<Entity, "tried">;
+    }
+
+    // Parent
+    {
+      _entity = {} as Field<Entity, never, ContainerParent>;
+      _entity = {} as Field<Entity, never, OrganizationParent>;
+
+      let _container: Field.Immutable<Entity, never, ContainerParent>;
+      _container = {} as Field<Account | User, never, ContainerParent>;
+      _container = {} as Field<Account, never, ContainerParent>;
+      _container = {} as Field<User, never, ContainerParent>;
+      // @ts-expect-error
+      _container = {} as Field<Account>;
+      // @ts-expect-error
+      _container = {} as Field<Entity, never, OrganizationParent>;
+
+      let _organization: Field.Immutable<User, never, OrganizationParent>;
+      _organization = {} as Field<User, never, OrganizationParent>;
+      // @ts-expect-error
+      _organization = {} as Field<Entity, never, OrganizationParent>;
+      // @ts-expect-error
+      _organization = {} as Field<Account | User, never, OrganizationParent>;
+      // @ts-expect-error
+      _organization = {} as Field<User, never, ContainerParent>;
+    }
+
+    // Shared
+    {
+      type EntityTuple = [Entity, Entity | undefined];
+      let _entity: Field.Immutable.Shared<[Entity, Entity | undefined]>;
+      _entity = ({} as Field<Account | User>).shared<EntityTuple>();
+      _entity = ({} as Field<Account>).shared<EntityTuple>();
+      _entity = ({} as Field<User>).shared<EntityTuple>();
+
+      type AccountTuple = [Account, Account | undefined];
+      let _account: Field.Immutable.Shared<[Account, Account | undefined]>;
+      // @ts-expect-error
+      _account = ({} as Field<Account | User>).shared<AccountTuple>();
+      _account = ({} as Field<Account>).shared<AccountTuple>();
+      // @ts-expect-error
+      _account = ({} as Field<User>).shared<AccountTuple>();
     }
   }
 }
@@ -645,6 +787,19 @@ import { Field } from "./index.js";
       // @ts-expect-error
       entity.$.paid;
     }
+  }
+
+  // Shared
+  {
+    const field = ({} as Field<string>).shared<[string, string | undefined]>();
+
+    field.value satisfies string | undefined;
+    // @ts-expect-error
+    field.value.any;
+
+    field.useValue() satisfies string | undefined;
+    // @ts-expect-error
+    field.useValue().any;
   }
 }
 //#endregion
@@ -3873,6 +4028,76 @@ const unionField = new Field({ hello: "world", world: true }) as
       // @ts-expect-error
       result.any;
     }
+  }
+}
+//#endregion
+
+//#region Field#shared
+{
+  // Basic
+  {
+    const field = {} as Field<string>;
+
+    field.shared<[string, string | undefined]>() satisfies Field<
+      Atom.Shared.Value<[string, string | undefined]>
+    >;
+    field.shared<[string, string | undefined, string]>() satisfies Field<
+      Atom.Shared.Value<[string, string | undefined, string]>
+    >;
+    field.shared<
+      [string, string | undefined, string, string | null]
+    >() satisfies Field<
+      Atom.Shared.Value<[string, string | undefined, string, string | null]>
+    >;
+
+    field.shared<[number, string | undefined]>() satisfies Field<unknown>;
+    field.shared<[number, string | undefined]>() satisfies Field<unknown>;
+    field.shared<
+      [string, string | undefined, number]
+    >() satisfies Field<unknown>;
+  }
+
+  // Union
+  {
+    const field = {} as Field<string | number>;
+
+    field.shared<
+      [string | number, string | number | undefined]
+    >() satisfies Field<
+      Atom.Shared.Value<[string | number, string | number | undefined]>
+    >;
+    field.shared<
+      [string | number, string | number | undefined, string | number]
+    >() satisfies Field<
+      Atom.Shared.Value<
+        [string | number, string | number | undefined, string | number]
+      >
+    >;
+    field.shared<
+      [
+        string | number,
+        string | number | undefined,
+        string | number,
+        string | number | null,
+      ]
+    >() satisfies Field<
+      Atom.Shared.Value<
+        [
+          string | number,
+          string | number | undefined,
+          string | number,
+          string | number | null,
+        ]
+      >
+    >;
+
+    field.shared<
+      [string | number, boolean | undefined]
+    >() satisfies Field<unknown>;
+    field.shared<[string, string | undefined]>() satisfies Field<unknown>;
+    field.shared<
+      [string | number, string | number | undefined, number]
+    >() satisfies Field<unknown>;
   }
 }
 //#endregion
