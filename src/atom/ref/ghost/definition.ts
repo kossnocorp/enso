@@ -2,7 +2,7 @@ import type { Atom } from "../../definition.ts";
 import { AtomRef } from "../index.js";
 
 export declare class AtomRefGhost<
-    Flavor extends Atom.Flavor,
+    Flavor extends Atom.Flavor.Constraint,
     Value,
     Qualifier extends AtomRef.Qualifier = never,
     Parent extends Atom.Parent.Constraint<Value> = Atom.Parent.Default,
@@ -14,7 +14,7 @@ export namespace AtomRefGhost {
   //#region Interface
 
   export interface Interface<
-    Flavor extends Atom.Flavor,
+    Flavor extends Atom.Flavor.Constraint,
     Value,
     Qualifier extends AtomRef.Qualifier = never,
     Parent extends Atom.Parent.Constraint<Value> = Atom.Parent.Default,

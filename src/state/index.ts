@@ -62,7 +62,7 @@ export class State<
 
 export namespace State {
   export type Envelop<
-    Flavor extends Atom.Flavor,
+    Flavor extends Atom.Flavor.Constraint,
     Value,
     Qualifier extends Atom.Qualifier = Atom.Qualifier.Default,
     Parent extends Atom.Parent.Constraint<Value> = Atom.Parent.Default,

@@ -4,7 +4,7 @@ export const detachedValue = Symbol();
 
 export type DetachedValue = typeof detachedValue;
 
-export class UndefinedStateRegistry<Shell extends Atom.Shell> {
+export class UndefinedStateRegistry<Shell extends Atom.Flavor.Shell> {
   #external;
   #refsMap = new Map();
   #registry = new FinalizationRegistry((key) => this.#refsMap.delete(key));

@@ -8,7 +8,7 @@ import type { Enso } from "../types.ts";
 import type { EnsoUtils as Utils } from "../utils.ts";
 
 export declare class Atom<
-    Flavor extends Atom.Flavor,
+    Flavor extends Atom.Flavor.Constraint,
     Value,
     Qualifier extends Atom.Qualifier,
     Parent extends Atom.Parent.Constraint<Value>,
@@ -30,7 +30,7 @@ export declare class Atom<
 
   constructor(
     value: Value,
-    parent?: Atom.Parent.Def<Exclude<Flavor, Atom.Variant>, Parent>,
+    parent?: Atom.Parent.Def<Exclude<Flavor, Atom.Flavor.Variant>, Parent>,
   );
 
   deconstruct(): void;
@@ -108,7 +108,11 @@ export declare class Atom<
 
   get root(): Atom.Root<Flavor>;
 
-  get parent(): Atom.Parent.Prop<Exclude<Flavor, Atom.Variant>, Value, Parent>;
+  get parent(): Atom.Parent.Prop<
+    Exclude<Flavor, Atom.Flavor.Variant>,
+    Value,
+    Parent
+  >;
 
   get key(): string;
 
@@ -130,7 +134,7 @@ export declare class Atom<
 
   //#region Events
 
-  eventsTree: EventsTree<Extract<Flavor, Atom.Shell>>;
+  eventsTree: EventsTree<Extract<Flavor, Atom.Flavor.Shell>>;
 
   watch(callback: Atom.Watch.Callback<Value>): Atom.Unwatch;
 
@@ -176,7 +180,7 @@ export namespace Atom {
   }
 
   export namespace Static {
-    export interface Subclass<Shell extends Atom.Shell> {
+    export interface Subclass<Shell extends Atom.Flavor.Shell> {
       create<
         Value,
         Qualifier extends Atom.Qualifier = Atom.Qualifier.Default,
@@ -208,7 +212,7 @@ export namespace Atom {
 
     export namespace Ensure {
       export interface Mapper<
-        Shell extends Atom.Shell,
+        Shell extends Atom.Flavor.Shell,
         EnvelopType extends Envelop<Shell, any> | Utils.Nullish,
         MappedValue,
       > {
@@ -218,12 +222,12 @@ export namespace Atom {
       }
 
       export type AtomValue<
-        Shell extends Atom.Shell,
+        Shell extends Atom.Flavor.Shell,
         EnvelopType extends Envelop<Shell, any> | Utils.Nullish,
       > = EnvelopType extends Envelop<Shell, infer Value> ? Value : never;
 
       export type Result<
-        Shell extends Atom.Shell,
+        Shell extends Atom.Flavor.Shell,
         EnvelopType extends Envelop<Shell, any> | Utils.Nullish,
         MappedValue,
       > = MappedValue extends undefined
@@ -231,7 +235,7 @@ export namespace Atom {
         : ResultMapped<Shell, EnvelopType, MappedValue>;
 
       export type ResultDirect<
-        Shell extends Atom.Shell,
+        Shell extends Atom.Flavor.Shell,
         EnvelopType extends Envelop<Shell, any> | Utils.Nullish,
       > = Field<
         | (EnvelopType extends Utils.Nullish ? undefined : never)
@@ -239,7 +243,7 @@ export namespace Atom {
       >;
 
       export type ResultMapped<
-        Shell extends Atom.Shell,
+        Shell extends Atom.Flavor.Shell,
         EnvelopType extends Envelop<Shell, any> | Utils.Nullish,
         MappedValue,
       > = Envelop<
@@ -253,15 +257,28 @@ export namespace Atom {
 
   //#region Flavor
 
-  export type Flavor = Shell | Variant;
+  export namespace Flavor {
+    // NOTE: We wrap those into a namespace, as Flavor, Shell and Variant are
+    // used as generic param names, so to avoid a situation when we forget to
+    // define a flavor param and use it the constraint instead, e.g.:
+    //
+    //   type Generic<Value> = Shell extends "field" ? Field<Value> : never
+    //
+    // If Shell was defined at Atom.Shell, it would produce incorrect type,
+    // where we meant to have `type Generic<Shell, Value> = ...`.
 
-  export type Shell = "state" | "field";
+    export type Constraint = Shell | Variant;
+
+    export type Shell = "state" | "field";
+
+    export type Variant = "immutable" | "base" | "exact";
+  }
 
   // WIP: Try to get rid of it. The purpose is to have symmetry with Ref but it
   // might be simple Extract, however I can't check until I stabilize tysts.
 
   export type Envelop<
-    Flavor extends Atom.Flavor,
+    Flavor extends Atom.Flavor.Constraint,
     Value,
     Qualifier extends Atom.Qualifier = Atom.Qualifier.Default,
     Parent extends Atom.Parent.Constraint<Value> = Atom.Parent.Default,
@@ -283,7 +300,7 @@ export namespace Atom {
         : never;
 
   export type Every<
-    Flavor extends Atom.Flavor,
+    Flavor extends Atom.Flavor.Constraint,
     Value,
     Qualifier extends Atom.Qualifier = Atom.Qualifier.Default,
     Parent extends Atom.Parent.Constraint<Value> = Atom.Parent.Default,
@@ -298,22 +315,22 @@ export namespace Atom {
           : never
         : never);
 
-  export type ExtractShell<Flavor extends Atom.Flavor> =
-    Utils.IsNever<Exclude<Flavor, Variant>> extends true
+  export type ExtractShell<Flavor extends Atom.Flavor.Constraint> =
+    Utils.IsNever<Exclude<Flavor, Atom.Flavor.Variant>> extends true
       ? unknown
-      : Flavor extends Shell
+      : Flavor extends Atom.Flavor.Shell
         ? Flavor
         : never;
 
-  export type ExtractVariant<Flavor extends Atom.Flavor> =
-    Utils.IsNever<Exclude<Flavor, Shell>> extends true
+  export type ExtractVariant<Flavor extends Atom.Flavor.Constraint> =
+    Utils.IsNever<Exclude<Flavor, Atom.Flavor.Shell>> extends true
       ? "exact"
-      : Flavor extends Variant
+      : Flavor extends Atom.Flavor.Variant
         ? Flavor
         : never;
 
   export type SelfEnvelop<
-    Flavor extends Atom.Flavor,
+    Flavor extends Atom.Flavor.Constraint,
     Value,
     Qualifier extends Atom.Qualifier = Atom.Qualifier.Default,
     Parent extends Atom.Parent.Constraint<Value> = Atom.Parent.Default,
@@ -327,10 +344,8 @@ export namespace Atom {
 
   //#region Variant
 
-  export type Variant = "immutable" | "base" | "shared" | "exact";
-
   export namespace Variant {
-    export type Qualifier<Variant extends Atom.Variant> = Variant;
+    export type Qualifier<Variant extends Atom.Flavor.Variant> = Variant;
   }
 
   //#endregion
@@ -379,13 +394,16 @@ export namespace Atom {
     export type Phantom<ChildValue, Parent extends Constraint<ChildValue>> =
       Utils.IsNever<Parent> extends true ? unknown : { parent: Parent };
 
-    export type Envelop<Shell extends Atom.Shell, ParentValue> = Atom.Envelop<
+    export type Envelop<
+      Shell extends Atom.Flavor.Shell,
+      ParentValue,
+    > = Atom.Envelop<
       Shell | "immutable",
       Utils.IsNever<ParentValue> extends true ? any : ParentValue
     >;
 
     export type Prop<
-      Shell extends Atom.Shell,
+      Shell extends Atom.Flavor.Shell,
       ChildValue,
       Parent extends Atom.Parent.Constraint<ChildValue>,
     > = Def<
@@ -394,7 +412,7 @@ export namespace Atom {
     >;
 
     export type Def<
-      Shell extends Atom.Shell,
+      Shell extends Atom.Flavor.Shell,
       Parent extends Atom.Parent.Constraint<any>,
     > =
       Parent extends Interface<infer ParentValue, infer Key>
@@ -404,7 +422,7 @@ export namespace Atom {
         : never;
 
     export interface Direct<
-      Shell extends Atom.Shell,
+      Shell extends Atom.Flavor.Shell,
       ParentValue,
       Key extends keyof ParentValue,
     > {
@@ -417,7 +435,7 @@ export namespace Atom {
       key: Key;
     }
 
-    export interface Source<Shell extends Atom.Shell, ParentValue> {
+    export interface Source<Shell extends Atom.Flavor.Shell, ParentValue> {
       source: Envelop<Shell, ParentValue>;
     }
 
@@ -436,7 +454,7 @@ export namespace Atom {
   //#region Child
 
   export type Child<
-    Flavor extends Atom.Flavor,
+    Flavor extends Atom.Flavor.Constraint,
     ParentValue,
     Key extends keyof ParentValue,
     Access extends Child.Access,
@@ -448,7 +466,7 @@ export namespace Atom {
 
   export namespace Child {
     export type Every<
-      Flavor extends Atom.Flavor,
+      Flavor extends Atom.Flavor.Constraint,
       ParentValue,
       Key extends keyof ParentValue,
       Access extends Child.Access,
@@ -462,9 +480,10 @@ export namespace Atom {
 
     export type Access = "indexed" | "iterated";
 
-    export type Type<Flavor extends Atom.Flavor, ParentValue> =
-      | Extract<Flavor, Shell>
-      | (ExtractVariant<Flavor> extends infer Variant extends Atom.Variant
+    export type Type<Flavor extends Atom.Flavor.Constraint, ParentValue> =
+      | Extract<Flavor, Atom.Flavor.Shell>
+      | (ExtractVariant<Flavor> extends infer Variant extends
+          Atom.Flavor.Variant
           ? Utils.IsReadonlyArray<ParentValue> extends true
             ? Variant extends "immutable"
               ? "immutable"
@@ -508,7 +527,7 @@ export namespace Atom {
   //#region Exact
 
   export interface Exact<
-    Flavor extends Atom.Flavor,
+    Flavor extends Atom.Flavor.Constraint,
     Value,
     Qualifier extends Atom.Qualifier = Atom.Qualifier.Default,
     Parent extends Atom.Parent.Constraint<Value> = Atom.Parent.Default,
@@ -550,7 +569,7 @@ export namespace Atom {
 
   export namespace Exact {
     export type Envelop<
-      Flavor extends Atom.Flavor,
+      Flavor extends Atom.Flavor.Constraint,
       Value,
       Qualifier extends Atom.Qualifier = Atom.Qualifier.Default,
       Parent extends Atom.Parent.Constraint<Value> = Atom.Parent.Default,
@@ -562,7 +581,7 @@ export namespace Atom {
           : never;
 
     export interface Self<
-      Flavor extends Atom.Flavor,
+      Flavor extends Atom.Flavor.Constraint,
       Value,
       Qualifier extends Atom.Qualifier = Atom.Qualifier.Default,
       Parent extends Atom.Parent.Constraint<Value> = Atom.Parent.Default,
@@ -576,7 +595,7 @@ export namespace Atom {
   //#region Base
 
   export interface Base<
-    Flavor extends Atom.Flavor,
+    Flavor extends Atom.Flavor.Constraint,
     Value,
     Qualifier extends Atom.Qualifier = Atom.Qualifier.Default,
     Parent extends Atom.Parent.Constraint<Value> = Atom.Parent.Default,
@@ -584,7 +603,7 @@ export namespace Atom {
 
   export namespace Base {
     export type Envelop<
-      Flavor extends Atom.Flavor,
+      Flavor extends Atom.Flavor.Constraint,
       Value,
       Qualifier extends Atom.Qualifier = Atom.Qualifier.Default,
       Parent extends Atom.Parent.Constraint<Value> = Atom.Parent.Default,
@@ -596,7 +615,7 @@ export namespace Atom {
           : never;
 
     export type Result<
-      Shell extends Atom.Shell,
+      Shell extends Atom.Flavor.Shell,
       EnvelopType extends Atom.Envelop<Shell, any>,
     > = Atom.Base.Envelop<
       Shell,
@@ -649,7 +668,7 @@ export namespace Atom {
     }
 
     export interface Self<
-      Flavor extends Atom.Flavor,
+      Flavor extends Atom.Flavor.Constraint,
       Value,
       Qualifier extends Atom.Qualifier = Atom.Qualifier.Default,
       Parent extends Atom.Parent.Constraint<Value> = Atom.Parent.Default,
@@ -661,7 +680,7 @@ export namespace Atom {
   //#region Immutable
 
   export interface Immutable<
-    Flavor extends Atom.Flavor,
+    Flavor extends Atom.Flavor.Constraint,
     Value,
     Qualifier extends Atom.Qualifier = Atom.Qualifier.Default,
     Parent extends Atom.Parent.Constraint<Value> = Atom.Parent.Default,
@@ -703,7 +722,7 @@ export namespace Atom {
 
     root: Root<Flavor>;
 
-    parent: Parent.Prop<Exclude<Flavor, Atom.Variant>, Value, Parent>;
+    parent: Parent.Prop<Exclude<Flavor, Atom.Flavor.Variant>, Value, Parent>;
 
     readonly key: string;
 
@@ -739,7 +758,7 @@ export namespace Atom {
 
     //#region Events
 
-    eventsTree: EventsTree<Extract<Flavor, Atom.Shell>>;
+    eventsTree: EventsTree<Extract<Flavor, Atom.Flavor.Shell>>;
 
     watch(callback: Watch.Callback<Value>): Unwatch;
 
@@ -769,13 +788,13 @@ export namespace Atom {
   }
 
   export namespace Immutable {
-    export type Phantom<Flavor extends Atom.Flavor, Value> = $.Prop<
-      Extract<Flavor, Shell> | "base",
+    export type Phantom<Flavor extends Atom.Flavor.Constraint, Value> = $.Prop<
+      Extract<Flavor, Flavor.Shell> | "base",
       Value
     >;
 
     export type Envelop<
-      Flavor extends Atom.Flavor,
+      Flavor extends Atom.Flavor.Constraint,
       Value,
       Qualifier extends Atom.Qualifier = Atom.Qualifier.Default,
       Parent extends Atom.Parent.Constraint<Value> = Atom.Parent.Default,
@@ -787,7 +806,7 @@ export namespace Atom {
           : never;
 
     export interface Self<
-      Flavor extends Atom.Flavor,
+      Flavor extends Atom.Flavor.Constraint,
       Value,
       Qualifier extends Atom.Qualifier = Atom.Qualifier.Default,
       Parent extends Atom.Parent.Constraint<Value> = Atom.Parent.Default,
@@ -796,7 +815,7 @@ export namespace Atom {
     }
 
     export type Remove<
-      Flavor extends Atom.Flavor,
+      Flavor extends Atom.Flavor.Constraint,
       Value,
       Qualifier extends Atom.Qualifier,
     > =
@@ -866,7 +885,7 @@ export namespace Atom {
 
   export namespace Self {
     export type RemoveProp<
-      Flavor extends Atom.Flavor,
+      Flavor extends Atom.Flavor.Constraint,
       Value,
       Qualifier extends Atom.Qualifier = Atom.Qualifier.Default,
       Parent extends Atom.Parent.Constraint<Value> = Atom.Parent.Default,
@@ -875,7 +894,7 @@ export namespace Atom {
       : never;
 
     export interface RemoveFn<
-      Flavor extends Atom.Flavor,
+      Flavor extends Atom.Flavor.Constraint,
       Value,
       Qualifier extends Atom.Qualifier = Atom.Qualifier.Default,
       Parent extends Atom.Parent.Constraint<Value> = Atom.Parent.Default,
@@ -894,7 +913,7 @@ export namespace Atom {
 
   //#region Remove
 
-  export type RemoveProp<Flavor extends Atom.Flavor, Value> =
+  export type RemoveProp<Flavor extends Atom.Flavor.Constraint, Value> =
     Utils.IsReadonlyArray<Value> extends true
       ? never
       : Value extends Utils.Tuple
@@ -908,7 +927,7 @@ export namespace Atom {
             : never;
 
   export interface RemoveArray<
-    Flavor extends Atom.Flavor,
+    Flavor extends Atom.Flavor.Constraint,
     Value extends unknown[],
   > {
     (
@@ -917,7 +936,7 @@ export namespace Atom {
   }
 
   export interface RemoveObject<
-    Flavor extends Atom.Flavor,
+    Flavor extends Atom.Flavor.Constraint,
     Value extends object,
   > {
     <Key extends Enso.DetachableKeys<Value>>(
@@ -941,7 +960,7 @@ export namespace Atom {
     // (i.e. just the item field).
 
     export interface TupleHandlerPair<
-      Flavor extends Atom.Flavor,
+      Flavor extends Atom.Flavor.Constraint,
       Value extends Utils.Tuple,
       Result = void,
     > {
@@ -956,7 +975,7 @@ export namespace Atom {
     }
 
     export interface TupleHandlerSingle<
-      Flavor extends Atom.Flavor,
+      Flavor extends Atom.Flavor.Constraint,
       Value extends Utils.Tuple,
       Result = void,
     > {
@@ -969,7 +988,7 @@ export namespace Atom {
     }
 
     export type TupleItem<
-      Flavor extends Atom.Flavor,
+      Flavor extends Atom.Flavor.Constraint,
       Value extends Utils.Tuple,
     > = {
       [Key in Utils.IndexOfTuple<Value>]: Envelop<Flavor, Value[Key]>;
@@ -978,7 +997,7 @@ export namespace Atom {
     // Array
 
     export interface ArrayHandler<
-      Flavor extends Atom.Flavor,
+      Flavor extends Atom.Flavor.Constraint,
       Value extends Utils.ArrayConstraint,
       Result = void,
     > {
@@ -994,7 +1013,7 @@ export namespace Atom {
     // (i.e. just the item field).
 
     export interface ObjectHandlerPair<
-      Flavor extends Atom.Flavor,
+      Flavor extends Atom.Flavor.Constraint,
       Value extends object,
       Result = void,
     > {
@@ -1014,7 +1033,7 @@ export namespace Atom {
     }
 
     export interface ObjectHandlerSingle<
-      Flavor extends Atom.Flavor,
+      Flavor extends Atom.Flavor.Constraint,
       Value extends object,
       Result = void,
     > {
@@ -1031,7 +1050,7 @@ export namespace Atom {
     }
 
     export type ObjectItem<
-      Flavor extends Atom.Flavor,
+      Flavor extends Atom.Flavor.Constraint,
       Value extends object,
     > = Exclude<
       {
@@ -1045,7 +1064,7 @@ export namespace Atom {
     //#region Processor
 
     export type Mapper<
-      Flavor extends Atom.Flavor,
+      Flavor extends Atom.Flavor.Constraint,
       Value,
       ProcessorType extends Mapper.ResultType,
     > =
@@ -1079,7 +1098,7 @@ export namespace Atom {
       // Tuple
 
       export interface Tuple<
-        Flavor extends Atom.Flavor,
+        Flavor extends Atom.Flavor.Constraint,
         Value extends Utils.Tuple,
         ProcessorType extends Mapper.ResultType,
       > {
@@ -1103,7 +1122,7 @@ export namespace Atom {
       // Array
 
       export interface Array<
-        Flavor extends Atom.Flavor,
+        Flavor extends Atom.Flavor.Constraint,
         Value extends Utils.ArrayConstraint,
         ProcessorType extends Mapper.ResultType,
       > {
@@ -1119,7 +1138,7 @@ export namespace Atom {
       // Object
 
       export interface Object<
-        Flavor extends Atom.Flavor,
+        Flavor extends Atom.Flavor.Constraint,
         Value extends object,
         ProcessorType extends Mapper.ResultType,
       > {
@@ -1146,7 +1165,7 @@ export namespace Atom {
     //#region Selector
 
     export type Selector<
-      Flavor extends Atom.Flavor,
+      Flavor extends Atom.Flavor.Constraint,
       Value,
       SelectorType extends Selector.Type,
     > =
@@ -1175,7 +1194,7 @@ export namespace Atom {
       // Tuple
 
       export interface Tuple<
-        Flavor extends Atom.Flavor,
+        Flavor extends Atom.Flavor.Constraint,
         Value extends Utils.Tuple,
         SelectorType extends Selector.Type,
       > {
@@ -1191,7 +1210,7 @@ export namespace Atom {
       // Array
 
       export interface Array<
-        Flavor extends Atom.Flavor,
+        Flavor extends Atom.Flavor.Constraint,
         Value extends Utils.ArrayConstraint,
         SelectorType extends Selector.Type,
       > {
@@ -1203,7 +1222,7 @@ export namespace Atom {
       // Object
 
       export interface Object<
-        Flavor extends Atom.Flavor,
+        Flavor extends Atom.Flavor.Constraint,
         Value extends object,
         SelectorType extends Selector.Type,
       > {
@@ -1221,29 +1240,27 @@ export namespace Atom {
   }
 
   export type ForEachProp<
-    Flavor extends Atom.Flavor,
+    Flavor extends Atom.Flavor.Constraint,
     Value,
   > = Collection.Mapper<Flavor, Value, "each">;
 
-  export type MapProp<Flavor extends Atom.Flavor, Value> = Collection.Mapper<
-    Flavor,
+  export type MapProp<
+    Flavor extends Atom.Flavor.Constraint,
     Value,
-    "map"
-  >;
+  > = Collection.Mapper<Flavor, Value, "map">;
 
-  export type FindProp<Flavor extends Atom.Flavor, Value> = Collection.Selector<
-    Flavor,
+  export type FindProp<
+    Flavor extends Atom.Flavor.Constraint,
     Value,
-    "find"
-  >;
+  > = Collection.Selector<Flavor, Value, "find">;
 
   export type FilterProp<
-    Flavor extends Atom.Flavor,
+    Flavor extends Atom.Flavor.Constraint,
     Value,
   > = Collection.Selector<Flavor, Value, "filter">;
 
   export type UseCollectionProp<
-    Flavor extends Atom.Flavor,
+    Flavor extends Atom.Flavor.Constraint,
     Value,
     Qualifier extends Atom.Qualifier = Atom.Qualifier.Default,
     Parent extends Atom.Parent.Constraint<Value> = Atom.Parent.Default,
@@ -1255,7 +1272,7 @@ export namespace Atom {
 
   export namespace Insert {
     export type Prop<
-      Flavor extends Atom.Flavor,
+      Flavor extends Atom.Flavor.Constraint,
       Value,
       Qualifier extends Atom.Qualifier = Atom.Qualifier.Default,
       Parent extends Atom.Parent.Constraint<Value> = Atom.Parent.Default,
@@ -1266,7 +1283,7 @@ export namespace Atom {
         : never;
 
     export interface Fn<
-      Flavor extends Atom.Flavor,
+      Flavor extends Atom.Flavor.Constraint,
       Value extends unknown[],
       Qualifier extends Atom.Qualifier = Atom.Qualifier.Default,
       Parent extends Atom.Parent.Constraint<Value> = Atom.Parent.Default,
@@ -1284,7 +1301,7 @@ export namespace Atom {
 
   export namespace Push {
     export type Prop<
-      Flavor extends Atom.Flavor,
+      Flavor extends Atom.Flavor.Constraint,
       Value,
       Qualifier extends Atom.Qualifier = Atom.Qualifier.Default,
       Parent extends Atom.Parent.Constraint<Value> = Atom.Parent.Default,
@@ -1295,7 +1312,7 @@ export namespace Atom {
         : never;
 
     export interface Fn<
-      Flavor extends Atom.Flavor,
+      Flavor extends Atom.Flavor.Constraint,
       Value extends unknown[],
       Qualifier extends Atom.Qualifier = Atom.Qualifier.Default,
       Parent extends Atom.Parent.Constraint<Value> = Atom.Parent.Default,
@@ -1316,8 +1333,8 @@ export namespace Atom {
 
   //#region Tree
 
-  export type Root<Flavor extends Atom.Flavor> = Envelop<
-    Exclude<Flavor, Variant> | "immutable",
+  export type Root<Flavor extends Atom.Flavor.Constraint> = Envelop<
+    Exclude<Flavor, Flavor.Variant> | "immutable",
     unknown,
     "root"
   >;
@@ -1325,7 +1342,7 @@ export namespace Atom {
   //#region $
 
   export namespace $ {
-    export type Prop<Flavor extends Atom.Flavor, Value> =
+    export type Prop<Flavor extends Atom.Flavor.Constraint, Value> =
       // Mapped unknown and any are resolved to `{}` and `Record<string, any>`
       // respectively, so we have to have special case for them to account for
       // invariance.
@@ -1344,14 +1361,14 @@ export namespace Atom {
 
   export namespace At {
     export type Prop<
-      Flavor extends Atom.Flavor,
+      Flavor extends Atom.Flavor.Constraint,
       Value,
     > = keyof Value extends infer Key extends keyof Value
       ? Fn<Flavor, Value, Key>
       : never;
 
     export interface Fn<
-      Flavor extends Atom.Flavor,
+      Flavor extends Atom.Flavor.Constraint,
       Value,
       Key extends keyof Value,
     > {
@@ -1361,7 +1378,7 @@ export namespace Atom {
     }
 
     export type Child<
-      Flavor extends Atom.Flavor,
+      Flavor extends Atom.Flavor.Constraint,
       Value,
       Key extends keyof Value,
     > = Key extends Key ? Atom.Child<Flavor, Value, Key, "indexed"> : never;
@@ -1373,7 +1390,7 @@ export namespace Atom {
 
   export namespace Try {
     export type Prop<
-      Flavor extends Atom.Flavor,
+      Flavor extends Atom.Flavor.Constraint,
       Value,
     > = keyof Value extends infer Key extends keyof Value
       ? <ArgKey extends Key>(
@@ -1382,7 +1399,7 @@ export namespace Atom {
       : never;
 
     export type Child<
-      Flavor extends Atom.Flavor,
+      Flavor extends Atom.Flavor.Constraint,
       Value,
       Key extends keyof Utils.NonNullish<Value>,
     > = Key extends Key
@@ -1399,7 +1416,7 @@ export namespace Atom {
       : never;
 
     export type Envelop<
-      Flavor extends Atom.Flavor,
+      Flavor extends Atom.Flavor.Constraint,
       Value,
       Qualifier extends Atom.Qualifier,
     > =
@@ -1455,7 +1472,7 @@ export namespace Atom {
 
   export namespace Decompose {
     export interface Prop<
-      Flavor extends Atom.Flavor,
+      Flavor extends Atom.Flavor.Constraint,
       Value,
       Qualifier extends Atom.Qualifier = Atom.Qualifier.Default,
       Parent extends Atom.Parent.Constraint<Value> = Atom.Parent.Default,
@@ -1464,7 +1481,7 @@ export namespace Atom {
     }
 
     export type Result<
-      Flavor extends Atom.Flavor,
+      Flavor extends Atom.Flavor.Constraint,
       Value,
       Qualifier extends Atom.Qualifier = Atom.Qualifier.Default,
       Parent extends Atom.Parent.Constraint<Value> = Atom.Parent.Default,
@@ -1476,7 +1493,7 @@ export namespace Atom {
             }
           : never)
       // Add unknown option for the base and immutable variants
-      | (Flavor extends (infer Shell extends Atom.Shell) | infer Variant
+      | (Flavor extends (infer Shell extends Atom.Flavor.Shell) | infer Variant
           ? Variant extends "base" | "immutable"
             ? {
                 value: unknown;
@@ -1487,7 +1504,7 @@ export namespace Atom {
 
     export namespace Use {
       export interface Prop<
-        Flavor extends Atom.Flavor,
+        Flavor extends Atom.Flavor.Constraint,
         Value,
         Qualifier extends Atom.Qualifier = Atom.Qualifier.Default,
         Parent extends Atom.Parent.Constraint<Value> = Atom.Parent.Default,
@@ -1511,7 +1528,7 @@ export namespace Atom {
 
   export namespace Discriminate {
     export interface Prop<
-      Flavor extends Atom.Flavor,
+      Flavor extends Atom.Flavor.Constraint,
       Value,
       Qualifier extends Atom.Qualifier = Atom.Qualifier.Default,
       Parent extends Atom.Parent.Constraint<Value> = Atom.Parent.Default,
@@ -1524,7 +1541,7 @@ export namespace Atom {
     export type Discriminator<Payload> = keyof Utils.NonUndefined<Payload>;
 
     export type Result<
-      Flavor extends Atom.Flavor,
+      Flavor extends Atom.Flavor.Constraint,
       Value,
       Discriminator extends Discriminate.Discriminator<Value>,
       Qualifier extends Atom.Qualifier = Atom.Qualifier.Default,
@@ -1532,7 +1549,7 @@ export namespace Atom {
     > = Inner<Flavor, Value, Discriminator, Qualifier, Parent>;
 
     export type Inner<
-      Flavor extends Atom.Flavor,
+      Flavor extends Atom.Flavor.Constraint,
       Value,
       Discriminator extends Discriminate.Discriminator<Value>,
       Qualifier extends Atom.Qualifier = Atom.Qualifier.Default,
@@ -1555,7 +1572,7 @@ export namespace Atom {
               }
           : never)
       // Add unknown option for the base and immutable variants
-      | (Flavor extends (infer Shell extends Atom.Shell) | infer Variant
+      | (Flavor extends (infer Shell extends Atom.Flavor.Shell) | infer Variant
           ? Variant extends "base" | "immutable"
             ? {
                 discriminator: unknown;
@@ -1575,7 +1592,7 @@ export namespace Atom {
     }
 
     export type Envelop<
-      Flavor extends Atom.Flavor,
+      Flavor extends Atom.Flavor.Constraint,
       Value,
       ComputedValue,
       Qualifier extends Atom.Qualifier = Atom.Qualifier.Default,
@@ -1584,14 +1601,14 @@ export namespace Atom {
 
     export namespace Into {
       export type Prop<
-        Flavor extends Atom.Flavor,
+        Flavor extends Atom.Flavor.Constraint,
         Value,
         Qualifier extends Atom.Qualifier = Atom.Qualifier.Default,
         Parent extends Atom.Parent.Constraint<Value> = Atom.Parent.Default,
       > = Into.Fn<Flavor, Value, Qualifier, Parent>;
 
       export interface Fn<
-        Flavor extends Atom.Flavor,
+        Flavor extends Atom.Flavor.Constraint,
         Value,
         Qualifier extends Atom.Qualifier = Atom.Qualifier.Default,
         Parent extends Atom.Parent.Constraint<Value> = Atom.Parent.Default,
@@ -1606,7 +1623,7 @@ export namespace Atom {
       }
 
       export interface Result<
-        Flavor extends Atom.Flavor,
+        Flavor extends Atom.Flavor.Constraint,
         Value,
         ComputedValue,
         Qualifier extends Atom.Qualifier = Atom.Qualifier.Default,
@@ -1617,14 +1634,14 @@ export namespace Atom {
 
       export namespace Use {
         export type Prop<
-          Flavor extends Atom.Flavor,
+          Flavor extends Atom.Flavor.Constraint,
           Value,
           Qualifier extends Atom.Qualifier = Atom.Qualifier.Default,
           Parent extends Atom.Parent.Constraint<Value> = Atom.Parent.Default,
         > = Fn<Flavor, Value, Qualifier, Parent>;
 
         export interface Fn<
-          Flavor extends Atom.Flavor,
+          Flavor extends Atom.Flavor.Constraint,
           Value,
           Qualifier extends Atom.Qualifier = Atom.Qualifier.Default,
           Parent extends Atom.Parent.Constraint<Value> = Atom.Parent.Default,
@@ -1636,7 +1653,7 @@ export namespace Atom {
         }
 
         export interface Result<
-          Flavor extends Atom.Flavor,
+          Flavor extends Atom.Flavor.Constraint,
           Value,
           ComputedValue,
           Qualifier extends Atom.Qualifier = Atom.Qualifier.Default,
@@ -1655,7 +1672,7 @@ export namespace Atom {
 
     export namespace From {
       export interface Fn<
-        Flavor extends Atom.Flavor,
+        Flavor extends Atom.Flavor.Constraint,
         Value,
         ComputedValue,
         Qualifier extends Atom.Qualifier = Atom.Qualifier.Default,
@@ -1672,7 +1689,7 @@ export namespace Atom {
 
       export namespace Use {
         export interface Fn<
-          Flavor extends Atom.Flavor,
+          Flavor extends Atom.Flavor.Constraint,
           Value,
           ComputedValue,
           Qualifier extends Atom.Qualifier = Atom.Qualifier.Default,
@@ -1693,7 +1710,7 @@ export namespace Atom {
 
   export namespace Defined {
     export type Prop<
-      Flavor extends Atom.Flavor,
+      Flavor extends Atom.Flavor.Constraint,
       Value,
       Qualifier extends Atom.Qualifier = Atom.Qualifier.Default,
       Parent extends Atom.Parent.Constraint<Value> = Atom.Parent.Default,
@@ -1705,7 +1722,7 @@ export namespace Atom {
         : never;
 
     export interface FnString<
-      Flavor extends Atom.Flavor,
+      Flavor extends Atom.Flavor.Constraint,
       Value extends string | Utils.Nullish,
       Qualifier extends Atom.Qualifier = Atom.Qualifier.Default,
       Parent extends Atom.Parent.Constraint<Value> = Atom.Parent.Default,

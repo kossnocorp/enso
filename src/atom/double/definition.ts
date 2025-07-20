@@ -1,7 +1,7 @@
 import type { Atom } from "../index.js";
 
 export declare class AtomDouble<
-  Flavor extends Atom.Flavor,
+  Flavor extends Atom.Flavor.Constraint,
   Value,
   Qualifier extends Atom.Qualifier = Atom.Qualifier.Default,
   Parent extends Atom.Parent.Constraint<Value> = Atom.Parent.Default,
@@ -11,7 +11,7 @@ export namespace AtomDouble {
   //#region Interface
 
   export interface Interface<
-    Flavor extends Atom.Flavor,
+    Flavor extends Atom.Flavor.Constraint,
     Value,
     Qualifier extends Atom.Qualifier = Atom.Qualifier.Default,
     Parent extends Atom.Parent.Constraint<Value> = Atom.Parent.Default,

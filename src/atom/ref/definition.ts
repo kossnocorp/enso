@@ -26,7 +26,7 @@ export namespace AtomRef {
   //#region Shell
 
   // WIP: Try to find a better name for this type, so region can be more precise.
-  export type Type = Atom.Flavor | Shell | Variant;
+  export type Type = Atom.Flavor.Constraint | Shell | Variant;
 
   export type Shell = "ref" | "ref-ghost";
 
@@ -35,9 +35,9 @@ export namespace AtomRef {
   // WIP: Try to get rid of it. The purpose is to have symmetry with Atom but it
   // might be simple Extract, however I can't check until I stabilize tysts.
 
-  export type NonShell = Exclude<Type, Atom.Flavor | Shell>;
+  export type NonShell = Exclude<Type, Atom.Flavor.Constraint | Shell>;
 
-  export type NonVariant = Exclude<Type, Atom.Flavor | Variant>;
+  export type NonVariant = Exclude<Type, Atom.Flavor.Constraint | Variant>;
 
   export type Envelop<
     Type extends AtomRef.Type,
@@ -45,7 +45,7 @@ export namespace AtomRef {
     Qualifier extends AtomRef.Qualifier = never,
     Parent extends Atom.Parent.Constraint<Value> = Atom.Parent.Default,
   > =
-    Extract<Type, Atom.Shell> extends "field"
+    Extract<Type, Atom.Flavor.Shell> extends "field"
       ? FieldRef.Envelop<Type, Value, Qualifier, Parent>
       : never;
 
