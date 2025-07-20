@@ -10,13 +10,13 @@ export class State<
     Qualifier extends Atom.Qualifier = Atom.Qualifier.Default,
     Parent extends Atom.Parent.Constraint<Value> = Atom.Parent.Default,
   >
-  extends Atom<"state" | "invariant", Value, Qualifier, Parent>
+  extends Atom<"state" | "exact", Value, Qualifier, Parent>
   implements
     Static<
       typeof State<Value, Qualifier, Parent>,
       Atom.Static.Subclass<"state">
     >,
-    State.Invariant<Value, Qualifier, Parent>
+    State.Exact<Value, Qualifier, Parent>
 {
   //#region Static
 
@@ -33,16 +33,16 @@ export class State<
     return void 0 as any;
   }
 
-  static common<Envelop extends State<any>>(
+  static base<Envelop extends State<any>>(
     atom: Envelop,
-  ): Atom.Common.Result<"state", Envelop> {
+  ): Atom.Base.Result<"state", Envelop> {
     return void 0 as any;
   }
 
   static use<Value>(
     initialValue: Value,
     deps: DependencyList,
-  ): State.Invariant<Value> {
+  ): State.Exact<Value> {
     return void 0 as any;
   }
 
@@ -69,25 +69,25 @@ export namespace State {
     Parent extends Atom.Parent.Constraint<Value> = Atom.Parent.Default,
   > = "immutable" extends Type
     ? Immutable<Value, Qualifier, Parent>
-    : "common" extends Type
-      ? Common<Value, Qualifier, Parent>
-      : "invariant" extends Type
-        ? Invariant<Value, Qualifier, Parent>
+    : "base" extends Type
+      ? Base<Value, Qualifier, Parent>
+      : "exact" extends Type
+        ? Exact<Value, Qualifier, Parent>
         : never;
 
-  export interface Invariant<
+  export interface Exact<
     Value,
     Qualifier extends Atom.Qualifier = Atom.Qualifier.Default,
     Parent extends Atom.Parent.Constraint<Value> = Atom.Parent.Default,
   > extends Hint,
-      Atom.Invariant<"state" | "invariant", Value, Qualifier, Parent> {}
+      Atom.Exact<"state" | "exact", Value, Qualifier, Parent> {}
 
-  export interface Common<
+  export interface Base<
     Value,
     Qualifier extends Atom.Qualifier = Atom.Qualifier.Default,
     Parent extends Atom.Parent.Constraint<Value> = Atom.Parent.Default,
   > extends Hint,
-      Atom.Common<"state" | "common", Value, Qualifier, Parent> {}
+      Atom.Base<"state" | "base", Value, Qualifier, Parent> {}
 
   export interface Immutable<
     Value,
