@@ -1,4 +1,3 @@
-import { U } from "vitest/dist/chunks/environment.d.cL3nLXbE.js";
 import { Atom } from "../atom/index.js";
 import type { ChangesEvent, FieldChange } from "../change/index.ts";
 import type { DetachedValue } from "../detached/index.ts";
@@ -523,11 +522,11 @@ const unionField = new Field({ hello: "world", world: true }) as
 
     // Mixed
     {
-      const entity = {} as
+      const field = {} as
         | Field<User, "detachable">
         | Field<Account, "detachable" | "bound">;
 
-      const result = Field.base(entity);
+      const result = Field.base(field);
 
       result satisfies Field.Base<User | Account, "detachable">;
       // @ts-expect-error
@@ -541,6 +540,16 @@ const unionField = new Field({ hello: "world", world: true }) as
       // @ts-expect-error
       result.value satisfies Hello;
     }
+  }
+
+  // Shared
+  {
+    const field = {} as
+      | Field<Atom.Shared.Value<[User, User | undefined]>>
+      | Field<Atom.Shared.Value<[Account, Account | undefined]>>;
+
+    const result = Field.base(field);
+    result satisfies Field.Base<unknown>;
   }
 }
 //#endregion
@@ -604,6 +613,16 @@ const unionField = new Field({ hello: "world", world: true }) as
       // @ts-expect-error
       result.any;
     }
+  }
+
+  // Shared
+  {
+    const field = {} as
+      | Field<Atom.Shared.Value<[User, User | undefined]>>
+      | Field<Atom.Shared.Value<[Account, Account | undefined]>>;
+
+    const result = Field.useEnsure(field);
+    result satisfies Field.Base<unknown>;
   }
 }
 //#endregion
@@ -2058,13 +2077,61 @@ const brandedPrim = new Field({} as Branded<string>);
   // Primitive
   {
     const field = new Field(1);
-    field.size satisfies never;
+    field.size satisfies void;
   }
 
   // Branded primitive
   {
     const field = new Field({} as Branded<string>);
-    field.size satisfies never;
+    field.size satisfies void;
+  }
+
+  // Union
+  {
+    // Value union
+    {
+      unionValue.size satisfies number;
+    }
+
+    // Field union
+    {
+      unionField.size satisfies number;
+    }
+
+    // Undefined
+    {
+      const field = {} as Field<string[] | undefined>;
+      field.size satisfies number | void;
+    }
+
+    // Primitive
+    {
+      const field = {} as Field<string[] | number>;
+      field.size satisfies number | void;
+    }
+
+    // Branded primitive
+    {
+      const field = {} as Field<string[] | Branded<number>>;
+      field.size satisfies number | void;
+    }
+  }
+
+  // Shared
+  {
+    // Supported
+    {
+      const field = ({} as Field<string[]>).shared<[string[], string[]]>();
+      field.size satisfies number;
+    }
+
+    // Unsupported
+    {
+      const field = ({} as Field<string[]>).shared<
+        [string[], string[] | undefined]
+      >();
+      field.size satisfies number | void;
+    }
   }
 }
 //#endregion
