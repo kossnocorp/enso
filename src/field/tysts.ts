@@ -1130,6 +1130,73 @@ const unionField = new Field({ hello: "world", world: true }) as
     // @ts-expect-error
     result.any;
   }
+
+  // Union
+  {
+    // Value union
+    {
+      const field = {} as Field<User | Account>;
+
+      field.$.name satisfies Field<string>;
+      //@ts-expect-error
+      field.$.name.any;
+
+      // @ts-expect-error
+      field.$.email;
+    }
+
+    // Field union
+    {
+      const field = {} as Field<User> | Field<Account>;
+
+      field.$.name satisfies Field<string>;
+      //@ts-expect-error
+      field.$.name.any;
+
+      // @ts-expect-error
+      field.$.email;
+    }
+
+    // Undefined
+    {
+      const field = {} as Field<User | undefined>;
+      // @ts-expect-error
+      field.$.name;
+    }
+
+    // Primitive
+    {
+      const field = {} as Field<User | number>;
+      // @ts-expect-error
+      field.$.name;
+    }
+
+    // Branded primitive
+    {
+      const field = {} as Field<User | Branded<number>>;
+      // @ts-expect-error
+      field.$.name;
+    }
+  }
+
+  // Shared
+  {
+    // Supported
+    {
+      const field = ({} as Field<User>).shared<[User, User]>();
+
+      field.$.name satisfies Field<string>;
+      //@ts-expect-error
+      field.$.name.any;
+    }
+
+    // Unsupported
+    {
+      const field = ({} as Field<User>).shared<[User, User | undefined]>();
+      // @ts-expect-error
+      field.$.name;
+    }
+  }
 }
 //#endregion
 
@@ -1286,6 +1353,68 @@ const unionField = new Field({ hello: "world", world: true }) as
     result satisfies Field<string> | Field<boolean | undefined>;
     // @ts-expect-error
     result.any;
+  }
+
+  // Union
+  {
+    // Value union
+    {
+      const field = {} as Field<User | Account>;
+
+      field.at("name") satisfies Field<string>;
+      //@ts-expect-error
+      field.at("name").any;
+
+      // @ts-expect-error
+      field.at("email");
+    }
+
+    // Field union
+    {
+      const field = {} as Field<User> | Field<Account>;
+      //@ts-expect-error
+      field.at("name") satisfies Field<string>;
+    }
+
+    // Undefined
+    {
+      const field = {} as Field<User | undefined>;
+      // @ts-expect-error
+      field.at("name");
+    }
+
+    // Primitive
+    {
+      const field = {} as Field<User | number>;
+      // @ts-expect-error
+      field.at("name");
+    }
+
+    // Branded primitive
+    {
+      const field = {} as Field<User | Branded<number>>;
+      // @ts-expect-error
+      field.at("name");
+    }
+  }
+
+  // Shared
+  {
+    // Supported
+    {
+      const field = ({} as Field<User>).shared<[User, User]>();
+
+      field.at("name") satisfies Field<string>;
+      //@ts-expect-error
+      field.at("name").any;
+    }
+
+    // Unsupported
+    {
+      const field = ({} as Field<User>).shared<[User, User | undefined]>();
+      // @ts-expect-error
+      field.at("name");
+    }
   }
 }
 //#endregion
@@ -1481,6 +1610,68 @@ const unionField = new Field({ hello: "world", world: true }) as
     // @ts-expect-error
     result.any;
   }
+
+  // Union
+  {
+    // Value union
+    {
+      const field = {} as Field<User | Account>;
+
+      field.try("name") satisfies Field<string>;
+      //@ts-expect-error
+      field.try("name").any;
+
+      // @ts-expect-error
+      field.try("email");
+    }
+
+    // Field union
+    {
+      const field = {} as Field<User> | Field<Account>;
+      //@ts-expect-error
+      field.try("name") satisfies Field<string>;
+    }
+
+    // Undefined
+    {
+      const field = {} as Field<User | undefined>;
+      // @ts-expect-error
+      field.try("name");
+    }
+
+    // Primitive
+    {
+      const field = {} as Field<User | number>;
+      // @ts-expect-error
+      field.try("name");
+    }
+
+    // Branded primitive
+    {
+      const field = {} as Field<User | Branded<number>>;
+      // @ts-expect-error
+      field.try("name");
+    }
+  }
+
+  // Shared
+  {
+    // Supported
+    {
+      const field = ({} as Field<User>).shared<[User, User]>();
+
+      field.try("name") satisfies Field<string>;
+      //@ts-expect-error
+      field.try("name").any;
+    }
+
+    // Unsupported
+    {
+      const field = ({} as Field<User>).shared<[User, User | undefined]>();
+      // @ts-expect-error
+      field.try("name");
+    }
+  }
 }
 //#endregion
 
@@ -1626,6 +1817,39 @@ const unionField = new Field({ hello: "world", world: true }) as
       number,
       "tried"
     >;
+  }
+
+  // Union
+  {
+    // Value union
+    {
+      const field = {} as Field<User | Account>;
+
+      const result = field.self.try();
+      result satisfies Field<User | Account, "tried">;
+      //@ts-expect-error
+      result.any;
+    }
+
+    // Field union
+    {
+      const field = {} as Field<User> | Field<Account>;
+
+      const result = field.self.try();
+      result satisfies Field<User, "tried"> | Field<Account, "tried">;
+      //@ts-expect-error
+      result.any;
+    }
+  }
+
+  // Shared
+  {
+    const field = ({} as Field<User>).shared<[User, User | undefined]>();
+
+    const result = field.self.try();
+    result satisfies Field<User, "tried"> | undefined;
+    // @ts-expect-error
+    result.any;
   }
 }
 //#endregion
