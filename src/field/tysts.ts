@@ -3846,6 +3846,28 @@ const brandedPrim = new Field({} as Branded<string>);
       "detachable" | "bound"
     > = decomposed;
   }
+
+  // Shared
+  {
+    const field = ({} as Field<Hello | Blah>).shared<
+      [Hello | Blah, Hello | Blah | undefined]
+    >();
+
+    const result = field.decompose();
+    result satisfies
+      | {
+          value: Hello;
+          field: Field<Hello>;
+        }
+      | {
+          value: Blah;
+          field: Field<Blah>;
+        }
+      | {
+          value: undefined;
+          field: Field<undefined>;
+        };
+  }
 }
 //#endregion
 
@@ -3949,15 +3971,48 @@ const brandedPrim = new Field({} as Branded<string>);
       "detachable" | "bound"
     > = decomposed;
   }
+
+  // Shared
+  {
+    const field = ({} as Field<Hello | Blah>).shared<
+      [Hello | Blah, Hello | Blah | undefined]
+    >();
+
+    const result = field.useDecompose((newValue, prevValue) => {
+      newValue satisfies Hello | Blah | undefined;
+      // @ts-expect-error
+      newValue.any;
+
+      prevValue satisfies Hello | Blah | undefined;
+      // @ts-expect-error
+      prevValue.any;
+
+      return true;
+    }, []);
+
+    result satisfies
+      | {
+          value: Hello;
+          field: Field<Hello>;
+        }
+      | {
+          value: Blah;
+          field: Field<Blah>;
+        }
+      | {
+          value: undefined;
+          field: Field<undefined>;
+        };
+  }
 }
 //#endregion
 
-//#region Field["discriminate"] / Field["useDiscriminate"]
+//#region Field#discriminate & Field#useDiscriminate
 {
-  function _discriminate<Value, Key extends keyof Value>(
-    field: Field<Value>,
+  function _discriminate<Key extends keyof User>(
+    field: Field<User>,
     key: Key,
-  ): Field.Discriminated<Value, Key> {
+  ): Field.Discriminated<User, Key> {
     return Math.random() > 0.5
       ? field.discriminate(key)
       : field.useDiscriminate(key);
@@ -4516,10 +4571,57 @@ const brandedPrim = new Field({} as Branded<string>);
     // @ts-expect-error
     unionField.discriminate("paid");
   }
+
+  // Shared
+  {
+    // Regular
+    {
+      const field = ({} as Field<User | Organization>).shared<
+        [User | Organization, User | Organization | undefined]
+      >();
+
+      const result = field.discriminate("type");
+      result satisfies
+        | {
+            discriminator: "user";
+            field: Field<User>;
+          }
+        | {
+            discriminator: "organization";
+            field: Field<Organization>;
+          }
+        | {
+            discriminator: undefined;
+            field: Field<undefined>;
+          };
+    }
+
+    // Hook
+    {
+      const field = ({} as Field<User | Organization>).shared<
+        [User | Organization, User | Organization | undefined]
+      >();
+
+      const result = field.useDiscriminate("type");
+      result satisfies
+        | {
+            discriminator: "user";
+            field: Field<User>;
+          }
+        | {
+            discriminator: "organization";
+            field: Field<Organization>;
+          }
+        | {
+            discriminator: undefined;
+            field: Field<undefined>;
+          };
+    }
+  }
 }
 //#endregion
 
-//#region Field["into"]
+//#region Field#into
 {
   // Exact
   {
@@ -4714,10 +4816,41 @@ const brandedPrim = new Field({} as Branded<string>);
     // @ts-expect-error
     result.any;
   }
+
+  // Shared
+  {
+    const field = ({} as Field<string>).shared<[string, string | undefined]>();
+
+    const result = field
+      .into((value) => {
+        value satisfies string | undefined;
+        // @ts-expect-error
+        value.any;
+
+        return value?.length ?? 0;
+      })
+      .from((sizeValue, value) => {
+        sizeValue satisfies number;
+        // @ts-expect-error
+        sizeValue.any;
+
+        value satisfies string | undefined;
+        // @ts-expect-error
+        value.any;
+
+        return value?.slice(0, sizeValue) ?? "";
+      });
+
+    result satisfies Field<
+      number,
+      Field.Proxied<Field.Shared.Value<[string, string | undefined]>>
+    >;
+    result satisfies Field<number>;
+  }
 }
 //#endregion
 
-//#region Field["useInto"]
+//#region Field#useInto
 {
   // Exact
   {
@@ -4815,6 +4948,37 @@ const brandedPrim = new Field({} as Branded<string>);
     // @ts-expect-error
     result satisfies Field<number, Field.Proxied<string>>;
   }
+
+  // Shared
+  {
+    const field = ({} as Field<string>).shared<[string, string | undefined]>();
+
+    const result = field
+      .useInto((value) => {
+        value satisfies string | undefined;
+        // @ts-expect-error
+        value.any;
+
+        return value?.length ?? 0;
+      }, [])
+      .from((sizeValue, value) => {
+        sizeValue satisfies number;
+        // @ts-expect-error
+        sizeValue.any;
+
+        value satisfies string | undefined;
+        // @ts-expect-error
+        value.any;
+
+        return value?.slice(0, sizeValue) ?? "";
+      }, []);
+
+    result satisfies Field<
+      number,
+      Field.Proxied<Field.Shared.Value<[string, string | undefined]>>
+    >;
+    result satisfies Field<number>;
+  }
 }
 //#endregion
 
@@ -4881,6 +5045,16 @@ const brandedPrim = new Field({} as Branded<string>);
       // @ts-expect-error
       result.any;
     }
+  }
+
+  // Shared
+  {
+    const field = ({} as Field<string>).shared<[string, string | undefined]>();
+
+    const result = field.useDefined("string");
+    result satisfies Field<string>;
+    // @ts-expect-error
+    result.any;
   }
 }
 //#endregion

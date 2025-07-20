@@ -265,6 +265,11 @@ export namespace Field {
     Parent extends Atom.Parent.Constraint<ValueTuple> = Atom.Parent.Default,
   > = Exact.Shared<ValueTuple, Qualifier, Parent>;
 
+  export namespace Shared {
+    export type Value<ValueTuple extends Atom.Shared.Value.Tuple> =
+      Atom.Shared.Value<ValueTuple>;
+  }
+
   export namespace Exact {
     export type Shared<
       ValueTuple extends Atom.Shared.Value.Tuple,
