@@ -917,7 +917,7 @@ export namespace Atom {
       Parent extends Parent.Constraint<Value> = Parent.Default,
     > = Envelop<
       Flavor,
-      Result.Tuple<Value, ValueTuple> extends infer ResultTuple extends
+      Result.Tuple<Flavor, Value, ValueTuple> extends infer ResultTuple extends
         Value.Tuple
         ? Utils.IsNever<ResultTuple> extends true
           ? unknown
@@ -929,6 +929,14 @@ export namespace Atom {
 
     export namespace Result {
       export type Tuple<
+        Flavor extends Flavor.Constraint,
+        Value,
+        ValueTuple extends Value.Tuple,
+      > = "exact" extends Flavor
+        ? Exact<Value, ValueTuple>
+        : Base<Value, ValueTuple>;
+
+      export type Exact<
         Value,
         ValueTuple extends Value.Tuple,
       > = ValueTuple extends [
@@ -938,27 +946,130 @@ export namespace Atom {
         infer Value4,
         infer Value5,
       ]
-        ? Result.Tuple5<Value, Value1, Value2, Value3, Value4, Value5>
+        ? Result.Exact5<Value, Value1, Value2, Value3, Value4, Value5>
         : ValueTuple extends [
               infer Value1,
               infer Value2,
               infer Value3,
               infer Value4,
             ]
-          ? Result.Tuple4<Value, Value1, Value2, Value3, Value4>
+          ? Result.Exact4<Value, Value1, Value2, Value3, Value4>
           : ValueTuple extends [infer Value1, infer Value2, infer Value3]
-            ? Result.Tuple3<Value, Value1, Value2, Value3>
+            ? Result.Exact3<Value, Value1, Value2, Value3>
             : ValueTuple extends [infer Value1, infer Value2]
-              ? Result.Tuple2<Value, Value1, Value2>
+              ? Result.Exact2<Value, Value1, Value2>
               : never;
 
-      export type Tuple2<Value, Value1, Value2> = [Value] extends [Value1]
+      export type ExcludeSubclasses<Value, ValueItem> =
+        ValueItem extends ValueItem
+          ? Value extends ValueItem
+            ? Value
+            : ValueItem
+          : never;
+
+      interface Entity {
+        name: string;
+        flag?: boolean;
+      }
+
+      interface Account extends Entity {
+        paid: boolean;
+      }
+
+      type Test1 = Exact2<
+        Account,
+        Account | Entity | boolean,
+        Account | Entity
+      >;
+
+      export type Exact2<Value, Value1, Value2> = [Value] extends [Value1]
+        ? [Value] extends [Value2]
+          ? [ExcludeSubclasses<Value, Value1>, ExcludeSubclasses<Value, Value2>]
+          : never
+        : never;
+
+      export type Exact3<Value, Value1, Value2, Value3> = [Value] extends [
+        Value1,
+      ]
+        ? [Value] extends [Value2]
+          ? [Value] extends [Value3]
+            ? [
+                ExcludeSubclasses<Value, Value1>,
+                ExcludeSubclasses<Value, Value2>,
+                ExcludeSubclasses<Value, Value3>,
+              ]
+            : never
+          : never
+        : never;
+
+      export type Exact4<Value, Value1, Value2, Value3, Value4> = [
+        Value,
+      ] extends [Value1]
+        ? [Value] extends [Value2]
+          ? [Value] extends [Value3]
+            ? [Value] extends [Value4]
+              ? [
+                  ExcludeSubclasses<Value, Value1>,
+                  ExcludeSubclasses<Value, Value2>,
+                  ExcludeSubclasses<Value, Value3>,
+                  ExcludeSubclasses<Value, Value4>,
+                ]
+              : never
+            : never
+          : never
+        : never;
+
+      export type Exact5<Value, Value1, Value2, Value3, Value4, Value5> = [
+        Value,
+      ] extends [Value1]
+        ? [Value] extends [Value2]
+          ? [Value] extends [Value3]
+            ? [Value] extends [Value4]
+              ? [Value] extends [Value5]
+                ? [
+                    ExcludeSubclasses<Value, Value1>,
+                    ExcludeSubclasses<Value, Value2>,
+                    ExcludeSubclasses<Value, Value3>,
+                    ExcludeSubclasses<Value, Value4>,
+                    ExcludeSubclasses<Value, Value5>,
+                  ]
+                : never
+              : never
+            : never
+          : never
+        : never;
+
+      export type Base<
+        Value,
+        ValueTuple extends Value.Tuple,
+      > = ValueTuple extends [
+        infer Value1,
+        infer Value2,
+        infer Value3,
+        infer Value4,
+        infer Value5,
+      ]
+        ? Result.Base5<Value, Value1, Value2, Value3, Value4, Value5>
+        : ValueTuple extends [
+              infer Value1,
+              infer Value2,
+              infer Value3,
+              infer Value4,
+            ]
+          ? Result.Base4<Value, Value1, Value2, Value3, Value4>
+          : ValueTuple extends [infer Value1, infer Value2, infer Value3]
+            ? Result.Base3<Value, Value1, Value2, Value3>
+            : ValueTuple extends [infer Value1, infer Value2]
+              ? Result.Base2<Value, Value1, Value2>
+              : never;
+
+      export type Base2<Value, Value1, Value2> = [Value] extends [Value1]
         ? [Value] extends [Value2]
           ? [Value1, Value2]
           : never
         : never;
 
-      export type Tuple3<Value, Value1, Value2, Value3> = [Value] extends [
+      export type Base3<Value, Value1, Value2, Value3> = [Value] extends [
         Value1,
       ]
         ? [Value] extends [Value2]
@@ -968,7 +1079,7 @@ export namespace Atom {
           : never
         : never;
 
-      export type Tuple4<Value, Value1, Value2, Value3, Value4> = [
+      export type Base4<Value, Value1, Value2, Value3, Value4> = [
         Value,
       ] extends [Value1]
         ? [Value] extends [Value2]
@@ -980,7 +1091,7 @@ export namespace Atom {
           : never
         : never;
 
-      export type Tuple5<Value, Value1, Value2, Value3, Value4, Value5> = [
+      export type Base5<Value, Value1, Value2, Value3, Value4, Value5> = [
         Value,
       ] extends [Value1]
         ? [Value] extends [Value2]
