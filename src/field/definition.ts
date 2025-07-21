@@ -30,7 +30,7 @@ export declare class Field<
     Parent extends Atom.Parent.Constraint<Value> = Atom.Parent.Default,
   >(
     value: Value,
-    parent?: Atom.Parent.Def<"field", Parent>,
+    parent?: Atom.Parent.Ref<"field", Parent>,
   ): Atom.Envelop<"field" | "exact", Value, Qualifier, Parent>;
 
   static base<Envelop extends Field<any>>(

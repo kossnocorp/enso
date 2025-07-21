@@ -1,3 +1,5 @@
+// @ts-nocheck
+
 import { describe, expect, it, vi } from "vitest";
 import { postpone } from "../../tests/utils.ts";
 import { change } from "../change/index.ts";

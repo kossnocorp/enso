@@ -27,7 +27,7 @@ export class State<
     Parent extends Atom.Parent.Constraint<Value> = Atom.Parent.Default,
   >(
     value: Value,
-    parent?: Atom.Parent.Def<"state", Parent>,
+    parent?: Atom.Parent.Ref<"state", Parent>,
   ): State<Value, Qualifier, Parent> {
     return void 0 as any;
   }

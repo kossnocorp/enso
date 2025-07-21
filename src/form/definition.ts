@@ -55,7 +55,7 @@ export declare class Form<Value> implements Form.Interface<Value> {
 
   //#region Tree
 
-  get $(): Atom.$.Prop<"field", Value>;
+  get $(): Atom.$.Prop<"field", Atom.Def<Value>>;
 
   at: Atom.At.Prop<"field", Value>;
 
@@ -125,7 +125,7 @@ export namespace Form {
 
     //#region Tree
 
-    get $(): Atom.$.Prop<"field", Value>;
+    get $(): Atom.$.Prop<"field", Atom.Def<Value>>;
 
     at: Atom.At.Prop<"field", Value>;
 
