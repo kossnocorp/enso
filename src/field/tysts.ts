@@ -1274,6 +1274,17 @@ const unionField = new Field({ hello: "world", world: true }) as
     result.any;
   }
 
+  // Nullish
+  {
+    const field = {} as Field<Entity | null | undefined>;
+
+    field.$?.flag satisfies Field<boolean | undefined> | undefined;
+    // @ts-expect-error
+    field.$.flag;
+    // @ts-expect-error
+    field.$?.flag.any;
+  }
+
   // Union
   {
     // Value union
@@ -1300,9 +1311,24 @@ const unionField = new Field({ hello: "world", world: true }) as
       field.$.email;
     }
 
+    // Null
+    {
+      const field = {} as Field<User | null>;
+
+      const result = field.$?.name;
+      result satisfies Field<string> | undefined;
+      undefined satisfies typeof result;
+      // @ts-expect-error
+      field.$.name;
+    }
+
     // Undefined
     {
       const field = {} as Field<User | undefined>;
+
+      const result = field.$?.name;
+      result satisfies Field<string> | undefined;
+      undefined satisfies typeof result;
       // @ts-expect-error
       field.$.name;
     }
@@ -1310,6 +1336,10 @@ const unionField = new Field({ hello: "world", world: true }) as
     // Primitive
     {
       const field = {} as Field<User | number>;
+
+      const result = field.$?.name;
+      result satisfies Field<string> | undefined;
+      undefined satisfies typeof result;
       // @ts-expect-error
       field.$.name;
     }
@@ -1317,6 +1347,10 @@ const unionField = new Field({ hello: "world", world: true }) as
     // Branded primitive
     {
       const field = {} as Field<User | Branded<number>>;
+
+      const result = field.$?.name;
+      result satisfies Field<string> | undefined;
+      undefined satisfies typeof result;
       // @ts-expect-error
       field.$.name;
     }
@@ -1324,7 +1358,7 @@ const unionField = new Field({ hello: "world", world: true }) as
 
   // Shared
   {
-    // Supported
+    // Defined
     {
       const field = ({} as Field<User>).shared<[User, User]>();
 
@@ -1333,9 +1367,13 @@ const unionField = new Field({ hello: "world", world: true }) as
       field.$.name.any;
     }
 
-    // Unsupported
+    // Undefined
     {
       const field = ({} as Field<User>).shared<[User, User | undefined]>();
+
+      const result = field.$?.name;
+      result satisfies Field<string> | undefined;
+      undefined satisfies typeof result;
       // @ts-expect-error
       field.$.name;
     }
@@ -1516,12 +1554,16 @@ const unionField = new Field({ hello: "world", world: true }) as
     {
       const field = {} as Field<User> | Field<Account>;
       //@ts-expect-error
-      field.at("name") satisfies Field<string>;
+      field.at?.("name");
     }
 
     // Undefined
     {
       const field = {} as Field<User | undefined>;
+
+      const result = field.at?.("name");
+      result satisfies Field<string> | undefined;
+      undefined satisfies typeof result;
       // @ts-expect-error
       field.at("name");
     }
@@ -1529,6 +1571,10 @@ const unionField = new Field({ hello: "world", world: true }) as
     // Primitive
     {
       const field = {} as Field<User | number>;
+
+      const result = field.at?.("name");
+      result satisfies Field<string> | undefined;
+      undefined satisfies typeof result;
       // @ts-expect-error
       field.at("name");
     }
@@ -1536,6 +1582,10 @@ const unionField = new Field({ hello: "world", world: true }) as
     // Branded primitive
     {
       const field = {} as Field<User | Branded<number>>;
+
+      const result = field.at?.("name");
+      result satisfies Field<string> | undefined;
+      undefined satisfies typeof result;
       // @ts-expect-error
       field.at("name");
     }
@@ -1543,7 +1593,7 @@ const unionField = new Field({ hello: "world", world: true }) as
 
   // Shared
   {
-    // Supported
+    // Defined
     {
       const field = ({} as Field<User>).shared<[User, User]>();
 
@@ -1552,9 +1602,13 @@ const unionField = new Field({ hello: "world", world: true }) as
       field.at("name").any;
     }
 
-    // Unsupported
+    // Undefined
     {
       const field = ({} as Field<User>).shared<[User, User | undefined]>();
+
+      const result = field.at?.("name");
+      result satisfies Field<string> | undefined;
+      undefined satisfies typeof result;
       // @ts-expect-error
       field.at("name");
     }
@@ -1772,12 +1826,16 @@ const unionField = new Field({ hello: "world", world: true }) as
     {
       const field = {} as Field<User> | Field<Account>;
       //@ts-expect-error
-      field.try("name") satisfies Field<string>;
+      field.try?.("name");
     }
 
     // Undefined
     {
       const field = {} as Field<User | undefined>;
+
+      const result = field.try?.("name");
+      result satisfies Field<string> | undefined;
+      undefined satisfies typeof result;
       // @ts-expect-error
       field.try("name");
     }
@@ -1785,6 +1843,10 @@ const unionField = new Field({ hello: "world", world: true }) as
     // Primitive
     {
       const field = {} as Field<User | number>;
+
+      const result = field.try?.("name");
+      result satisfies Field<string> | undefined;
+      undefined satisfies typeof result;
       // @ts-expect-error
       field.try("name");
     }
@@ -1792,6 +1854,10 @@ const unionField = new Field({ hello: "world", world: true }) as
     // Branded primitive
     {
       const field = {} as Field<User | Branded<number>>;
+
+      const result = field.try?.("name");
+      result satisfies Field<string> | undefined;
+      undefined satisfies typeof result;
       // @ts-expect-error
       field.try("name");
     }
@@ -1811,6 +1877,10 @@ const unionField = new Field({ hello: "world", world: true }) as
     // Unsupported
     {
       const field = ({} as Field<User>).shared<[User, User | undefined]>();
+
+      const result = field.try?.("name");
+      result satisfies Field<string> | undefined;
+      undefined satisfies typeof result;
       // @ts-expect-error
       field.try("name");
     }
@@ -1991,6 +2061,7 @@ const unionField = new Field({ hello: "world", world: true }) as
 
     const result = field.self.try();
     result satisfies Field<User, "tried"> | undefined;
+    undefined satisfies typeof result;
     // @ts-expect-error
     result.any;
   }
@@ -2101,19 +2172,22 @@ const brandedPrim = new Field({} as Branded<string>);
     // Undefined
     {
       const field = {} as Field<string[] | undefined>;
-      field.size satisfies number | void;
+      field.size satisfies number | undefined;
+      undefined satisfies typeof field.size;
     }
 
     // Primitive
     {
       const field = {} as Field<string[] | number>;
-      field.size satisfies number | void;
+      field.size satisfies number | undefined;
+      undefined satisfies typeof field.size;
     }
 
     // Branded primitive
     {
       const field = {} as Field<string[] | Branded<number>>;
-      field.size satisfies number | void;
+      field.size satisfies number | undefined;
+      undefined satisfies typeof field.size;
     }
   }
 
@@ -2130,7 +2204,8 @@ const brandedPrim = new Field({} as Branded<string>);
       const field = ({} as Field<string[]>).shared<
         [string[], string[] | undefined]
       >();
-      field.size satisfies number | void;
+      field.size satisfies number | undefined;
+      undefined satisfies typeof field.size;
     }
   }
 }
@@ -2333,43 +2408,62 @@ const brandedPrim = new Field({} as Branded<string>);
   {
     // Value union
     {
-      // @ts-expect-error
-      unionValue.forEach((item, key) => {});
+      // @ts-expect-error -- TODO: I'm sure it is possible to make it work
+      unionValue.forEach?.((item) => {});
+
+      // @ts-expect-error -- TODO: I'm sure it is possible to make it work
+      unionValue.forEach?.((item, index) => {});
     }
 
     // Field union
     {
-      // @ts-expect-error
-      unionField.forEach((item, key) => {});
+      // @ts-expect-error -- TODO: I'm sure it is possible to make it work
+      unionField.forEach?.((item) => {});
+
+      // @ts-expect-error -- TODO: I'm sure it is possible to make it work
+      unionField.forEach?.((item, index) => {});
     }
 
     // Undefined
     {
       const field = {} as Field<string[] | undefined>;
+
+      field.forEach?.((item) => {
+        item satisfies Field<string, "detachable">;
+      });
       // @ts-expect-error
-      field.forEach((item, index) => {});
+      field.forEach((_item) => {});
     }
 
     // Primitive
     {
       const field = {} as Field<string[] | number>;
+
+      field.forEach?.((item) => {
+        item satisfies Field<string, "detachable">;
+      });
       // @ts-expect-error
-      field.forEach((item, index) => {});
+      field.forEach((_item) => {});
     }
 
     // Branded primitive
     {
       const field = {} as Field<string[] | Branded<number>>;
+
+      field.forEach?.((item) => {
+        item satisfies Field<string, "detachable">;
+      });
       // @ts-expect-error
-      field.forEach((item, index) => {});
+      field.forEach((_item) => {});
     }
   }
 
   // Shared
   {
-    // Supported
+    // Defined
     {
       const field = ({} as Field<string[]>).shared<[string[], string[]]>();
+
       field.forEach((item, index) => {
         item satisfies Field<string, "detachable">;
         // @ts-expect-error
@@ -2381,13 +2475,17 @@ const brandedPrim = new Field({} as Branded<string>);
       });
     }
 
-    // Unsupported
+    // Undefined
     {
       const field = ({} as Field<string[]>).shared<
         [string[], string[] | undefined]
       >();
+
+      field.forEach?.((item) => {
+        item satisfies Field<string, "detachable">;
+      });
       // @ts-expect-error
-      field.forEach((item, index) => {});
+      field.forEach((_) => {});
     }
   }
 }
@@ -2585,41 +2683,68 @@ const brandedPrim = new Field({} as Branded<string>);
   {
     // Value union
     {
-      // @ts-expect-error
-      unionValue.map((item, key) => {});
+      // @ts-expect-error -- TODO: I'm sure it is possible to make it work
+      unionValue.map?.((item) => {});
+
+      // @ts-expect-error -- TODO: I'm sure it is possible to make it work
+      unionValue.map?.((item, index) => {});
     }
 
     // Field union
     {
-      // @ts-expect-error
-      unionField.map((item, key) => {});
+      // @ts-expect-error -- TODO: I'm sure it is possible to make it work
+      unionField.map?.((item) => {});
+
+      // @ts-expect-error -- TODO: I'm sure it is possible to make it work
+      unionField.map?.((item, index) => {});
     }
 
     // Undefined
     {
       const field = {} as Field<string[] | undefined>;
+
+      const result = field.map?.((item) => {
+        item satisfies Field<string, "detachable">;
+        return 0;
+      });
+      result satisfies number[] | undefined;
+      undefined satisfies typeof result;
       // @ts-expect-error
-      field.map((item, index) => {});
+      field.map((_item) => {});
     }
 
     // Primitive
     {
       const field = {} as Field<string[] | number>;
+
+      const result = field.map?.((item) => {
+        item satisfies Field<string, "detachable">;
+        return 0;
+      });
+      result satisfies number[] | undefined;
+      undefined satisfies typeof result;
       // @ts-expect-error
-      field.map((item, index) => {});
+      field.map((_item) => {});
     }
 
     // Branded primitive
     {
       const field = {} as Field<string[] | Branded<number>>;
+
+      const result = field.map?.((item) => {
+        item satisfies Field<string, "detachable">;
+        return 0;
+      });
+      result satisfies number[] | undefined;
+      undefined satisfies typeof result;
       // @ts-expect-error
-      field.map((item, index) => {});
+      field.map((_item) => {});
     }
   }
 
   // Shared
   {
-    // Supported
+    // Defined
     {
       const field = ({} as Field<string[]>).shared<[string[], string[]]>();
       field.map((item, index) => {
@@ -2633,13 +2758,17 @@ const brandedPrim = new Field({} as Branded<string>);
       });
     }
 
-    // Unsupported
+    // Undefined
     {
       const field = ({} as Field<string[]>).shared<
         [string[], string[] | undefined]
       >();
+
+      field.map?.((item) => {
+        item satisfies Field<string, "detachable">;
+      });
       // @ts-expect-error
-      field.map((item, index) => {});
+      field.map((_) => {});
     }
   }
 }
@@ -2888,14 +3017,22 @@ const brandedPrim = new Field({} as Branded<string>);
   {
     // Value union
     {
-      // @ts-expect-error
-      unionValue.find((item, key) => {});
+      unionValue.find((item) => {
+        item satisfies Field<string> | Field<boolean>;
+      });
+
+      // @ts-expect-error -- TODO: I'm sure it is possible to make it work
+      unionValue.find?.((item, index) => {});
     }
 
     // Field union
     {
-      // @ts-expect-error
-      unionField.find((item, key) => {});
+      unionField.find((item) => {
+        item satisfies Field<string> | Field<boolean>;
+      });
+
+      // @ts-expect-error -- TODO: I'm sure it is possible to make it work
+      unionField.find?.((item, index) => {});
     }
 
     // Undefined
@@ -2915,8 +3052,12 @@ const brandedPrim = new Field({} as Branded<string>);
     // Branded primitive
     {
       const field = {} as Field<string[] | Branded<number>>;
+
+      field.find?.((item) => {
+        item satisfies Field<string, "detachable">;
+      });
       // @ts-expect-error
-      field.find((item, index) => {});
+      field.find((_item) => {});
     }
   }
 
@@ -2941,8 +3082,12 @@ const brandedPrim = new Field({} as Branded<string>);
       const field = ({} as Field<string[]>).shared<
         [string[], string[] | undefined]
       >();
+
+      field.find?.((item) => {
+        item satisfies Field<string, "detachable">;
+      });
       // @ts-expect-error
-      field.find((item, index) => {});
+      field.find((_item) => {});
     }
   }
 }
@@ -3184,35 +3329,61 @@ const brandedPrim = new Field({} as Branded<string>);
   {
     // Value union
     {
-      // @ts-expect-error
-      unionValue.filter((item, key) => {});
+      unionValue.filter((item) => {
+        item satisfies Field<string> | Field<boolean>;
+      });
+
+      // @ts-expect-error -- TODO: I'm sure it is possible to make it work
+      unionValue.filter?.((item, index) => {});
     }
 
     // Field union
     {
-      // @ts-expect-error
-      unionField.filter((item, key) => {});
+      unionField.filter((item) => {
+        item satisfies Field<string> | Field<boolean>;
+      });
+
+      // @ts-expect-error -- TODO: I'm sure it is possible to make it work
+      unionField.filter?.((item, index) => {});
     }
 
     // Undefined
     {
       const field = {} as Field<string[] | undefined>;
+
+      const result = field.filter?.((item) => {
+        item satisfies Field<string, "detachable">;
+      });
+      result satisfies Field<string, "detachable">[] | undefined;
+      undefined satisfies typeof result;
       // @ts-expect-error
-      field.filter((item, index) => {});
+      field.filter((_item) => {});
     }
 
     // Primitive
     {
       const field = {} as Field<string[] | number>;
+
+      const result = field.filter?.((item) => {
+        item satisfies Field<string, "detachable">;
+      });
+      result satisfies Field<string, "detachable">[] | undefined;
+      undefined satisfies typeof result;
       // @ts-expect-error
-      field.filter((item, index) => {});
+      field.filter((_item) => {});
     }
 
     // Branded primitive
     {
       const field = {} as Field<string[] | Branded<number>>;
+
+      const result = field.filter?.((item) => {
+        item satisfies Field<string, "detachable">;
+      });
+      result satisfies Field<string, "detachable">[] | undefined;
+      undefined satisfies typeof result;
       // @ts-expect-error
-      field.filter((item, index) => {});
+      field.filter((_item) => {});
     }
   }
 
@@ -3237,8 +3408,12 @@ const brandedPrim = new Field({} as Branded<string>);
       const field = ({} as Field<string[]>).shared<
         [string[], string[] | undefined]
       >();
+
+      field.filter?.((item) => {
+        item satisfies Field<string, "detachable">;
+      });
       // @ts-expect-error
-      field.filter((item, index) => {});
+      field.filter((_item) => {});
     }
   }
 }
@@ -3334,9 +3509,7 @@ const brandedPrim = new Field({} as Branded<string>);
     {
       const result = unionValue.useCollection();
 
-      result satisfies
-        | Field.Exact<Hello, "bound", never>
-        | Field.Exact<Blah, "bound", never>;
+      result satisfies Field<Hello, "bound"> | Field<Blah, "bound">;
       // @ts-expect-error
       result.any;
     }
@@ -3345,9 +3518,7 @@ const brandedPrim = new Field({} as Branded<string>);
     {
       const result = unionField.useCollection();
 
-      result satisfies
-        | Field.Exact<Hello, "bound", never>
-        | Field.Exact<Blah, "bound", never>;
+      result satisfies Field<Hello, "bound"> | Field<Blah, "bound">;
       // @ts-expect-error
       result.any;
     }
@@ -3355,6 +3526,11 @@ const brandedPrim = new Field({} as Branded<string>);
     // Undefined
     {
       const field = {} as Field<string[] | undefined>;
+
+      const result = field.useCollection?.();
+      result satisfies Field<string[], "bound"> | undefined;
+      // @ts-expect-error
+      result satisfies undefined;
       // @ts-expect-error
       field.useCollection();
     }
@@ -3362,6 +3538,11 @@ const brandedPrim = new Field({} as Branded<string>);
     // Primitive
     {
       const field = {} as Field<string[] | number>;
+
+      const result = field.useCollection?.();
+      result satisfies Field<string[], "bound"> | undefined;
+      // @ts-expect-error
+      result satisfies undefined;
       // @ts-expect-error
       field.useCollection();
     }
@@ -3369,6 +3550,11 @@ const brandedPrim = new Field({} as Branded<string>);
     // Branded primitive
     {
       const field = {} as Field<string[] | Branded<number>>;
+
+      const result = field.useCollection?.();
+      result satisfies Field<string[], "bound"> | undefined;
+      // @ts-expect-error
+      result satisfies undefined;
       // @ts-expect-error
       field.useCollection();
     }
@@ -3391,6 +3577,11 @@ const brandedPrim = new Field({} as Branded<string>);
       const field = ({} as Field<string[]>).shared<
         [string[], string[] | undefined]
       >();
+
+      const result = field.useCollection?.();
+      result satisfies Field<string[], "bound"> | undefined;
+      // @ts-expect-error
+      result satisfies undefined;
       // @ts-expect-error
       field.useCollection();
     }
@@ -3478,19 +3669,22 @@ const brandedPrim = new Field({} as Branded<string>);
     {
       const field = {} as Field<Account | User>;
       // @ts-expect-error
-      field.remove("flag");
+      field.remove?.("flag");
     }
 
     // Field union
     {
       const field = {} as Field<Account> | Field<User>;
       // @ts-expect-error
-      field.remove("flag");
+      field.remove?.("flag");
     }
 
     // Undefined
     {
       const field = {} as Field<string[] | undefined>;
+
+      const result = field.remove?.(0);
+      result satisfies Field<string | DetachedValue, "detachable"> | undefined;
       // @ts-expect-error
       field.remove(0);
     }
@@ -3498,6 +3692,9 @@ const brandedPrim = new Field({} as Branded<string>);
     // Primitive
     {
       const field = {} as Field<string[] | number>;
+
+      const result = field.remove?.(0);
+      result satisfies Field<string | DetachedValue, "detachable"> | undefined;
       // @ts-expect-error
       field.remove(0);
     }
@@ -3505,6 +3702,9 @@ const brandedPrim = new Field({} as Branded<string>);
     // Branded primitive
     {
       const field = {} as Field<string[] | Branded<number>>;
+
+      const result = field.remove?.(0);
+      result satisfies Field<string | DetachedValue, "detachable"> | undefined;
       // @ts-expect-error
       field.remove(0);
     }
@@ -3512,6 +3712,9 @@ const brandedPrim = new Field({} as Branded<string>);
     // Readonly array
     {
       const field = {} as Field<string[] | readonly string[]>;
+
+      const result = field.remove?.(0);
+      result satisfies Field<string | DetachedValue, "detachable"> | undefined;
       // @ts-expect-error
       field.remove(0);
     }
@@ -3519,6 +3722,9 @@ const brandedPrim = new Field({} as Branded<string>);
     // Tuple
     {
       const field = {} as Field<string[] | [string, string]>;
+
+      const result = field.remove?.(0);
+      result satisfies Field<string | DetachedValue, "detachable"> | undefined;
       // @ts-expect-error
       field.remove(0);
     }
@@ -3537,6 +3743,11 @@ const brandedPrim = new Field({} as Branded<string>);
       const field = ({} as Field<string[]>).shared<
         [string[], string[] | undefined]
       >();
+      // @ts-expect-error
+      field.remove(0);
+
+      const result = field.remove?.(0);
+      result satisfies Field<string | DetachedValue, "detachable"> | undefined;
       // @ts-expect-error
       field.remove(0);
     }
@@ -3700,19 +3911,22 @@ const brandedPrim = new Field({} as Branded<string>);
     {
       const field = {} as Field<string[] | number[]>;
       // @ts-expect-error
-      field.insert(0, "hello");
+      field.insert?.(0, "hello");
     }
 
     // Field union
     {
       const field = {} as Field<string[]> | Field<number[]>;
       // @ts-expect-error
-      field.insert(0, "hello");
+      field.insert?.(0, "hello");
     }
 
     // Undefined
     {
       const field = {} as Field<string[] | undefined>;
+
+      const result = field.insert?.(0, "hello");
+      result satisfies Field<string, "detachable"> | undefined;
       // @ts-expect-error
       field.insert(0, "hello");
     }
@@ -3720,6 +3934,9 @@ const brandedPrim = new Field({} as Branded<string>);
     // Primitive
     {
       const field = {} as Field<string[] | number>;
+
+      const result = field.insert?.(0, "hello");
+      result satisfies Field<string, "detachable"> | undefined;
       // @ts-expect-error
       field.insert(0, "hello");
     }
@@ -3727,6 +3944,9 @@ const brandedPrim = new Field({} as Branded<string>);
     // Branded primitive
     {
       const field = {} as Field<string[] | Branded<number>>;
+
+      const result = field.insert?.(0, "hello");
+      result satisfies Field<string, "detachable"> | undefined;
       // @ts-expect-error
       field.insert(0, "hello");
     }
@@ -3734,6 +3954,9 @@ const brandedPrim = new Field({} as Branded<string>);
     // Readonly array
     {
       const field = {} as Field<string[] | readonly string[]>;
+
+      const result = field.insert?.(0, "hello");
+      result satisfies Field<string, "detachable"> | undefined;
       // @ts-expect-error
       field.insert(0, "hello");
     }
@@ -3741,6 +3964,9 @@ const brandedPrim = new Field({} as Branded<string>);
     // Tuple
     {
       const field = {} as Field<string[] | [string, string]>;
+
+      const result = field.insert?.(0, "hello");
+      result satisfies Field<string, "detachable"> | undefined;
       // @ts-expect-error
       field.insert(0, "hello");
     }
@@ -3748,6 +3974,9 @@ const brandedPrim = new Field({} as Branded<string>);
     // Object
     {
       const field = {} as Field<string[] | Hello>;
+
+      const result = field.insert?.(0, "hello");
+      result satisfies Field<string, "detachable"> | undefined;
       // @ts-expect-error
       field.insert(0, "hello");
     }
@@ -3755,17 +3984,20 @@ const brandedPrim = new Field({} as Branded<string>);
 
   // Shared
   {
-    // Supported
+    // Defined
     {
       const field = ({} as Field<string[]>).shared<[string[], string[]]>();
       field.insert(0, "hello");
     }
 
-    // Unsupported
+    // Undefined
     {
       const field = ({} as Field<string[]>).shared<
         [string[], string[] | undefined]
       >();
+
+      const result = field.insert?.(0, "hello");
+      result satisfies Field<string, "detachable"> | undefined;
       // @ts-expect-error
       field.insert(0, "hello");
     }
@@ -3846,19 +4078,22 @@ const brandedPrim = new Field({} as Branded<string>);
     {
       const field = {} as Field<string[] | number[]>;
       // @ts-expect-error
-      field.push("hello");
+      field.push?.("hello");
     }
 
     // Field union
     {
       const field = {} as Field<string[]> | Field<number[]>;
       // @ts-expect-error
-      field.push("hello");
+      field.push?.("hello");
     }
 
     // Undefined
     {
       const field = {} as Field<string[] | undefined>;
+
+      const result = field.push?.("hello");
+      result satisfies Field<string, "detachable"> | undefined;
       // @ts-expect-error
       field.push("hello");
     }
@@ -3866,6 +4101,9 @@ const brandedPrim = new Field({} as Branded<string>);
     // Primitive
     {
       const field = {} as Field<string[] | number>;
+
+      const result = field.push?.("hello");
+      result satisfies Field<string, "detachable"> | undefined;
       // @ts-expect-error
       field.push("hello");
     }
@@ -3873,6 +4111,9 @@ const brandedPrim = new Field({} as Branded<string>);
     // Branded primitive
     {
       const field = {} as Field<string[] | Branded<number>>;
+
+      const result = field.push?.("hello");
+      result satisfies Field<string, "detachable"> | undefined;
       // @ts-expect-error
       field.push("hello");
     }
@@ -3880,6 +4121,9 @@ const brandedPrim = new Field({} as Branded<string>);
     // Readonly array
     {
       const field = {} as Field<string[] | readonly string[]>;
+
+      const result = field.push?.("hello");
+      result satisfies Field<string, "detachable"> | undefined;
       // @ts-expect-error
       field.push("hello");
     }
@@ -3887,6 +4131,9 @@ const brandedPrim = new Field({} as Branded<string>);
     // Tuple
     {
       const field = {} as Field<string[] | [string, string]>;
+
+      const result = field.push?.("hello");
+      result satisfies Field<string, "detachable"> | undefined;
       // @ts-expect-error
       field.push("hello");
     }
@@ -3894,6 +4141,9 @@ const brandedPrim = new Field({} as Branded<string>);
     // Object
     {
       const field = {} as Field<string[] | Hello>;
+
+      const result = field.push?.("hello");
+      result satisfies Field<string, "detachable"> | undefined;
       // @ts-expect-error
       field.push("hello");
     }
@@ -3901,17 +4151,20 @@ const brandedPrim = new Field({} as Branded<string>);
 
   // Shared
   {
-    // Supported
+    // Defined
     {
       const field = ({} as Field<string[]>).shared<[string[], string[]]>();
       field.push("hello");
     }
 
-    // Unsupported
+    // Undefined
     {
       const field = ({} as Field<string[]>).shared<
         [string[], string[] | undefined]
       >();
+
+      const result = field.push?.("hello");
+      result satisfies Field<string, "detachable"> | undefined;
       // @ts-expect-error
       field.push("hello");
     }
@@ -5245,6 +5498,8 @@ const brandedPrim = new Field({} as Branded<string>);
     {
       const field = new Field("hello") as Field<string | number>;
 
+      const result = field.useDefined?.("string");
+      result satisfies Field<string> | undefined;
       // @ts-expect-error
       field.useDefined("string");
     }
@@ -5254,7 +5509,7 @@ const brandedPrim = new Field({} as Branded<string>);
       const field = new Field(0) as Field<number | undefined>;
 
       // @ts-expect-error
-      field.useDefined("string");
+      field.useDefined?.("string");
     }
 
     // Base

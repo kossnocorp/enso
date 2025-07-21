@@ -63,10 +63,12 @@ export namespace EnsoUtils {
    */
   export type Nullish<Type = never> = Type | null | undefined;
 
+  export type HasNullish<Type> = Not<IsNever<Extract<Type, Nullish>>>;
+
   /**
    * Excludes nulish values from the given type.
    */
-  export type NonNullish<Type> = Exclude<Type, Nullish>;
+  export type NonNullish<Type> = Exclude<Type, null | undefined>;
 
   /**
    * Excludes undefined values from the given type.
@@ -275,6 +277,19 @@ export namespace EnsoUtils {
     Class extends Interface & { new (...args: any[]): any },
     Interface,
   > = InstanceType<Class>;
+
+  //#endregion
+
+  //#region Object
+
+  export type HasNonObject<Type> = Not<
+    IsNever<Extract<Type, BrandedPrimitive> | Exclude<Type, object>>
+  >;
+
+  export type OnlyObject<Type> = Extract<
+    Exclude<Type, BrandedPrimitive>,
+    object
+  >;
 
   //#endregion
 }

@@ -265,21 +265,21 @@ import { Atom } from "./index.js";
   {
     type NumberProp = Atom.$.Prop<"field", number>;
 
-    const _test = {} as NumberProp;
-    _test satisfies {};
+    const _test: NumberProp = {} as any;
+    _test satisfies undefined;
 
-    tyst<NumberProp>({} as Atom.$.Prop<"field", number>);
-    tyst<NumberProp>({} as Atom.$.Prop<"field", Branded<number>>);
+    tyst<NumberProp>(undefined as Atom.$.Prop<"field", number>);
+    tyst<NumberProp>(undefined as Atom.$.Prop<"field", Branded<number>>);
   }
 
   // Branded primitive
   {
     type BrandedProp = Atom.$.Prop<"field", Branded<number>>;
 
-    const _test = {} as BrandedProp;
-    _test satisfies {};
+    const _test: BrandedProp = {} as any;
+    _test satisfies undefined;
 
-    tyst<BrandedProp>({} as Atom.$.Prop<"field", string>);
+    tyst<BrandedProp>(undefined as Atom.$.Prop<"field", string>);
   }
 
   // Object
@@ -302,7 +302,7 @@ import { Atom } from "./index.js";
     tyst<AnyProp>({} as string);
     tyst<AnyProp>({} as Atom.$.Prop<"field", any>);
     tyst<AnyProp>({} as Atom.$.Prop<"field", unknown>);
-    tyst<AnyProp>({} as Atom.$.Prop<"field", string>);
+    tyst<AnyProp>(undefined as Atom.$.Prop<"field", string>);
   }
 
   // Unknown
