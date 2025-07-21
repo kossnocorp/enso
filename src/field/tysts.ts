@@ -17,6 +17,18 @@ const unionField = new Field({ hello: "world", world: true }) as
 
     // Basic
     {
+      // let
+      const base = {} as Field.Base<Entity>;
+      const baseTried = base.self.try();
+      const baseTriedSelf = baseTried.self;
+
+      const subField = {} as Field.Base<Account | User>;
+      const subTried = subField.self.try();
+      const subTriedSelf = subTried.self;
+
+      let _try = base.self;
+      _try = subField.self;
+
       _entity = {} as Field.Base<Account | User>;
       _entity = {} as Field.Base<Account>;
       _entity = {} as Field.Base<User>;
@@ -77,24 +89,6 @@ const unionField = new Field({ hello: "world", world: true }) as
       >;
       // @ts-expect-error
       _organization = {} as Field.Base<User, never, ContainerParent>;
-    }
-
-    // Shared
-    {
-      type EntityTuple = [Entity, Entity | undefined];
-      let _entity: Field.Base.Shared<[Entity, Entity | undefined]>;
-      _entity = ({} as Field.Base<Entity>).shared<EntityTuple>();
-      _entity = ({} as Field.Base<Account | User>).shared<EntityTuple>();
-      _entity = ({} as Field.Base<Account>).shared<EntityTuple>();
-      _entity = ({} as Field.Base<User>).shared<EntityTuple>();
-
-      type AccountTuple = [Account, Account | undefined];
-      let _account: Field.Base.Shared<[Account, Account | undefined]>;
-      // @ts-expect-error
-      _account = ({} as Field.Base<Account | User>).shared<AccountTuple>();
-      _account = ({} as Field.Base<Account>).shared<AccountTuple>();
-      // @ts-expect-error
-      _account = ({} as Field.Base<User>).shared<AccountTuple>();
     }
   }
 
@@ -161,24 +155,6 @@ const unionField = new Field({ hello: "world", world: true }) as
       _organization = {} as Field<Account | User, never, OrganizationParent>;
       // @ts-expect-error
       _organization = {} as Field<User, never, ContainerParent>;
-    }
-
-    // Shared
-    {
-      type EntityTuple = [Entity, Entity | undefined];
-      let _entity: Field.Base.Shared<[Entity, Entity | undefined]>;
-      _entity = ({} as Field<Entity>).shared<EntityTuple>();
-      _entity = ({} as Field<Account | User>).shared<EntityTuple>();
-      _entity = ({} as Field<Account>).shared<EntityTuple>();
-      _entity = ({} as Field<User>).shared<EntityTuple>();
-
-      type AccountTuple = [Account, Account | undefined];
-      let _account: Field.Base.Shared<[Account, Account | undefined]>;
-      _account = ({} as Field<Account>).shared<AccountTuple>();
-      // @ts-expect-error
-      _account = ({} as Field<Account | User>).shared<AccountTuple>();
-      // @ts-expect-error
-      _account = ({} as Field<User>).shared<AccountTuple>();
     }
   }
 
@@ -277,27 +253,6 @@ const unionField = new Field({ hello: "world", world: true }) as
           Field.Proxied<{ abc: "a" | "b" | "c"; id: Branded<string> }>
         >,
       );
-    }
-
-    // Shared
-    {
-      type EntityTuple = [Entity, Entity | undefined];
-      let _entity: Field.Shared<[Entity, Entity | undefined]>;
-      _entity = ({} as Field<Entity>).shared<EntityTuple>();
-      // @ts-expect-error
-      _entity = ({} as Field<Account | User>).shared<EntityTuple>();
-      // @ts-expect-error
-      _entity = ({} as Field<Account>).shared<EntityTuple>();
-      // @ts-expect-error
-      _entity = ({} as Field<User>).shared<EntityTuple>();
-
-      type AccountTuple = [Account, Account | undefined];
-      let _account: Field.Shared<[Account, Account | undefined]>;
-      _account = ({} as Field<Account>).shared<AccountTuple>();
-      // @ts-expect-error
-      _account = ({} as Field<Account | User>).shared<AccountTuple>();
-      // @ts-expect-error
-      _account = ({} as Field<User>).shared<AccountTuple>();
     }
   }
 
@@ -453,23 +408,23 @@ const unionField = new Field({ hello: "world", world: true }) as
       // @ts-expect-error
       _organization = {} as Field<User, never, ContainerParent>;
     }
+  }
 
-    // Shared
-    {
-      type EntityTuple = [Entity, Entity | undefined];
-      let _entity: Field.Immutable.Shared<[Entity, Entity | undefined]>;
-      _entity = ({} as Field<Account | User>).shared<EntityTuple>();
-      _entity = ({} as Field<Account>).shared<EntityTuple>();
-      _entity = ({} as Field<User>).shared<EntityTuple>();
+  // Shared
+  {
+    type EntityTuple = [Entity, Entity | undefined];
+    let _entity: Field.Shared<[Entity, Entity | undefined]>;
+    _entity = ({} as Field<Account | User>).shared<EntityTuple>();
+    _entity = ({} as Field<Account>).shared<EntityTuple>();
+    _entity = ({} as Field<User>).shared<EntityTuple>();
 
-      type AccountTuple = [Account, Account | undefined];
-      let _account: Field.Immutable.Shared<[Account, Account | undefined]>;
-      _account = ({} as Field<Account>).shared<AccountTuple>();
-      // @ts-expect-error
-      _account = ({} as Field<Account | User>).shared<AccountTuple>();
-      // @ts-expect-error
-      _account = ({} as Field<User>).shared<AccountTuple>();
-    }
+    type AccountTuple = [Account, Account | undefined];
+    let _account: Field.Shared<[Account, Account | undefined]>;
+    _account = ({} as Field<Account>).shared<AccountTuple>();
+    // @ts-expect-error
+    _account = ({} as Field<Account | User>).shared<AccountTuple>();
+    // @ts-expect-error
+    _account = ({} as Field<User>).shared<AccountTuple>();
   }
 }
 //#endregion
@@ -545,8 +500,8 @@ const unionField = new Field({ hello: "world", world: true }) as
   // Shared
   {
     const field = {} as
-      | Field<Atom.Shared.Value<[User, User | undefined]>>
-      | Field<Atom.Shared.Value<[Account, Account | undefined]>>;
+      | Field.Shared<[User, User | undefined]>
+      | Field.Shared<[Account, Account | undefined]>;
 
     const result = Field.base(field);
     result satisfies Field.Base<unknown>;
@@ -618,8 +573,8 @@ const unionField = new Field({ hello: "world", world: true }) as
   // Shared
   {
     const field = {} as
-      | Field<Atom.Shared.Value<[User, User | undefined]>>
-      | Field<Atom.Shared.Value<[Account, Account | undefined]>>;
+      | Field.Shared<[User, User | undefined]>
+      | Field.Shared<[Account, Account | undefined]>;
 
     const result = Field.useEnsure(field);
     result satisfies Field.Base<unknown>;
@@ -5461,10 +5416,7 @@ const brandedPrim = new Field({} as Branded<string>);
         return value?.slice(0, sizeValue) ?? "";
       }, []);
 
-    result satisfies Field<
-      number,
-      Field.Proxied<Field.Shared.Value<[string, string | undefined]>>
-    >;
+    result satisfies Field<number, Field.Proxied<string | undefined>>;
     result satisfies Field<number>;
   }
 }
@@ -5555,16 +5507,16 @@ const brandedPrim = new Field({} as Branded<string>);
   {
     const field = {} as Field<string>;
 
-    field.shared<[string, string | undefined]>() satisfies Field<
-      Atom.Shared.Value<[string, string | undefined]>
+    field.shared<[string, string | undefined]>() satisfies Field.Shared<
+      [string, string | undefined]
     >;
-    field.shared<[string, string | undefined, string]>() satisfies Field<
-      Atom.Shared.Value<[string, string | undefined, string]>
+    field.shared<[string, string | undefined, string]>() satisfies Field.Shared<
+      [string, string | undefined, string]
     >;
     field.shared<
       [string, string | undefined, string, string | null]
-    >() satisfies Field<
-      Atom.Shared.Value<[string, string | undefined, string, string | null]>
+    >() satisfies Field.Shared<
+      [string, string | undefined, string, string | null]
     >;
 
     field.shared<[number, string | undefined]>() satisfies Field<unknown>;
@@ -5580,15 +5532,11 @@ const brandedPrim = new Field({} as Branded<string>);
 
     field.shared<
       [string | number, string | number | undefined]
-    >() satisfies Field<
-      Atom.Shared.Value<[string | number, string | number | undefined]>
-    >;
+    >() satisfies Field.Shared<[string | number, string | number | undefined]>;
     field.shared<
       [string | number, string | number | undefined, string | number]
     >() satisfies Field<
-      Atom.Shared.Value<
-        [string | number, string | number | undefined, string | number]
-      >
+      [string | number, string | number | undefined, string | number]
     >;
     field.shared<
       [
@@ -5598,14 +5546,12 @@ const brandedPrim = new Field({} as Branded<string>);
         string | number | null,
       ]
     >() satisfies Field<
-      Atom.Shared.Value<
-        [
-          string | number,
-          string | number | undefined,
-          string | number,
-          string | number | null,
-        ]
-      >
+      [
+        string | number,
+        string | number | undefined,
+        string | number,
+        string | number | null,
+      ]
     >;
 
     field.shared<
@@ -5625,33 +5571,33 @@ const brandedPrim = new Field({} as Branded<string>);
     // Exact
     {
       const exact = ({} as Field<User>).shared<ExactTuple>();
-      exact satisfies Field<Atom.Shared.Value<ExactTuple>>;
+      exact satisfies Field.Shared<ExactTuple>;
 
       const base = ({} as Field<User>).shared<EntityTuple>();
-      base satisfies Field<Atom.Shared.Value<ExactTuple>>;
+      base satisfies Field.Shared<ExactTuple>;
 
       const mixed = ({} as Field<User>).shared<
         [User | Entity, User | Entity | undefined]
       >();
-      mixed satisfies Field<Atom.Shared.Value<[User, User | undefined]>>;
+      mixed satisfies Field.Shared<[User, User | undefined]>;
     }
 
     // Base
     {
       const exact = ({} as Field.Base<User>).shared<ExactTuple>();
-      exact satisfies Field.Base<Atom.Shared.Value<ExactTuple>>;
+      exact satisfies Field.Base<ExactTuple>;
 
       const base = ({} as Field.Base<User>).shared<EntityTuple>();
-      base satisfies Field.Base<Atom.Shared.Value<EntityTuple>>;
+      base satisfies Field.Base<EntityTuple>;
     }
 
     // Immutable
     {
       const exact = ({} as Field.Immutable<User>).shared<ExactTuple>();
-      exact satisfies Field.Immutable<Atom.Shared.Value<ExactTuple>>;
+      exact satisfies Field.Immutable<ExactTuple>;
 
       const base = ({} as Field.Immutable<User>).shared<EntityTuple>();
-      base satisfies Field.Immutable<Atom.Shared.Value<EntityTuple>>;
+      base satisfies Field.Immutable<EntityTuple>;
     }
   }
 }

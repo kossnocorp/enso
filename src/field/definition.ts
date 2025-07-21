@@ -12,7 +12,7 @@ export declare class Field<
     Qualifier extends Atom.Qualifier.Constraint = Atom.Qualifier.Default,
     Parent extends Atom.Parent.Constraint<Value> = Atom.Parent.Default,
   >
-  extends Atom<"field" | "exact", Value, Qualifier, Parent>
+  extends Atom<"field", Value, Qualifier, Parent>
   implements
     Utils.StaticImplements<
       typeof Field<Value, Qualifier, Parent>,
@@ -111,9 +111,11 @@ export namespace Field {
     ? Immutable<Value, Qualifier, Parent>
     : "base" extends Flavor
       ? Base<Value, Qualifier, Parent>
-      : "exact" extends Flavor
-        ? Exact<Value, Qualifier, Parent>
-        : never;
+      : "shared" extends Flavor
+        ? Shared<Value, Qualifier, Parent>
+        : "exact" extends Flavor
+          ? Exact<Value, Qualifier, Parent>
+          : never;
 
   //#region Interface
 
@@ -137,16 +139,10 @@ export namespace Field {
     Value,
     Qualifier extends Atom.Qualifier.Constraint = Atom.Qualifier.Default,
     Parent extends Atom.Parent.Constraint<Value> = Atom.Parent.Default,
-  > extends Base.Interface<"base", Value, Qualifier, Parent> {}
+  > extends Atom.Base<"field" | "base", Value, Qualifier, Parent>,
+      Immutable.Interface<"base", Value, Qualifier, Parent> {}
 
   export namespace Base {
-    export interface Interface<
-      Variant extends Atom.Flavor.Variant,
-      Value,
-      Qualifier extends Atom.Qualifier.Constraint = Atom.Qualifier.Default,
-      Parent extends Atom.Parent.Constraint<Value> = Atom.Parent.Default,
-    > extends Immutable.Interface<Variant, Value, Qualifier, Parent> {}
-
     export type Discriminated<
       Value,
       Discriminator extends Atom.Discriminate.Discriminator<Value>,
@@ -160,6 +156,18 @@ export namespace Field {
       Parent
     >;
   }
+
+  export interface Shared<
+    Value,
+    Qualifier extends Atom.Qualifier.Constraint = Atom.Qualifier.Default,
+    Parent extends Atom.Parent.Constraint<Value> = Atom.Parent.Default,
+  > extends Atom.Shared<"field" | "shared", Value, Qualifier, Parent>,
+      Immutable.Interface<
+        "shared",
+        Atom.Shared.Value.Read<Value>,
+        Qualifier,
+        Parent
+      > {}
 
   export interface Immutable<
     Value,
@@ -256,45 +264,6 @@ export namespace Field {
   export type Proxied<SourceValue = any> = Atom.Proxy.Qualifier<SourceValue>;
 
   //#endregion Transform
-
-  //#region Shared
-
-  export type Shared<
-    ValueTuple extends Atom.Shared.Value.Tuple,
-    Qualifier extends Atom.Qualifier.Constraint = Atom.Qualifier.Default,
-    Parent extends Atom.Parent.Constraint<ValueTuple> = Atom.Parent.Default,
-  > = Exact.Shared<ValueTuple, Qualifier, Parent>;
-
-  export namespace Shared {
-    export type Value<ValueTuple extends Atom.Shared.Value.Tuple> =
-      Atom.Shared.Value<ValueTuple>;
-  }
-
-  export namespace Exact {
-    export type Shared<
-      ValueTuple extends Atom.Shared.Value.Tuple,
-      Qualifier extends Atom.Qualifier.Constraint = Atom.Qualifier.Default,
-      Parent extends Atom.Parent.Constraint<ValueTuple> = Atom.Parent.Default,
-    > = Field.Exact<Atom.Shared.Value<ValueTuple>, Qualifier, Parent>;
-  }
-
-  export namespace Base {
-    export type Shared<
-      ValueTuple extends Atom.Shared.Value.Tuple,
-      Qualifier extends Atom.Qualifier.Constraint = Atom.Qualifier.Default,
-      Parent extends Atom.Parent.Constraint<ValueTuple> = Atom.Parent.Default,
-    > = Field.Base<Atom.Shared.Value<ValueTuple>, Qualifier, Parent>;
-  }
-
-  export namespace Immutable {
-    export type Shared<
-      ValueTuple extends Atom.Shared.Value.Tuple,
-      Qualifier extends Atom.Qualifier.Constraint = Atom.Qualifier.Default,
-      Parent extends Atom.Parent.Constraint<ValueTuple> = Atom.Parent.Default,
-    > = Field.Immutable<Atom.Shared.Value<ValueTuple>, Qualifier, Parent>;
-  }
-
-  //#endregion
 
   //#region Meta
 

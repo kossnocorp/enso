@@ -9,7 +9,7 @@ export class State<
     Qualifier extends Atom.Qualifier.Constraint = Atom.Qualifier.Default,
     Parent extends Atom.Parent.Constraint<Value> = Atom.Parent.Default,
   >
-  extends Atom<"state" | "exact", Value, Qualifier, Parent>
+  extends Atom<"state", Value, Qualifier, Parent>
   implements
     Utils.StaticImplements<
       typeof State<Value, Qualifier, Parent>,
@@ -70,9 +70,11 @@ export namespace State {
     ? Immutable<Value, Qualifier, Parent>
     : "base" extends Flavor
       ? Base<Value, Qualifier, Parent>
-      : "exact" extends Flavor
-        ? Exact<Value, Qualifier, Parent>
-        : never;
+      : "shared" extends Flavor
+        ? Shared<Value, Qualifier, Parent>
+        : "exact" extends Flavor
+          ? Exact<Value, Qualifier, Parent>
+          : never;
 
   export interface Exact<
     Value,
@@ -87,6 +89,15 @@ export namespace State {
     Parent extends Atom.Parent.Constraint<Value> = Atom.Parent.Default,
   > extends Hint,
       Atom.Base<"state" | "base", Value, Qualifier, Parent> {}
+
+  export interface Shared<
+    Value,
+    Qualifier extends Atom.Qualifier.Constraint = Atom.Qualifier.Default,
+    Parent extends Atom.Parent.Constraint<
+      Atom.Shared.Value.Read<Value>
+    > = Atom.Parent.Default,
+  > extends Hint,
+      Atom.Shared<"state" | "shared", Value, Qualifier, Parent> {}
 
   export interface Immutable<
     Value,
