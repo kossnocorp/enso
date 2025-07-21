@@ -59,7 +59,7 @@ export declare class Atom<
 
   get value(): Atom.Value.Prop<ValueDef["read"]>;
 
-  useValue(): Atom.Value<ValueDef["read"]>;
+  useValue(): Atom.Value.Opaque<ValueDef["read"]>;
 
   compute: Atom.Compute.Prop<ValueDef["read"]>;
 
@@ -765,7 +765,7 @@ export namespace Atom {
 
     value: Atom.Value.Prop<ValueDef["read"]>;
 
-    useValue(): Atom.Value<ValueDef["read"]>;
+    useValue(): Atom.Value.Opaque<ValueDef["read"]>;
 
     compute: Compute.Prop<ValueDef["read"]>;
 
@@ -1179,30 +1179,6 @@ export namespace Atom {
 
   //#region Value
 
-  export type Value<Value> =
-    // Mapped unknown and any are resolved to `{}` and `Record<string, any>`
-    // respectively, so we have to have special case for them to account for
-    // invariance.
-    Utils.IsNotTop<Value> extends true
-      ? Value extends Shared.Value<infer ValueTuple>
-        ? Shared.Value.Union<ValueTuple>
-        : // Preserve brand if it exists
-          Value extends string & (infer Brand extends Utils.AnyBrand)
-          ? string & Brand
-          : Value extends number & (infer Brand extends Utils.AnyBrand)
-            ? number & Brand
-            : Value extends boolean & (infer Brand extends Utils.AnyBrand)
-              ? boolean & Brand
-              : Value extends symbol & (infer Brand extends Utils.AnyBrand)
-                ? symbol & Brand
-                : // Otherwise map the value to its own type
-                  { [Key in keyof Value]: Value[Key] }
-      : Utils.IsUnknown<Value> extends true
-        ? never
-        : Utils.IsAny<Value> extends true
-          ? any
-          : Value;
-
   export interface Def<ReadValue, WriteValue = ReadValue> {
     read: ReadValue;
     write: WriteValue;
@@ -1216,6 +1192,32 @@ export namespace Atom {
   }
 
   export namespace Value {
+    export type Prop<Value> = Opaque<Value>;
+
+    export type Opaque<Value> =
+      // Mapped unknown and any are resolved to `{}` and `Record<string, any>`
+      // respectively, so we have to have special case for them to account for
+      // invariance.
+      Utils.IsNotTop<Value> extends true
+        ? Value extends Shared.Value<infer ValueTuple>
+          ? Shared.Value.Union<ValueTuple>
+          : // Preserve brand if it exists
+            Value extends string & (infer Brand extends Utils.AnyBrand)
+            ? string & Brand
+            : Value extends number & (infer Brand extends Utils.AnyBrand)
+              ? number & Brand
+              : Value extends boolean & (infer Brand extends Utils.AnyBrand)
+                ? boolean & Brand
+                : Value extends symbol & (infer Brand extends Utils.AnyBrand)
+                  ? symbol & Brand
+                  : // Otherwise map the value to its own type
+                    { [Key in keyof Value]: Value[Key] }
+        : Utils.IsUnknown<Value> extends true
+          ? never
+          : Utils.IsAny<Value> extends true
+            ? any
+            : Value;
+
     export type Read<Value> =
       Value extends Def<infer Value>
         ? Value extends Shared.Value<infer ValueTuple>
@@ -1235,8 +1237,6 @@ export namespace Atom {
         : Value extends Shared.Value<infer ValueTuple>
           ? Shared.Value.Intersection<ValueTuple>
           : Value;
-
-    export type Prop<Value> = Atom.Value<Value>;
 
     export interface Phantom<Value> {
       (value: Value.Read<Value>): void;
