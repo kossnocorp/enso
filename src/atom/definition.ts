@@ -6,7 +6,6 @@ import { Field } from "../field/definition.ts";
 import type { State } from "../state/index.ts";
 import type { Enso } from "../types.ts";
 import type { EnsoUtils as Utils } from "../utils.ts";
-import { F } from "vitest/dist/chunks/config.d.D2ROskhv.js";
 
 export declare class Atom<
     Kind extends Atom.Flavor.Kind,
@@ -288,7 +287,7 @@ export namespace Atom {
 
     export type Kind = "state" | "field";
 
-    export type Variant = "immutable" | "base" | "exact" | "shared";
+    export type Variant = "immutable" | "base" | "exact";
   }
 
   // WIP: Try to get rid of it. The purpose is to have symmetry with Ref but it
@@ -502,7 +501,7 @@ export namespace Atom {
             ? Variant extends "immutable"
               ? "immutable"
               : "base"
-            : Variant extends "base" | "shared"
+            : Variant extends "base"
               ? "exact"
               : Variant
           : never);
@@ -590,6 +589,10 @@ export namespace Atom {
       //#endregion
 
       //#region Transform
+
+      into: Proxy.Into.Prop<Flavor, Value, Qualifier, Parent>;
+
+      useInto: Proxy.Into.Use.Prop<Flavor, Value, Qualifier, Parent>;
 
       shared: Shared.Prop<Flavor, Value, Qualifier, Parent>;
 
@@ -716,13 +719,22 @@ export namespace Atom {
     Parent extends Atom.Parent.Constraint<
       Shared.Value.Read<Value>
     > = Atom.Parent.Default,
-  > extends Exact.Interface<
-        Flavor,
-        Shared.Value.Write<Value>,
-        Qualifier,
-        Parent
-      >,
-      Immutable<Flavor, Shared.Value.Read<Value>, Qualifier, Parent> {}
+  > {}
+
+  // export interface Shared<
+  //   Flavor extends Atom.Flavor.Constraint,
+  //   Value,
+  //   Qualifier extends Atom.Qualifier.Constraint = Atom.Qualifier.Default,
+  //   Parent extends Atom.Parent.Constraint<
+  //     Shared.Value.Read<Value>
+  //   > = Atom.Parent.Default,
+  // > extends Exact.Interface<
+  //       Flavor,
+  //       Shared.Value.Write<Value>,
+  //       Qualifier,
+  //       Parent
+  //     >,
+  //     Immutable<Flavor, Shared.Value.Read<Value>, Qualifier, Parent> {}
 
   export namespace Shared {
     export type Envelop<
@@ -777,10 +789,7 @@ export namespace Atom {
       Value,
       Qualifier extends Qualifier.Constraint,
       Parent extends Parent.Constraint<Value>,
-    > =
-      Exclude<Flavor, Atom.Flavor.Kind> extends "shared"
-        ? undefined
-        : Fn<Flavor, Value, Qualifier, Parent>;
+    > = Fn<Flavor, Value, Qualifier, Parent>;
 
     export interface Fn<
       Flavor extends Flavor.Constraint,
@@ -803,8 +812,8 @@ export namespace Atom {
       ValueTuple extends Value.Tuple,
       Qualifier extends Qualifier.Constraint,
       Parent extends Parent.Constraint<Value>,
-    > = Envelop<
-      Exclude<Flavor, Atom.Flavor.Variant> | "shared",
+    > = Shared.Envelop<
+      Exclude<Flavor, Atom.Flavor.Variant>,
       Result.Tuple<Flavor, Value, ValueTuple> extends infer ResultTuple extends
         Value.Tuple
         ? Utils.IsNever<ResultTuple> extends true
@@ -1092,10 +1101,6 @@ export namespace Atom {
 
     useDiscriminate: Discriminate.Prop<Flavor, Value, Qualifier, Parent>;
 
-    into: Proxy.Into.Prop<Flavor, Value, Qualifier, Parent>;
-
-    useInto: Proxy.Into.Use.Prop<Flavor, Value, Qualifier, Parent>;
-
     useDefined: Defined.Prop<Flavor, Value, Qualifier, Parent>;
 
     //#endregion
@@ -1142,20 +1147,11 @@ export namespace Atom {
           | (undefined extends Value ? undefined : never)
           // Resolve branded field without null or undefined
           | Atom.Envelop<
-              Try.Flavor<Flavor>,
+              Flavor,
               Utils.NonNullish<Value>,
               "tried" | Qualifier,
               Parent
             >;
-
-        export type Flavor<Flavor extends Atom.Flavor.Constraint> =
-          | Extract<Flavor, Atom.Flavor.Kind>
-          | (ExtractVariant<Flavor> extends infer Variant extends
-              Atom.Flavor.Variant
-              ? Variant extends "shared"
-                ? "exact"
-                : Variant
-              : never);
       }
     }
   }
@@ -1206,12 +1202,7 @@ export namespace Atom {
       SetValue extends Value,
       Qualifier extends Atom.Qualifier.Constraint = Atom.Qualifier.Default,
       Parent extends Atom.Parent.Constraint<Value> = Atom.Parent.Default,
-    > = Atom.Envelop<
-      Exclude<Flavor, Flavor.Variant> | "exact",
-      Set.Value<Value, SetValue>,
-      Qualifier,
-      Parent
-    >;
+    > = Atom.Envelop<Flavor, Set.Value<Value, SetValue>, Qualifier, Parent>;
 
     export type Value<Value, SetValue extends Value> = Value extends Value
       ? SetValue extends Value
@@ -1227,12 +1218,7 @@ export namespace Atom {
       PavedValue extends Utils.NonNullish<Value>,
       Qualifier extends Atom.Qualifier.Constraint = Atom.Qualifier.Default,
       Parent extends Atom.Parent.Constraint<Value> = Atom.Parent.Default,
-    > = Atom.Envelop<
-      Exclude<Flavor, Flavor.Variant> | "exact",
-      Pave.Value<Value, PavedValue>,
-      Qualifier,
-      Parent
-    >;
+    > = Atom.Envelop<Flavor, Pave.Value<Value, PavedValue>, Qualifier, Parent>;
 
     export type Value<
       Value,
@@ -1262,11 +1248,9 @@ export namespace Atom {
           ? Exact.Self<Flavor, Value, Qualifier, Parent>
           : Variant extends "base"
             ? Base.Self<Flavor, Value, Qualifier, Parent>
-            : Variant extends "shared"
-              ? Shared.Self<Flavor, Value, Qualifier, Parent>
-              : Variant extends "immutable"
-                ? Immutable.Self<Flavor, Value, Qualifier, Parent>
-                : never
+            : Variant extends "immutable"
+              ? Immutable.Self<Flavor, Value, Qualifier, Parent>
+              : never
         : never;
 
     export namespace Remove {
@@ -1898,7 +1882,7 @@ export namespace Atom {
           : never)
       // Add unknown option for the base and immutable variants
       | (Flavor extends (infer Kind extends Atom.Flavor.Kind) | infer Variant
-          ? Variant extends "base" | "shared" | "immutable"
+          ? Variant extends "base" | "immutable"
             ? {
                 value: unknown;
                 field: Envelop<Kind | Variant, unknown, Qualifier, Parent>;
@@ -1977,7 +1961,7 @@ export namespace Atom {
           : never)
       // Add unknown option for the base and immutable variants
       | (Flavor extends (infer Kind extends Atom.Flavor.Kind) | infer Variant
-          ? Variant extends "base" | "shared" | "immutable"
+          ? Variant extends "base" | "immutable"
             ? {
                 discriminator: unknown;
                 field: Envelop<Kind | Variant, unknown, Qualifier, Parent>;

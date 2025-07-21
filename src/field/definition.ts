@@ -111,11 +111,9 @@ export namespace Field {
     ? Immutable<Value, Qualifier, Parent>
     : "base" extends Flavor
       ? Base<Value, Qualifier, Parent>
-      : "shared" extends Flavor
-        ? Shared<Value, Qualifier, Parent>
-        : "exact" extends Flavor
-          ? Exact<Value, Qualifier, Parent>
-          : never;
+      : "exact" extends Flavor
+        ? Exact<Value, Qualifier, Parent>
+        : never;
 
   //#region Interface
 
@@ -161,13 +159,20 @@ export namespace Field {
     Value,
     Qualifier extends Atom.Qualifier.Constraint = Atom.Qualifier.Default,
     Parent extends Atom.Parent.Constraint<Value> = Atom.Parent.Default,
-  > extends Atom.Shared<"field" | "shared", Value, Qualifier, Parent>,
-      Immutable.Interface<
-        "shared",
-        Atom.Shared.Value.Read<Value>,
-        Qualifier,
-        Parent
-      > {}
+  > extends Hint,
+      Atom.Shared<"field", Value, Qualifier, Parent> {}
+
+  // export interface Shared<
+  //   Value,
+  //   Qualifier extends Atom.Qualifier.Constraint = Atom.Qualifier.Default,
+  //   Parent extends Atom.Parent.Constraint<Value> = Atom.Parent.Default,
+  // > extends Atom.Shared<"field" | "shared", Value, Qualifier, Parent>,
+  //     Immutable.Interface<
+  //       "shared",
+  //       Atom.Shared.Value.Read<Value>,
+  //       Qualifier,
+  //       Parent
+  //     > {}
 
   export interface Immutable<
     Value,
@@ -181,11 +186,10 @@ export namespace Field {
       Value,
       Qualifier extends Atom.Qualifier.Constraint = Atom.Qualifier.Default,
       Parent extends Atom.Parent.Constraint<Value> = Atom.Parent.Default,
-    > extends Ish.Value,
+    > extends Hint,
+        Ish.Value,
         Ish.Validation,
-        Atom.Immutable<"field" | Variant, Value, Qualifier, Parent> {
-      [hintSymbol]: true;
-    }
+        Atom.Immutable<"field" | Variant, Value, Qualifier, Parent> {}
 
     export type Discriminated<
       Value,
@@ -221,6 +225,10 @@ export namespace Field {
 
       useValid(): boolean;
     }
+  }
+
+  export interface Hint {
+    [hintSymbol]: true;
   }
 
   //#endregion

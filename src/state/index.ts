@@ -70,11 +70,9 @@ export namespace State {
     ? Immutable<Value, Qualifier, Parent>
     : "base" extends Flavor
       ? Base<Value, Qualifier, Parent>
-      : "shared" extends Flavor
-        ? Shared<Value, Qualifier, Parent>
-        : "exact" extends Flavor
-          ? Exact<Value, Qualifier, Parent>
-          : never;
+      : "exact" extends Flavor
+        ? Exact<Value, Qualifier, Parent>
+        : never;
 
   export interface Exact<
     Value,
@@ -97,7 +95,7 @@ export namespace State {
       Atom.Shared.Value.Read<Value>
     > = Atom.Parent.Default,
   > extends Hint,
-      Atom.Shared<"state" | "shared", Value, Qualifier, Parent> {}
+      Atom.Shared<"state", Value, Qualifier, Parent> {}
 
   export interface Immutable<
     Value,
