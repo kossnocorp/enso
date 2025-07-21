@@ -59,7 +59,7 @@ export declare class Form<Value> implements Form.Interface<Value> {
 
   at: Atom.At.Prop<"field", Atom.Def<Value>>;
 
-  try: Atom.Try.Prop<"field", Value>;
+  try: Atom.Try.Prop<"field", Atom.Def<Value>>;
 
   //#endregion
 
@@ -85,10 +85,10 @@ export declare class Form<Value> implements Form.Interface<Value> {
 
   //#region Events
 
-  watch(callback: Atom.Watch.Callback<Value>): Atom.Unwatch;
+  watch(callback: Atom.Watch.Callback<Atom.Def<Value>>): Atom.Unwatch;
 
   useWatch(
-    callback: Atom.Watch.Callback<Value>,
+    callback: Atom.Watch.Callback<Atom.Def<Value>>,
     deps: DependencyList,
   ): Atom.Unwatch;
 
@@ -129,16 +129,16 @@ export namespace Form {
 
     at: Atom.At.Prop<"field", Atom.Def<Value>>;
 
-    try: Atom.Try.Prop<"field", Value>;
+    try: Atom.Try.Prop<"field", Atom.Def<Value>>;
 
     //#endregion
 
     //#region Events
 
-    watch(callback: Atom.Watch.Callback<Value>): Atom.Unwatch;
+    watch(callback: Atom.Watch.Callback<Atom.Def<Value>>): Atom.Unwatch;
 
     useWatch(
-      callback: Atom.Watch.Callback<Value>,
+      callback: Atom.Watch.Callback<Atom.Def<Value>>,
       deps: DependencyList,
     ): Atom.Unwatch;
 

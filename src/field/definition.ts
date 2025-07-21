@@ -149,12 +149,12 @@ export namespace Field {
 
     export type Discriminated<
       Value,
-      Discriminator extends Atom.Discriminate.Discriminator<Value>,
+      Discriminator extends Atom.Discriminate.Discriminator<Atom.Def<Value>>,
       Qualifier extends Atom.Qualifier.Constraint = Atom.Qualifier.Default,
       Parent extends Atom.Parent.Constraint<Value> = Atom.Parent.Default,
     > = Atom.Discriminate.Result<
       "field" | "base",
-      Value,
+      Atom.Def<Value>,
       Discriminator,
       Qualifier,
       Parent
@@ -181,12 +181,12 @@ export namespace Field {
 
     export type Discriminated<
       Value,
-      Discriminator extends Atom.Discriminate.Discriminator<Value>,
+      Discriminator extends Atom.Discriminate.Discriminator<Atom.Def<Value>>,
       Qualifier extends Atom.Qualifier.Constraint = Atom.Qualifier.Default,
       Parent extends Atom.Parent.Constraint<Value> = Atom.Parent.Default,
     > = Atom.Discriminate.Result<
       "field" | "immutable",
-      Value,
+      Atom.Def<Value>,
       Discriminator,
       Qualifier,
       Parent
@@ -242,12 +242,12 @@ export namespace Field {
 
   export type Discriminated<
     Value,
-    Discriminator extends Atom.Discriminate.Discriminator<Value>,
+    Discriminator extends Atom.Discriminate.Discriminator<Atom.Def<Value>>,
     Qualifier extends Atom.Qualifier.Constraint = Atom.Qualifier.Default,
     Parent extends Atom.Parent.Constraint<Value> = Atom.Parent.Default,
   > = Atom.Discriminate.Result<
     "field" | "exact",
-    Value,
+    Atom.Def<Value>,
     Discriminator,
     Qualifier,
     Parent
