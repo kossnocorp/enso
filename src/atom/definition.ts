@@ -93,20 +93,15 @@ export declare class Atom<
 
   remove: Atom.RemoveProp<Flavor, ValueDef>;
 
-  forEach: Atom.ForEachProp<Flavor, ValueDef["read"]>;
+  forEach: Atom.ForEachProp<Flavor, ValueDef>;
 
-  map: Atom.MapProp<Flavor, ValueDef["read"]>;
+  map: Atom.MapProp<Flavor, ValueDef>;
 
-  find: Atom.FindProp<Flavor, ValueDef["read"]>;
+  find: Atom.FindProp<Flavor, ValueDef>;
 
-  filter: Atom.FilterProp<Flavor, ValueDef["read"]>;
+  filter: Atom.FilterProp<Flavor, ValueDef>;
 
-  useCollection: Atom.UseCollectionProp<
-    Flavor,
-    ValueDef["read"],
-    Qualifier,
-    Parent
-  >;
+  useCollection: Atom.UseCollectionProp<Flavor, ValueDef, Qualifier, Parent>;
 
   insert: Atom.Insert.Prop<Flavor, ValueDef, Qualifier, Parent>;
 
@@ -171,7 +166,7 @@ export declare class Atom<
 
   useDefined: Atom.Defined.Prop<Flavor, ValueDef, Qualifier, Parent>;
 
-  shared: Atom.Shared.Prop<Flavor, ValueDef["read"], Qualifier, Parent>;
+  shared: Atom.Shared.Prop<Flavor, ValueDef, Qualifier, Parent>;
 
   //#endregion
 }
@@ -547,9 +542,7 @@ export namespace Atom {
     Flavor extends Atom.Flavor.Constraint,
     ValueDef extends Atom.Def.Constraint,
     Qualifier extends Atom.Qualifier.Constraint = Atom.Qualifier.Default,
-    Parent extends Atom.Parent.Constraint<
-      ValueDef["read"]
-    > = Atom.Parent.Default,
+    Parent extends Atom.Parent.Constraint<ValueDef> = Atom.Parent.Default,
   > extends Immutable<Flavor, ValueDef, Qualifier, Parent> {
     //#region Value
 
@@ -627,9 +620,7 @@ export namespace Atom {
     Flavor extends Atom.Flavor.Constraint,
     ValueDef extends Atom.Def.Constraint,
     Qualifier extends Atom.Qualifier.Constraint = Atom.Qualifier.Default,
-    Parent extends Atom.Parent.Constraint<
-      ValueDef["read"]
-    > = Atom.Parent.Default,
+    Parent extends Atom.Parent.Constraint<ValueDef> = Atom.Parent.Default,
   > extends Immutable<Flavor, ValueDef, Qualifier, Parent> {}
 
   export namespace Base {
@@ -718,9 +709,7 @@ export namespace Atom {
     Flavor extends Atom.Flavor.Constraint,
     ValueDef extends Atom.Def.Constraint,
     Qualifier extends Atom.Qualifier.Constraint = Atom.Qualifier.Default,
-    Parent extends Atom.Parent.Constraint<
-      ValueDef["read"]
-    > = Atom.Parent.Default,
+    Parent extends Atom.Parent.Constraint<ValueDef> = Atom.Parent.Default,
   > {
     //#region Phantoms
 
@@ -781,20 +770,15 @@ export namespace Atom {
 
     size: Size.Prop<ValueDef>;
 
-    forEach: ForEachProp<Flavor, ValueDef["read"]>;
+    forEach: ForEachProp<Flavor, ValueDef>;
 
-    map: MapProp<Flavor, ValueDef["read"]>;
+    map: MapProp<Flavor, ValueDef>;
 
-    find: FindProp<Flavor, ValueDef["read"]>;
+    find: FindProp<Flavor, ValueDef>;
 
-    filter: FilterProp<Flavor, ValueDef["read"]>;
+    filter: FilterProp<Flavor, ValueDef>;
 
-    useCollection: UseCollectionProp<
-      Flavor,
-      ValueDef["read"],
-      Qualifier,
-      Parent
-    >;
+    useCollection: UseCollectionProp<Flavor, ValueDef, Qualifier, Parent>;
 
     //#endregion
 
@@ -826,7 +810,7 @@ export namespace Atom {
 
     useDefined: Defined.Prop<Flavor, ValueDef, Qualifier, Parent>;
 
-    shared: Shared.Prop<Flavor, ValueDef["read"], Qualifier, Parent>;
+    shared: Shared.Prop<Flavor, ValueDef, Qualifier, Parent>;
 
     //#endregion
   }
@@ -924,13 +908,13 @@ export namespace Atom {
 
     export interface Prop<
       Flavor extends Flavor.Constraint,
-      Value,
+      ValueDef extends Def.Constraint,
       Qualifier extends Qualifier.Constraint = Qualifier.Default,
-      Parent extends Parent.Constraint<Value> = Parent.Default,
+      Parent extends Parent.Constraint<ValueDef> = Parent.Default,
     > {
       <ValueTuple extends Value.Tuple>(): Result<
         Flavor,
-        Value,
+        ValueDef,
         ValueTuple,
         Qualifier,
         Parent
@@ -939,14 +923,17 @@ export namespace Atom {
 
     export type Result<
       Flavor extends Flavor.Constraint,
-      Value,
+      ValueDef extends Def.Constraint,
       ValueTuple extends Value.Tuple,
       Qualifier extends Qualifier.Constraint = Qualifier.Default,
-      Parent extends Parent.Constraint<Value> = Parent.Default,
+      Parent extends Parent.Constraint<ValueDef> = Parent.Default,
     > = Envelop<
       Flavor,
-      Result.Tuple<Flavor, Value, ValueTuple> extends infer ResultTuple extends
-        Value.Tuple
+      Result.Tuple<
+        Flavor,
+        ValueDef,
+        ValueTuple
+      > extends infer ResultTuple extends Value.Tuple
         ? Utils.IsNever<ResultTuple> extends true
           ? unknown
           : Shared.Value<ResultTuple>
@@ -958,11 +945,11 @@ export namespace Atom {
     export namespace Result {
       export type Tuple<
         Flavor extends Flavor.Constraint,
-        Value,
+        ValueDef extends Def.Constraint,
         ValueTuple extends Value.Tuple,
       > = "exact" extends Flavor
-        ? Exact<Value, ValueTuple>
-        : Base<Value, ValueTuple>;
+        ? Exact<ValueDef["read"], ValueTuple>
+        : Base<ValueDef["read"], ValueTuple>;
 
       export type Exact<
         Value,
@@ -1456,10 +1443,10 @@ export namespace Atom {
 
     export type Mapper<
       Flavor extends Atom.Flavor.Constraint,
-      Value,
+      ValueDef extends Def.Constraint,
       ProcessorType extends Mapper.ResultType,
     > =
-      Value.Read<Value> extends infer Value
+      Value.Read<ValueDef> extends infer Value
         ? Utils.IsReadonlyArray<Value> extends true
           ? Value extends Utils.ReadonlyArrayConstraint
             ? Mapper.Array<Flavor, Value, ProcessorType>
@@ -1559,10 +1546,10 @@ export namespace Atom {
 
     export type Selector<
       Flavor extends Atom.Flavor.Constraint,
-      Value,
+      ValueDef extends Def.Constraint,
       SelectorType extends Selector.Type,
     > =
-      Value.Read<Value> extends infer Value
+      Value.Read<ValueDef> extends infer Value
         ? Utils.IsReadonlyArray<Value> extends true
           ? Value extends Utils.ReadonlyArrayConstraint
             ? Selector.Array<Flavor, Value, SelectorType>
@@ -1636,31 +1623,31 @@ export namespace Atom {
 
   export type ForEachProp<
     Flavor extends Atom.Flavor.Constraint,
-    Value,
-  > = Collection.Mapper<Flavor, Value, "each">;
+    ValueDef extends Def.Constraint,
+  > = Collection.Mapper<Flavor, ValueDef, "each">;
 
   export type MapProp<
     Flavor extends Atom.Flavor.Constraint,
-    Value,
-  > = Collection.Mapper<Flavor, Value, "map">;
+    ValueDef extends Def.Constraint,
+  > = Collection.Mapper<Flavor, ValueDef, "map">;
 
   export type FindProp<
     Flavor extends Atom.Flavor.Constraint,
-    Value,
-  > = Collection.Selector<Flavor, Value, "find">;
+    ValueDef extends Def.Constraint,
+  > = Collection.Selector<Flavor, ValueDef, "find">;
 
   export type FilterProp<
     Flavor extends Atom.Flavor.Constraint,
-    Value,
-  > = Collection.Selector<Flavor, Value, "filter">;
+    ValueDef extends Def.Constraint,
+  > = Collection.Selector<Flavor, ValueDef, "filter">;
 
   export type UseCollectionProp<
     Flavor extends Atom.Flavor.Constraint,
-    Value,
+    ValueDef extends Def.Constraint,
     Qualifier extends Atom.Qualifier.Constraint = Atom.Qualifier.Default,
-    Parent extends Atom.Parent.Constraint<Value> = Atom.Parent.Default,
+    Parent extends Atom.Parent.Constraint<ValueDef> = Atom.Parent.Default,
   > =
-    Value.Read<Value> extends infer Value
+    Value.Read<ValueDef> extends infer Value
       ? Value extends object
         ? Value extends Utils.BrandedPrimitive
           ? undefined
