@@ -39,7 +39,7 @@ export declare class Form<Value> implements Form.Interface<Value> {
 
   get value(): Atom.Value.Prop<Value>;
 
-  useValue(): Atom.Value<Value>;
+  useValue(): Atom.Value.Opaque<Value>;
 
   set(value: Value): void;
 
@@ -117,7 +117,7 @@ export namespace Form {
 
     value: Atom.Value.Prop<Value>;
 
-    useValue(): Atom.Value<Value>;
+    useValue(): Atom.Value.Opaque<Value>;
 
     set(value: Value): void;
 
