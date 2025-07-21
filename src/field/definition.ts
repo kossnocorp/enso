@@ -12,7 +12,7 @@ export declare class Field<
     Qualifier extends Atom.Qualifier.Constraint = Atom.Qualifier.Default,
     Parent extends Atom.Parent.Constraint<Value> = Atom.Parent.Default,
   >
-  extends Atom<"field" | "exact", Value, Qualifier, Parent>
+  extends Atom<"field" | "exact", Atom.Def<Value>, Qualifier, Parent>
   implements
     Utils.StaticImplements<
       typeof Field<Value, Qualifier, Parent>,
@@ -129,7 +129,7 @@ export namespace Field {
       Value,
       Qualifier extends Atom.Qualifier.Constraint = Atom.Qualifier.Default,
       Parent extends Atom.Parent.Constraint<Value> = Atom.Parent.Default,
-    > extends Atom.Exact<"field" | Variant, Value, Qualifier, Parent>,
+    > extends Atom.Exact<"field" | Variant, Atom.Def<Value>, Qualifier, Parent>,
         Immutable.Interface<Variant, Value, Qualifier, Parent> {}
   }
 
@@ -175,7 +175,7 @@ export namespace Field {
       Parent extends Atom.Parent.Constraint<Value> = Atom.Parent.Default,
     > extends Ish.Value,
         Ish.Validation,
-        Atom.Immutable<"field" | Variant, Value, Qualifier, Parent> {
+        Atom.Immutable<"field" | Variant, Atom.Def<Value>, Qualifier, Parent> {
       [hintSymbol]: true;
     }
 

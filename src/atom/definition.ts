@@ -9,16 +9,16 @@ import type { EnsoUtils as Utils } from "../utils.ts";
 
 export declare class Atom<
     Flavor extends Atom.Flavor.Constraint,
-    Value,
+    ValueDef extends Atom.Def.Constraint,
     Qualifier extends Atom.Qualifier.Constraint,
-    Parent extends Atom.Parent.Constraint<Value>,
+    Parent extends Atom.Parent.Constraint<ValueDef["read"]>,
   >
   implements
     Utils.StaticImplements<
-      typeof Atom<Flavor, Value, Qualifier, Parent>,
+      typeof Atom<Flavor, ValueDef, Qualifier, Parent>,
       Atom.Static
     >,
-    Atom.Exact<Flavor, Value, Qualifier, Parent>
+    Atom.Exact<Flavor, ValueDef, Qualifier, Parent>
 {
   //#region Static
 
@@ -29,7 +29,7 @@ export declare class Atom<
   //#region Instance
 
   constructor(
-    value: Value,
+    value: ValueDef["read"],
     parent?: Atom.Parent.Ref<Exclude<Flavor, Atom.Flavor.Variant>, Parent>,
   );
 
@@ -39,16 +39,13 @@ export declare class Atom<
 
   //#region Phantoms
 
-  [AtomPrivate.immutablePhantom]: Atom.Immutable.Phantom<
-    Flavor,
-    Atom.Def<Value>
-  >;
+  [AtomPrivate.immutablePhantom]: Atom.Immutable.Phantom<Flavor, ValueDef>;
 
   [AtomPrivate.qualifierPhantom](): Atom.Qualifier.Map<Qualifier>;
 
-  [AtomPrivate.valuePhantom]: Atom.Value.Phantom<Value>;
+  [AtomPrivate.valuePhantom]: Atom.Value.Phantom<ValueDef["read"]>;
 
-  [AtomPrivate.parentPhantom]: Atom.Parent.Phantom<Value, Parent>;
+  [AtomPrivate.parentPhantom]: Atom.Parent.Phantom<ValueDef["read"], Parent>;
 
   //#endregion
 
@@ -60,28 +57,28 @@ export declare class Atom<
 
   //#region Value
 
-  get value(): Atom.Value.Prop<Value>;
+  get value(): Atom.Value.Prop<ValueDef["read"]>;
 
-  useValue(): Atom.Value<Value>;
+  useValue(): Atom.Value<ValueDef["read"]>;
 
-  compute: Atom.Compute.Prop<Value>;
+  compute: Atom.Compute.Prop<ValueDef["read"]>;
 
-  useCompute: Atom.Compute.UseProp<Value>;
+  useCompute: Atom.Compute.UseProp<ValueDef["read"]>;
 
-  set<NewValue extends Atom.Value.Write<Value>>(
+  set<NewValue extends Atom.Value.Write<ValueDef>>(
     value: NewValue,
   ): Atom.Envelop<
     Flavor,
-    Atom.Set.Value<Atom.Value.Write<Value>, NewValue>,
+    Atom.Set.Value<Atom.Value.Write<ValueDef>, NewValue>,
     Qualifier,
     Parent
   >;
 
-  pave<PavedValue extends Utils.NonNullish<Atom.Value.Write<Value>>>(
+  pave<PavedValue extends Utils.NonNullish<Atom.Value.Write<ValueDef>>>(
     value: PavedValue,
   ): Atom.Envelop<
     Flavor,
-    Atom.Pave.Value<Atom.Value.Write<Value>, PavedValue>,
+    Atom.Pave.Value<Atom.Value.Write<ValueDef>, PavedValue>,
     Qualifier,
     Parent
   >;
@@ -92,23 +89,28 @@ export declare class Atom<
 
   //#region Type
 
-  size: Atom.Size.Prop<Value>;
+  size: Atom.Size.Prop<ValueDef["read"]>;
 
-  remove: Atom.RemoveProp<Flavor, Value>;
+  remove: Atom.RemoveProp<Flavor, ValueDef["read"]>;
 
-  forEach: Atom.ForEachProp<Flavor, Value>;
+  forEach: Atom.ForEachProp<Flavor, ValueDef["read"]>;
 
-  map: Atom.MapProp<Flavor, Value>;
+  map: Atom.MapProp<Flavor, ValueDef["read"]>;
 
-  find: Atom.FindProp<Flavor, Value>;
+  find: Atom.FindProp<Flavor, ValueDef["read"]>;
 
-  filter: Atom.FilterProp<Flavor, Value>;
+  filter: Atom.FilterProp<Flavor, ValueDef["read"]>;
 
-  useCollection: Atom.UseCollectionProp<Flavor, Value, Qualifier, Parent>;
+  useCollection: Atom.UseCollectionProp<
+    Flavor,
+    ValueDef["read"],
+    Qualifier,
+    Parent
+  >;
 
-  insert: Atom.Insert.Prop<Flavor, Value, Qualifier, Parent>;
+  insert: Atom.Insert.Prop<Flavor, ValueDef["read"], Qualifier, Parent>;
 
-  push: Atom.Push.Prop<Flavor, Value, Qualifier, Parent>;
+  push: Atom.Push.Prop<Flavor, ValueDef["read"], Qualifier, Parent>;
 
   //#endregion
 
@@ -118,23 +120,23 @@ export declare class Atom<
 
   get parent(): Atom.Parent.Prop<
     Exclude<Flavor, Atom.Flavor.Variant>,
-    Value,
+    ValueDef["read"],
     Parent
   >;
 
   get key(): string;
 
-  get $(): Atom.$.Prop<Flavor, Atom.Def<Value>>;
+  get $(): Atom.$.Prop<Flavor, ValueDef>;
 
-  at: Atom.At.Prop<Flavor, Value>;
+  at: Atom.At.Prop<Flavor, ValueDef>;
 
-  try: Atom.Try.Prop<Flavor, Value>;
+  try: Atom.Try.Prop<Flavor, ValueDef["read"]>;
 
   get path(): string[];
 
   get name(): string;
 
-  self: Atom.Self.Envelop<Flavor, Value, Qualifier, Parent>;
+  self: Atom.Self.Envelop<Flavor, ValueDef["read"], Qualifier, Parent>;
 
   //#endregion
 
@@ -142,10 +144,10 @@ export declare class Atom<
 
   eventsTree: EventsTree<Extract<Flavor, Atom.Flavor.Kind>>;
 
-  watch(callback: Atom.Watch.Callback<Value>): Atom.Unwatch;
+  watch(callback: Atom.Watch.Callback<ValueDef["read"]>): Atom.Unwatch;
 
   useWatch(
-    callback: Atom.Watch.Callback<Value>,
+    callback: Atom.Watch.Callback<ValueDef["read"]>,
     deps: DependencyList,
   ): Atom.Unwatch;
 
@@ -155,21 +157,41 @@ export declare class Atom<
 
   //#region Transform
 
-  decompose: Atom.Decompose.Prop<Flavor, Value, Qualifier, Parent>;
+  decompose: Atom.Decompose.Prop<Flavor, ValueDef, Qualifier, Parent>;
 
-  useDecompose: Atom.Decompose.Use.Prop<Flavor, Value, Qualifier, Parent>;
+  useDecompose: Atom.Decompose.Use.Prop<
+    Flavor,
+    ValueDef["read"],
+    Qualifier,
+    Parent
+  >;
 
-  discriminate: Atom.Discriminate.Prop<Flavor, Value, Qualifier, Parent>;
+  discriminate: Atom.Discriminate.Prop<
+    Flavor,
+    ValueDef["read"],
+    Qualifier,
+    Parent
+  >;
 
-  useDiscriminate: Atom.Discriminate.Prop<Flavor, Value, Qualifier, Parent>;
+  useDiscriminate: Atom.Discriminate.Prop<
+    Flavor,
+    ValueDef["read"],
+    Qualifier,
+    Parent
+  >;
 
-  into: Atom.Proxy.Into.Prop<Flavor, Value, Qualifier, Parent>;
+  into: Atom.Proxy.Into.Prop<Flavor, ValueDef["read"], Qualifier, Parent>;
 
-  useInto: Atom.Proxy.Into.Use.Prop<Flavor, Value, Qualifier, Parent>;
+  useInto: Atom.Proxy.Into.Use.Prop<
+    Flavor,
+    ValueDef["read"],
+    Qualifier,
+    Parent
+  >;
 
-  useDefined: Atom.Defined.Prop<Flavor, Value, Qualifier, Parent>;
+  useDefined: Atom.Defined.Prop<Flavor, ValueDef["read"], Qualifier, Parent>;
 
-  shared: Atom.Shared.Prop<Flavor, Value, Qualifier, Parent>;
+  shared: Atom.Shared.Prop<Flavor, ValueDef["read"], Qualifier, Parent>;
 
   //#endregion
 }
@@ -449,7 +471,10 @@ export namespace Atom {
       source: Envelop<Kind, ParentValue>;
     }
 
-    export type Constraint<ChildValue> = Type<ChildValue, Interface<any, any>>;
+    export type Constraint<Value> = Type<
+      Value.Read<Value>,
+      Interface<any, any>
+    >;
 
     export type Type<Value, ParentInterface> =
       ParentInterface extends Interface<infer ParentValue, infer Key>
@@ -538,33 +563,35 @@ export namespace Atom {
 
   export interface Exact<
     Flavor extends Atom.Flavor.Constraint,
-    Value,
+    ValueDef extends Atom.Def.Constraint,
     Qualifier extends Atom.Qualifier.Constraint = Atom.Qualifier.Default,
-    Parent extends Atom.Parent.Constraint<Value> = Atom.Parent.Default,
-  > extends Immutable<Flavor, Value, Qualifier, Parent> {
+    Parent extends Atom.Parent.Constraint<
+      ValueDef["read"]
+    > = Atom.Parent.Default,
+  > extends Immutable<Flavor, ValueDef, Qualifier, Parent> {
     //#region Value
 
-    set<NewValue extends Value.Write<Value>>(
+    set<NewValue extends Value.Write<ValueDef>>(
       value: NewValue,
     ): Envelop<
       Flavor,
-      Atom.Set.Value<Value.Write<Value>, NewValue>,
+      Atom.Set.Value<Value.Write<ValueDef>, NewValue>,
       Qualifier,
       Parent
     >;
 
-    pave<PavedValue extends Utils.NonNullish<Atom.Value.Write<Value>>>(
+    pave<PavedValue extends Utils.NonNullish<Atom.Value.Write<ValueDef>>>(
       value: PavedValue,
     ): Envelop<
       Flavor,
-      Pave.Value<Atom.Value.Write<Value>, PavedValue>,
+      Pave.Value<Atom.Value.Write<ValueDef>, PavedValue>,
       Qualifier,
       Parent
     >;
 
     // NOTE: The purpose of this is to cause invariance and break compatibility
     // with subtypes.
-    [AtomPrivate.valuePhantom]: Atom.Value.Phantom<Value>;
+    [AtomPrivate.valuePhantom]: Atom.Value.Phantom<ValueDef["read"]>;
 
     lastChanges: FieldChange;
 
@@ -572,11 +599,11 @@ export namespace Atom {
 
     //#region Type
 
-    remove: RemoveProp<Flavor, Value>;
+    remove: RemoveProp<Flavor, ValueDef["read"]>;
 
-    insert: Insert.Prop<Flavor, Value, Qualifier, Parent>;
+    insert: Insert.Prop<Flavor, ValueDef["read"], Qualifier, Parent>;
 
-    push: Push.Prop<Flavor, Value, Qualifier, Parent>;
+    push: Push.Prop<Flavor, ValueDef["read"], Qualifier, Parent>;
 
     //#endregion
 
@@ -616,10 +643,12 @@ export namespace Atom {
 
   export interface Base<
     Flavor extends Atom.Flavor.Constraint,
-    Value,
+    ValueDef extends Atom.Def.Constraint,
     Qualifier extends Atom.Qualifier.Constraint = Atom.Qualifier.Default,
-    Parent extends Atom.Parent.Constraint<Value> = Atom.Parent.Default,
-  > extends Immutable<Flavor, Value, Qualifier, Parent> {}
+    Parent extends Atom.Parent.Constraint<
+      ValueDef["read"]
+    > = Atom.Parent.Default,
+  > extends Immutable<Flavor, ValueDef, Qualifier, Parent> {}
 
   export namespace Base {
     export type Envelop<
@@ -705,20 +734,22 @@ export namespace Atom {
 
   export interface Immutable<
     Flavor extends Atom.Flavor.Constraint,
-    Value,
+    ValueDef extends Atom.Def.Constraint,
     Qualifier extends Atom.Qualifier.Constraint = Atom.Qualifier.Default,
-    Parent extends Atom.Parent.Constraint<Value> = Atom.Parent.Default,
+    Parent extends Atom.Parent.Constraint<
+      ValueDef["read"]
+    > = Atom.Parent.Default,
   > {
     //#region Phantoms
 
     // NOTE: As immutable atoms never resolve exact children like base,
     // we must manually provide phantom type to ensure proper variance between
     // them.
-    [AtomPrivate.immutablePhantom]: Immutable.Phantom<Flavor, Atom.Def<Value>>;
+    [AtomPrivate.immutablePhantom]: Immutable.Phantom<Flavor, ValueDef>;
 
     [AtomPrivate.qualifierPhantom](): Atom.Qualifier.Map<Qualifier>;
 
-    [AtomPrivate.parentPhantom]: Parent.Phantom<Value, Parent>;
+    [AtomPrivate.parentPhantom]: Parent.Phantom<ValueDef["read"], Parent>;
 
     //#endregion
 
@@ -732,13 +763,13 @@ export namespace Atom {
 
     //#region Value
 
-    value: Atom.Value.Prop<Value>;
+    value: Atom.Value.Prop<ValueDef["read"]>;
 
-    useValue(): Atom.Value<Value>;
+    useValue(): Atom.Value<ValueDef["read"]>;
 
-    compute: Compute.Prop<Value>;
+    compute: Compute.Prop<ValueDef["read"]>;
 
-    useCompute: Compute.UseProp<Value>;
+    useCompute: Compute.UseProp<ValueDef["read"]>;
 
     //#endregion
 
@@ -746,7 +777,11 @@ export namespace Atom {
 
     root: Root<Flavor>;
 
-    parent: Parent.Prop<Exclude<Flavor, Atom.Flavor.Variant>, Value, Parent>;
+    parent: Parent.Prop<
+      Exclude<Flavor, Atom.Flavor.Variant>,
+      ValueDef["read"],
+      Parent
+    >;
 
     readonly key: string;
 
@@ -754,29 +789,34 @@ export namespace Atom {
 
     readonly name: string;
 
-    $: $.Prop<Flavor, Atom.Def<Value>>;
+    $: $.Prop<Flavor, ValueDef>;
 
-    at: At.Prop<Flavor, Value>;
+    at: At.Prop<Flavor, ValueDef>;
 
-    try: Atom.Try.Prop<Flavor, Value>;
+    try: Atom.Try.Prop<Flavor, ValueDef["read"]>;
 
-    self: Self.Envelop<Flavor, Value, Qualifier>;
+    self: Self.Envelop<Flavor, ValueDef["read"], Qualifier>;
 
     //#endregion
 
     //#region Type
 
-    size: Size.Prop<Value>;
+    size: Size.Prop<ValueDef["read"]>;
 
-    forEach: ForEachProp<Flavor, Value>;
+    forEach: ForEachProp<Flavor, ValueDef["read"]>;
 
-    map: MapProp<Flavor, Value>;
+    map: MapProp<Flavor, ValueDef["read"]>;
 
-    find: FindProp<Flavor, Value>;
+    find: FindProp<Flavor, ValueDef["read"]>;
 
-    filter: FilterProp<Flavor, Value>;
+    filter: FilterProp<Flavor, ValueDef["read"]>;
 
-    useCollection: UseCollectionProp<Flavor, Value, Qualifier, Parent>;
+    useCollection: UseCollectionProp<
+      Flavor,
+      ValueDef["read"],
+      Qualifier,
+      Parent
+    >;
 
     //#endregion
 
@@ -784,9 +824,12 @@ export namespace Atom {
 
     eventsTree: EventsTree<Extract<Flavor, Atom.Flavor.Kind>>;
 
-    watch(callback: Watch.Callback<Value>): Unwatch;
+    watch(callback: Watch.Callback<ValueDef["read"]>): Unwatch;
 
-    useWatch(callback: Watch.Callback<Value>, deps: DependencyList): Unwatch;
+    useWatch(
+      callback: Watch.Callback<ValueDef["read"]>,
+      deps: DependencyList,
+    ): Unwatch;
 
     trigger(changes: FieldChange, notifyParents?: boolean): void;
 
@@ -794,21 +837,36 @@ export namespace Atom {
 
     //#region Transform
 
-    decompose: Decompose.Prop<Flavor, Value, Qualifier, Parent>;
+    decompose: Decompose.Prop<Flavor, ValueDef, Qualifier, Parent>;
 
-    useDecompose: Decompose.Use.Prop<Flavor, Value, Qualifier, Parent>;
+    useDecompose: Decompose.Use.Prop<
+      Flavor,
+      ValueDef["read"],
+      Qualifier,
+      Parent
+    >;
 
-    discriminate: Discriminate.Prop<Flavor, Value, Qualifier, Parent>;
+    discriminate: Discriminate.Prop<
+      Flavor,
+      ValueDef["read"],
+      Qualifier,
+      Parent
+    >;
 
-    useDiscriminate: Discriminate.Prop<Flavor, Value, Qualifier, Parent>;
+    useDiscriminate: Discriminate.Prop<
+      Flavor,
+      ValueDef["read"],
+      Qualifier,
+      Parent
+    >;
 
-    into: Proxy.Into.Prop<Flavor, Value, Qualifier, Parent>;
+    into: Proxy.Into.Prop<Flavor, ValueDef["read"], Qualifier, Parent>;
 
-    useInto: Proxy.Into.Use.Prop<Flavor, Value, Qualifier, Parent>;
+    useInto: Proxy.Into.Use.Prop<Flavor, ValueDef["read"], Qualifier, Parent>;
 
-    useDefined: Defined.Prop<Flavor, Value, Qualifier, Parent>;
+    useDefined: Defined.Prop<Flavor, ValueDef["read"], Qualifier, Parent>;
 
-    shared: Shared.Prop<Flavor, Value, Qualifier, Parent>;
+    shared: Shared.Prop<Flavor, ValueDef["read"], Qualifier, Parent>;
 
     //#endregion
   }
@@ -1168,9 +1226,15 @@ export namespace Atom {
           : Value;
 
     export type Write<Value> =
-      Value extends Shared.Value<infer ValueTuple>
-        ? Shared.Value.Intersection<ValueTuple>
-        : Value;
+      // WIP:
+      // Value extends Def<any, infer Value>
+      Value extends Def<infer Value>
+        ? Value extends Shared.Value<infer ValueTuple>
+          ? Shared.Value.Intersection<ValueTuple>
+          : Value
+        : Value extends Shared.Value<infer ValueTuple>
+          ? Shared.Value.Intersection<ValueTuple>
+          : Value;
 
     export type Prop<Value> = Atom.Value<Value>;
 
@@ -1743,9 +1807,14 @@ export namespace Atom {
   //#region At
 
   export namespace At {
-    export type Prop<Flavor extends Atom.Flavor.Constraint, Value> =
-      | (Utils.HasNonObject<Value.Read<Value>> extends true ? undefined : never)
-      | (Utils.OnlyObject<Value.Read<Value>> extends infer Value
+    export type Prop<
+      Flavor extends Atom.Flavor.Constraint,
+      ValueDef extends Def.Constraint,
+    > =
+      | (Utils.HasNonObject<Value.Read<ValueDef>> extends true
+          ? undefined
+          : never)
+      | (Utils.OnlyObject<Value.Read<ValueDef>> extends infer Value
           ? Fn<Flavor, Utils.NonNullish<Value>, keyof Utils.NonNullish<Value>>
           : never);
 
@@ -1856,11 +1925,11 @@ export namespace Atom {
   export namespace Decompose {
     export interface Prop<
       Flavor extends Atom.Flavor.Constraint,
-      Value,
+      ValueDef extends Def.Constraint,
       Qualifier extends Atom.Qualifier.Constraint = Atom.Qualifier.Default,
-      Parent extends Atom.Parent.Constraint<Value> = Atom.Parent.Default,
+      Parent extends Atom.Parent.Constraint<ValueDef> = Atom.Parent.Default,
     > {
-      (): Result<Flavor, Value, Qualifier, Parent>;
+      (): Result<Flavor, ValueDef, Qualifier, Parent>;
     }
 
     export type Result<

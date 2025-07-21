@@ -9,7 +9,7 @@ export class State<
     Qualifier extends Atom.Qualifier.Constraint = Atom.Qualifier.Default,
     Parent extends Atom.Parent.Constraint<Value> = Atom.Parent.Default,
   >
-  extends Atom<"state" | "exact", Value, Qualifier, Parent>
+  extends Atom<"state" | "exact", Atom.Def<Value>, Qualifier, Parent>
   implements
     Utils.StaticImplements<
       typeof State<Value, Qualifier, Parent>,
@@ -79,21 +79,26 @@ export namespace State {
     Qualifier extends Atom.Qualifier.Constraint = Atom.Qualifier.Default,
     Parent extends Atom.Parent.Constraint<Value> = Atom.Parent.Default,
   > extends Hint,
-      Atom.Exact<"state" | "exact", Value, Qualifier, Parent> {}
+      Atom.Exact<"state" | "exact", Atom.Def<Value>, Qualifier, Parent> {}
 
   export interface Base<
     Value,
     Qualifier extends Atom.Qualifier.Constraint = Atom.Qualifier.Default,
     Parent extends Atom.Parent.Constraint<Value> = Atom.Parent.Default,
   > extends Hint,
-      Atom.Base<"state" | "base", Value, Qualifier, Parent> {}
+      Atom.Base<"state" | "base", Atom.Def<Value>, Qualifier, Parent> {}
 
   export interface Immutable<
     Value,
     Qualifier extends Atom.Qualifier.Constraint = Atom.Qualifier.Default,
     Parent extends Atom.Parent.Constraint<Value> = Atom.Parent.Default,
   > extends Hint,
-      Atom.Immutable<"state" | "immutable", Value, Qualifier, Parent> {}
+      Atom.Immutable<
+        "state" | "immutable",
+        Atom.Def<Value>,
+        Qualifier,
+        Parent
+      > {}
 
   export interface Hint {
     [hintSymbol]: true;
