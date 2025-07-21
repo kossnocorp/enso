@@ -30,7 +30,7 @@ export declare class Atom<
 
   constructor(
     value: Value,
-    parent?: Atom.Parent.Def<Exclude<Flavor, Atom.Flavor.Variant>, Parent>,
+    parent?: Atom.Parent.Ref<Exclude<Flavor, Atom.Flavor.Variant>, Parent>,
   );
 
   deconstruct(): void;
@@ -39,7 +39,10 @@ export declare class Atom<
 
   //#region Phantoms
 
-  [AtomPrivate.immutablePhantom]: Atom.Immutable.Phantom<Flavor, Value>;
+  [AtomPrivate.immutablePhantom]: Atom.Immutable.Phantom<
+    Flavor,
+    Atom.Def<Value>
+  >;
 
   [AtomPrivate.qualifierPhantom](): Atom.Qualifier.Map<Qualifier>;
 
@@ -121,7 +124,7 @@ export declare class Atom<
 
   get key(): string;
 
-  get $(): Atom.$.Prop<Flavor, Value>;
+  get $(): Atom.$.Prop<Flavor, Atom.Def<Value>>;
 
   at: Atom.At.Prop<Flavor, Value>;
 
@@ -192,7 +195,7 @@ export namespace Atom {
         Parent extends Atom.Parent.Constraint<Value> = Atom.Parent.Default,
       >(
         value: Value,
-        parent?: Parent.Def<Kind, Parent>,
+        parent?: Parent.Ref<Kind, Parent>,
       ): Envelop<Kind | "exact", Value, Qualifier, Parent>;
 
       // TODO: Ideally it should go into Static and utilize create
@@ -413,12 +416,12 @@ export namespace Atom {
       Kind extends Atom.Flavor.Kind,
       ChildValue,
       Parent extends Atom.Parent.Constraint<ChildValue>,
-    > = Def<
+    > = Ref<
       Kind,
       Utils.IsNever<Parent> extends true ? Interface<any, any> : Parent
     >;
 
-    export type Def<
+    export type Ref<
       Kind extends Atom.Flavor.Kind,
       Parent extends Atom.Parent.Constraint<any>,
     > =
@@ -711,7 +714,7 @@ export namespace Atom {
     // NOTE: As immutable atoms never resolve exact children like base,
     // we must manually provide phantom type to ensure proper variance between
     // them.
-    [AtomPrivate.immutablePhantom]: Immutable.Phantom<Flavor, Value>;
+    [AtomPrivate.immutablePhantom]: Immutable.Phantom<Flavor, Atom.Def<Value>>;
 
     [AtomPrivate.qualifierPhantom](): Atom.Qualifier.Map<Qualifier>;
 
@@ -751,7 +754,7 @@ export namespace Atom {
 
     readonly name: string;
 
-    $: $.Prop<Flavor, Value>;
+    $: $.Prop<Flavor, Atom.Def<Value>>;
 
     at: At.Prop<Flavor, Value>;
 
@@ -811,10 +814,10 @@ export namespace Atom {
   }
 
   export namespace Immutable {
-    export type Phantom<Flavor extends Atom.Flavor.Constraint, Value> = $.Prop<
-      Extract<Flavor, Flavor.Kind> | "base",
-      Value
-    >;
+    export type Phantom<
+      Flavor extends Atom.Flavor.Constraint,
+      ValueDef extends Def.Constraint,
+    > = $.Prop<Extract<Flavor, Flavor.Kind> | "base", ValueDef>;
 
     export type Envelop<
       Flavor extends Atom.Flavor.Constraint,
@@ -1142,11 +1145,27 @@ export namespace Atom {
           ? any
           : Value;
 
+  export interface Def<ReadValue, WriteValue = ReadValue> {
+    read: ReadValue;
+    write: WriteValue;
+    [defBrand]: true;
+  }
+
+  declare const defBrand: unique symbol;
+
+  export namespace Def {
+    export type Constraint = Atom.Def<any>;
+  }
+
   export namespace Value {
     export type Read<Value> =
-      Value extends Shared.Value<infer ValueTuple>
-        ? Shared.Value.Union<ValueTuple>
-        : Value;
+      Value extends Def<infer Value>
+        ? Value extends Shared.Value<infer ValueTuple>
+          ? Shared.Value.Union<ValueTuple>
+          : Value
+        : Value extends Shared.Value<infer ValueTuple>
+          ? Shared.Value.Union<ValueTuple>
+          : Value;
 
     export type Write<Value> =
       Value extends Shared.Value<infer ValueTuple>
@@ -1692,8 +1711,11 @@ export namespace Atom {
   //#region $
 
   export namespace $ {
-    export type Prop<Flavor extends Atom.Flavor.Constraint, Value> =
-      Value.Read<Value> extends infer Value
+    export type Prop<
+      Flavor extends Atom.Flavor.Constraint,
+      ValueDef extends Def.Constraint,
+    > =
+      Value.Read<ValueDef> extends infer Value
         ? // Mapped unknown and any are resolved to `{}` and `Record<string, any>`
           // respectively, so we have to have special case for them to account for
           // invariance.

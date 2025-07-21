@@ -292,4 +292,12 @@ export namespace EnsoUtils {
   >;
 
   //#endregion
+
+  //#region Prettification
+
+  export type Transparent<Type> = Type extends infer Type
+    ? { [Key in keyof Type]: Type[Key] }
+    : never;
+
+  //#endregion
 }

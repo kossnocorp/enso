@@ -263,30 +263,32 @@ import { Atom } from "./index.js";
 {
   // Primitive
   {
-    type NumberProp = Atom.$.Prop<"field", number>;
+    type NumberProp = Atom.$.Prop<"field", Atom.Def<number>>;
 
     const _test: NumberProp = {} as any;
     _test satisfies undefined;
 
-    tyst<NumberProp>(undefined as Atom.$.Prop<"field", number>);
-    tyst<NumberProp>(undefined as Atom.$.Prop<"field", Branded<number>>);
+    tyst<NumberProp>(undefined as Atom.$.Prop<"field", Atom.Def<number>>);
+    tyst<NumberProp>(
+      undefined as Atom.$.Prop<"field", Atom.Def<Branded<number>>>,
+    );
   }
 
   // Branded primitive
   {
-    type BrandedProp = Atom.$.Prop<"field", Branded<number>>;
+    type BrandedProp = Atom.$.Prop<"field", Atom.Def<Branded<number>>>;
 
     const _test: BrandedProp = {} as any;
     _test satisfies undefined;
 
-    tyst<BrandedProp>(undefined as Atom.$.Prop<"field", string>);
+    tyst<BrandedProp>(undefined as Atom.$.Prop<"field", Atom.Def<string>>);
   }
 
   // Object
   {
-    type ObjectProp = Atom.$.Prop<"field", Entity>;
+    type ObjectProp = Atom.$.Prop<"field", Atom.Def<Entity>>;
 
-    tyst<ObjectProp>({} as Atom.$.Prop<"field", User>);
+    tyst<ObjectProp>({} as Atom.$.Prop<"field", Atom.Def<User>>);
     tyst<ObjectProp>({} as Atom.$.Prop<"field", any>);
     // @ts-expect-error
     tyst<ObjectProp>({} as User);
@@ -300,14 +302,14 @@ import { Atom } from "./index.js";
 
     tyst<AnyProp>({} as unknown);
     tyst<AnyProp>({} as string);
-    tyst<AnyProp>({} as Atom.$.Prop<"field", any>);
-    tyst<AnyProp>({} as Atom.$.Prop<"field", unknown>);
-    tyst<AnyProp>(undefined as Atom.$.Prop<"field", string>);
+    tyst<AnyProp>({} as Atom.$.Prop<"field", Atom.Def<any>>);
+    tyst<AnyProp>({} as Atom.$.Prop<"field", Atom.Def<unknown>>);
+    tyst<AnyProp>(undefined as Atom.$.Prop<"field", Atom.Def<string>>);
   }
 
   // Unknown
   {
-    type UnknownProp = Atom.$.Prop<"field", unknown>;
+    type UnknownProp = Atom.$.Prop<"field", Atom.Def<unknown>>;
 
     // @ts-expect-error
     tyst<UnknownProp>({} as Atom.$.Prop<"field", any>);
