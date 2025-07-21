@@ -253,7 +253,9 @@ export namespace Field {
     Parent
   >;
 
-  export type Proxied<SourceValue = any> = Atom.Proxy.Qualifier<SourceValue>;
+  export type Proxied<SourceValue = any> = Atom.Proxy.Qualifier<
+    Atom.Def<SourceValue>
+  >;
 
   //#endregion Transform
 
