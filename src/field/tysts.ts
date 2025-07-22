@@ -1390,6 +1390,27 @@ const unionField = new Field({ hello: "world", world: true }) as
       field.$.name;
     }
   }
+
+  // Generic
+  {
+    // Defined
+    {
+      function _generic<EntityType extends Entity>(field: Field<EntityType>) {
+        field.$.name satisfies Field<string>;
+      }
+    }
+
+    // Undefined
+    {
+      function _generic<EntityType extends Entity | undefined>(
+        field: Field<EntityType>,
+      ) {
+        field.$?.name satisfies Field<string> | undefined;
+        // @ts-expect-error
+        field.$.name;
+      }
+    }
+  }
 }
 //#endregion
 

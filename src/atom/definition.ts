@@ -121,7 +121,7 @@ export declare class Atom<
 
   get key(): string;
 
-  get $(): Atom.$.Prop<Flavor, ValueDef>;
+  get $(): Atom.$.Prop<Flavor, ValueDef["read"]>;
 
   at: Atom.At.Prop<Flavor, ValueDef>;
 
@@ -525,13 +525,15 @@ export namespace Atom {
       ParentValue,
       ParentKey extends keyof ParentValue,
       Access extends Child.Access,
-    > = Atom.Def<
-      | ParentValue[ParentKey]
-      | (Access extends "indexed"
-          ? Utils.IsStaticKey<ParentValue, ParentKey> extends true
-            ? never
-            : undefined
-          : never)
+    > = Utils.Expose<
+      Atom.Def<
+        | ParentValue[ParentKey]
+        | (Access extends "indexed"
+            ? Utils.IsStaticKey<ParentValue, ParentKey> extends true
+              ? never
+              : undefined
+            : never)
+      >
     >;
 
     export type Qualifier<
@@ -772,7 +774,7 @@ export namespace Atom {
 
     readonly name: string;
 
-    $: $.Prop<Flavor, ValueDef>;
+    $: $.Prop<Flavor, ValueDef["read"]>;
 
     at: At.Prop<Flavor, ValueDef>;
 
@@ -835,7 +837,7 @@ export namespace Atom {
     export type Phantom<
       Flavor extends Atom.Flavor.Constraint,
       ValueDef extends Def.Constraint,
-    > = $.Prop<Extract<Flavor, Flavor.Kind> | "base", ValueDef>;
+    > = $.Prop<Extract<Flavor, Flavor.Kind> | "base", ValueDef["read"]>;
 
     export type Envelop<
       Flavor extends Atom.Flavor.Constraint,
@@ -1702,14 +1704,11 @@ export namespace Atom {
   //#region $
 
   export namespace $ {
-    export type Prop<
-      Flavor extends Atom.Flavor.Constraint,
-      ValueDef extends Def.Constraint,
-    > = ValueDef["read"] extends infer Value
-      ? // Mapped unknown and any are resolved to `{}` and `Record<string, any>`
-        // respectively, so we have to have special case for them to account for
-        // invariance.
-        Utils.IsAny<Value> extends true
+    export type Prop<Flavor extends Atom.Flavor.Constraint, Value> =
+      // Mapped unknown and any are resolved to `{}` and `Record<string, any>`
+      // respectively, so we have to have special case for them to account for
+      // invariance.
+      Utils.IsAny<Value> extends true
         ? any
         : Utils.IsUnknown<Value> extends true
           ? never
@@ -1717,10 +1716,11 @@ export namespace Atom {
             ? Value extends Utils.BrandedPrimitive
               ? undefined
               : {
-                  [Key in keyof Value]-?: Child<Flavor, Value, Key, "indexed">;
+                  [Key in keyof Value]-?: Utils.Expose<
+                    Child<Flavor, Value, Key, "indexed">
+                  >;
                 }
-            : undefined
-      : never;
+            : undefined;
   }
 
   //#endregion
