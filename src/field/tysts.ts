@@ -1646,6 +1646,29 @@ const unionField = new Field({ hello: "world", world: true }) as
       field.at("name");
     }
   }
+
+  // Generic
+  {
+    // Defined
+    {
+      function _generic<EntityType extends Entity>(field: Field<EntityType>) {
+        // @ts-ignore -- WIP: Figure out if it is even possible
+        field.at("name") satisfies Field<string>;
+      }
+    }
+
+    // Undefined
+    {
+      function _generic<EntityType extends Entity | undefined>(
+        field: Field<EntityType>,
+      ) {
+        // @ts-ignore -- WIP: Figure out if it is even possible
+        field.at?.("name") satisfies Field<string> | undefined;
+        // @ts-expect-error
+        field.at("name");
+      }
+    }
+  }
 }
 //#endregion
 
@@ -1916,6 +1939,29 @@ const unionField = new Field({ hello: "world", world: true }) as
       undefined satisfies typeof result;
       // @ts-expect-error
       field.try("name");
+    }
+  }
+
+  // Generic
+  {
+    // Defined
+    {
+      function _generic<EntityType extends Entity>(field: Field<EntityType>) {
+        // @ts-ignore -- WIP: Figure out if it is even possible
+        field.try("name") satisfies Field<string>;
+      }
+    }
+
+    // Undefined
+    {
+      function _generic<EntityType extends Entity | undefined>(
+        field: Field<EntityType>,
+      ) {
+        // @ts-ignore -- WIP: Figure out if it is even possible
+        field.try?.("name") satisfies Field<string> | undefined;
+        // @ts-expect-error
+        field.try("name");
+      }
     }
   }
 }

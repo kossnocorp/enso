@@ -123,7 +123,7 @@ export declare class Atom<
 
   get $(): Atom.$.Prop<Flavor, ValueDef["read"]>;
 
-  at: Atom.At.Prop<Flavor, ValueDef>;
+  at: Atom.At.Prop<Flavor, ValueDef["read"]>;
 
   try: Atom.Try.Prop<Flavor, ValueDef>;
 
@@ -776,7 +776,7 @@ export namespace Atom {
 
     $: $.Prop<Flavor, ValueDef["read"]>;
 
-    at: At.Prop<Flavor, ValueDef>;
+    at: At.Prop<Flavor, ValueDef["read"]>;
 
     try: Atom.Try.Prop<Flavor, ValueDef>;
 
@@ -1728,14 +1728,20 @@ export namespace Atom {
   //#region At
 
   export namespace At {
-    export type Prop<
-      Flavor extends Atom.Flavor.Constraint,
-      ValueDef extends Def.Constraint,
-    > =
-      | (Utils.HasNonObject<ValueDef["read"]> extends true ? undefined : never)
-      | (Utils.OnlyObject<ValueDef["read"]> extends infer Value
+    export type Prop<Flavor extends Atom.Flavor.Constraint, Value> =
+      | (Utils.HasNonObject<Value> extends true ? undefined : never)
+      | (Utils.OnlyObject<Value> extends infer Value
           ? Fn<Flavor, Utils.NonNullish<Value>, keyof Utils.NonNullish<Value>>
           : never);
+
+    // WIP: This approach works for generic values, but breaks for unions:
+
+    // export type Prop<
+    //   Flavor extends Atom.Flavor.Constraint,
+    //   Value,
+    // > = Value extends Utils.NonObject
+    //   ? undefined
+    //   : Fn<Flavor, Value, keyof Value>;
 
     export interface Fn<
       Flavor extends Atom.Flavor.Constraint,
