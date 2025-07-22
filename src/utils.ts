@@ -232,6 +232,23 @@ export namespace EnsoUtils {
     ? Intersection
     : never;
 
+  /**
+   * Resolves union keys.
+   */
+  export type UnionKeys<Type> = Type extends Type ? keyof Type : never;
+
+  /**
+   * Resolves union value.
+   */
+  export type UnionValue<
+    Type,
+    UnionKey extends UnionKeys<Type>,
+  > = Type extends {
+    [Key in UnionKey]: unknown;
+  }
+    ? Type[UnionKey]
+    : never;
+
   //#endregion
 
   //#region Primitive
@@ -281,6 +298,8 @@ export namespace EnsoUtils {
   //#endregion
 
   //#region Object
+
+  export type NonObject = Primitive | BrandedPrimitive;
 
   export type HasNonObject<Type> = Not<
     IsNever<Extract<Type, BrandedPrimitive> | Exclude<Type, object>>
