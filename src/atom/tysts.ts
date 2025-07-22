@@ -193,23 +193,23 @@ import { Atom } from "./index.js";
 
 //#region Atom.Base.Value.Base
 {
-  type BaseValue = Atom.Base.Value.Base<
-    Atom.Envelop<any, Account> | Atom.Envelop<any, User>
+  type BaseValue = Atom.Base.Value.BaseDef<
+    Atom.Envelop<any, Atom.Def<Account>> | Atom.Envelop<any, Atom.Def<User>>
   >;
 
-  tyst<BaseValue>({} as Account);
-  tyst<BaseValue>({} as User);
+  tyst<BaseValue>({} as Atom.Def<Account>);
+  tyst<BaseValue>({} as Atom.Def<User>);
   // @ts-expect-error
-  tyst<BaseValue>({} as Entity);
+  tyst<BaseValue>({} as Atom.Def<Entity>);
   // @ts-expect-error
-  tyst<BaseValue>(unknown);
+  tyst<BaseValue>({} as Atom.Def<unknown>);
 }
 //#endregion
 
 //#region Atom.Base.Value.Shared
 {
   type NoSharedValue = Atom.Base.Value.Shared<
-    Atom.Envelop<any, Account> | Atom.Envelop<any, User>
+    Atom.Envelop<any, Atom.Def<Account>> | Atom.Envelop<any, Atom.Def<User>>
   >;
 
   tyst<never>({} as NoSharedValue);
@@ -217,20 +217,21 @@ import { Atom } from "./index.js";
   tyst<NoSharedValue>({} as any);
 
   type SharedValue = Atom.Base.Value.Shared<
-    Atom.Envelop<any, User | undefined> | Atom.Envelop<any, User>
+    | Atom.Envelop<any, Atom.Def<User | undefined>>
+    | Atom.Envelop<any, Atom.Def<User>>
   >;
 
-  tyst<SharedValue>({} as User);
+  tyst<SharedValue>({} as Atom.Def<User>);
   // @ts-expect-error
-  tyst<SharedValue>({} as User | undefined);
+  tyst<SharedValue>({} as Atom.Def<User | undefined>);
   // @ts-expect-error
-  tyst<SharedValue>({} as undefined);
+  tyst<SharedValue>({} as Atom.Def<undefined>);
   // @ts-expect-error
-  tyst<SharedValue>({} as Account);
+  tyst<SharedValue>({} as Atom.Def<Account>);
   // @ts-expect-error
-  tyst<SharedValue>({} as Entity);
+  tyst<SharedValue>({} as Atom.Def<Entity>);
   // @ts-expect-error
-  tyst<SharedValue>(unknown);
+  tyst<SharedValue>({} as Atom.Def<unknown>);
 }
 //#endregion
 

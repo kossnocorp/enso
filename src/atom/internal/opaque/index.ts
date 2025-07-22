@@ -9,7 +9,7 @@ export class AtomValuePrimitive<
 > extends AtomValue<Kind, Value> {
   #value;
 
-  constructor(atom: Atom.Envelop<Kind, Value>, value: Value) {
+  constructor(atom: Atom.Envelop<Kind, Atom.Def<Value>>, value: Value) {
     super(atom, value);
     this.#value = value;
   }

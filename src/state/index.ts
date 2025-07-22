@@ -63,42 +63,77 @@ export class State<
 export namespace State {
   export type Envelop<
     Flavor extends Atom.Flavor.Constraint,
-    Value,
+    ValueDef extends Atom.Def.Constraint,
     Qualifier extends Atom.Qualifier.Constraint = Atom.Qualifier.Default,
-    Parent extends Atom.Parent.Constraint<Value> = Atom.Parent.Default,
+    Parent extends Atom.Parent.Constraint<ValueDef> = Atom.Parent.Default,
   > = "immutable" extends Flavor
-    ? Immutable<Value, Qualifier, Parent>
+    ? Immutable.Internal<ValueDef, Qualifier, Parent>
     : "base" extends Flavor
-      ? Base<Value, Qualifier, Parent>
+      ? Base.Internal<ValueDef, Qualifier, Parent>
       : "exact" extends Flavor
-        ? Exact<Value, Qualifier, Parent>
+        ? Exact.Internal<ValueDef, Qualifier, Parent>
         : never;
+
+  // #region Exact
 
   export interface Exact<
     Value,
     Qualifier extends Atom.Qualifier.Constraint = Atom.Qualifier.Default,
-    Parent extends Atom.Parent.Constraint<Value> = Atom.Parent.Default,
-  > extends Hint,
-      Atom.Exact<"state" | "exact", Atom.Def<Value>, Qualifier, Parent> {}
+    Parent extends Atom.Parent.Constraint<
+      Atom.Def<Value>
+    > = Atom.Parent.Default,
+  > extends Exact.Internal<Atom.Def<Value>, Qualifier, Parent> {}
+
+  export namespace Exact {
+    export interface Internal<
+      ValueDef extends Atom.Def.Constraint,
+      Qualifier extends Atom.Qualifier.Constraint = Atom.Qualifier.Default,
+      Parent extends Atom.Parent.Constraint<ValueDef> = Atom.Parent.Default,
+    > extends Hint,
+        Atom.Exact<"state" | "exact", ValueDef, Qualifier, Parent> {}
+  }
+
+  //#endregion
+
+  //#region Base
 
   export interface Base<
     Value,
     Qualifier extends Atom.Qualifier.Constraint = Atom.Qualifier.Default,
     Parent extends Atom.Parent.Constraint<Value> = Atom.Parent.Default,
-  > extends Hint,
-      Atom.Base<"state" | "base", Atom.Def<Value>, Qualifier, Parent> {}
+  > extends Base.Internal<Atom.Def<Value>, Qualifier, Parent> {}
+
+  export namespace Base {
+    export interface Internal<
+      ValueDef extends Atom.Def.Constraint,
+      Qualifier extends Atom.Qualifier.Constraint = Atom.Qualifier.Default,
+      Parent extends Atom.Parent.Constraint<ValueDef> = Atom.Parent.Default,
+    > extends Hint,
+        Atom.Base<"state" | "base", ValueDef, Qualifier, Parent> {}
+  }
+
+  //#endregion
+
+  //#region Immutable
 
   export interface Immutable<
     Value,
     Qualifier extends Atom.Qualifier.Constraint = Atom.Qualifier.Default,
-    Parent extends Atom.Parent.Constraint<Value> = Atom.Parent.Default,
-  > extends Hint,
-      Atom.Immutable<
-        "state" | "immutable",
-        Atom.Def<Value>,
-        Qualifier,
-        Parent
-      > {}
+    Parent extends Atom.Parent.Constraint<
+      Atom.Def<Value>
+    > = Atom.Parent.Default,
+  > extends Immutable.Internal<Atom.Def<Value>, Qualifier, Parent> {}
+
+  export namespace Immutable {
+    export interface Internal<
+      ValueDef extends Atom.Def.Constraint,
+      Qualifier extends Atom.Qualifier.Constraint = Atom.Qualifier.Default,
+      Parent extends Atom.Parent.Constraint<ValueDef> = Atom.Parent.Default,
+    > extends Hint,
+        Atom.Immutable<"state" | "immutable", ValueDef, Qualifier, Parent> {}
+  }
+
+  //#endregion
 
   export interface Hint {
     [hintSymbol]: true;

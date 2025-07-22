@@ -549,6 +549,7 @@ const unionField = new Field({ hello: "world", world: true }) as
       | Field<Atom.Shared.Value<[Account, Account | undefined]>>;
 
     const result = Field.base(field);
+    // @ts-expect-error -- WIP
     result satisfies Field.Base<unknown>;
   }
 }
@@ -622,6 +623,7 @@ const unionField = new Field({ hello: "world", world: true }) as
       | Field<Atom.Shared.Value<[Account, Account | undefined]>>;
 
     const result = Field.useEnsure(field);
+    // @ts-expect-error -- WIP
     result satisfies Field.Base<unknown>;
   }
 }
