@@ -369,6 +369,221 @@ import { Atom } from "./index.js";
 }
 //#endregion
 
+//#region Atom.Shared.Result.Tuple
+{
+  // Exact
+  {
+    // Wide
+    {
+      type Tuple = Atom.Shared.Result.Tuple<
+        "field" | "exact",
+        Atom.Def<number>,
+        [number, number | undefined]
+      >;
+      tyst<Tuple>({} as [number, number | undefined]);
+    }
+
+    // Narrow
+    {
+      type Tuple = Atom.Shared.Result.Tuple<
+        "field" | "exact",
+        Atom.Def<number | undefined>,
+        [number, number | undefined]
+      >;
+      tyst<Tuple>({} as [number, number | undefined]);
+    }
+  }
+
+  // Base
+  {
+    // Wide
+    {
+      type Tuple = Atom.Shared.Result.Tuple<
+        "field" | "base",
+        Atom.Def<number>,
+        [number, number | undefined]
+      >;
+      tyst<Tuple>({} as [number, number | undefined]);
+    }
+
+    // Narrow
+    {
+      type Tuple = Atom.Shared.Result.Tuple<
+        "field" | "base",
+        Atom.Def<number | undefined>,
+        [number, number | undefined]
+      >;
+      tyst<Tuple>({} as [number, number | undefined]);
+    }
+  }
+}
+//#endregion
+
+//#region Atom.Shared.Result.ExcludeSubclasses
+{
+  // Exact
+  {
+    type Excluded = Atom.Shared.Result.ExcludeSubclasses<
+      Entity,
+      Entity | undefined | number
+    >;
+    tyst<Excluded>({} as Entity | undefined | number);
+  }
+
+  // Subclass
+  {
+    type Excluded = Atom.Shared.Result.ExcludeSubclasses<
+      User,
+      Entity | undefined | number
+    >;
+    tyst<Excluded>({} as User | undefined | number);
+  }
+}
+//#endregion
+
+//#region Atom.Shared.Result.Sharable
+{
+  // Sharable
+  {
+    type Sharable = Atom.Shared.Result.Sharable<
+      [Entity | undefined | number, Entity | undefined, Entity]
+    >;
+    tyst<true>({} as Sharable);
+    // @ts-expect-error
+    tyst<false>({} as Sharable);
+  }
+
+  // Mismatch
+  {
+    type Sharable = Atom.Shared.Result.Sharable<
+      [Entity | undefined | number, Entity | undefined, Entity | null]
+    >;
+    tyst<false>({} as Sharable);
+    // @ts-expect-error
+    tyst<true>({} as Sharable);
+  }
+
+  // Mixed
+  {
+    type Sharable = Atom.Shared.Result.Sharable<
+      [string | number, string | number | undefined, number]
+    >;
+    tyst<true>({} as Sharable);
+    // @ts-expect-error
+    tyst<false>({} as Sharable);
+  }
+}
+//#endregion
+
+//#region Atom.Shared.Result.Extends
+{
+  // Extends
+  {
+    type Extends = Atom.Shared.Result.Extends<
+      Entity,
+      [Entity | undefined | number, Entity | undefined, Entity]
+    >;
+    tyst<true>({} as Extends);
+    // @ts-expect-error
+    tyst<false>({} as Extends);
+  }
+
+  // Mismatch
+  {
+    type Extends = Atom.Shared.Result.Extends<
+      Entity,
+      [Entity | undefined | number, Entity | undefined, Entity | null]
+    >;
+    tyst<false>({} as Extends);
+    // @ts-expect-error
+    tyst<true>({} as Extends);
+  }
+
+  // Extends base
+  {
+    type Extends = Atom.Shared.Result.Extends<
+      User,
+      [Entity | undefined | number, Entity | undefined, Entity]
+    >;
+    tyst<true>({} as Extends);
+    // @ts-expect-error
+    tyst<false>({} as Extends);
+  }
+}
+//#endregion
+
+//#region Atom.Shared.Result.EachExtends
+{
+  // Extends
+  {
+    type Extends = Atom.Shared.Result.EachExtends<
+      Entity | undefined | number,
+      Entity | undefined | number
+    >;
+    tyst<true>({} as Extends);
+    // @ts-expect-error
+    tyst<false>({} as Extends);
+  }
+
+  // Wide
+  {
+    type Extends = Atom.Shared.Result.EachExtends<Entity, Entity | undefined>;
+    tyst<false>({} as Extends);
+    // @ts-expect-error
+    tyst<true>({} as Extends);
+  }
+
+  // Narrow
+  {
+    type Extends = Atom.Shared.Result.EachExtends<Entity | undefined, Entity>;
+    tyst<false>({} as Extends);
+    // @ts-expect-error
+    tyst<true>({} as Extends);
+  }
+
+  // Extends base
+  {
+    type Extends = Atom.Shared.Result.EachExtends<
+      User | undefined,
+      Entity | undefined
+    >;
+    tyst<true>({} as Extends);
+    // @ts-expect-error
+    tyst<false>({} as Extends);
+  }
+
+  // Extends with extra base
+  {
+    type Extends = Atom.Shared.Result.EachExtends<
+      User | undefined,
+      User | Entity | undefined
+    >;
+    tyst<true>({} as Extends);
+    // @ts-expect-error
+    tyst<false>({} as Extends);
+  }
+
+  // Mismatch union
+  {
+    type Extends = Atom.Shared.Result.EachExtends<
+      User | undefined,
+      User | Entity | undefined | Account
+    >;
+    tyst<false>({} as Extends);
+    // @ts-expect-error
+    tyst<true>({} as Extends);
+  }
+
+  // Mixed
+  {
+    type Extends = Atom.Shared.Result.EachExtends<string | number, number>;
+    tyst<false>({} as Extends);
+    // @ts-expect-error
+    tyst<true>({} as Extends);
+  }
+}
+//#endregion
+
 //#region Helpers
 
 function tyst<Type>(_arg: Type): void {}
