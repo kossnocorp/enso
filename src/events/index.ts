@@ -75,12 +75,12 @@ export class EventsTree<Kind extends Atom.Flavor.Kind> {
 
 export namespace EventsTree {
   export interface Node<Kind extends Atom.Flavor.Kind> {
-    atoms: Set<Atom.Exact.Envelop<Kind, unknown>>;
+    atoms: Set<Atom.Exact.Envelop<Kind, Atom.Def<unknown>>>;
     children: Record<keyof any, Node<Kind>>;
   }
 
   export type TraverseCallback<Kind extends Atom.Flavor.Kind> = (
     path: Atom.Path,
-    atoms: Atom.Exact.Envelop<Kind, unknown>[],
+    atoms: Atom.Exact.Envelop<Kind, Atom.Def<unknown>>[],
   ) => void;
 }

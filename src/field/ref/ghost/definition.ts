@@ -7,7 +7,9 @@ const hintSymbol = Symbol();
 export declare class FieldRefGhost<
     Value,
     Qualifier extends AtomRef.Qualifier = never,
-    Parent extends Atom.Parent.Constraint<Value> = Atom.Parent.Default,
+    Parent extends Atom.Parent.Constraint<
+      Atom.Def<Value>
+    > = Atom.Parent.Default,
   >
   extends AtomRefGhost<"field", Value, Qualifier, Parent>
   implements FieldRefGhost.Interface<Value, Qualifier, Parent>
@@ -25,7 +27,9 @@ export namespace FieldRefGhost {
   export interface Interface<
     Value,
     Qualifier extends AtomRef.Qualifier = never,
-    Parent extends Atom.Parent.Constraint<Value> = Atom.Parent.Default,
+    Parent extends Atom.Parent.Constraint<
+      Atom.Def<Value>
+    > = Atom.Parent.Default,
   > extends Hint,
       AtomRefGhost.Interface<"field", Value, Qualifier, Parent> {}
 

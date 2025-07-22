@@ -7,7 +7,9 @@ const hintSymbol = Symbol();
 export class State<
     Value,
     Qualifier extends Atom.Qualifier.Constraint = Atom.Qualifier.Default,
-    Parent extends Atom.Parent.Constraint<Value> = Atom.Parent.Default,
+    Parent extends Atom.Parent.Constraint<
+      Atom.Def<Value>
+    > = Atom.Parent.Default,
   >
   extends Atom<"state" | "exact", Atom.Def<Value>, Qualifier, Parent>
   implements
@@ -24,7 +26,9 @@ export class State<
   static create<
     Value,
     Qualifier extends Atom.Qualifier.Constraint = Atom.Qualifier.Default,
-    Parent extends Atom.Parent.Constraint<Value> = Atom.Parent.Default,
+    Parent extends Atom.Parent.Constraint<
+      Atom.Def<Value>
+    > = Atom.Parent.Default,
   >(
     value: Value,
     parent?: Atom.Parent.Ref<"state", Parent>,
@@ -100,7 +104,9 @@ export namespace State {
   export interface Base<
     Value,
     Qualifier extends Atom.Qualifier.Constraint = Atom.Qualifier.Default,
-    Parent extends Atom.Parent.Constraint<Value> = Atom.Parent.Default,
+    Parent extends Atom.Parent.Constraint<
+      Atom.Def<Value>
+    > = Atom.Parent.Default,
   > extends Base.Internal<Atom.Def<Value>, Qualifier, Parent> {}
 
   export namespace Base {

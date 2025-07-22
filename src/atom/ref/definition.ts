@@ -6,7 +6,7 @@ export declare class AtomRef<
   Type extends AtomRef.Type,
   Value,
   Qualifier extends AtomRef.Qualifier = never,
-  Parent extends Atom.Parent.Constraint<Value> = Atom.Parent.Default,
+  Parent extends Atom.Parent.Constraint<Atom.Def<Value>> = Atom.Parent.Default,
 > implements AtomRef.Interface<Type, Value, Qualifier, Parent>
 {
   //#region Value
@@ -43,7 +43,9 @@ export namespace AtomRef {
     Type extends AtomRef.Type,
     Value,
     Qualifier extends AtomRef.Qualifier = never,
-    Parent extends Atom.Parent.Constraint<Value> = Atom.Parent.Default,
+    Parent extends Atom.Parent.Constraint<
+      Atom.Def<Value>
+    > = Atom.Parent.Default,
   > =
     Extract<Type, Atom.Flavor.Kind> extends "field"
       ? FieldRef.Envelop<Type, Value, Qualifier, Parent>
@@ -53,7 +55,9 @@ export namespace AtomRef {
     Type extends AtomRef.Type,
     Value,
     Qualifier extends AtomRef.Qualifier = never,
-    Parent extends Atom.Parent.Constraint<Value> = Atom.Parent.Default,
+    Parent extends Atom.Parent.Constraint<
+      Atom.Def<Value>
+    > = Atom.Parent.Default,
   > =
     // Handle boolean separately, so it doesn't produce `Ref<..., true> | Ref<..., false>`
     | (boolean extends Value ? Envelop<Type, Value, Qualifier, Parent> : never)
@@ -125,7 +129,9 @@ export namespace AtomRef {
     Type extends AtomRef.Type,
     Value,
     Qualifier extends AtomRef.Qualifier = never,
-    Parent extends Atom.Parent.Constraint<Value> = Atom.Parent.Default,
+    Parent extends Atom.Parent.Constraint<
+      Atom.Def<Value>
+    > = Atom.Parent.Default,
   > {
     //#region Value
 

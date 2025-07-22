@@ -360,6 +360,17 @@ import { Atom } from "./index.js";
 }
 //#endregion
 
+//#region Atom.Shared.Def
+{
+  // Basic
+  {
+    type Prop = Atom.Shared.Def<[number, number | undefined]>;
+
+    tyst<Prop>({} as Atom.Def<number | undefined, number>);
+  }
+}
+//#endregion
+
 //#region Helpers
 
 function tyst<Type>(_arg: Type): void {}
