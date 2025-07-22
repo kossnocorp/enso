@@ -970,29 +970,17 @@ export namespace Atom {
         ? Exact<ValueDef["read"], ValueTuple>
         : Base<ValueDef["read"], ValueTuple>;
 
-      export type Exact<
-        Value,
-        ValueTuple extends Value.Tuple,
-      > = ValueTuple extends [
-        infer Value1,
-        infer Value2,
-        infer Value3,
-        infer Value4,
-        infer Value5,
-      ]
-        ? Result.Exact5<Value, Value1, Value2, Value3, Value4, Value5>
-        : ValueTuple extends [
-              infer Value1,
-              infer Value2,
-              infer Value3,
-              infer Value4,
-            ]
-          ? Result.Exact4<Value, Value1, Value2, Value3, Value4>
-          : ValueTuple extends [infer Value1, infer Value2, infer Value3]
-            ? Result.Exact3<Value, Value1, Value2, Value3>
-            : ValueTuple extends [infer Value1, infer Value2]
-              ? Result.Exact2<Value, Value1, Value2>
-              : never;
+      export type Exact<Value, ValueTuple extends Value.Tuple> =
+        Sharable<ValueTuple> extends true
+          ? Extends<Value, ValueTuple> extends true
+            ? {
+                [Key in keyof ValueTuple]: ExcludeSubclasses<
+                  Value,
+                  ValueTuple[Key]
+                >;
+              }
+            : never
+          : never;
 
       export type ExcludeSubclasses<Value, ValueItem> =
         ValueItem extends ValueItem
@@ -1001,128 +989,76 @@ export namespace Atom {
             : ValueItem
           : never;
 
-      export type Exact2<Value, Value1, Value2> = [Value] extends [Value1]
-        ? [Value] extends [Value2]
-          ? [ExcludeSubclasses<Value, Value1>, ExcludeSubclasses<Value, Value2>]
-          : never
-        : never;
-
-      export type Exact3<Value, Value1, Value2, Value3> = [Value] extends [
-        Value1,
-      ]
-        ? [Value] extends [Value2]
-          ? [Value] extends [Value3]
-            ? [
-                ExcludeSubclasses<Value, Value1>,
-                ExcludeSubclasses<Value, Value2>,
-                ExcludeSubclasses<Value, Value3>,
-              ]
+      export type Base<Value, ValueTuple extends Value.Tuple> =
+        Sharable<ValueTuple> extends true
+          ? Extends<Value, ValueTuple> extends true
+            ? ValueTuple
             : never
-          : never
-        : never;
+          : never;
 
-      export type Exact4<Value, Value1, Value2, Value3, Value4> = [
-        Value,
-      ] extends [Value1]
-        ? [Value] extends [Value2]
-          ? [Value] extends [Value3]
-            ? [Value] extends [Value4]
-              ? [
-                  ExcludeSubclasses<Value, Value1>,
-                  ExcludeSubclasses<Value, Value2>,
-                  ExcludeSubclasses<Value, Value3>,
-                  ExcludeSubclasses<Value, Value4>,
-                ]
+      export type Sharable<ValueTuple extends Value.Tuple> = true extends (
+        Utils.IndexOfTuple<ValueTuple> extends infer Index1 extends
+          keyof ValueTuple
+          ? Index1 extends Index1
+            ? (
+                Utils.IndexOfTuple<ValueTuple> extends infer Index2 extends
+                  keyof ValueTuple
+                  ? Index2 extends Index2
+                    ? ValueTuple[Index1] extends ValueTuple[Index2]
+                      ? true
+                      : false
+                    : never
+                  : never
+              ) extends true
+              ? true
               : never
             : never
           : never
-        : never;
+      )
+        ? true
+        : false;
 
-      export type Exact5<Value, Value1, Value2, Value3, Value4, Value5> = [
-        Value,
-      ] extends [Value1]
-        ? [Value] extends [Value2]
-          ? [Value] extends [Value3]
-            ? [Value] extends [Value4]
-              ? [Value] extends [Value5]
-                ? [
-                    ExcludeSubclasses<Value, Value1>,
-                    ExcludeSubclasses<Value, Value2>,
-                    ExcludeSubclasses<Value, Value3>,
-                    ExcludeSubclasses<Value, Value4>,
-                    ExcludeSubclasses<Value, Value5>,
-                  ]
-                : never
-              : never
-            : never
-          : never
-        : never;
-
-      export type Base<
+      export type Extends<
         Value,
         ValueTuple extends Value.Tuple,
-      > = ValueTuple extends [
-        infer Value1,
-        infer Value2,
-        infer Value3,
-        infer Value4,
-        infer Value5,
-      ]
-        ? Result.Base5<Value, Value1, Value2, Value3, Value4, Value5>
-        : ValueTuple extends [
-              infer Value1,
-              infer Value2,
-              infer Value3,
-              infer Value4,
-            ]
-          ? Result.Base4<Value, Value1, Value2, Value3, Value4>
-          : ValueTuple extends [infer Value1, infer Value2, infer Value3]
-            ? Result.Base3<Value, Value1, Value2, Value3>
-            : ValueTuple extends [infer Value1, infer Value2]
-              ? Result.Base2<Value, Value1, Value2>
-              : never;
-
-      export type Base2<Value, Value1, Value2> = [Value] extends [Value1]
-        ? [Value] extends [Value2]
-          ? [Value1, Value2]
-          : never
-        : never;
-
-      export type Base3<Value, Value1, Value2, Value3> = [Value] extends [
-        Value1,
-      ]
-        ? [Value] extends [Value2]
-          ? [Value] extends [Value3]
-            ? [Value1, Value2, Value3]
-            : never
-          : never
-        : never;
-
-      export type Base4<Value, Value1, Value2, Value3, Value4> = [
-        Value,
-      ] extends [Value1]
-        ? [Value] extends [Value2]
-          ? [Value] extends [Value3]
-            ? [Value] extends [Value4]
-              ? [Value1, Value2, Value3, Value4]
+      > = true extends (
+        Utils.IndexOfTuple<ValueTuple> extends infer Index extends
+          keyof ValueTuple
+          ? Index extends Index
+            ? EachExtends<Value, ValueTuple[Index]> extends true
+              ? true
               : never
             : never
           : never
-        : never;
+      )
+        ? true
+        : false;
 
-      export type Base5<Value, Value1, Value2, Value3, Value4, Value5> = [
-        Value,
-      ] extends [Value1]
-        ? [Value] extends [Value2]
-          ? [Value] extends [Value3]
-            ? [Value] extends [Value4]
-              ? [Value] extends [Value5]
-                ? [Value1, Value2, Value3, Value4, Value5]
-                : never
-              : never
-            : never
-          : never
-        : never;
+      export type EachExtends<Value, TupleValue> =
+        | (Value extends Value
+            ? true extends (
+                TupleValue extends TupleValue
+                  ? Value extends TupleValue
+                    ? true
+                    : never
+                  : never
+              )
+              ? true
+              : false
+            : never)
+        | (TupleValue extends TupleValue
+            ? true extends (
+                Value extends Value
+                  ? Value extends TupleValue
+                    ? true
+                    : never
+                  : never
+              )
+              ? true
+              : false
+            : never) extends true
+        ? true
+        : false;
     }
   }
 

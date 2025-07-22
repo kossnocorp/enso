@@ -1093,7 +1093,7 @@ const unionField = new Field({ hello: "world", world: true }) as
   // Shared
   {
     const field = ({} as Field<SecuritySettings>).shared<
-      [SecuritySettings | Settings, SecuritySettings | undefined]
+      [SecuritySettings, SecuritySettings | Settings | undefined]
     >();
 
     const result = field.pave({});
@@ -5686,8 +5686,17 @@ const brandedPrim = new Field({} as Branded<string>);
     >() satisfies Field<unknown>;
     field.shared<[string, string | undefined]>() satisfies Field<unknown>;
     field.shared<
-      [string | number, string | number | undefined, number]
+      [string, number | undefined, number | null, undefined | string]
     >() satisfies Field<unknown>;
+  }
+
+  // Narrow union
+  {
+    const field = {} as Field<string | number>;
+
+    field.shared<
+      [string | number, string | number | undefined]
+    >() satisfies Field.Shared<[string | number, string | number | undefined]>;
   }
 
   // Variance
