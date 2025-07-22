@@ -57,7 +57,7 @@ export declare class Form<Value> implements Form.Interface<Value> {
 
   get $(): Atom.$.Prop<"field", Value>;
 
-  at: Atom.At.Prop<"field", Atom.Def<Value>>;
+  at: Atom.At.Prop<"field", Value>;
 
   try: Atom.Try.Prop<"field", Atom.Def<Value>>;
 
@@ -127,7 +127,7 @@ export namespace Form {
 
     get $(): Atom.$.Prop<"field", Value>;
 
-    at: Atom.At.Prop<"field", Atom.Def<Value>>;
+    at: Atom.At.Prop<"field", Value>;
 
     try: Atom.Try.Prop<"field", Atom.Def<Value>>;
 
