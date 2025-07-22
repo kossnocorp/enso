@@ -5,7 +5,9 @@ export declare class AtomRefGhost<
     Flavor extends Atom.Flavor.Constraint,
     Value,
     Qualifier extends AtomRef.Qualifier = never,
-    Parent extends Atom.Parent.Constraint<Value> = Atom.Parent.Default,
+    Parent extends Atom.Parent.Constraint<
+      Atom.Def<Value>
+    > = Atom.Parent.Default,
   >
   extends AtomRef<Flavor | "ref-ghost", Value, Qualifier, Parent>
   implements AtomRefGhost.Interface<Flavor, Value, Qualifier, Parent> {}
@@ -17,7 +19,9 @@ export namespace AtomRefGhost {
     Flavor extends Atom.Flavor.Constraint,
     Value,
     Qualifier extends AtomRef.Qualifier = never,
-    Parent extends Atom.Parent.Constraint<Value> = Atom.Parent.Default,
+    Parent extends Atom.Parent.Constraint<
+      Atom.Def<Value>
+    > = Atom.Parent.Default,
   > extends AtomRef.Interface<Flavor | "ref-ghost", Value, Qualifier, Parent> {}
 
   //#endregion Interface

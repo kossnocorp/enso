@@ -10,7 +10,9 @@ const hintSymbol = Symbol();
 export declare class Field<
     Value,
     Qualifier extends Atom.Qualifier.Constraint = Atom.Qualifier.Default,
-    Parent extends Atom.Parent.Constraint<Value> = Atom.Parent.Default,
+    Parent extends Atom.Parent.Constraint<
+      Atom.Def<Value>
+    > = Atom.Parent.Default,
   >
   extends Atom<"field" | "exact", Atom.Def<Value>, Qualifier, Parent>
   implements
@@ -27,7 +29,9 @@ export declare class Field<
   static create<
     Value,
     Qualifier extends Atom.Qualifier.Constraint = Atom.Qualifier.Default,
-    Parent extends Atom.Parent.Constraint<Value> = Atom.Parent.Default,
+    Parent extends Atom.Parent.Constraint<
+      Atom.Def<Value>
+    > = Atom.Parent.Default,
   >(
     value: Value,
     parent?: Atom.Parent.Ref<"field", Parent>,
@@ -139,7 +143,9 @@ export namespace Field {
       Variant extends Atom.Flavor.Variant,
       Value,
       Qualifier extends Atom.Qualifier.Constraint = Atom.Qualifier.Default,
-      Parent extends Atom.Parent.Constraint<Value> = Atom.Parent.Default,
+      Parent extends Atom.Parent.Constraint<
+        Atom.Def<Value>
+      > = Atom.Parent.Default,
     > extends Atom.Exact<"field" | Variant, Atom.Def<Value>, Qualifier, Parent>,
         Immutable.Interface<Variant, Atom.Def<Value>, Qualifier, Parent> {}
   }
@@ -174,7 +180,9 @@ export namespace Field {
       Value,
       Discriminator extends Atom.Discriminate.Discriminator<Atom.Def<Value>>,
       Qualifier extends Atom.Qualifier.Constraint = Atom.Qualifier.Default,
-      Parent extends Atom.Parent.Constraint<Value> = Atom.Parent.Default,
+      Parent extends Atom.Parent.Constraint<
+        Atom.Def<Value>
+      > = Atom.Parent.Default,
     > = Atom.Discriminate.Result<
       "field" | "base",
       Atom.Def<Value>,
@@ -218,7 +226,9 @@ export namespace Field {
       Value,
       Discriminator extends Atom.Discriminate.Discriminator<Atom.Def<Value>>,
       Qualifier extends Atom.Qualifier.Constraint = Atom.Qualifier.Default,
-      Parent extends Atom.Parent.Constraint<Value> = Atom.Parent.Default,
+      Parent extends Atom.Parent.Constraint<
+        Atom.Def<Value>
+      > = Atom.Parent.Default,
     > = Atom.Discriminate.Result<
       "field" | "immutable",
       Atom.Def<Value>,
@@ -230,6 +240,53 @@ export namespace Field {
 
   //#endregion Immutable
 
+  //#region Shared
+
+  export type Shared<
+    ValueTuple extends Atom.Shared.Value.Tuple,
+    Qualifier extends Atom.Qualifier.Constraint = Atom.Qualifier.Default,
+    Parent extends Atom.Parent.Constraint<
+      Atom.Shared.Def<ValueTuple>
+    > = Atom.Parent.Default,
+  > = Shared.Exact<ValueTuple, Qualifier, Parent>;
+
+  export namespace Shared {
+    export type Def<ValueTuple extends Atom.Shared.Value.Tuple> =
+      Atom.Shared.Def<ValueTuple>;
+
+    export type Proxy<ValueTuple extends Atom.Shared.Value.Tuple> =
+      Atom.Proxy.Qualifier<Atom.Shared.Def<ValueTuple>>;
+
+    export type Exact<
+      ValueTuple extends Atom.Shared.Value.Tuple,
+      Qualifier extends Atom.Qualifier.Constraint = Atom.Qualifier.Default,
+      Parent extends Atom.Parent.Constraint<
+        Atom.Shared.Def<ValueTuple>
+      > = Atom.Parent.Default,
+    > = Field.Exact.Internal<Atom.Shared.Def<ValueTuple>, Qualifier, Parent>;
+
+    export type Base<
+      ValueTuple extends Atom.Shared.Value.Tuple,
+      Qualifier extends Atom.Qualifier.Constraint = Atom.Qualifier.Default,
+      Parent extends Atom.Parent.Constraint<
+        Atom.Shared.Def<ValueTuple>
+      > = Atom.Parent.Default,
+    > = Field.Base.Internal<Atom.Shared.Def<ValueTuple>, Qualifier, Parent>;
+
+    export type Immutable<
+      ValueTuple extends Atom.Shared.Value.Tuple,
+      Qualifier extends Atom.Qualifier.Constraint = Atom.Qualifier.Default,
+      Parent extends Atom.Parent.Constraint<
+        Atom.Shared.Def<ValueTuple>
+      > = Atom.Parent.Default,
+    > = Field.Immutable.Internal<
+      Atom.Shared.Def<ValueTuple>,
+      Qualifier,
+      Parent
+    >;
+  }
+
+  //#endregion
   export namespace Ish {
     export interface Value {
       dirty: boolean;
@@ -274,14 +331,18 @@ export namespace Field {
   export type Decomposed<
     Value,
     Qualifier extends Atom.Qualifier.Constraint = Atom.Qualifier.Default,
-    Parent extends Atom.Parent.Constraint<Value> = Atom.Parent.Default,
-  > = Atom.Decompose.Result<"field", Value, Qualifier, Parent>;
+    Parent extends Atom.Parent.Constraint<
+      Atom.Def<Value>
+    > = Atom.Parent.Default,
+  > = Atom.Decompose.Result<"field", Atom.Def<Value>, Qualifier, Parent>;
 
   export type Discriminated<
     Value,
     Discriminator extends Atom.Discriminate.Discriminator<Atom.Def<Value>>,
     Qualifier extends Atom.Qualifier.Constraint = Atom.Qualifier.Default,
-    Parent extends Atom.Parent.Constraint<Value> = Atom.Parent.Default,
+    Parent extends Atom.Parent.Constraint<
+      Atom.Def<Value>
+    > = Atom.Parent.Default,
   > = Atom.Discriminate.Result<
     "field" | "exact",
     Atom.Def<Value>,
@@ -290,50 +351,11 @@ export namespace Field {
     Parent
   >;
 
-  export type Proxied<SourceValue = any> = Atom.Proxy.Qualifier<
+  export type Proxy<SourceValue = any> = Atom.Proxy.Qualifier<
     Atom.Def<SourceValue>
   >;
 
   //#endregion Transform
-
-  //#region Shared
-
-  export type Shared<
-    ValueTuple extends Atom.Shared.Value.Tuple,
-    Qualifier extends Atom.Qualifier.Constraint = Atom.Qualifier.Default,
-    Parent extends Atom.Parent.Constraint<ValueTuple> = Atom.Parent.Default,
-  > = Exact.Shared<ValueTuple, Qualifier, Parent>;
-
-  export namespace Shared {
-    export type Value<ValueTuple extends Atom.Shared.Value.Tuple> =
-      Atom.Shared.Value<ValueTuple>;
-  }
-
-  export namespace Exact {
-    export type Shared<
-      ValueTuple extends Atom.Shared.Value.Tuple,
-      Qualifier extends Atom.Qualifier.Constraint = Atom.Qualifier.Default,
-      Parent extends Atom.Parent.Constraint<ValueTuple> = Atom.Parent.Default,
-    > = Field.Exact<Atom.Shared.Value<ValueTuple>, Qualifier, Parent>;
-  }
-
-  export namespace Base {
-    export type Shared<
-      ValueTuple extends Atom.Shared.Value.Tuple,
-      Qualifier extends Atom.Qualifier.Constraint = Atom.Qualifier.Default,
-      Parent extends Atom.Parent.Constraint<ValueTuple> = Atom.Parent.Default,
-    > = Field.Base<Atom.Shared.Value<ValueTuple>, Qualifier, Parent>;
-  }
-
-  export namespace Immutable {
-    export type Shared<
-      ValueTuple extends Atom.Shared.Value.Tuple,
-      Qualifier extends Atom.Qualifier.Constraint = Atom.Qualifier.Default,
-      Parent extends Atom.Parent.Constraint<ValueTuple> = Atom.Parent.Default,
-    > = Field.Immutable<Atom.Shared.Value<ValueTuple>, Qualifier, Parent>;
-  }
-
-  //#endregion
 
   //#region Meta
 

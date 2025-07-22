@@ -82,14 +82,24 @@ const unionField = new Field({ hello: "world", world: true }) as
     // Shared
     {
       type EntityTuple = [Entity, Entity | undefined];
-      let _entity: Field.Base.Shared<[Entity, Entity | undefined]>;
+      let _entity: Field.Shared.Base<[Entity, Entity | undefined]>;
+      const entity = {} as Field.Shared.Base<[Entity, Entity | undefined]>;
+      // (property) Atom.Immutable<"base" | "field", Atom.Def<Atom<Flavor extends Atom.Flavor.Constraint, ValueDef extends Atom.Def.Constraint, Qualifier extends Atom.Qualifier.Constraint, Parent extends Atom.Parent.Constraint<ValueDef>>.Shared.Def<[Entity, Entity | undefined]>, Atom.Shared.Def<...>>, never, never>.value: {
+      //     read: Entity | undefined;
+      //     write: Entity;
+      //     [defBrand]: true;
+      // }
+
+      const shared = ({} as Field.Base<Entity>).shared<EntityTuple>();
+      // (property) Atom.Immutable<"base" | "field", Atom<Flavor extends Atom.Flavor.Constraint, ValueDef extends Atom.Def.Constraint, Qualifier extends Atom.Qualifier.Constraint, Parent extends Atom.Parent.Constraint<ValueDef>>.Shared.Def<[Entity, Entity | undefined]>, never, never>.value: Entity | undefined
+
       _entity = ({} as Field.Base<Entity>).shared<EntityTuple>();
       _entity = ({} as Field.Base<Account | User>).shared<EntityTuple>();
       _entity = ({} as Field.Base<Account>).shared<EntityTuple>();
       _entity = ({} as Field.Base<User>).shared<EntityTuple>();
 
       type AccountTuple = [Account, Account | undefined];
-      let _account: Field.Base.Shared<[Account, Account | undefined]>;
+      let _account: Field.Shared.Base<[Account, Account | undefined]>;
       // @ts-expect-error
       _account = ({} as Field.Base<Account | User>).shared<AccountTuple>();
       _account = ({} as Field.Base<Account>).shared<AccountTuple>();
@@ -166,14 +176,14 @@ const unionField = new Field({ hello: "world", world: true }) as
     // Shared
     {
       type EntityTuple = [Entity, Entity | undefined];
-      let _entity: Field.Base.Shared<[Entity, Entity | undefined]>;
+      let _entity: Field.Shared.Base<[Entity, Entity | undefined]>;
       _entity = ({} as Field<Entity>).shared<EntityTuple>();
       _entity = ({} as Field<Account | User>).shared<EntityTuple>();
       _entity = ({} as Field<Account>).shared<EntityTuple>();
       _entity = ({} as Field<User>).shared<EntityTuple>();
 
       type AccountTuple = [Account, Account | undefined];
-      let _account: Field.Base.Shared<[Account, Account | undefined]>;
+      let _account: Field.Shared.Base<[Account, Account | undefined]>;
       _account = ({} as Field<Account>).shared<AccountTuple>();
       // @ts-expect-error
       _account = ({} as Field<Account | User>).shared<AccountTuple>();
@@ -274,7 +284,7 @@ const unionField = new Field({ hello: "world", world: true }) as
       tystField(
         {} as Field<
           "a" | "b" | "c",
-          Field.Proxied<{ abc: "a" | "b" | "c"; id: Branded<string> }>
+          Field.Proxy<{ abc: "a" | "b" | "c"; id: Branded<string> }>
         >,
       );
     }
@@ -457,13 +467,13 @@ const unionField = new Field({ hello: "world", world: true }) as
     // Shared
     {
       type EntityTuple = [Entity, Entity | undefined];
-      let _entity: Field.Immutable.Shared<[Entity, Entity | undefined]>;
+      let _entity: Field.Shared.Immutable<[Entity, Entity | undefined]>;
       _entity = ({} as Field<Account | User>).shared<EntityTuple>();
       _entity = ({} as Field<Account>).shared<EntityTuple>();
       _entity = ({} as Field<User>).shared<EntityTuple>();
 
       type AccountTuple = [Account, Account | undefined];
-      let _account: Field.Immutable.Shared<[Account, Account | undefined]>;
+      let _account: Field.Shared.Immutable<[Account, Account | undefined]>;
       _account = ({} as Field<Account>).shared<AccountTuple>();
       // @ts-expect-error
       _account = ({} as Field<Account | User>).shared<AccountTuple>();
@@ -545,12 +555,13 @@ const unionField = new Field({ hello: "world", world: true }) as
   // Shared
   {
     const field = {} as
-      | Field<Atom.Shared.Value<[User, User | undefined]>>
-      | Field<Atom.Shared.Value<[Account, Account | undefined]>>;
+      | Field.Shared<[User, User | undefined]>
+      | Field.Shared<[Account, Account | undefined]>;
 
     const result = Field.base(field);
-    // @ts-expect-error -- WIP
-    result satisfies Field.Base<unknown>;
+    result satisfies Field.Shared.Base<
+      [User, User | undefined] | [Account, Account | undefined]
+    >;
   }
 }
 //#endregion
@@ -619,12 +630,11 @@ const unionField = new Field({ hello: "world", world: true }) as
   // Shared
   {
     const field = {} as
-      | Field<Atom.Shared.Value<[User, User | undefined]>>
-      | Field<Atom.Shared.Value<[Account, Account | undefined]>>;
+      | Field.Shared<[User, User | undefined]>
+      | Field.Shared<[Account, Account | undefined]>;
 
     const result = Field.useEnsure(field);
-    // @ts-expect-error -- WIP
-    result satisfies Field.Base<unknown>;
+    result satisfies Field<unknown>;
   }
 }
 //#endregion
@@ -5136,12 +5146,12 @@ const brandedPrim = new Field({} as Branded<string>);
         return value.slice(0, sizeValue);
       });
 
-    result satisfies Field<number, Field.Proxied<string>>;
+    result satisfies Field<number, Field.Proxy<string>>;
     result satisfies Field<number>;
-    result satisfies Field<number, Field.Proxied<any>>;
-    result satisfies Field<number, Field.Proxied<unknown>>;
+    result satisfies Field<number, Field.Proxy<any>>;
+    result satisfies Field<number, Field.Proxy<unknown>>;
     // @ts-expect-error
-    result satisfies Field<number, Field.Proxied<number>>;
+    result satisfies Field<number, Field.Proxy<number>>;
 
     const nestedResult = result
       .into((value) => {
@@ -5162,7 +5172,7 @@ const brandedPrim = new Field({} as Branded<string>);
 
         return Number(stringifiedValue);
       });
-    nestedResult satisfies Field<string, Field.Proxied<number>>;
+    nestedResult satisfies Field<string, Field.Proxy<number>>;
     // @ts-expect-error
     nestedResult.any;
   }
@@ -5190,14 +5200,14 @@ const brandedPrim = new Field({} as Branded<string>);
         return value.slice(0, sizeValue);
       });
 
-    result satisfies Field.Base<number, Field.Proxied<string>>;
+    result satisfies Field.Base<number, Field.Proxy<string>>;
     result satisfies Field.Base<number>;
-    result satisfies Field.Base<number, Field.Proxied<any>>;
-    result satisfies Field.Base<number, Field.Proxied<unknown>>;
+    result satisfies Field.Base<number, Field.Proxy<any>>;
+    result satisfies Field.Base<number, Field.Proxy<unknown>>;
     // @ts-expect-error
-    result satisfies Field.Base<number, Field.Proxied<number>>;
+    result satisfies Field.Base<number, Field.Proxy<number>>;
     // @ts-expect-error
-    result satisfies Field<number, Field.Proxied<string>>;
+    result satisfies Field<number, Field.Proxy<string>>;
 
     const nestedResult = result
       .into((value) => {
@@ -5218,7 +5228,7 @@ const brandedPrim = new Field({} as Branded<string>);
 
         return Number(stringifiedValue);
       });
-    nestedResult satisfies Field.Base<string, Field.Proxied<number>>;
+    nestedResult satisfies Field.Base<string, Field.Proxy<number>>;
     // @ts-expect-error
     nestedResult.any;
   }
@@ -5246,14 +5256,14 @@ const brandedPrim = new Field({} as Branded<string>);
         return value.slice(0, sizeValue);
       });
 
-    result satisfies Field.Immutable<number, Field.Proxied<string>>;
+    result satisfies Field.Immutable<number, Field.Proxy<string>>;
     result satisfies Field.Immutable<number>;
-    result satisfies Field.Immutable<number, Field.Proxied<any>>;
-    result satisfies Field.Immutable<number, Field.Proxied<unknown>>;
+    result satisfies Field.Immutable<number, Field.Proxy<any>>;
+    result satisfies Field.Immutable<number, Field.Proxy<unknown>>;
     // @ts-expect-error
-    result satisfies Field.Immutable<number, Field.Proxied<number>>;
+    result satisfies Field.Immutable<number, Field.Proxy<number>>;
     // @ts-expect-error
-    result satisfies Field<number, Field.Proxied<string>>;
+    result satisfies Field<number, Field.Proxy<string>>;
 
     const nestedResult = result
       .into((value) => {
@@ -5274,7 +5284,7 @@ const brandedPrim = new Field({} as Branded<string>);
 
         return Number(stringifiedValue);
       });
-    nestedResult satisfies Field.Immutable<string, Field.Proxied<number>>;
+    nestedResult satisfies Field.Immutable<string, Field.Proxy<number>>;
     // @ts-expect-error
     nestedResult.any;
   }
@@ -5302,7 +5312,7 @@ const brandedPrim = new Field({} as Branded<string>);
         return value.slice(0, sizeValue);
       });
 
-    result satisfies Field<number, Field.Proxied<string>>;
+    result satisfies Field<number, Field.Proxy<string>>;
     // @ts-expect-error
     result.any;
   }
@@ -5333,7 +5343,7 @@ const brandedPrim = new Field({} as Branded<string>);
 
     result satisfies Field<
       number,
-      Field.Proxied<Field.Shared.Value<[string, string | undefined]>>
+      Field.Shared.Proxy<[string, string | undefined]>
     >;
     result satisfies Field<number>;
   }
@@ -5365,12 +5375,12 @@ const brandedPrim = new Field({} as Branded<string>);
         return value.slice(0, sizeValue);
       }, []);
 
-    result satisfies Field<number, Field.Proxied<string>>;
+    result satisfies Field<number, Field.Proxy<string>>;
     result satisfies Field<number>;
-    result satisfies Field<number, Field.Proxied<any>>;
-    result satisfies Field<number, Field.Proxied<unknown>>;
+    result satisfies Field<number, Field.Proxy<any>>;
+    result satisfies Field<number, Field.Proxy<unknown>>;
     // @ts-expect-error
-    result satisfies Field<number, Field.Proxied<number>>;
+    result satisfies Field<number, Field.Proxy<number>>;
   }
 
   // Base
@@ -5396,14 +5406,14 @@ const brandedPrim = new Field({} as Branded<string>);
         return value.slice(0, sizeValue);
       }, []);
 
-    result satisfies Field.Base<number, Field.Proxied<string>>;
+    result satisfies Field.Base<number, Field.Proxy<string>>;
     result satisfies Field.Base<number>;
-    result satisfies Field.Base<number, Field.Proxied<any>>;
-    result satisfies Field.Base<number, Field.Proxied<unknown>>;
+    result satisfies Field.Base<number, Field.Proxy<any>>;
+    result satisfies Field.Base<number, Field.Proxy<unknown>>;
     // @ts-expect-error
-    result satisfies Field.Base<number, Field.Proxied<number>>;
+    result satisfies Field.Base<number, Field.Proxy<number>>;
     // @ts-expect-error
-    result satisfies Field<number, Field.Proxied<string>>;
+    result satisfies Field<number, Field.Proxy<string>>;
   }
 
   // Immutable
@@ -5429,14 +5439,14 @@ const brandedPrim = new Field({} as Branded<string>);
         return value.slice(0, sizeValue);
       });
 
-    result satisfies Field.Immutable<number, Field.Proxied<string>>;
+    result satisfies Field.Immutable<number, Field.Proxy<string>>;
     result satisfies Field.Immutable<number>;
-    result satisfies Field.Immutable<number, Field.Proxied<any>>;
-    result satisfies Field.Immutable<number, Field.Proxied<unknown>>;
+    result satisfies Field.Immutable<number, Field.Proxy<any>>;
+    result satisfies Field.Immutable<number, Field.Proxy<unknown>>;
     // @ts-expect-error
-    result satisfies Field.Immutable<number, Field.Proxied<number>>;
+    result satisfies Field.Immutable<number, Field.Proxy<number>>;
     // @ts-expect-error
-    result satisfies Field<number, Field.Proxied<string>>;
+    result satisfies Field<number, Field.Proxy<string>>;
   }
 
   // Shared
@@ -5465,7 +5475,7 @@ const brandedPrim = new Field({} as Branded<string>);
 
     result satisfies Field<
       number,
-      Field.Proxied<Field.Shared.Value<[string, string | undefined]>>
+      Field.Shared.Proxy<[string, string | undefined]>
     >;
     result satisfies Field<number>;
   }
@@ -5557,16 +5567,16 @@ const brandedPrim = new Field({} as Branded<string>);
   {
     const field = {} as Field<string>;
 
-    field.shared<[string, string | undefined]>() satisfies Field<
-      Atom.Shared.Value<[string, string | undefined]>
+    field.shared<[string, string | undefined]>() satisfies Field.Shared<
+      [string, string | undefined]
     >;
-    field.shared<[string, string | undefined, string]>() satisfies Field<
-      Atom.Shared.Value<[string, string | undefined, string]>
+    field.shared<[string, string | undefined, string]>() satisfies Field.Shared<
+      [string, string | undefined, string]
     >;
     field.shared<
       [string, string | undefined, string, string | null]
-    >() satisfies Field<
-      Atom.Shared.Value<[string, string | undefined, string, string | null]>
+    >() satisfies Field.Shared<
+      [string, string | undefined, string, string | null]
     >;
 
     field.shared<[number, string | undefined]>() satisfies Field<unknown>;
@@ -5582,15 +5592,11 @@ const brandedPrim = new Field({} as Branded<string>);
 
     field.shared<
       [string | number, string | number | undefined]
-    >() satisfies Field<
-      Atom.Shared.Value<[string | number, string | number | undefined]>
-    >;
+    >() satisfies Field.Shared<[string | number, string | number | undefined]>;
     field.shared<
       [string | number, string | number | undefined, string | number]
-    >() satisfies Field<
-      Atom.Shared.Value<
-        [string | number, string | number | undefined, string | number]
-      >
+    >() satisfies Field.Shared<
+      [string | number, string | number | undefined, string | number]
     >;
     field.shared<
       [
@@ -5599,15 +5605,13 @@ const brandedPrim = new Field({} as Branded<string>);
         string | number,
         string | number | null,
       ]
-    >() satisfies Field<
-      Atom.Shared.Value<
-        [
-          string | number,
-          string | number | undefined,
-          string | number,
-          string | number | null,
-        ]
-      >
+    >() satisfies Field.Shared<
+      [
+        string | number,
+        string | number | undefined,
+        string | number,
+        string | number | null,
+      ]
     >;
 
     field.shared<
@@ -5627,33 +5631,33 @@ const brandedPrim = new Field({} as Branded<string>);
     // Exact
     {
       const exact = ({} as Field<User>).shared<ExactTuple>();
-      exact satisfies Field<Atom.Shared.Value<ExactTuple>>;
+      exact satisfies Field.Shared<ExactTuple>;
 
       const base = ({} as Field<User>).shared<EntityTuple>();
-      base satisfies Field<Atom.Shared.Value<ExactTuple>>;
+      base satisfies Field.Shared<ExactTuple>;
 
       const mixed = ({} as Field<User>).shared<
         [User | Entity, User | Entity | undefined]
       >();
-      mixed satisfies Field<Atom.Shared.Value<[User, User | undefined]>>;
+      mixed satisfies Field.Shared<[User, User | undefined]>;
     }
 
     // Base
     {
       const exact = ({} as Field.Base<User>).shared<ExactTuple>();
-      exact satisfies Field.Base<Atom.Shared.Value<ExactTuple>>;
+      exact satisfies Field.Shared.Base<ExactTuple>;
 
       const base = ({} as Field.Base<User>).shared<EntityTuple>();
-      base satisfies Field.Base<Atom.Shared.Value<EntityTuple>>;
+      base satisfies Field.Shared.Base<EntityTuple>;
     }
 
     // Immutable
     {
       const exact = ({} as Field.Immutable<User>).shared<ExactTuple>();
-      exact satisfies Field.Immutable<Atom.Shared.Value<ExactTuple>>;
+      exact satisfies Field.Shared.Immutable<ExactTuple>;
 
       const base = ({} as Field.Immutable<User>).shared<EntityTuple>();
-      base satisfies Field.Immutable<Atom.Shared.Value<EntityTuple>>;
+      base satisfies Field.Shared.Immutable<EntityTuple>;
     }
   }
 }
