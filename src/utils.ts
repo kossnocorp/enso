@@ -299,5 +299,7 @@ export namespace EnsoUtils {
     ? { [Key in keyof Type]: Type[Key] }
     : never;
 
+  export type Expose<Type> = Type & {};
+
   //#endregion
 }

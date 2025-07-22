@@ -3,7 +3,7 @@ import type { Atom } from "../../definition.ts";
 export const externalSymbol = Symbol();
 
 export class AtomValue<Kind extends Atom.Flavor.Kind, Value> {
-  constructor(atom: Atom.Envelop<Kind, Value>, _value: Value) {
+  constructor(atom: Atom.Envelop<Kind, Atom.Def<Value>>, _value: Value) {
     this.#external = atom;
   }
 

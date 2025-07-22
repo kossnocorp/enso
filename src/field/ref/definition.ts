@@ -18,7 +18,7 @@ export declare class FieldRef<
 
   [hintSymbol]: true;
 
-  constructor(atom: Atom.Envelop<"field", Value, Qualifier, Parent>);
+  constructor(atom: Atom.Envelop<"field", Atom.Def<Value>, Qualifier, Parent>);
 
   //#endregion Instance
 }

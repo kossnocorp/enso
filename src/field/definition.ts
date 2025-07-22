@@ -31,7 +31,7 @@ export declare class Field<
   >(
     value: Value,
     parent?: Atom.Parent.Ref<"field", Parent>,
-  ): Atom.Envelop<"field" | "exact", Value, Qualifier, Parent>;
+  ): Atom.Envelop<"field" | "exact", Atom.Def<Value>, Qualifier, Parent>;
 
   static base<Envelop extends Field<any>>(
     field: Envelop,
@@ -104,48 +104,71 @@ export declare class Field<
 export namespace Field {
   export type Envelop<
     Flavor extends Atom.Flavor.Constraint,
-    Value,
+    ValueDef extends Atom.Def.Constraint,
     Qualifier extends Atom.Qualifier.Constraint = Atom.Qualifier.Default,
-    Parent extends Atom.Parent.Constraint<Value> = Atom.Parent.Default,
+    Parent extends Atom.Parent.Constraint<ValueDef> = Atom.Parent.Default,
   > = "immutable" extends Flavor
-    ? Immutable<Value, Qualifier, Parent>
+    ? Immutable.Internal<ValueDef, Qualifier, Parent>
     : "base" extends Flavor
-      ? Base<Value, Qualifier, Parent>
+      ? Base.Internal<ValueDef, Qualifier, Parent>
       : "exact" extends Flavor
-        ? Exact<Value, Qualifier, Parent>
+        ? Exact.Internal<ValueDef, Qualifier, Parent>
         : never;
 
   //#region Interface
 
+  //#region Exact
+
   export interface Exact<
     Value,
     Qualifier extends Atom.Qualifier.Constraint = Atom.Qualifier.Default,
-    Parent extends Atom.Parent.Constraint<Value> = Atom.Parent.Default,
-  > extends Exact.Interface<"exact", Value, Qualifier, Parent> {}
+    Parent extends Atom.Parent.Constraint<
+      Atom.Def<Value>
+    > = Atom.Parent.Default,
+  > extends Exact.Internal<Atom.Def<Value>, Qualifier, Parent> {}
 
   export namespace Exact {
+    export interface Internal<
+      ValueDef extends Atom.Def.Constraint,
+      Qualifier extends Atom.Qualifier.Constraint = Atom.Qualifier.Default,
+      Parent extends Atom.Parent.Constraint<ValueDef> = Atom.Parent.Default,
+    > extends Atom.Exact<"field" | "exact", ValueDef, Qualifier, Parent>,
+        Immutable.Interface<"exact", ValueDef, Qualifier, Parent> {}
+
     export interface Interface<
       Variant extends Atom.Flavor.Variant,
       Value,
       Qualifier extends Atom.Qualifier.Constraint = Atom.Qualifier.Default,
       Parent extends Atom.Parent.Constraint<Value> = Atom.Parent.Default,
     > extends Atom.Exact<"field" | Variant, Atom.Def<Value>, Qualifier, Parent>,
-        Immutable.Interface<Variant, Value, Qualifier, Parent> {}
+        Immutable.Interface<Variant, Atom.Def<Value>, Qualifier, Parent> {}
   }
+
+  //#endregion
+
+  //#region Base
 
   export interface Base<
     Value,
     Qualifier extends Atom.Qualifier.Constraint = Atom.Qualifier.Default,
-    Parent extends Atom.Parent.Constraint<Value> = Atom.Parent.Default,
-  > extends Base.Interface<"base", Value, Qualifier, Parent> {}
+    Parent extends Atom.Parent.Constraint<
+      Atom.Def<Value>
+    > = Atom.Parent.Default,
+  > extends Base.Internal<Atom.Def<Value>, Qualifier, Parent> {}
 
   export namespace Base {
+    export interface Internal<
+      ValueDef extends Atom.Def.Constraint,
+      Qualifier extends Atom.Qualifier.Constraint = Atom.Qualifier.Default,
+      Parent extends Atom.Parent.Constraint<ValueDef> = Atom.Parent.Default,
+    > extends Base.Interface<"base", ValueDef, Qualifier, Parent> {}
+
     export interface Interface<
       Variant extends Atom.Flavor.Variant,
-      Value,
+      ValueDef extends Atom.Def.Constraint,
       Qualifier extends Atom.Qualifier.Constraint = Atom.Qualifier.Default,
-      Parent extends Atom.Parent.Constraint<Value> = Atom.Parent.Default,
-    > extends Immutable.Interface<Variant, Value, Qualifier, Parent> {}
+      Parent extends Atom.Parent.Constraint<ValueDef> = Atom.Parent.Default,
+    > extends Immutable.Interface<Variant, ValueDef, Qualifier, Parent> {}
 
     export type Discriminated<
       Value,
@@ -161,21 +184,33 @@ export namespace Field {
     >;
   }
 
+  //#endregion
+
+  //#region Immutable
+
   export interface Immutable<
     Value,
     Qualifier extends Atom.Qualifier.Constraint = Atom.Qualifier.Default,
-    Parent extends Atom.Parent.Constraint<Value> = Atom.Parent.Default,
-  > extends Immutable.Interface<"immutable", Value, Qualifier, Parent> {}
+    Parent extends Atom.Parent.Constraint<
+      Atom.Def<Value>
+    > = Atom.Parent.Default,
+  > extends Immutable.Internal<Atom.Def<Value>, Qualifier, Parent> {}
 
   export namespace Immutable {
+    export interface Internal<
+      ValueDef extends Atom.Def.Constraint,
+      Qualifier extends Atom.Qualifier.Constraint = Atom.Qualifier.Default,
+      Parent extends Atom.Parent.Constraint<ValueDef> = Atom.Parent.Default,
+    > extends Immutable.Interface<"immutable", ValueDef, Qualifier, Parent> {}
+
     export interface Interface<
       Variant extends Atom.Flavor.Variant,
-      Value,
+      ValueDef extends Atom.Def.Constraint,
       Qualifier extends Atom.Qualifier.Constraint = Atom.Qualifier.Default,
-      Parent extends Atom.Parent.Constraint<Value> = Atom.Parent.Default,
+      Parent extends Atom.Parent.Constraint<ValueDef> = Atom.Parent.Default,
     > extends Ish.Value,
         Ish.Validation,
-        Atom.Immutable<"field" | Variant, Atom.Def<Value>, Qualifier, Parent> {
+        Atom.Immutable<"field" | Variant, ValueDef, Qualifier, Parent> {
       [hintSymbol]: true;
     }
 
@@ -192,6 +227,8 @@ export namespace Field {
       Parent
     >;
   }
+
+  //#endregion Immutable
 
   export namespace Ish {
     export interface Value {
