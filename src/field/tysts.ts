@@ -1486,6 +1486,10 @@ const unionField = new Field({ hello: "world", world: true }) as
     field.at("key") satisfies undefined;
     // @ts-expect-error
     field.at("key") satisfies Field<number>;
+
+    const key: string = "key";
+
+    field.at(key).$;
   }
 
   // Immutable
