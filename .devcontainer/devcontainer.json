@@ -7,11 +7,6 @@
   "workspaceMount": "source=${localWorkspaceFolder},target=/wrkspc/${localWorkspaceFolderBasename},type=bind",
   "workspaceFolder": "/wrkspc/${localWorkspaceFolderBasename}",
 
-  "mounts": [
-    // Cache .cache for pnpm
-    "type=volume,src=dot-cache,target=${localEnv:HOME}/.cache"
-  ],
-
   "onCreateCommand": "./.devcontainer/scripts/on-create.sh",
   "postCreateCommand": "./.devcontainer/scripts/post-create.sh",
   "updateContentCommand": "./.devcontainer/scripts/on-update.sh",
