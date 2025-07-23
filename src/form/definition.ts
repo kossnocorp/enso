@@ -81,6 +81,8 @@ export declare class Form<Value> implements Form.Interface<Value> {
 
   useValid(): boolean;
 
+  validate(validator: Field.Validator<Atom.Def<Value>>): Promise<void>;
+
   //#endregion
 
   //#region Events
@@ -98,7 +100,7 @@ export declare class Form<Value> implements Form.Interface<Value> {
 export namespace Form {
   export interface Interface<Value>
     extends Field.Ish.Value,
-      Field.Ish.Validation {
+      Field.Ish.Validation<Atom.Def<Value>> {
     //#region Instance
 
     [hintSymbol]: true;
@@ -147,7 +149,7 @@ export namespace Form {
 
   export interface Options<Value> {
     id?: string;
-    validate?: Field.Validator<Value, undefined>;
+    validate?: Field.Validator<Atom.Def<Value>>;
   }
 
   export namespace Component {

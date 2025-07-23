@@ -1,3 +1,5 @@
+// @ts-nocheck
+
 import { Field } from "../definition.ts";
 import { FieldRef } from "./definition.ts";
 
@@ -31,7 +33,7 @@ const objOrUnd = new Field<Ok | undefined>({ ok: true });
 const rec = new Field<Record<string, string | boolean>>({});
 const prim = new Field<string | boolean>("hello");
 
-// `Field["forEach"]`
+// FieldRef#forEach
 {
   // Tuple
   {

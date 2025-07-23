@@ -5,14 +5,12 @@ import { AtomRefGhost } from "../../../atom/ref/ghost/index.js";
 const hintSymbol = Symbol();
 
 export declare class FieldRefGhost<
-    Value,
+    ValueDef extends Atom.Def.Constraint,
     Qualifier extends AtomRef.Qualifier = never,
-    Parent extends Atom.Parent.Constraint<
-      Atom.Def<Value>
-    > = Atom.Parent.Default,
+    Parent extends Atom.Parent.Constraint<ValueDef> = Atom.Parent.Default,
   >
-  extends AtomRefGhost<"field", Value, Qualifier, Parent>
-  implements FieldRefGhost.Interface<Value, Qualifier, Parent>
+  extends AtomRefGhost<"field", ValueDef, Qualifier, Parent>
+  implements FieldRefGhost.Interface<ValueDef, Qualifier, Parent>
 {
   //#region Instance
 
@@ -25,13 +23,11 @@ export namespace FieldRefGhost {
   //#region Interface
 
   export interface Interface<
-    Value,
+    ValueDef extends Atom.Def.Constraint,
     Qualifier extends AtomRef.Qualifier = never,
-    Parent extends Atom.Parent.Constraint<
-      Atom.Def<Value>
-    > = Atom.Parent.Default,
+    Parent extends Atom.Parent.Constraint<ValueDef> = Atom.Parent.Default,
   > extends Hint,
-      AtomRefGhost.Interface<"field", Value, Qualifier, Parent> {}
+      AtomRefGhost.Interface<"field", ValueDef, Qualifier, Parent> {}
 
   export interface Hint {
     [hintSymbol]: true;

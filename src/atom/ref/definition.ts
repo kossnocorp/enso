@@ -3,80 +3,64 @@ import type { Atom } from "../index.js";
 import type { FieldRef } from "../../field/ref/definition.ts";
 
 export declare class AtomRef<
-  Type extends AtomRef.Type,
-  Value,
+  Flavor extends AtomRef.Flavor.Constraint,
+  ValueDef extends Atom.Def.Constraint,
   Qualifier extends AtomRef.Qualifier = never,
-  Parent extends Atom.Parent.Constraint<Atom.Def<Value>> = Atom.Parent.Default,
-> implements AtomRef.Interface<Type, Value, Qualifier, Parent>
+  Parent extends Atom.Parent.Constraint<ValueDef> = Atom.Parent.Default,
+> implements AtomRef.Interface<Flavor, ValueDef, Qualifier, Parent>
 {
   //#region Value
 
-  value: Atom.Value.Prop<Atom.Def<Value>>;
+  value: Atom.Value.Prop<ValueDef>;
 
   //#endregion Value
 
   //#region Type
 
-  forEach: AtomRef.ForEachProp<Type, Value>;
+  forEach: AtomRef.ForEachProp<Flavor, ValueDef>;
 
   //#endregion Type
 }
 
 export namespace AtomRef {
-  //#region Kind
+  //#region Flavor
 
-  // WIP: Try to find a better name for this type, so region can be more precise.
-  export type Type = Atom.Flavor.Constraint | Kind | Variant;
+  export namespace Flavor {
+    // WIP: Try to find a better name for this type, so region can be more precise.
+    export type Constraint = Atom.Flavor.Kind | Kind | Variant;
 
-  export type Kind = "ref" | "ref-ghost";
+    export type Kind = "ref" | "ref-ghost";
 
-  export type Variant = never;
+    export type Variant = never;
+  }
 
   // WIP: Try to get rid of it. The purpose is to have symmetry with Atom but it
   // might be simple Extract, however I can't check until I stabilize tysts.
 
-  export type NonKind = Exclude<Type, Atom.Flavor.Constraint | Kind>;
+  // export type NonKind = Exclude<Flavor, Atom.Flavor.Constraint | Kind>;
 
-  export type NonVariant = Exclude<Type, Atom.Flavor.Constraint | Variant>;
+  // export type NonVariant = Exclude<Flavor, Atom.Flavor.Constraint | Variant>;
 
   export type Envelop<
-    Type extends AtomRef.Type,
-    Value,
+    Type extends AtomRef.Flavor.Constraint,
+    ValueDef extends Atom.Def.Constraint,
     Qualifier extends AtomRef.Qualifier = never,
-    Parent extends Atom.Parent.Constraint<
-      Atom.Def<Value>
-    > = Atom.Parent.Default,
+    Parent extends Atom.Parent.Constraint<ValueDef> = Atom.Parent.Default,
   > =
     Extract<Type, Atom.Flavor.Kind> extends "field"
-      ? FieldRef.Envelop<Type, Value, Qualifier, Parent>
+      ? FieldRef.Envelop<Type, ValueDef, Qualifier, Parent>
       : never;
 
-  export type Every<
-    Type extends AtomRef.Type,
-    Value,
-    Qualifier extends AtomRef.Qualifier = never,
-    Parent extends Atom.Parent.Constraint<
-      Atom.Def<Value>
-    > = Atom.Parent.Default,
-  > =
-    // Handle boolean separately, so it doesn't produce `Ref<..., true> | Ref<..., false>`
-    | (boolean extends Value ? Envelop<Type, Value, Qualifier, Parent> : never)
-    | (Exclude<Value, boolean> extends infer Value
-        ? Value extends Value
-          ? Envelop<Type, Value, Qualifier, Parent>
-          : never
-        : never);
-
-  export type ExtractKind<Type extends AtomRef.Type> =
-    Utils.IsNever<Exclude<Type, NonKind>> extends true
+  export type ExtractKind<Kind extends AtomRef.Flavor.Constraint> =
+    Utils.IsNever<Extract<Kind, Flavor.Kind>> extends true
       ? unknown
-      : Type extends Kind
-        ? Type
+      : Kind extends Flavor.Kind
+        ? Kind
         : never;
 
-  export type ExtractVariant<_Type extends AtomRef.Type> = never;
+  export type ExtractVariant<_Type extends AtomRef.Flavor.Constraint> = never;
 
-  //#endregion Kind
+  //#endregion
 
   //#region Qualifier
 
@@ -89,59 +73,62 @@ export namespace AtomRef {
   //#region Child
 
   export type Child<
-    Kind extends AtomRef.Type,
+    Kind extends AtomRef.Flavor.Constraint,
     ParentValue,
     Key extends keyof ParentValue,
+    Access extends Atom.Child.Access,
   > = Envelop<
     Child.Type<Kind>,
-    Child.Value<ParentValue, Key>,
+    Child.Value<ParentValue, Key, Access>,
     Child.Qualifier<ParentValue, Key>
   >;
 
   export namespace Child {
-    export type Every<
-      Kind extends AtomRef.Type,
-      ParentValue,
-      Key extends keyof ParentValue,
-    > = AtomRef.Every<
-      Kind,
-      Child.Value<ParentValue, Key>,
-      Child.Qualifier<ParentValue, Key>
+    export type Type<Flavor extends AtomRef.Flavor.Constraint> = Extract<
+      Flavor,
+      AtomRef.Flavor.Kind
     >;
 
-    export type Type<Type extends AtomRef.Type> = Type;
-
-    export type Value<Value, Key extends keyof Value> =
-      | Value[Key]
-      | (Utils.IsStaticKey<Value, Key> extends true ? never : undefined);
+    export type Value<
+      ParentValue,
+      ParentKey extends keyof ParentValue,
+      Access extends Atom.Child.Access,
+    > = Utils.Expose<
+      Atom.Def<
+        | ParentValue[ParentKey]
+        | (Access extends "indexed"
+            ? Utils.IsStaticKey<ParentValue, ParentKey> extends true
+              ? never
+              : undefined
+            : never)
+      >
+    >;
 
     export type Qualifier<
       ParentValue,
-      _ParentKey extends keyof Utils.NonNullish<ParentValue>,
+      ParentKey extends keyof Utils.NonNullish<ParentValue>,
     > = never;
   }
 
-  //#endregion Child
+  //#endregion
 
   //#region Interface
 
   export interface Interface<
-    Type extends AtomRef.Type,
-    Value,
+    Flavor extends AtomRef.Flavor.Constraint,
+    ValueDef extends Atom.Def.Constraint,
     Qualifier extends AtomRef.Qualifier = never,
-    Parent extends Atom.Parent.Constraint<
-      Atom.Def<Value>
-    > = Atom.Parent.Default,
+    Parent extends Atom.Parent.Constraint<ValueDef> = Atom.Parent.Default,
   > {
     //#region Value
 
-    value: Atom.Value.Prop<Atom.Def<Value>>;
+    value: Atom.Value.Prop<ValueDef>;
 
     //#endregion Value
 
     //#region Type
 
-    forEach: AtomRef.ForEachProp<Type, Value>;
+    forEach: AtomRef.ForEachProp<Flavor, ValueDef>;
 
     //#endregion Type
   }
@@ -152,9 +139,9 @@ export namespace AtomRef {
 
   //#region Collection
 
-  //#region Mapper
+  export namespace Collection {
+    //#region Handler
 
-  export namespace Mapper {
     // Tuple
 
     // NOTE: We have to have two separate overloads for objects `TuplePair`
@@ -163,59 +150,50 @@ export namespace AtomRef {
     // the correct overload for when the callback accepts a single argument
     // (i.e. just the item field).
 
-    export interface TuplePair<
-      Type extends AtomRef.Type,
+    export interface TupleHandlerPair<
+      Flavor extends AtomRef.Flavor.Constraint,
       Value extends Utils.Tuple,
       Result = void,
     > {
       (
         ...args: {
           [Key in Utils.IndexOfTuple<Value>]: [
-            Envelop<Child.Type<Type>, Value[Key]>,
+            Child<Flavor, Value, Key, "iterated">,
             Key,
           ];
         }[Utils.IndexOfTuple<Value>]
       ): Result;
     }
 
-    export interface TupleSingle<
-      Type extends AtomRef.Type,
+    export interface TupleHandlerSingle<
+      Flavor extends AtomRef.Flavor.Constraint,
       Value extends Utils.Tuple,
       Result = void,
     > {
       (
         item: {
-          [Key in keyof Value]: Envelop<Type, Value[Key]>;
+          [Key in keyof Value]: Envelop<Flavor, Atom.Def<Value[Key]>>;
         }[Utils.IndexOfTuple<Value>],
         index?: Utils.IndexOfTuple<Value>,
       ): Result;
     }
 
-    export type TupleSingleItem<
-      Type extends AtomRef.Type,
+    export type TupleItem<
+      Flavor extends AtomRef.Flavor.Constraint,
       Value extends Utils.Tuple,
     > = {
-      [Key in Utils.IndexOfTuple<Value>]: Envelop<Type, Value[Key]>;
+      [Key in Utils.IndexOfTuple<Value>]: Envelop<Flavor, Atom.Def<Value[Key]>>;
     }[Utils.IndexOfTuple<Value>];
 
     // Array
 
-    export interface Array<
-      Type extends AtomRef.Type,
-      Value extends unknown[],
+    export interface ArrayHandler<
+      Flavor extends AtomRef.Flavor.Constraint,
+      Value extends Utils.ArrayConstraint,
       Result = void,
     > {
-      (item: ArrayItem<Type, Value>, index: number): Result;
+      (item: Child<Flavor, Value, number, "iterated">, index: number): Result;
     }
-
-    export type ArrayItem<
-      Type extends AtomRef.Type,
-      Value extends unknown[],
-    > = Envelop<
-      Child.Type<Type>,
-      Value[number],
-      Child.Qualifier<Value, number>
-    >;
 
     // Object
 
@@ -225,8 +203,8 @@ export namespace AtomRef {
     // the correct overload for when the callback accepts a single argument
     // (i.e. just the item field).
 
-    export interface ObjectPair<
-      Type extends AtomRef.Type,
+    export interface ObjectHandlerPair<
+      Flavor extends AtomRef.Flavor.Constraint,
       Value extends object,
       Result = void,
     > {
@@ -236,7 +214,7 @@ export namespace AtomRef {
         ...args: Exclude<
           {
             [Key in Utils.CovariantifyKeyof<Value>]: [
-              Child<Type, Value, Key>,
+              Child<Flavor, Value, Key, "iterated">,
               Key,
             ];
           }[Utils.CovariantifyKeyof<Value>],
@@ -245,8 +223,8 @@ export namespace AtomRef {
       ): Result;
     }
 
-    export interface ObjectSingle<
-      Type extends AtomRef.Type,
+    export interface ObjectHandlerSingle<
+      Flavor extends AtomRef.Flavor.Constraint,
       Value extends object,
       Result = void,
     > {
@@ -254,57 +232,227 @@ export namespace AtomRef {
         // Exclude is needed to remove undefined that appears when there're
         // optional fields in the object.
         item: Exclude<
-          { [Key in keyof Value]: Child<Type, Value, Key> }[keyof Value],
+          {
+            [Key in keyof Value]: Child<Flavor, Value, Key, "iterated">;
+          }[keyof Value],
           undefined
         >,
       ): Result;
     }
+
+    export type ObjectItem<
+      Flavor extends AtomRef.Flavor.Constraint,
+      Value extends object,
+    > = Exclude<
+      {
+        [Key in keyof Value]: Child<Flavor, Value, Key, "iterated">;
+      }[keyof Value],
+      undefined
+    >;
+
+    //#endregion
+
+    //#region Processor
+
+    export type Mapper<
+      Flavor extends AtomRef.Flavor.Constraint,
+      ValueDef extends Atom.Def.Constraint,
+      ProcessorType extends Mapper.ResultType,
+    > = ValueDef["read"] extends infer Value
+      ? Utils.IsReadonlyArray<Value> extends true
+        ? Value extends Utils.ReadonlyArrayConstraint
+          ? Mapper.Array<Flavor, Value, ProcessorType>
+          : never
+        : Value extends Utils.Tuple
+          ? Mapper.Tuple<Flavor, Value, ProcessorType>
+          : Value extends unknown[]
+            ? Mapper.Array<Flavor, Value, ProcessorType>
+            : Value extends object
+              ? Value extends Utils.BrandedPrimitive
+                ? undefined
+                : Mapper.Object<Flavor, Value, ProcessorType>
+              : undefined
+      : never;
+
+    export namespace Mapper {
+      export type ResultType = "each" | "map";
+
+      export type CallbackResult<
+        ProcessorType extends Mapper.ResultType,
+        Result,
+      > = ProcessorType extends "each" ? unknown : Result;
+
+      export type Result<
+        ProcessorType extends Mapper.ResultType,
+        Result,
+      > = ProcessorType extends "each" ? void : Result[];
+
+      // Tuple
+
+      export interface Tuple<
+        Flavor extends AtomRef.Flavor.Constraint,
+        Value extends Utils.Tuple,
+        ProcessorType extends Mapper.ResultType,
+      > {
+        <Result>(
+          callback: Collection.TupleHandlerPair<
+            Flavor,
+            Value,
+            CallbackResult<ProcessorType, Result>
+          >,
+        ): Mapper.Result<ProcessorType, Result>;
+
+        <Result>(
+          callback: Collection.TupleHandlerSingle<
+            Flavor,
+            Value,
+            CallbackResult<ProcessorType, Result>
+          >,
+        ): Mapper.Result<ProcessorType, Result>;
+      }
+
+      // Array
+
+      export interface Array<
+        Flavor extends AtomRef.Flavor.Constraint,
+        Value extends Utils.ArrayConstraint,
+        ProcessorType extends Mapper.ResultType,
+      > {
+        <Result>(
+          callback: Collection.ArrayHandler<
+            Flavor,
+            Value,
+            CallbackResult<ProcessorType, Result>
+          >,
+        ): Mapper.Result<ProcessorType, Result>;
+      }
+
+      // Object
+
+      export interface Object<
+        Flavor extends AtomRef.Flavor.Constraint,
+        Value extends object,
+        ProcessorType extends Mapper.ResultType,
+      > {
+        <Result>(
+          callback: Collection.ObjectHandlerPair<
+            Flavor,
+            Value,
+            CallbackResult<ProcessorType, Result>
+          >,
+        ): Mapper.Result<ProcessorType, Result>;
+
+        <Result>(
+          callback: Collection.ObjectHandlerSingle<
+            Flavor,
+            Value,
+            CallbackResult<ProcessorType, Result>
+          >,
+        ): Mapper.Result<ProcessorType, Result>;
+      }
+    }
+
+    //#endregion
+
+    //#region Selector
+
+    export type Selector<
+      Flavor extends AtomRef.Flavor.Constraint,
+      ValueDef extends Atom.Def.Constraint,
+      SelectorType extends Selector.Type,
+    > = ValueDef["read"] extends infer Value
+      ? Utils.IsReadonlyArray<Value> extends true
+        ? Value extends Utils.ReadonlyArrayConstraint
+          ? Selector.Array<Flavor, Value, SelectorType>
+          : undefined
+        : Value extends Utils.Tuple
+          ? Selector.Tuple<Flavor, Value, SelectorType>
+          : Value extends unknown[]
+            ? Selector.Array<Flavor, Value, SelectorType>
+            : Value extends object
+              ? Value extends Utils.BrandedPrimitive
+                ? undefined
+                : Selector.Object<Flavor, Value, SelectorType>
+              : undefined
+      : never;
+
+    export namespace Selector {
+      export type Type = "find" | "filter";
+
+      export type Result<
+        SelectorType extends Selector.Type,
+        Result,
+      > = SelectorType extends "find" ? Result | undefined : Result[];
+
+      // Tuple
+
+      export interface Tuple<
+        Flavor extends AtomRef.Flavor.Constraint,
+        Value extends Utils.Tuple,
+        SelectorType extends Selector.Type,
+      > {
+        (
+          callback: Collection.TupleHandlerPair<Flavor, Value, unknown>,
+        ): Result<SelectorType, Collection.TupleItem<Flavor, Value>>;
+
+        (
+          callback: Collection.TupleHandlerSingle<Flavor, Value, unknown>,
+        ): Result<SelectorType, Collection.TupleItem<Flavor, Value>>;
+      }
+
+      // Array
+
+      export interface Array<
+        Flavor extends AtomRef.Flavor.Constraint,
+        Value extends Utils.ArrayConstraint,
+        SelectorType extends Selector.Type,
+      > {
+        (
+          callback: Collection.ArrayHandler<Flavor, Value, unknown>,
+        ): Result<SelectorType, Child<Flavor, Value, number, "iterated">>;
+      }
+
+      // Object
+
+      export interface Object<
+        Flavor extends AtomRef.Flavor.Constraint,
+        Value extends object,
+        SelectorType extends Selector.Type,
+      > {
+        (
+          callback: Collection.ObjectHandlerPair<Flavor, Value, unknown>,
+        ): Result<SelectorType, Collection.ObjectItem<Flavor, Value>>;
+
+        (
+          callback: Collection.ObjectHandlerSingle<Flavor, Value, unknown>,
+        ): Result<SelectorType, Collection.ObjectItem<Flavor, Value>>;
+      }
+    }
+
+    //#endregion
   }
-
-  //#endregion Mapper
-
-  //#region ForEach
 
   export type ForEachProp<
-    Type extends AtomRef.Type,
-    Value,
-  > = Value extends Utils.Tuple
-    ? ForEachTuple<Type, Value>
-    : Value extends unknown[]
-      ? ForEachArray<Type, Value>
-      : Value extends object
-        ? ForEachObject<Type, Value>
-        : never;
+    Flavor extends AtomRef.Flavor.Constraint,
+    ValueDef extends Atom.Def.Constraint,
+  > = Collection.Mapper<Flavor, ValueDef, "each">;
 
-  export interface ForEachTuple<
-    Type extends AtomRef.Type,
-    Value extends Utils.Tuple,
-  > {
-    (callback: Mapper.TuplePair<Type, Value>): void;
+  // export type MapProp<
+  //   Flavor extends Atom.Flavor.Constraint,
+  //   ValueDef extends Def.Constraint,
+  // > = Collection.Mapper<Flavor, ValueDef, "map">;
 
-    (callback: Mapper.TupleSingle<Type, Value>): void;
-  }
+  // export type FindProp<
+  //   Flavor extends Atom.Flavor.Constraint,
+  //   ValueDef extends Def.Constraint,
+  // > = Collection.Selector<Flavor, ValueDef, "find">;
 
-  export interface ForEachArray<
-    Type extends AtomRef.Type,
-    Value extends unknown[],
-    Result = void,
-  > {
-    (callback: Mapper.Array<Type, Value, Result>): void;
-  }
+  // export type FilterProp<
+  //   Flavor extends Atom.Flavor.Constraint,
+  //   ValueDef extends Def.Constraint,
+  // > = Collection.Selector<Flavor, ValueDef, "filter">;
 
-  export interface ForEachObject<
-    Type extends AtomRef.Type,
-    Value extends object,
-  > {
-    (callback: Mapper.ObjectPair<Type, Value>): void;
-
-    (callback: Mapper.ObjectSingle<Type, Value>): void;
-  }
-
-  //#endregion ForEach
-
-  //#endregion Collection
+  //#endregion
 
   //#endregion Type
 }
