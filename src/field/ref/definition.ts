@@ -7,20 +7,22 @@ export * from "./old.ts";
 const hintSymbol = Symbol();
 
 export declare class FieldRef<
-    Value,
+    ValueDef extends Atom.Def.Constraint,
     Qualifier extends AtomRef.Qualifier = never,
     Parent extends Atom.Parent.Constraint<
-      Atom.Def<Value>
+      Atom.Def<ValueDef>
     > = Atom.Parent.Default,
   >
-  extends AtomRef<"field" | "ref", Value, Qualifier, Parent>
-  implements FieldRef.Interface<Value, Qualifier, Parent>
+  extends AtomRef<"field" | "ref", ValueDef, Qualifier, Parent>
+  implements FieldRef.Interface<ValueDef, Qualifier, Parent>
 {
   //#region Instance
 
   [hintSymbol]: true;
 
-  constructor(atom: Atom.Envelop<"field", Atom.Def<Value>, Qualifier, Parent>);
+  constructor(
+    atom: Atom.Envelop<"field", Atom.Def<ValueDef>, Qualifier, Parent>,
+  );
 
   //#endregion Instance
 }
@@ -29,16 +31,16 @@ export namespace FieldRef {
   //#region Kind
 
   export type Envelop<
-    Type extends AtomRef.Type,
-    Value,
+    Flavor extends AtomRef.Flavor.Constraint,
+    ValueDef extends Atom.Def.Constraint,
     Qualifier extends AtomRef.Qualifier = never,
     Parent extends Atom.Parent.Constraint<
-      Atom.Def<Value>
+      Atom.Def<ValueDef>
     > = Atom.Parent.Default,
-  > = Type extends "ref"
-    ? FieldRef<Value, Qualifier, Parent>
-    : Type extends "ref-ghost"
-      ? FieldRefGhost<Value, Qualifier, Parent>
+  > = "ref" extends Flavor
+    ? FieldRef<ValueDef, Qualifier, Parent>
+    : "ref-ghost" extends Flavor
+      ? FieldRefGhost<ValueDef, Qualifier, Parent>
       : never;
 
   //#endregion Kind
@@ -50,13 +52,11 @@ export namespace FieldRef {
   }
 
   export interface Interface<
-    Value,
+    ValueDef extends Atom.Def.Constraint,
     Qualifier extends AtomRef.Qualifier = never,
-    Parent extends Atom.Parent.Constraint<
-      Atom.Def<Value>
-    > = Atom.Parent.Default,
+    Parent extends Atom.Parent.Constraint<ValueDef> = Atom.Parent.Default,
   > extends Hint,
-      AtomRef.Interface<"field" | "ref", Value, Qualifier, Parent> {}
+      AtomRef.Interface<"field" | "ref", ValueDef, Qualifier, Parent> {}
 
   //#endregion Interface
 }

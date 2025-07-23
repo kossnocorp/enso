@@ -1,26 +1,5 @@
 import { ValidationTree } from "../../validation/index.ts";
 import type { Field } from "../definition.ts";
-import type { FieldRef } from "../ref/definition.ts";
-
-//#region validateField
-
-export function validateField<Value, Context>(
-  field: Field<Value>,
-  validator: Field.Validator<Value, Context>,
-): Promise<void>;
-
-export function validateField<Value>(
-  field: Field<Value>,
-  validator: Field.Validator<Value, undefined>,
-): Promise<void>;
-
-export async function validateField<Value, Context = undefined>(
-  field: Field<Value>,
-  validator: Field.Validator<Value, Context>,
-  context?: Context,
-): Promise<void> {}
-
-//#endregion validateField
 
 //#region fieldValidationTree
 

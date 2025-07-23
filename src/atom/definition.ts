@@ -323,24 +323,6 @@ export namespace Atom {
           >
         : never;
 
-  export type Every<
-    Flavor extends Atom.Flavor.Constraint,
-    Value,
-    Qualifier extends Atom.Qualifier.Constraint = Atom.Qualifier.Default,
-    Parent extends Atom.Parent.Constraint<
-      Atom.Def<Value>
-    > = Atom.Parent.Default,
-  > =
-    // Handle boolean separately, so it doesn't produce `Atom<..., true> | Atom<..., false>`
-    | (boolean extends Value
-        ? Envelop<Flavor, Atom.Def<Value>, Qualifier, Parent>
-        : never)
-    | (Exclude<Value, boolean> extends infer Value
-        ? Value extends Value
-          ? Envelop<Flavor, Atom.Def<Value>, Qualifier, Parent>
-          : never
-        : never);
-
   export type ExtractKind<Flavor extends Atom.Flavor.Constraint> =
     Utils.IsNever<Exclude<Flavor, Atom.Flavor.Variant>> extends true
       ? unknown
@@ -493,19 +475,6 @@ export namespace Atom {
   >;
 
   export namespace Child {
-    export type Every<
-      Flavor extends Atom.Flavor.Constraint,
-      ParentValue,
-      Key extends keyof ParentValue,
-      Access extends Child.Access,
-    > = Key extends Key
-      ? Atom.Every<
-          Child.Type<Flavor, ParentValue>,
-          Child.Value<ParentValue, Key, Access>,
-          Child.Qualifier<ParentValue, Key>
-        >
-      : never;
-
     export type Access = "indexed" | "iterated";
 
     export type Type<Flavor extends Atom.Flavor.Constraint, ParentValue> =

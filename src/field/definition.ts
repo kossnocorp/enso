@@ -57,14 +57,14 @@ export declare class Field<
   // Field
 
   static Component<
-    Payload,
+    Value,
     MetaEnable extends boolean | undefined = undefined,
     DirtyEnable extends boolean = false,
     ErrorsEnable extends boolean = false,
     ValidEnable extends boolean = false,
   >(
     props: Field.Component.Props<
-      Payload,
+      Value,
       MetaEnable,
       DirtyEnable,
       ErrorsEnable,
@@ -101,6 +101,8 @@ export declare class Field<
   get valid(): boolean;
 
   useValid(): boolean;
+
+  validate(validator: Field.Validator<Atom.Def<Value>>): Promise<void>;
 
   //#endregion
 }
@@ -217,7 +219,7 @@ export namespace Field {
       Qualifier extends Atom.Qualifier.Constraint = Atom.Qualifier.Default,
       Parent extends Atom.Parent.Constraint<ValueDef> = Atom.Parent.Default,
     > extends Ish.Value,
-        Ish.Validation,
+        Ish.Validation<ValueDef>,
         Atom.Immutable<"field" | Variant, ValueDef, Qualifier, Parent> {
       [hintSymbol]: true;
     }
@@ -298,7 +300,7 @@ export namespace Field {
       reset(): void;
     }
 
-    export interface Validation {
+    export interface Validation<ValueDef extends Atom.Def.Constraint> {
       errors: Field.Error[];
 
       useErrors(): Field.Error[];
@@ -306,6 +308,8 @@ export namespace Field {
       valid: boolean;
 
       useValid(): boolean;
+
+      validate(validator: Field.Validator<ValueDef>): Promise<void>;
     }
   }
 
@@ -379,12 +383,12 @@ export namespace Field {
       dirty?: boolean | undefined;
     }
 
-    export type Enable<Enable, Payload> = Enable extends true
-      ? Payload
+    export type Enable<Enable, Value> = Enable extends true
+      ? Value
       : Enable extends false
         ? undefined
         : Enable extends boolean
-          ? Payload | undefined
+          ? Value | undefined
           : Enable extends undefined
             ? undefined
             : never;
@@ -398,15 +402,15 @@ export namespace Field {
 
   export namespace Component {
     export type Props<
-      Payload,
+      Value,
       MetaEnable extends boolean | undefined = undefined,
       DirtyEnable extends boolean = false,
       ErrorsEnable extends boolean = false,
       ValidEnable extends boolean = false,
     > = {
-      field: Field<Payload>;
+      field: Field<Value>;
       render: Render<
-        Payload,
+        Value,
         MetaEnable extends true
           ? undefined
           : MetaEnable extends false
@@ -427,8 +431,8 @@ export namespace Field {
       valid?: ValidEnable;
     };
 
-    export type Render<Payload, MetaProps extends Meta.Props | undefined> = (
-      input: Input<Payload>,
+    export type Render<Value, MetaProps extends Meta.Props | undefined> = (
+      input: Input<Value>,
       meta: Meta<MetaProps>,
     ) => React.ReactNode;
   }
@@ -459,9 +463,9 @@ export namespace Field {
     message: string;
   }
 
-  export type Validator<Value, Context = undefined> = undefined extends Context
-    ? (payload: FieldRef<Value>) => Promise<void> | void
-    : (payload: FieldRef<Value>, context: Context) => Promise<void> | void;
+  export interface Validator<ValueDef extends Atom.Def.Constraint> {
+    <Def extends ValueDef>(ref: FieldRef<Def>): Promise<void> | void;
+  }
 
   //#endregion
 }
