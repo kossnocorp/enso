@@ -125,7 +125,7 @@ export declare class Atom<
 
   at: Atom.At.Prop<Flavor, ValueDef["read"]>;
 
-  try: Atom.Try.Prop<Flavor, ValueDef>;
+  try: Atom.Try.Prop<Flavor, ValueDef["read"]>;
 
   get path(): string[];
 
@@ -540,15 +540,17 @@ export namespace Atom {
       ParentValue,
       ParentKey extends keyof Utils.NonNullish<ParentValue>,
     > =
-      Utils.IsStaticKey<ParentValue, ParentKey> extends true
-        ? Utils.IsOptionalKey<ParentValue, ParentKey> extends true
-          ? "detachable"
-          : never
-        : Utils.IsReadonlyArray<ParentValue> extends true
-          ? never
-          : ParentValue extends Utils.Tuple
+      Utils.IsAny<ParentValue> extends true
+        ? "detachable"
+        : Utils.IsStaticKey<ParentValue, ParentKey> extends true
+          ? Utils.IsOptionalKey<ParentValue, ParentKey> extends true
+            ? "detachable"
+            : never
+          : Utils.IsReadonlyArray<ParentValue> extends true
             ? never
-            : "detachable";
+            : ParentValue extends Utils.Tuple
+              ? never
+              : "detachable";
   }
 
   //#endregion
@@ -778,7 +780,7 @@ export namespace Atom {
 
     at: At.Prop<Flavor, ValueDef["read"]>;
 
-    try: Atom.Try.Prop<Flavor, ValueDef>;
+    try: Atom.Try.Prop<Flavor, ValueDef["read"]>;
 
     self: Self.Envelop<Flavor, ValueDef, Qualifier>;
 
@@ -1695,16 +1697,15 @@ export namespace Atom {
   //#region Try
 
   export namespace Try {
-    export type Prop<
-      Flavor extends Atom.Flavor.Constraint,
-      ValueDef extends Def.Constraint,
-    > =
-      | (Utils.HasNonObject<ValueDef["read"]> extends true ? undefined : never)
-      | (Utils.OnlyObject<ValueDef["read"]> extends infer Value
-          ? keyof Value extends infer Key extends keyof Value
-            ? <ArgKey extends Key>(
-                key: ArgKey | Enso.SafeNullish<ArgKey>,
-              ) => Child<Flavor, Value, ArgKey>
+    export type Prop<Flavor extends Atom.Flavor.Constraint, Value> =
+      | (Utils.HasNonObject<Value> extends true ? undefined : never)
+      | (Utils.OnlyObject<Value> | Utils.OnlyAny<Value> extends infer Value
+          ? Utils.IsNever<Value> extends false
+            ? keyof Value extends infer Key extends keyof Value
+              ? <ArgKey extends Key>(
+                  key: ArgKey | Enso.SafeNullish<ArgKey>,
+                ) => Child<Flavor, Value, ArgKey>
+              : never
             : never
           : never);
 
