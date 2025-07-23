@@ -627,6 +627,16 @@ const unionField = new Field({ hello: "world", world: true }) as
     }
   }
 
+  // Field.Exact
+  {
+    const field = {} as Field.Exact<string> | undefined;
+
+    const result = Field.useEnsure(field);
+    result satisfies Field<string | undefined>;
+    // @ts-expect-error
+    result.any;
+  }
+
   // Shared
   {
     const field = {} as
@@ -1866,6 +1876,22 @@ const unionField = new Field({ hello: "world", world: true }) as
       | undefined;
     // @ts-expect-error
     result.any;
+  }
+
+  // any
+  {
+    const field = {} as Field<any>;
+
+    const result = field.try?.(0);
+    result satisfies Field<any, "tried" | "detachable"> | null | undefined;
+    undefined satisfies typeof result;
+
+    // @ts-expect-error
+    field.try(0);
+    // @ts-expect-error
+    field.try(0).$.any;
+
+    field.try?.({} as keyof any)?.$;
   }
 
   // Union

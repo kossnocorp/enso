@@ -59,7 +59,7 @@ export declare class Form<Value> implements Form.Interface<Value> {
 
   at: Atom.At.Prop<"field", Value>;
 
-  try: Atom.Try.Prop<"field", Atom.Def<Value>>;
+  try: Atom.Try.Prop<"field", Value>;
 
   //#endregion
 
@@ -129,7 +129,7 @@ export namespace Form {
 
     at: Atom.At.Prop<"field", Value>;
 
-    try: Atom.Try.Prop<"field", Atom.Def<Value>>;
+    try: Atom.Try.Prop<"field", Value>;
 
     //#endregion
 

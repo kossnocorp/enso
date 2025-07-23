@@ -175,6 +175,8 @@ export namespace EnsoUtils {
 
   export type IsAny<Type> = IfAnyOr<Type, true, false>;
 
+  export type OnlyAny<Type> = IfAnyOr<Type, any, never>;
+
   //#endregion
 
   //#region Unknown

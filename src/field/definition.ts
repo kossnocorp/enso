@@ -47,7 +47,7 @@ export declare class Field<
   ): Field.Exact<Value>;
 
   static useEnsure<
-    FieldType extends Field<any> | Utils.Nullish,
+    FieldType extends Atom.Envelop<"field", any> | Utils.Nullish,
     MappedValue = undefined,
   >(
     field: FieldType,
