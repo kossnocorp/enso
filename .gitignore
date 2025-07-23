@@ -6,3 +6,5 @@ node_modules
 __screenshots__
 .envrc
 .direnv
+# macOS
+.DS_Store
