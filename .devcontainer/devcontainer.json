@@ -9,7 +9,7 @@
 
   "mounts": [
     // Cache .cache for pnpm
-    "source=${localWorkspaceFolder}/.devcontainer/.cache/dot-cache,target=${localEnv:HOME}/.cache,type=bind,consistency=cached"
+    "type=volume,src=dot-cache,target=${localEnv:HOME}/.cache"
   ],
 
   "onCreateCommand": "./.devcontainer/scripts/on-create.sh",
