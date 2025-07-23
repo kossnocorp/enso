@@ -3861,6 +3861,29 @@ const brandedPrim = new Field({} as Branded<string>);
     field.self.remove();
   }
 
+  // Qualifier
+  {
+    // never
+    {
+      const field = new Field("hello") as Field<string, never>;
+      // @ts-expect-error
+      field.self.remove();
+    }
+
+    // Mixed
+    {
+      const field = new Field("hello") as Field<string, "detachable" | "tried">;
+
+      const result = field.self.remove();
+
+      result satisfies Field<DetachedValue, "detachable">;
+      // @ts-expect-error
+      result satisfies Field<string, "detachable">;
+      // @ts-expect-error
+      result.any;
+    }
+  }
+
   // Union
   {
     // Value union

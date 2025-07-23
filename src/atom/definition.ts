@@ -1167,15 +1167,9 @@ export namespace Atom {
         Qualifier extends Atom.Qualifier.Constraint = Atom.Qualifier.Default,
         Parent extends Atom.Parent.Constraint<ValueDef> = Atom.Parent.Default,
       > =
-        // NOTE: {} is required to break signatures compatibility of value unions
-        // such as `string[] | undefined` when used for type functions. If
-        // the function were to resolve to `never`, it would act as it was just
-        // `string[]`, which is incorrect.
-        Utils.IsNever<Qualifier> extends true
-          ? {}
-          : Qualifier extends "detachable"
-            ? Fn<Flavor, ValueDef, Qualifier, Parent>
-            : {};
+        Utils.IsNever<Extract<Qualifier, "detachable">> extends false
+          ? Fn<Flavor, ValueDef, Qualifier, Parent>
+          : undefined;
 
       export interface Fn<
         Flavor extends Atom.Flavor.Constraint,
