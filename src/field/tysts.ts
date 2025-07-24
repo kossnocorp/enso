@@ -1092,7 +1092,14 @@ const unionField = new Field({ hello: "world", world: true }) as
     const field = new Field({} as Settings);
 
     const userResult = field.$.user.pave({ email: "user@example.com" });
-    userResult satisfies Field<UserSettings>;
+    type Test1 = typeof userResult;
+    type Test2 =
+      Test1 extends Field.Exact.Internal<infer Def, any, any>
+        ? Def | "Qwe"
+        : "neverrr";
+    userResult satisfies Field.Exact.Internal<
+      Field.Def<UserSettings, UserSettings | undefined>
+    >;
     // @ts-expect-error
     userResult.any;
 
@@ -1673,6 +1680,22 @@ const unionField = new Field({ hello: "world", world: true }) as
     result.any;
   }
 
+  // Any
+  {
+    const field = {} as Field<any>;
+
+    const result = field.try?.(0);
+    result satisfies Field<any, "tried" | "detachable"> | null | undefined;
+    undefined satisfies typeof result;
+
+    // @ts-expect-error
+    field.at(0);
+    // @ts-expect-error
+    field.at(0).$.any;
+
+    field.at?.({} as keyof any)?.$;
+  }
+
   // Union
   {
     // Value union
@@ -1968,7 +1991,7 @@ const unionField = new Field({ hello: "world", world: true }) as
     result.any;
   }
 
-  // any
+  // Any
   {
     const field = {} as Field<any>;
 
