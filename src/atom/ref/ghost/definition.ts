@@ -25,5 +25,5 @@ export namespace AtomRefGhost {
       Parent
     > {}
 
-  //#endregion Interface
+  //#endregion
 }

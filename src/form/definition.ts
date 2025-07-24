@@ -17,7 +17,7 @@ export declare class Form<Value> implements Form.Interface<Value> {
     props: Form.Component.Props<Payload, IsServer>,
   ): ReactElement<HTMLFormElement>;
 
-  //#endregion Static
+  //#endregion
 
   //#region Instance
 
@@ -25,7 +25,7 @@ export declare class Form<Value> implements Form.Interface<Value> {
 
   constructor(initialValue: Value, options?: Form.Options<Value>);
 
-  //#endregion Instance
+  //#endregion
 
   //#region Attributes
 
@@ -75,13 +75,13 @@ export declare class Form<Value> implements Form.Interface<Value> {
 
   get errors(): Field.Error[];
 
-  useErrors(): Field.Error[];
+  useErrors: Field.Errors.Use.Prop<Atom.Qualifier.Default>;
 
   get valid(): boolean;
 
   useValid(): boolean;
 
-  validate(validator: Field.Validator<Atom.Def<Value>>): Promise<void>;
+  validate(validator: Field.Validator<Value>): Promise<void>;
 
   //#endregion
 
@@ -99,8 +99,9 @@ export declare class Form<Value> implements Form.Interface<Value> {
 
 export namespace Form {
   export interface Interface<Value>
-    extends Field.Ish.Value,
-      Field.Ish.Validation<Atom.Def<Value>> {
+    extends Field.Ish.Value.Read<never>,
+      Field.Ish.Value.Write<never>,
+      Field.Ish.Validation<Atom.Def<Value>, Atom.Qualifier.Default> {
     //#region Instance
 
     [hintSymbol]: true;

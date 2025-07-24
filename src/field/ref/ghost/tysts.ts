@@ -178,9 +178,9 @@ const prim = new Field<string | boolean>("hello");
   }
 }
 
-//#endregion Collection
+//#endregion
 
-//#endregion Type
+//#endregion
 
 //#region Helpers
 

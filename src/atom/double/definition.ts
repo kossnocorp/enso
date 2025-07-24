@@ -19,5 +19,5 @@ export namespace AtomDouble {
     > = Atom.Parent.Default,
   > {}
 
-  //#endregion Interface
+  //#endregion
 }
