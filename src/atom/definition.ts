@@ -295,7 +295,7 @@ export namespace Atom {
 
     export type Kind = "state" | "field";
 
-    export type Variant = "immutable" | "base" | "exact";
+    export type Variant = "immutable" | "optional" | "base" | "exact";
   }
 
   // WIP: Try to get rid of it. The purpose is to have symmetry with Ref but it
@@ -681,6 +681,39 @@ export namespace Atom {
             : false
           : false;
     }
+
+    export interface Self<
+      Flavor extends Atom.Flavor.Constraint,
+      ValueDef extends Atom.Def.Constraint,
+      Qualifier extends Atom.Qualifier.Constraint = Atom.Qualifier.Default,
+      Parent extends Atom.Parent.Constraint<ValueDef> = Atom.Parent.Default,
+    > extends Immutable.Self<Flavor, ValueDef, Qualifier, Parent> {}
+  }
+
+  //#endregion
+
+  //#region Optional
+
+  export interface Optional<
+    Flavor extends Atom.Flavor.Constraint,
+    ValueDef extends Atom.Def.Constraint,
+    Qualifier extends Atom.Qualifier.Constraint = Atom.Qualifier.Default,
+    Parent extends Atom.Parent.Constraint<ValueDef> = Atom.Parent.Default,
+  > extends Immutable<Flavor, ValueDef, Qualifier, Parent> {}
+
+  export namespace Optional {
+    export type Envelop<
+      Flavor extends Atom.Flavor.Constraint,
+      ValueDef extends Atom.Def.Constraint,
+      Qualifier extends Atom.Qualifier.Constraint = Atom.Qualifier.Default,
+      Parent extends Atom.Parent.Constraint<ValueDef> = Atom.Parent.Default,
+    > = Utils.Expose<
+      ExtractKind<Flavor> extends "state"
+        ? State.Optional.Internal<ValueDef, Qualifier, Parent>
+        : ExtractKind<Flavor> extends "field"
+          ? Field.Optional.Internal<ValueDef, Qualifier, Parent>
+          : never
+    >;
 
     export interface Self<
       Flavor extends Atom.Flavor.Constraint,
