@@ -65,23 +65,9 @@ export declare class Atom<
 
   useCompute: Atom.Compute.Use.Prop<ValueDef, Qualifier>;
 
-  set<NewValue extends ValueDef["write"]>(
-    value: NewValue,
-  ): Atom.Envelop<
-    Flavor,
-    Atom.Set.Value<ValueDef["write"], NewValue>,
-    Qualifier,
-    Parent
-  >;
+  set: Atom.Set.Prop<Flavor, ValueDef, Qualifier, Parent>;
 
-  pave<PavedValue extends Utils.NonNullish<ValueDef["write"]>>(
-    value: PavedValue,
-  ): Atom.Envelop<
-    Flavor,
-    Atom.Pave.Value<ValueDef["write"], PavedValue>,
-    Qualifier,
-    Parent
-  >;
+  pave: Atom.Pave.Prop<Flavor, ValueDef, Qualifier, Parent>;
 
   get lastChanges(): FieldChange;
 
@@ -562,23 +548,9 @@ export namespace Atom {
   > extends Immutable<Flavor, ValueDef, Qualifier, Parent> {
     //#region Value
 
-    set<NewValue extends ValueDef["write"]>(
-      value: NewValue,
-    ): Envelop<
-      Flavor,
-      Atom.Set.Value<ValueDef["write"], NewValue>,
-      Qualifier,
-      Parent
-    >;
+    set: Set.Prop<Flavor, ValueDef, Qualifier, Parent>;
 
-    pave<PavedValue extends Utils.NonNullish<ValueDef["write"]>>(
-      value: PavedValue,
-    ): Envelop<
-      Flavor,
-      Pave.Value<ValueDef["write"], PavedValue>,
-      Qualifier,
-      Parent
-    >;
+    pave: Pave.Prop<Flavor, ValueDef, Qualifier, Parent>;
 
     // NOTE: The purpose of this is to cause invariance and break compatibility
     // with subtypes.
@@ -1173,18 +1145,44 @@ export namespace Atom {
   }
 
   export namespace Set {
-    export type Value<Value, NewValue extends Value> = Atom.Def<
-      Value extends Value ? (NewValue extends Value ? Value : never) : never
+    export interface Prop<
+      Flavor extends Atom.Flavor.Constraint,
+      ValueDef extends Atom.Def.Constraint,
+      Qualifier extends Atom.Qualifier.Constraint,
+      Parent extends Atom.Parent.Constraint<ValueDef>,
+    > {
+      <SetValue extends ValueDef["write"]>(
+        value: SetValue,
+      ): Envelop<
+        Flavor,
+        Set.Def<ValueDef["write"], SetValue>,
+        Qualifier,
+        Parent
+      >;
+    }
+
+    export type Def<Value, SetValue extends Value> = Atom.Def<
+      Value extends Value ? (SetValue extends Value ? Value : never) : never,
+      Value
     >;
   }
 
   export namespace Pave {
-    export type Value<
-      Value,
-      PavedValue extends Utils.NonNullish<Value>,
-    > = Atom.Def<
-      Value extends Value ? (PavedValue extends Value ? Value : never) : never
-    >;
+    export interface Prop<
+      Flavor extends Atom.Flavor.Constraint,
+      ValueDef extends Atom.Def.Constraint,
+      Qualifier extends Atom.Qualifier.Constraint,
+      Parent extends Atom.Parent.Constraint<ValueDef>,
+    > {
+      <PavedValue extends Utils.NonNullish<ValueDef["write"]>>(
+        value: PavedValue,
+      ): Envelop<
+        Flavor,
+        Set.Def<ValueDef["write"], PavedValue>,
+        Qualifier,
+        Parent
+      >;
+    }
   }
 
   //#endregion
