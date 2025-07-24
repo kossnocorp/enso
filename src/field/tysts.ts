@@ -852,6 +852,7 @@ const unionField = new Field({ hello: "world", world: true }) as
   {
     const field = {} as Field<string, "validating">;
 
+    field.useValue satisfies undefined;
     // @ts-expect-error
     field.useValue();
     // @ts-expect-error
@@ -920,6 +921,7 @@ const unionField = new Field({ hello: "world", world: true }) as
   {
     const field = {} as Field<string, "validating">;
 
+    field.useCompute satisfies undefined;
     // @ts-expect-error
     field.useCompute((_) => true);
     // @ts-expect-error
@@ -959,6 +961,8 @@ const unionField = new Field({ hello: "world", world: true }) as
   // Validating
   {
     const field = {} as Field<string, "validating">;
+
+    field.useDirty satisfies undefined;
     // @ts-expect-error
     field.useDirty();
     // @ts-expect-error
@@ -3687,15 +3691,23 @@ const brandedPrim = new Field({} as Branded<string>);
   // Primitive
   {
     const field = new Field("hello");
+
+    field.useCollection satisfies undefined;
     // @ts-expect-error
     field.useCollection();
+    // @ts-expect-error
+    field.useCollection?.();
   }
 
   // Branded primitive
   {
     const field = new Field({} as Branded<string>);
+
+    field.useCollection satisfies undefined;
     // @ts-expect-error
     field.useCollection();
+    // @ts-expect-error
+    field.useCollection?.();
   }
 
   // Union
@@ -3785,6 +3797,8 @@ const brandedPrim = new Field({} as Branded<string>);
   // Validating
   {
     const field = {} as Field<string, "validating">;
+
+    field.useCollection satisfies undefined;
     // @ts-expect-error
     field.useCollection();
     // @ts-expect-error
@@ -4488,6 +4502,8 @@ const brandedPrim = new Field({} as Branded<string>);
   // Validating
   {
     const field = {} as Field<string, "validating">;
+
+    field.useWatch satisfies undefined;
     // @ts-expect-error
     field.useWatch((_value, _event) => {}, []);
     // @ts-expect-error
@@ -4732,6 +4748,8 @@ const brandedPrim = new Field({} as Branded<string>);
   // Validating
   {
     const field = {} as Field<string, "validating">;
+
+    field.useDecompose satisfies undefined;
     // @ts-expect-error
     field.useDecompose((_newValue, _prevValue) => true, []);
     // @ts-expect-error
@@ -5355,6 +5373,8 @@ const brandedPrim = new Field({} as Branded<string>);
   // Validating
   {
     const field = {} as Field<User | Organization, "validating">;
+
+    field.useDiscriminate satisfies undefined;
     // @ts-expect-error
     field.useDiscriminate("type");
     // @ts-expect-error
@@ -5628,72 +5648,30 @@ const brandedPrim = new Field({} as Branded<string>);
   // Base
   {
     const field = new Field("hello") as Field.Base<string>;
-    const result = field
-      .useInto((value) => {
-        value satisfies string;
-        // @ts-expect-error
-        value.any;
 
-        return value.length;
-      }, [])
-      .from((sizeValue, value) => {
-        sizeValue satisfies number;
-        // @ts-expect-error
-        sizeValue.any;
-
-        value satisfies string;
-        // @ts-expect-error
-        value.any;
-
-        return value.slice(0, sizeValue);
-      }, []);
-
-    result satisfies Field.Base<number, Field.Proxy<string>>;
-    result satisfies Field.Base<number>;
-    result satisfies Field.Base<number, Field.Proxy<any>>;
-    result satisfies Field.Base<number, Field.Proxy<unknown>>;
+    field.useInto satisfies undefined;
     // @ts-expect-error
-    result satisfies Field.Base<number, Field.Proxy<number>>;
+    field.useInto((_value) => true, []);
     // @ts-expect-error
-    result satisfies Field<number, Field.Proxy<string>>;
+    field.useInto?.((_value) => true, []);
   }
 
   // Immutable
   {
     const field = new Field("hello") as Field.Immutable<string>;
-    const result = field
-      .into((value) => {
-        value satisfies string;
-        // @ts-expect-error
-        value.any;
 
-        return value.length;
-      })
-      .from((sizeValue, value) => {
-        sizeValue satisfies number;
-        // @ts-expect-error
-        sizeValue.any;
-
-        value satisfies string;
-        // @ts-expect-error
-        value.any;
-
-        return value.slice(0, sizeValue);
-      });
-
-    result satisfies Field.Immutable<number, Field.Proxy<string>>;
-    result satisfies Field.Immutable<number>;
-    result satisfies Field.Immutable<number, Field.Proxy<any>>;
-    result satisfies Field.Immutable<number, Field.Proxy<unknown>>;
+    field.useInto satisfies undefined;
     // @ts-expect-error
-    result satisfies Field.Immutable<number, Field.Proxy<number>>;
+    field.useInto((_value) => true, []);
     // @ts-expect-error
-    result satisfies Field<number, Field.Proxy<string>>;
+    field.useInto?.((_value) => true, []);
   }
 
   // Shared
   {
     const field = ({} as Field<string>).shared<[string, string | undefined]>();
+
+    field.useInto;
 
     const result = field
       .useInto((value) => {
@@ -5725,6 +5703,8 @@ const brandedPrim = new Field({} as Branded<string>);
   // Validating
   {
     const field = {} as Field<string, "validating">;
+
+    field.useInto satisfies undefined;
     // @ts-expect-error
     field.useInto((_value) => true, []);
     // @ts-expect-error
@@ -5813,6 +5793,8 @@ const brandedPrim = new Field({} as Branded<string>);
   // Validating
   {
     const field = {} as Field<string, "validating">;
+
+    field.useDefined satisfies undefined;
     // @ts-expect-error
     field.useDefined("string");
     // @ts-expect-error
@@ -5967,6 +5949,8 @@ const brandedPrim = new Field({} as Branded<string>);
   // Validating
   {
     const field = {} as Field<string, "validating">;
+
+    field.useErrors satisfies undefined;
     // @ts-expect-error
     field.useErrors();
     // @ts-expect-error
@@ -6006,6 +5990,8 @@ const brandedPrim = new Field({} as Branded<string>);
   // Validating
   {
     const field = {} as Field<string, "validating">;
+
+    field.useValid satisfies undefined;
     // @ts-expect-error
     field.useValid();
     // @ts-expect-error
