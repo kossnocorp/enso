@@ -374,6 +374,11 @@ export namespace Field {
 
   //#region Value
 
+  export type Def<ReadValue, WriteValue = ReadValue> = Atom.Def<
+    ReadValue,
+    WriteValue
+  >;
+
   export namespace Dirty {
     export namespace Use {
       export type Prop<Qualifier extends Atom.Qualifier.Constraint> =

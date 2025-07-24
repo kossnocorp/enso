@@ -1011,7 +1011,9 @@ const unionField = new Field({ hello: "world", world: true }) as
       age: 42,
     });
 
-    result satisfies Field<User>;
+    result satisfies Field.Exact.Internal<
+      Field.Def<User, User | Account | undefined>
+    >;
     // @ts-expect-error
     result.any;
 
@@ -1092,13 +1094,9 @@ const unionField = new Field({ hello: "world", world: true }) as
     const field = new Field({} as Settings);
 
     const userResult = field.$.user.pave({ email: "user@example.com" });
-    type Test1 = typeof userResult;
-    type Test2 =
-      Test1 extends Field.Exact.Internal<infer Def, any, any>
-        ? Def | "Qwe"
-        : "neverrr";
     userResult satisfies Field.Exact.Internal<
-      Field.Def<UserSettings, UserSettings | undefined>
+      Field.Def<UserSettings, UserSettings | undefined>,
+      "detachable"
     >;
     // @ts-expect-error
     userResult.any;
@@ -1113,7 +1111,10 @@ const unionField = new Field({ hello: "world", world: true }) as
     const securityResult = userResult.$.security.pave({
       public: true,
     });
-    securityResult satisfies Field<SecuritySettings>;
+    securityResult satisfies Field.Exact.Internal<
+      Field.Def<SecuritySettings, SecuritySettings | undefined>,
+      "detachable"
+    >;
     // @ts-expect-error
     securityResult.any;
 
@@ -1136,7 +1137,9 @@ const unionField = new Field({ hello: "world", world: true }) as
     const field = {} as Field<GlobalSettings | LocalSettings | undefined>;
 
     const result = field.pave({ global: true });
-    result satisfies Field<GlobalSettings>;
+    result satisfies Field.Exact.Internal<
+      Field.Def<GlobalSettings, GlobalSettings | LocalSettings | undefined>
+    >;
     // @ts-expect-error
     result.any;
 
