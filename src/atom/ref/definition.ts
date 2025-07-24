@@ -13,13 +13,13 @@ export declare class AtomRef<
 
   value: Atom.Value.Prop<ValueDef>;
 
-  //#endregion Value
+  //#endregion
 
   //#region Type
 
   forEach: AtomRef.ForEachProp<Flavor, ValueDef>;
 
-  //#endregion Type
+  //#endregion
 }
 
 export namespace AtomRef {
@@ -124,16 +124,16 @@ export namespace AtomRef {
 
     value: Atom.Value.Prop<ValueDef>;
 
-    //#endregion Value
+    //#endregion
 
     //#region Type
 
     forEach: AtomRef.ForEachProp<Flavor, ValueDef>;
 
-    //#endregion Type
+    //#endregion
   }
 
-  //#endregion Interface
+  //#endregion
 
   //#region Type
 
@@ -454,5 +454,5 @@ export namespace AtomRef {
 
   //#endregion
 
-  //#endregion Type
+  //#endregion
 }

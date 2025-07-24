@@ -72,7 +72,7 @@ export declare class Field<
     >,
   ): ReactElement<HTMLElement>;
 
-  //#endregion Static
+  //#endregion
 
   //#region Instance
 
@@ -84,11 +84,11 @@ export declare class Field<
 
   get dirty(): boolean;
 
-  useDirty(): boolean;
+  useDirty: Field.Dirty.Use.Prop<Qualifier>;
 
-  commit(): void;
+  commit: Field.Commit.Prop<Qualifier>;
 
-  reset(): void;
+  reset: Field.Reset.Prop<Qualifier>;
 
   //#endregion
 
@@ -96,13 +96,13 @@ export declare class Field<
 
   get errors(): Field.Error[];
 
-  useErrors(): Field.Error[];
+  useErrors: Field.Errors.Use.Prop<Qualifier>;
 
   get valid(): boolean;
 
-  useValid(): boolean;
+  useValid: Field.Valid.Use.Prop<Qualifier>;
 
-  validate(validator: Field.Validator<Atom.Def<Value>>): Promise<void>;
+  validate: Field.Validate.Prop<Value, Qualifier>;
 
   //#endregion
 }
@@ -140,7 +140,8 @@ export namespace Field {
       ValueDef extends Atom.Def.Constraint,
       Qualifier extends Atom.Qualifier.Constraint = Atom.Qualifier.Default,
       Parent extends Atom.Parent.Constraint<ValueDef> = Atom.Parent.Default,
-    > extends Atom.Exact<"field" | "exact", ValueDef, Qualifier, Parent>,
+    > extends Ish.Value.Write<Qualifier>,
+        Atom.Exact<"field" | "exact", ValueDef, Qualifier, Parent>,
         Immutable.Interface<"exact", ValueDef, Qualifier, Parent> {}
 
     export interface Interface<
@@ -150,7 +151,8 @@ export namespace Field {
       Parent extends Atom.Parent.Constraint<
         Atom.Def<Value>
       > = Atom.Parent.Default,
-    > extends Atom.Exact<"field" | Variant, Atom.Def<Value>, Qualifier, Parent>,
+    > extends Ish.Value.Write<Qualifier>,
+        Atom.Exact<"field" | Variant, Atom.Def<Value>, Qualifier, Parent>,
         Immutable.Interface<Variant, Atom.Def<Value>, Qualifier, Parent> {}
   }
 
@@ -262,8 +264,8 @@ export namespace Field {
       ValueDef extends Atom.Def.Constraint,
       Qualifier extends Atom.Qualifier.Constraint = Atom.Qualifier.Default,
       Parent extends Atom.Parent.Constraint<ValueDef> = Atom.Parent.Default,
-    > extends Ish.Value,
-        Ish.Validation<ValueDef>,
+    > extends Ish.Value.Read<Qualifier>,
+        Ish.Validation<ValueDef, Qualifier>,
         Atom.Immutable<"field" | Variant, ValueDef, Qualifier, Parent> {
       [hintSymbol]: true;
     }
@@ -284,7 +286,7 @@ export namespace Field {
     >;
   }
 
-  //#endregion Immutable
+  //#endregion
 
   //#region Shared
 
@@ -333,27 +335,72 @@ export namespace Field {
   }
 
   //#endregion
+
+  //#region Fieldish
+
   export namespace Ish {
-    export interface Value {
-      dirty: boolean;
+    export namespace Value {
+      export interface Read<Qualifier extends Atom.Qualifier.Constraint> {
+        dirty: boolean;
 
-      useDirty(): boolean;
+        useDirty: Dirty.Use.Prop<Qualifier>;
+      }
 
-      commit(): void;
+      export interface Write<Qualifier extends Atom.Qualifier.Constraint> {
+        commit: Commit.Prop<Qualifier>;
 
-      reset(): void;
+        reset: Reset.Prop<Qualifier>;
+      }
     }
 
-    export interface Validation<ValueDef extends Atom.Def.Constraint> {
+    export interface Validation<
+      ValueDef extends Atom.Def.Constraint,
+      Qualifier extends Atom.Qualifier.Constraint,
+    > {
       errors: Field.Error[];
 
-      useErrors(): Field.Error[];
+      useErrors: Field.Errors.Use.Prop<Qualifier>;
 
       valid: boolean;
 
-      useValid(): boolean;
+      useValid: Field.Valid.Use.Prop<Qualifier>;
 
-      validate(validator: Field.Validator<ValueDef>): Promise<void>;
+      validate: Validate.Prop<ValueDef["read"], Qualifier>;
+    }
+  }
+
+  //#endregion
+
+  //#endregion
+
+  //#region Value
+
+  export namespace Dirty {
+    export namespace Use {
+      export type Prop<Qualifier extends Atom.Qualifier.Constraint> =
+        Atom.Qualifier.Validating.DisableFor<Qualifier, Fn>;
+
+      export interface Fn {
+        (): boolean;
+      }
+    }
+  }
+
+  export namespace Commit {
+    export type Prop<Qualifier extends Atom.Qualifier.Constraint> =
+      Atom.Qualifier.Validating.DisableFor<Qualifier, Fn>;
+
+    export interface Fn {
+      (): void;
+    }
+  }
+
+  export namespace Reset {
+    export type Prop<Qualifier extends Atom.Qualifier.Constraint> =
+      Atom.Qualifier.Validating.DisableFor<Qualifier, Fn>;
+
+    export interface Fn {
+      (): void;
     }
   }
 
@@ -403,7 +450,7 @@ export namespace Field {
     Atom.Def<SourceValue>
   >;
 
-  //#endregion Transform
+  //#endregion
 
   //#region Meta
 
@@ -438,7 +485,7 @@ export namespace Field {
             : never;
   }
 
-  //#endregion Meta
+  //#endregion
 
   //#region Control
 
@@ -481,7 +528,7 @@ export namespace Field {
     ) => React.ReactNode;
   }
 
-  //#endregion Component
+  //#endregion
 
   //#region Input
 
@@ -507,8 +554,41 @@ export namespace Field {
     message: string;
   }
 
-  export interface Validator<ValueDef extends Atom.Def.Constraint> {
-    <Def extends ValueDef>(ref: FieldRef<Def>): Promise<void> | void;
+  export namespace Valid {
+    export namespace Use {
+      export type Prop<Qualifier extends Atom.Qualifier.Constraint> =
+        Atom.Qualifier.Validating.DisableFor<Qualifier, Fn>;
+
+      export interface Fn {
+        (): boolean;
+      }
+    }
+  }
+
+  export interface Validator<Value> {
+    (field: Field.Immutable<Value, "validating">): Promise<void> | void;
+  }
+
+  export namespace Validate {
+    export type Prop<
+      Value,
+      Qualifier extends Atom.Qualifier.Constraint,
+    > = Atom.Qualifier.Validating.DisableFor<Qualifier, Fn<Value>>;
+
+    export interface Fn<Value> {
+      (validator: Field.Validator<Value>): Promise<void>;
+    }
+  }
+
+  export namespace Errors {
+    export namespace Use {
+      export type Prop<Qualifier extends Atom.Qualifier.Constraint> =
+        Atom.Qualifier.Validating.DisableFor<Qualifier, Fn>;
+
+      export interface Fn {
+        (): Field.Error[];
+      }
+    }
   }
 
   //#endregion

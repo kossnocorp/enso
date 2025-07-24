@@ -16,7 +16,7 @@ export declare class FieldRefGhost<
 
   [hintSymbol]: true;
 
-  //#endregion Instance
+  //#endregion
 }
 
 export namespace FieldRefGhost {
@@ -33,5 +33,5 @@ export namespace FieldRefGhost {
     [hintSymbol]: true;
   }
 
-  //#endregion Interface
+  //#endregion
 }

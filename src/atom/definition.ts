@@ -363,9 +363,20 @@ export namespace Atom {
       | "detachable"
       | "tried"
       | "bound"
+      | "validating"
       | Proxy.Qualifier<unknown>;
 
     export type Default = never;
+
+    export type Extends<
+      Qualifier extends Constraint,
+      QualifierToCheck extends Constraint,
+    > =
+      Utils.IsNever<Qualifier> extends true
+        ? false
+        : Qualifier extends QualifierToCheck
+          ? true
+          : false;
 
     export type Map<Qualifier extends Atom.Qualifier.Constraint> =
       Utils.NeverDefault<
@@ -387,6 +398,16 @@ export namespace Atom {
       Qualifier extends Proxy.Qualifier<infer SourceValue>
         ? { proxy: SourceValue }
         : {};
+
+    export namespace Validating {
+      export type DisableFor<
+        Qualifier extends Atom.Qualifier.Constraint,
+        Type,
+      > =
+        Qualifier.Extends<Qualifier, "validating"> extends true
+          ? undefined
+          : Type;
+    }
   }
 
   //#endregion

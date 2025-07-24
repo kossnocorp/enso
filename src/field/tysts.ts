@@ -923,15 +923,27 @@ const unionField = new Field({ hello: "world", world: true }) as
 
 //#region Field#useDirty
 {
-  const field = new Field("hello") as
-    | Field<string>
-    | Field.Base<string>
-    | Field.Immutable<string>;
+  // Basic
+  {
+    const field = new Field("hello") as
+      | Field<string>
+      | Field.Base<string>
+      | Field.Immutable<string>;
 
-  const result = field.useDirty();
-  result satisfies boolean;
-  // @ts-expect-error
-  result.any;
+    const result = field.useDirty();
+    result satisfies boolean;
+    // @ts-expect-error
+    result.any;
+  }
+
+  // Validating
+  {
+    const field = {} as Field<string, "validating">;
+    // @ts-expect-error
+    field.useDirty();
+    // @ts-expect-error
+    field.useDirty?.();
+  }
 }
 //#endregion
 
@@ -1126,29 +1138,83 @@ const unionField = new Field({ hello: "world", world: true }) as
 
 //#region Field#commit
 {
-  const field = new Field("hello") as
-    | Field<string>
-    | Field.Base<string>
-    | Field.Immutable<string>;
+  // Exact
+  {
+    const field = {} as Field<string>;
 
-  const result = field.commit();
-  result satisfies void;
-  // @ts-expect-error
-  result.any;
+    const result = field.commit();
+    result satisfies void;
+    // @ts-expect-error
+    result.any;
+  }
+
+  // Base
+  {
+    const field = {} as Field.Base<string>;
+    // @ts-expect-error
+    field.commit();
+    // @ts-expect-error
+    field.commit?.();
+  }
+
+  // Immutable
+  {
+    const field = {} as Field.Immutable<string>;
+    // @ts-expect-error
+    field.commit();
+    // @ts-expect-error
+    field.commit?.();
+  }
+
+  // Validating
+  {
+    const field = {} as Field<string, "validating">;
+    // @ts-expect-error
+    field.commit();
+    // @ts-expect-error
+    field.commit?.();
+  }
 }
 //#endregion
 
 //#region Field#reset
 {
-  const field = new Field("hello") as
-    | Field<string>
-    | Field.Base<string>
-    | Field.Immutable<string>;
+  // Exact
+  {
+    const field = {} as Field<string>;
 
-  const result = field.reset();
-  result satisfies void;
-  // @ts-expect-error
-  result.any;
+    const result = field.reset();
+    result satisfies void;
+    // @ts-expect-error
+    result.any;
+  }
+
+  // Base
+  {
+    const field = {} as Field.Base<string>;
+    // @ts-expect-error
+    field.reset();
+    // @ts-expect-error
+    field.reset?.();
+  }
+
+  // Immutable
+  {
+    const field = {} as Field.Immutable<string>;
+    // @ts-expect-error
+    field.reset();
+    // @ts-expect-error
+    field.reset?.();
+  }
+
+  // Validating
+  {
+    const field = {} as Field<string, "validating">;
+    // @ts-expect-error
+    field.reset();
+    // @ts-expect-error
+    field.reset?.();
+  }
 }
 //#endregion
 
@@ -5811,15 +5877,27 @@ const brandedPrim = new Field({} as Branded<string>);
 
 //#region Field#useErrors
 {
-  const field = new Field("hello") as
-    | Field<string>
-    | Field.Base<string>
-    | Field.Immutable<string>;
+  // Basic
+  {
+    const field = new Field("hello") as
+      | Field<string>
+      | Field.Base<string>
+      | Field.Immutable<string>;
 
-  const result = field.useErrors();
-  result satisfies Field.Error[];
-  // @ts-expect-error
-  result.any;
+    const result = field.useErrors();
+    result satisfies Field.Error[];
+    // @ts-expect-error
+    result.baseany;
+  }
+
+  // Validating
+  {
+    const field = {} as Field<string, "validating">;
+    // @ts-expect-error
+    field.useErrors();
+    // @ts-expect-error
+    field.useErrors?.();
+  }
 }
 //#endregion
 
@@ -5838,15 +5916,75 @@ const brandedPrim = new Field({} as Branded<string>);
 
 //#region Field#useValid
 {
-  const field = new Field("hello") as
-    | Field<string>
-    | Field.Base<string>
-    | Field.Immutable<string>;
+  // Basic
+  {
+    const field = new Field("hello") as
+      | Field<string>
+      | Field.Base<string>
+      | Field.Immutable<string>;
 
-  const result = field.useValid();
-  result satisfies boolean;
-  // @ts-expect-error
-  result.any;
+    const result = field.useValid();
+    result satisfies boolean;
+    // @ts-expect-error
+    result.any;
+  }
+
+  // Validating
+  {
+    const field = {} as Field<string, "validating">;
+    // @ts-expect-error
+    field.useValid();
+    // @ts-expect-error
+    field.useValid?.();
+  }
+}
+//#endregion
+
+//#region Field#validate
+{
+  // Basic
+  {
+    const field = new Field("hello") as
+      | Field<string>
+      | Field.Base<string>
+      | Field.Immutable<string>;
+
+    const result = field.validate((field) => {
+      field satisfies Field.Immutable<string, "validating">;
+      // @ts-expect-error
+      field.any;
+    });
+    result satisfies Promise<void>;
+    // @ts-expect-error
+    result.any;
+
+    field.validate(async (_) => {});
+  }
+
+  // Shared
+  {
+    const field = ({} as Field<string>).shared<[string, string | undefined]>();
+
+    const result = field.validate((field) => {
+      field satisfies Field.Immutable<string | undefined, "validating">;
+      // @ts-expect-error
+      field.any;
+    });
+    result satisfies Promise<void>;
+    // @ts-expect-error
+    result.any;
+
+    field.validate(async (_) => {});
+  }
+
+  // Validating
+  {
+    const field = {} as Field<string, "validating">;
+    // @ts-expect-error
+    field.validate((_) => {});
+    // @ts-expect-error
+    field.validate?.((_) => {});
+  }
 }
 //#endregion
 

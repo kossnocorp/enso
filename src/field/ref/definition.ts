@@ -24,7 +24,7 @@ export declare class FieldRef<
     atom: Atom.Envelop<"field", Atom.Def<ValueDef>, Qualifier, Parent>,
   );
 
-  //#endregion Instance
+  //#endregion
 }
 
 export namespace FieldRef {
@@ -43,7 +43,7 @@ export namespace FieldRef {
       ? FieldRefGhost<ValueDef, Qualifier, Parent>
       : never;
 
-  //#endregion Kind
+  //#endregion
 
   //#region Interface
 
@@ -58,5 +58,5 @@ export namespace FieldRef {
   > extends Hint,
       AtomRef.Interface<"field" | "ref", ValueDef, Qualifier, Parent> {}
 
-  //#endregion Interface
+  //#endregion
 }
