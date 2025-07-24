@@ -293,6 +293,11 @@ export namespace Atom {
     export type Kind = "state" | "field";
 
     export type Variant = "immutable" | "optional" | "base" | "exact";
+
+    export type Extends<
+      Flavor extends Constraint,
+      FlavorToCheck extends Constraint,
+    > = FlavorToCheck extends Flavor ? true : false;
   }
 
   // WIP: Try to get rid of it. The purpose is to have symmetry with Ref but it
@@ -368,12 +373,15 @@ export namespace Atom {
     export type Extends<
       Qualifier extends Constraint,
       QualifierToCheck extends Constraint,
-    > =
+    > = true extends (
       Utils.IsNever<Qualifier> extends true
-        ? false
+        ? never
         : Qualifier extends QualifierToCheck
           ? true
-          : false;
+          : never
+    )
+      ? true
+      : false;
 
     export type Map<Qualifier extends Atom.Qualifier.Constraint> =
       Utils.NeverDefault<
@@ -400,10 +408,10 @@ export namespace Atom {
       export type DisableFor<
         Qualifier extends Atom.Qualifier.Constraint,
         Type,
-      > =
-        Qualifier.Extends<Qualifier, "validating"> extends true
-          ? undefined
-          : Type;
+      > = "validating" extends Qualifier ? undefined : Type;
+      // Qualifier.Extends<Qualifier, "validating"> extends true
+      //   ? undefined
+      //   : Type;
     }
   }
 
@@ -601,8 +609,8 @@ export namespace Atom {
     export type Envelop<
       Flavor extends Atom.Flavor.Constraint,
       ValueDef extends Atom.Def.Constraint,
-      Qualifier extends Atom.Qualifier.Constraint = Atom.Qualifier.Default,
-      Parent extends Atom.Parent.Constraint<ValueDef> = Atom.Parent.Default,
+      Qualifier extends Atom.Qualifier.Constraint,
+      Parent extends Atom.Parent.Constraint<ValueDef>,
     > =
       ExtractKind<Flavor> extends "state"
         ? State.Exact<ValueDef, Qualifier, Parent>
@@ -613,11 +621,14 @@ export namespace Atom {
     export interface Self<
       Flavor extends Atom.Flavor.Constraint,
       ValueDef extends Atom.Def.Constraint,
-      Qualifier extends Atom.Qualifier.Constraint = Atom.Qualifier.Default,
-      Parent extends Atom.Parent.Constraint<ValueDef> = Atom.Parent.Default,
+      Qualifier extends Atom.Qualifier.Constraint,
+      Parent extends Atom.Parent.Constraint<ValueDef>,
     > extends Immutable.Self<Flavor, ValueDef, Qualifier, Parent> {
       remove: Atom.Self.Remove.Prop<Flavor, ValueDef, Qualifier, Parent>;
     }
+
+    export type OnlyFor<Flavor extends Atom.Flavor.Constraint, Type> =
+      Flavor.Extends<Flavor, "exact"> extends true ? Type : undefined;
   }
 
   //#endregion
@@ -635,8 +646,8 @@ export namespace Atom {
     export type Envelop<
       Flavor extends Atom.Flavor.Constraint,
       ValueDef extends Atom.Def.Constraint,
-      Qualifier extends Atom.Qualifier.Constraint = Atom.Qualifier.Default,
-      Parent extends Atom.Parent.Constraint<ValueDef> = Atom.Parent.Default,
+      Qualifier extends Atom.Qualifier.Constraint,
+      Parent extends Atom.Parent.Constraint<ValueDef>,
     > = Utils.Expose<
       ExtractKind<Flavor> extends "state"
         ? State.Base.Internal<ValueDef, Qualifier, Parent>
@@ -651,7 +662,8 @@ export namespace Atom {
     > = Atom.Base.Envelop<
       Kind,
       Value.BaseDef<EnvelopType>,
-      Qualifier.Shared<EnvelopType>
+      Qualifier.Shared<EnvelopType>,
+      never
     >;
 
     export namespace Value {
@@ -802,7 +814,7 @@ export namespace Atom {
 
     try: Atom.Try.Prop<Flavor, ValueDef["read"]>;
 
-    self: Self.Envelop<Flavor, ValueDef, Qualifier>;
+    self: Self.Envelop<Flavor, ValueDef, Qualifier, Parent>;
 
     //#endregion
 
@@ -844,6 +856,9 @@ export namespace Atom {
 
     useDiscriminate: Discriminate.Prop<Flavor, ValueDef, Qualifier, Parent>;
 
+    // TODO: Find a way to simply move it to Exact, rather than using Exact.OnlyFor,
+    // but it breaks many tysts.
+
     into: Proxy.Into.Prop<Flavor, ValueDef, Qualifier, Parent>;
 
     useInto: Proxy.Into.Use.Prop<Flavor, ValueDef, Qualifier, Parent>;
@@ -864,8 +879,8 @@ export namespace Atom {
     export type Envelop<
       Flavor extends Atom.Flavor.Constraint,
       ValueDef extends Atom.Def.Constraint,
-      Qualifier extends Atom.Qualifier.Constraint = Atom.Qualifier.Default,
-      Parent extends Atom.Parent.Constraint<ValueDef> = Atom.Parent.Default,
+      Qualifier extends Atom.Qualifier.Constraint,
+      Parent extends Atom.Parent.Constraint<ValueDef>,
     > =
       ExtractKind<Flavor> extends "state"
         ? State.Immutable<ValueDef, Qualifier, Parent>
@@ -877,15 +892,16 @@ export namespace Atom {
       Flavor extends Atom.Flavor.Constraint,
       ValueDef extends Atom.Def.Constraint,
       Qualifier extends Atom.Qualifier.Constraint,
-      Parent extends Atom.Parent.Constraint<ValueDef> = Atom.Parent.Default,
+      Parent extends Atom.Parent.Constraint<ValueDef>,
     > {
-      try(): Try<Flavor, ValueDef, Qualifier>;
+      try(): Try<Flavor, ValueDef, Qualifier, Parent>;
     }
 
     export type Try<
       Flavor extends Atom.Flavor.Constraint,
       ValueDef extends Atom.Def.Constraint,
       Qualifier extends Atom.Qualifier.Constraint,
+      Parent extends Atom.Parent.Constraint<ValueDef>,
     > = ValueDef["read"] extends infer Value
       ? // Add null to the union
         | (null extends Value ? null : never)
@@ -895,7 +911,8 @@ export namespace Atom {
           | Atom.Envelop<
               Flavor,
               Atom.Def<Utils.NonNullish<Value>>,
-              "tried" | Qualifier
+              "tried" | Qualifier,
+              Parent
             >
       : never;
   }
@@ -961,8 +978,8 @@ export namespace Atom {
       Flavor extends Flavor.Constraint,
       ValueDef extends Def.Constraint,
       ValueTuple extends Value.Tuple,
-      Qualifier extends Qualifier.Constraint = Qualifier.Default,
-      Parent extends Parent.Constraint<ValueDef> = Parent.Default,
+      Qualifier extends Qualifier.Constraint,
+      Parent extends Parent.Constraint<ValueDef>,
     > = Envelop<
       Flavor,
       Result.Tuple<
@@ -1180,16 +1197,17 @@ export namespace Atom {
     export type Envelop<
       Flavor extends Atom.Flavor.Constraint,
       ValueDef extends Atom.Def.Constraint,
-      Qualifier extends Atom.Qualifier.Constraint = Atom.Qualifier.Default,
-      Parent extends Atom.Parent.Constraint<ValueDef> = Atom.Parent.Default,
-    > =
-      ExtractVariant<Flavor> extends infer Variant extends Atom.Flavor.Variant
-        ? Variant extends "exact"
-          ? Exact.Self<Flavor, ValueDef, Qualifier, Parent>
-          : Variant extends "base"
-            ? Base.Self<Flavor, ValueDef, Qualifier, Parent>
-            : Immutable.Self<Flavor, ValueDef, Qualifier, Parent>
-        : never;
+      Qualifier extends Atom.Qualifier.Constraint,
+      Parent extends Atom.Parent.Constraint<ValueDef>,
+    > = "exact" extends Flavor
+      ? Exact.Self<Flavor, ValueDef, Qualifier, Parent>
+      : "base" extends Flavor
+        ? Base.Self<Flavor, ValueDef, Qualifier, Parent>
+        : "optional" extends Flavor
+          ? Optional.Self<Flavor, ValueDef, Qualifier, Parent>
+          : "immutable" extends Flavor
+            ? Immutable.Self<Flavor, ValueDef, Qualifier, Parent>
+            : never;
 
     export namespace Remove {
       export type Prop<
@@ -2069,6 +2087,13 @@ export namespace Atom {
           Qualifier,
           Fn<Flavor, ValueDef, Qualifier, Parent>
         >;
+        // > = Exact.OnlyFor<
+        //   Flavor,
+        //   Qualifier.Validating.DisableFor<
+        //     Qualifier,
+        //     Fn<Flavor, ValueDef, Qualifier, Parent>
+        //   >
+        // >;
 
         export interface Fn<
           Flavor extends Atom.Flavor.Constraint,

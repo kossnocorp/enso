@@ -4,7 +4,7 @@ import { FieldChange, shiftChildChanges } from "../change/index.ts";
 export class EventsTree<Kind extends Atom.Flavor.Kind> {
   #tree: EventsTree.Node<Kind> = EventsTree.node();
 
-  at(path: Atom.Path): Atom.Exact.Envelop<Kind, any>[] {
+  at(path: Atom.Path): Atom.Exact.Envelop<Kind, any, never, never>[] {
     let node: EventsTree.Node<Kind> | undefined = this.#tree;
     for (const key of path) {
       node = node.children[key];
@@ -29,7 +29,7 @@ export class EventsTree<Kind extends Atom.Flavor.Kind> {
     queue.reverse().forEach(([path, atoms]) => callback(path, atoms));
   }
 
-  add(path: Atom.Path, atom: Atom.Exact.Envelop<Kind, any>) {
+  add(path: Atom.Path, atom: Atom.Exact.Envelop<Kind, any, never, never>) {
     let node = this.#tree;
     for (const key of path) {
       node = node.children[key] ??= EventsTree.node();
@@ -37,7 +37,10 @@ export class EventsTree<Kind extends Atom.Flavor.Kind> {
     node.atoms.add(atom);
   }
 
-  delete(path: Atom.Path, atom: Atom.Exact.Envelop<Kind, any>): boolean {
+  delete(
+    path: Atom.Path,
+    atom: Atom.Exact.Envelop<Kind, any, never, never>,
+  ): boolean {
     let node: EventsTree.Node<Kind> | undefined = this.#tree;
     for (const key of path) {
       node = node?.children[key];
@@ -49,7 +52,7 @@ export class EventsTree<Kind extends Atom.Flavor.Kind> {
   move(
     from: Atom.Path,
     to: Atom.Path,
-    atom: Atom.Exact.Envelop<Kind, any>,
+    atom: Atom.Exact.Envelop<Kind, any, never, never>,
   ): boolean {
     if (this.delete(from, atom)) {
       this.add(to, atom);
@@ -75,12 +78,12 @@ export class EventsTree<Kind extends Atom.Flavor.Kind> {
 
 export namespace EventsTree {
   export interface Node<Kind extends Atom.Flavor.Kind> {
-    atoms: Set<Atom.Exact.Envelop<Kind, Atom.Def<unknown>>>;
+    atoms: Set<Atom.Exact.Envelop<Kind, Atom.Def<unknown>, never, never>>;
     children: Record<keyof any, Node<Kind>>;
   }
 
   export type TraverseCallback<Kind extends Atom.Flavor.Kind> = (
     path: Atom.Path,
-    atoms: Atom.Exact.Envelop<Kind, Atom.Def<unknown>>[],
+    atoms: Atom.Exact.Envelop<Kind, Atom.Def<unknown>, never, never>[],
   ) => void;
 }

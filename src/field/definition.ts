@@ -1,7 +1,6 @@
 import React, { DependencyList, FocusEventHandler, ReactElement } from "react";
 import { Atom } from "../atom/index.js";
 import type { EnsoUtils as Utils } from "../utils.ts";
-import { FieldRef } from "./definition.ts";
 
 export * from "./ref/index.js";
 
@@ -111,8 +110,8 @@ export namespace Field {
   export type Envelop<
     Flavor extends Atom.Flavor.Constraint,
     ValueDef extends Atom.Def.Constraint,
-    Qualifier extends Atom.Qualifier.Constraint = Atom.Qualifier.Default,
-    Parent extends Atom.Parent.Constraint<ValueDef> = Atom.Parent.Default,
+    Qualifier extends Atom.Qualifier.Constraint,
+    Parent extends Atom.Parent.Constraint<ValueDef>,
   > = "immutable" extends Flavor
     ? Immutable.Internal<ValueDef, Qualifier, Parent>
     : "optional" extends Flavor
