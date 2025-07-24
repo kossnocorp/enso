@@ -72,11 +72,13 @@ export namespace State {
     Parent extends Atom.Parent.Constraint<ValueDef> = Atom.Parent.Default,
   > = "immutable" extends Flavor
     ? Immutable.Internal<ValueDef, Qualifier, Parent>
-    : "base" extends Flavor
-      ? Base.Internal<ValueDef, Qualifier, Parent>
-      : "exact" extends Flavor
-        ? Exact.Internal<ValueDef, Qualifier, Parent>
-        : never;
+    : "optional" extends Flavor
+      ? Optional.Internal<ValueDef, Qualifier, Parent>
+      : "base" extends Flavor
+        ? Base.Internal<ValueDef, Qualifier, Parent>
+        : "exact" extends Flavor
+          ? Exact.Internal<ValueDef, Qualifier, Parent>
+          : never;
 
   // #region Exact
 
@@ -116,6 +118,27 @@ export namespace State {
       Parent extends Atom.Parent.Constraint<ValueDef> = Atom.Parent.Default,
     > extends Hint,
         Atom.Base<"state" | "base", ValueDef, Qualifier, Parent> {}
+  }
+
+  //#endregion
+
+  //#region Optional
+
+  export interface Optional<
+    Value,
+    Qualifier extends Atom.Qualifier.Constraint = Atom.Qualifier.Default,
+    Parent extends Atom.Parent.Constraint<
+      Atom.Def<Value>
+    > = Atom.Parent.Default,
+  > extends Optional.Internal<Atom.Def<Value>, Qualifier, Parent> {}
+
+  export namespace Optional {
+    export interface Internal<
+      ValueDef extends Atom.Def.Constraint,
+      Qualifier extends Atom.Qualifier.Constraint = Atom.Qualifier.Default,
+      Parent extends Atom.Parent.Constraint<ValueDef> = Atom.Parent.Default,
+    > extends Hint,
+        Atom.Base<"state" | "optional", ValueDef, Qualifier, Parent> {}
   }
 
   //#endregion

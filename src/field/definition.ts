@@ -115,11 +115,13 @@ export namespace Field {
     Parent extends Atom.Parent.Constraint<ValueDef> = Atom.Parent.Default,
   > = "immutable" extends Flavor
     ? Immutable.Internal<ValueDef, Qualifier, Parent>
-    : "base" extends Flavor
-      ? Base.Internal<ValueDef, Qualifier, Parent>
-      : "exact" extends Flavor
-        ? Exact.Internal<ValueDef, Qualifier, Parent>
-        : never;
+    : "optional" extends Flavor
+      ? Optional.Internal<ValueDef, Qualifier, Parent>
+      : "base" extends Flavor
+        ? Base.Internal<ValueDef, Qualifier, Parent>
+        : "exact" extends Flavor
+          ? Exact.Internal<ValueDef, Qualifier, Parent>
+          : never;
 
   //#region Interface
 
@@ -187,6 +189,48 @@ export namespace Field {
       > = Atom.Parent.Default,
     > = Atom.Discriminate.Result<
       "field" | "base",
+      Atom.Def<Value>,
+      Discriminator,
+      Qualifier,
+      Parent
+    >;
+  }
+
+  //#endregion
+
+  //#region Optional
+
+  export interface Optional<
+    Value,
+    Qualifier extends Atom.Qualifier.Constraint = Atom.Qualifier.Default,
+    Parent extends Atom.Parent.Constraint<
+      Atom.Def<Value>
+    > = Atom.Parent.Default,
+  > extends Optional.Internal<Atom.Def<Value>, Qualifier, Parent> {}
+
+  export namespace Optional {
+    export interface Internal<
+      ValueDef extends Atom.Def.Constraint,
+      Qualifier extends Atom.Qualifier.Constraint = Atom.Qualifier.Default,
+      Parent extends Atom.Parent.Constraint<ValueDef> = Atom.Parent.Default,
+    > extends Optional.Interface<"optional", ValueDef, Qualifier, Parent> {}
+
+    export interface Interface<
+      Variant extends Atom.Flavor.Variant,
+      ValueDef extends Atom.Def.Constraint,
+      Qualifier extends Atom.Qualifier.Constraint = Atom.Qualifier.Default,
+      Parent extends Atom.Parent.Constraint<ValueDef> = Atom.Parent.Default,
+    > extends Immutable.Interface<Variant, ValueDef, Qualifier, Parent> {}
+
+    export type Discriminated<
+      Value,
+      Discriminator extends Atom.Discriminate.Discriminator<Atom.Def<Value>>,
+      Qualifier extends Atom.Qualifier.Constraint = Atom.Qualifier.Default,
+      Parent extends Atom.Parent.Constraint<
+        Atom.Def<Value>
+      > = Atom.Parent.Default,
+    > = Atom.Discriminate.Result<
+      "field" | "optional",
       Atom.Def<Value>,
       Discriminator,
       Qualifier,
