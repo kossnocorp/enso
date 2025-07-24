@@ -59,11 +59,11 @@ export declare class Atom<
 
   get value(): Atom.Value.Prop<ValueDef>;
 
-  useValue(): Atom.Value.Use.Result<ValueDef>;
+  useValue: Atom.Value.Use.Prop<ValueDef, Qualifier>;
 
   compute: Atom.Compute.Prop<ValueDef>;
 
-  useCompute: Atom.Compute.UseProp<ValueDef>;
+  useCompute: Atom.Compute.Use.Prop<ValueDef, Qualifier>;
 
   set<NewValue extends ValueDef["write"]>(
     value: NewValue,
@@ -101,7 +101,7 @@ export declare class Atom<
 
   filter: Atom.FilterProp<Flavor, ValueDef>;
 
-  useCollection: Atom.UseCollectionProp<Flavor, ValueDef, Qualifier, Parent>;
+  useCollection: Atom.Collection.Use.Prop<Flavor, ValueDef, Qualifier, Parent>;
 
   insert: Atom.Insert.Prop<Flavor, ValueDef, Qualifier, Parent>;
 
@@ -141,10 +141,7 @@ export declare class Atom<
 
   watch(callback: Atom.Watch.Callback<ValueDef>): Atom.Unwatch;
 
-  useWatch(
-    callback: Atom.Watch.Callback<ValueDef>,
-    deps: DependencyList,
-  ): Atom.Unwatch;
+  useWatch: Atom.Watch.Use.Prop<ValueDef, Qualifier>;
 
   trigger(changes: FieldChange, notifyParents?: boolean): void;
 
@@ -164,7 +161,7 @@ export declare class Atom<
 
   useInto: Atom.Proxy.Into.Use.Prop<Flavor, ValueDef, Qualifier, Parent>;
 
-  useDefined: Atom.Defined.Prop<Flavor, ValueDef, Qualifier, Parent>;
+  useDefined: Atom.Defined.Use.Prop<Flavor, ValueDef, Qualifier, Parent>;
 
   shared: Atom.Shared.Prop<Flavor, ValueDef, Qualifier, Parent>;
 
@@ -779,11 +776,11 @@ export namespace Atom {
 
     value: Atom.Value.Prop<ValueDef>;
 
-    useValue(): Atom.Value.Use.Result<ValueDef>;
+    useValue: Atom.Value.Use.Prop<ValueDef, Qualifier>;
 
     compute: Compute.Prop<ValueDef>;
 
-    useCompute: Compute.UseProp<ValueDef>;
+    useCompute: Compute.Use.Prop<ValueDef, Qualifier>;
 
     //#endregion
 
@@ -821,7 +818,7 @@ export namespace Atom {
 
     filter: FilterProp<Flavor, ValueDef>;
 
-    useCollection: UseCollectionProp<Flavor, ValueDef, Qualifier, Parent>;
+    useCollection: Collection.Use.Prop<Flavor, ValueDef, Qualifier, Parent>;
 
     //#endregion
 
@@ -831,7 +828,7 @@ export namespace Atom {
 
     watch(callback: Watch.Callback<ValueDef>): Unwatch;
 
-    useWatch(callback: Watch.Callback<ValueDef>, deps: DependencyList): Unwatch;
+    useWatch: Watch.Use.Prop<ValueDef, Qualifier>;
 
     trigger(changes: FieldChange, notifyParents?: boolean): void;
 
@@ -851,7 +848,7 @@ export namespace Atom {
 
     useInto: Proxy.Into.Use.Prop<Flavor, ValueDef, Qualifier, Parent>;
 
-    useDefined: Defined.Prop<Flavor, ValueDef, Qualifier, Parent>;
+    useDefined: Defined.Use.Prop<Flavor, ValueDef, Qualifier, Parent>;
 
     shared: Shared.Prop<Flavor, ValueDef, Qualifier, Parent>;
 
@@ -879,7 +876,7 @@ export namespace Atom {
     export interface Self<
       Flavor extends Atom.Flavor.Constraint,
       ValueDef extends Atom.Def.Constraint,
-      Qualifier extends Atom.Qualifier.Constraint = Atom.Qualifier.Default,
+      Qualifier extends Atom.Qualifier.Constraint,
       Parent extends Atom.Parent.Constraint<ValueDef> = Atom.Parent.Default,
     > {
       try(): Try<Flavor, ValueDef, Qualifier>;
@@ -1143,6 +1140,15 @@ export namespace Atom {
       EnvelopType extends Atom.Envelop<any, infer Value> ? Value : never;
 
     export namespace Use {
+      export type Prop<
+        ValueDef extends Def.Constraint,
+        Qualifier extends Atom.Qualifier.Constraint,
+      > = Qualifier.Validating.DisableFor<Qualifier, Fn<ValueDef>>;
+
+      export interface Fn<ValueDef extends Def.Constraint> {
+        (): Result<ValueDef>;
+      }
+
       export type Result<ValueDef extends Def.Constraint> = Opaque<
         ValueDef["read"]
       >;
@@ -1554,6 +1560,36 @@ export namespace Atom {
     }
 
     //#endregion
+
+    export namespace Use {
+      export type Prop<
+        Flavor extends Atom.Flavor.Constraint,
+        ValueDef extends Def.Constraint,
+        Qualifier extends Atom.Qualifier.Constraint,
+        Parent extends Atom.Parent.Constraint<ValueDef>,
+      > = Qualifier.Validating.DisableFor<
+        Qualifier,
+        Fn<Flavor, ValueDef, Qualifier, Parent>
+      >;
+
+      export type Fn<
+        Flavor extends Atom.Flavor.Constraint,
+        ValueDef extends Def.Constraint,
+        Qualifier extends Atom.Qualifier.Constraint,
+        Parent extends Atom.Parent.Constraint<ValueDef>,
+      > = ValueDef["read"] extends infer Value
+        ? Value extends object
+          ? Value extends Utils.BrandedPrimitive
+            ? undefined
+            : () => Envelop<
+                Flavor,
+                Atom.Def<Value>,
+                Qualifier | "bound",
+                Parent
+              >
+          : undefined
+        : never;
+    }
   }
 
   export type ForEachProp<
@@ -1576,25 +1612,12 @@ export namespace Atom {
     ValueDef extends Def.Constraint,
   > = Collection.Selector<Flavor, ValueDef, "filter">;
 
-  export type UseCollectionProp<
-    Flavor extends Atom.Flavor.Constraint,
-    ValueDef extends Def.Constraint,
-    Qualifier extends Atom.Qualifier.Constraint = Atom.Qualifier.Default,
-    Parent extends Atom.Parent.Constraint<ValueDef> = Atom.Parent.Default,
-  > = ValueDef["read"] extends infer Value
-    ? Value extends object
-      ? Value extends Utils.BrandedPrimitive
-        ? undefined
-        : () => Envelop<Flavor, Atom.Def<Value>, Qualifier | "bound", Parent>
-      : undefined
-    : never;
-
   export namespace Insert {
     export type Prop<
       Flavor extends Atom.Flavor.Constraint,
       ValueDef extends Def.Constraint,
-      Qualifier extends Atom.Qualifier.Constraint = Atom.Qualifier.Default,
-      Parent extends Atom.Parent.Constraint<ValueDef> = Atom.Parent.Default,
+      Qualifier extends Atom.Qualifier.Constraint,
+      Parent extends Atom.Parent.Constraint<ValueDef>,
     > = ValueDef["read"] extends infer Value
       ? Value extends Utils.StaticArray
         ? undefined
@@ -1776,6 +1799,17 @@ export namespace Atom {
     export interface Callback<ValueDef extends Def.Constraint> {
       (value: ValueDef["read"], event: ChangesEvent): void;
     }
+
+    export namespace Use {
+      export type Prop<
+        ValueDef extends Def.Constraint,
+        Qualifier extends Atom.Qualifier.Constraint,
+      > = Qualifier.Validating.DisableFor<Qualifier, Fn<ValueDef>>;
+
+      export interface Fn<ValueDef extends Def.Constraint> {
+        (callback: Watch.Callback<ValueDef>, deps: DependencyList): Unwatch;
+      }
+    }
   }
 
   export type Unwatch = () => void;
@@ -1795,11 +1829,18 @@ export namespace Atom {
       (value: ValueDef["read"]): Result;
     }
 
-    export interface UseProp<ValueDef extends Def.Constraint> {
-      <Result>(
-        callback: Callback<ValueDef, Result>,
-        deps: DependencyList,
-      ): Result;
+    export namespace Use {
+      export type Prop<
+        ValueDef extends Def.Constraint,
+        Qualifier extends Qualifier.Constraint,
+      > = Qualifier.Validating.DisableFor<Qualifier, Fn<ValueDef>>;
+
+      export interface Fn<ValueDef extends Def.Constraint> {
+        <Result>(
+          callback: Callback<ValueDef, Result>,
+          deps: DependencyList,
+        ): Result;
+      }
     }
   }
 
@@ -1849,11 +1890,21 @@ export namespace Atom {
       : never;
 
     export namespace Use {
-      export interface Prop<
+      export type Prop<
         Flavor extends Atom.Flavor.Constraint,
         ValueDef extends Def.Constraint,
-        Qualifier extends Atom.Qualifier.Constraint = Atom.Qualifier.Default,
-        Parent extends Atom.Parent.Constraint<ValueDef> = Atom.Parent.Default,
+        Qualifier extends Atom.Qualifier.Constraint,
+        Parent extends Atom.Parent.Constraint<ValueDef>,
+      > = Qualifier.Validating.DisableFor<
+        Qualifier,
+        Fn<Flavor, ValueDef, Qualifier, Parent>
+      >;
+
+      export interface Fn<
+        Flavor extends Atom.Flavor.Constraint,
+        ValueDef extends Def.Constraint,
+        Qualifier extends Atom.Qualifier.Constraint,
+        Parent extends Atom.Parent.Constraint<ValueDef>,
       > {
         (
           callback: Callback<ValueDef>,
@@ -1873,11 +1924,21 @@ export namespace Atom {
   //#region Discriminate
 
   export namespace Discriminate {
-    export interface Prop<
+    export type Prop<
       Flavor extends Atom.Flavor.Constraint,
       ValueDef extends Def.Constraint,
-      Qualifier extends Atom.Qualifier.Constraint = Atom.Qualifier.Default,
-      Parent extends Atom.Parent.Constraint<ValueDef> = Atom.Parent.Default,
+      Qualifier extends Atom.Qualifier.Constraint,
+      Parent extends Atom.Parent.Constraint<ValueDef>,
+    > = Qualifier.Validating.DisableFor<
+      Qualifier,
+      Fn<Flavor, ValueDef, Qualifier, Parent>
+    >;
+
+    export interface Fn<
+      Flavor extends Atom.Flavor.Constraint,
+      ValueDef extends Def.Constraint,
+      Qualifier extends Atom.Qualifier.Constraint,
+      Parent extends Atom.Parent.Constraint<ValueDef>,
     > {
       <Discriminator extends Discriminate.Discriminator<ValueDef>>(
         discriminator: Discriminator,
@@ -1891,16 +1952,16 @@ export namespace Atom {
       Flavor extends Atom.Flavor.Constraint,
       ValueDef extends Def.Constraint,
       Discriminator extends Discriminate.Discriminator<ValueDef>,
-      Qualifier extends Atom.Qualifier.Constraint = Atom.Qualifier.Default,
-      Parent extends Atom.Parent.Constraint<ValueDef> = Atom.Parent.Default,
+      Qualifier extends Atom.Qualifier.Constraint,
+      Parent extends Atom.Parent.Constraint<ValueDef>,
     > = Inner<Flavor, ValueDef, Discriminator, Qualifier, Parent>;
 
     export type Inner<
       Flavor extends Atom.Flavor.Constraint,
       ValueDef extends Def.Constraint,
       Discriminator extends Discriminate.Discriminator<ValueDef>,
-      Qualifier extends Atom.Qualifier.Constraint = Atom.Qualifier.Default,
-      Parent extends Atom.Parent.Constraint<ValueDef> = Atom.Parent.Default,
+      Qualifier extends Atom.Qualifier.Constraint,
+      Parent extends Atom.Parent.Constraint<ValueDef>,
     > = ValueDef["read"] extends infer Value
       ?
           | (Value extends Value
@@ -1956,8 +2017,8 @@ export namespace Atom {
       Flavor extends Atom.Flavor.Constraint,
       ValueDef extends Atom.Def.Constraint,
       ComputedValue,
-      Qualifier extends Atom.Qualifier.Constraint = Atom.Qualifier.Default,
-      Parent extends Atom.Parent.Constraint<ValueDef> = Atom.Parent.Default,
+      Qualifier extends Atom.Qualifier.Constraint,
+      Parent extends Atom.Parent.Constraint<ValueDef>,
     > = Atom.Envelop<
       Flavor,
       Atom.Def<ComputedValue>,
@@ -1969,15 +2030,15 @@ export namespace Atom {
       export type Prop<
         Flavor extends Atom.Flavor.Constraint,
         ValueDef extends Atom.Def.Constraint,
-        Qualifier extends Atom.Qualifier.Constraint = Atom.Qualifier.Default,
-        Parent extends Atom.Parent.Constraint<ValueDef> = Atom.Parent.Default,
+        Qualifier extends Atom.Qualifier.Constraint,
+        Parent extends Atom.Parent.Constraint<ValueDef>,
       > = Into.Fn<Flavor, ValueDef, Qualifier, Parent>;
 
       export interface Fn<
         Flavor extends Atom.Flavor.Constraint,
         ValueDef extends Atom.Def.Constraint,
-        Qualifier extends Atom.Qualifier.Constraint = Atom.Qualifier.Default,
-        Parent extends Atom.Parent.Constraint<ValueDef> = Atom.Parent.Default,
+        Qualifier extends Atom.Qualifier.Constraint,
+        Parent extends Atom.Parent.Constraint<ValueDef>,
       > {
         <ComputedValue>(
           intoMapper: Into.Mapper<ValueDef, ComputedValue>,
@@ -1992,8 +2053,8 @@ export namespace Atom {
         Flavor extends Atom.Flavor.Constraint,
         ValueDef extends Atom.Def.Constraint,
         ComputedValue,
-        Qualifier extends Atom.Qualifier.Constraint = Atom.Qualifier.Default,
-        Parent extends Atom.Parent.Constraint<ValueDef> = Atom.Parent.Default,
+        Qualifier extends Atom.Qualifier.Constraint,
+        Parent extends Atom.Parent.Constraint<ValueDef>,
       > {
         from: From.Fn<Flavor, ValueDef, ComputedValue, Qualifier, Parent>;
       }
@@ -2002,15 +2063,18 @@ export namespace Atom {
         export type Prop<
           Flavor extends Atom.Flavor.Constraint,
           ValueDef extends Atom.Def.Constraint,
-          Qualifier extends Atom.Qualifier.Constraint = Atom.Qualifier.Default,
-          Parent extends Atom.Parent.Constraint<ValueDef> = Atom.Parent.Default,
-        > = Fn<Flavor, ValueDef, Qualifier, Parent>;
+          Qualifier extends Atom.Qualifier.Constraint,
+          Parent extends Atom.Parent.Constraint<ValueDef>,
+        > = Qualifier.Validating.DisableFor<
+          Qualifier,
+          Fn<Flavor, ValueDef, Qualifier, Parent>
+        >;
 
         export interface Fn<
           Flavor extends Atom.Flavor.Constraint,
           ValueDef extends Atom.Def.Constraint,
-          Qualifier extends Atom.Qualifier.Constraint = Atom.Qualifier.Default,
-          Parent extends Atom.Parent.Constraint<ValueDef> = Atom.Parent.Default,
+          Qualifier extends Atom.Qualifier.Constraint,
+          Parent extends Atom.Parent.Constraint<ValueDef>,
         > {
           <ComputedValue>(
             intoMapper: Proxy.Into.Mapper<ValueDef, ComputedValue>,
@@ -2079,28 +2143,40 @@ export namespace Atom {
   //#region Defined
 
   export namespace Defined {
-    export type Prop<
-      Flavor extends Atom.Flavor.Constraint,
-      ValueDef extends Atom.Def.Constraint,
-      Qualifier extends Atom.Qualifier.Constraint = Atom.Qualifier.Default,
-      Parent extends Atom.Parent.Constraint<ValueDef> = Atom.Parent.Default,
-    > = ValueDef["read"] extends infer Value
-      ? Utils.IsNever<Extract<Value, string>> extends false
-        ? Value extends string | Utils.Nullish
-          ? FnString<Flavor, Value, Qualifier, Parent>
-          : undefined
-        : never
-      : never;
-
     export interface FnString<
       Flavor extends Atom.Flavor.Constraint,
       Value extends string | Utils.Nullish,
-      Qualifier extends Atom.Qualifier.Constraint = Atom.Qualifier.Default,
+      Qualifier extends Atom.Qualifier.Constraint,
       Parent extends Atom.Parent.Constraint<
         Atom.Def<Value>
       > = Atom.Parent.Default,
     > {
       (to: "string"): Envelop<Flavor, Atom.Def<string>, Qualifier, Parent>;
+    }
+
+    export namespace Use {
+      export type Prop<
+        Flavor extends Atom.Flavor.Constraint,
+        ValueDef extends Def.Constraint,
+        Qualifier extends Atom.Qualifier.Constraint,
+        Parent extends Atom.Parent.Constraint<ValueDef>,
+      > = Qualifier.Validating.DisableFor<
+        Qualifier,
+        Fn<Flavor, ValueDef, Qualifier, Parent>
+      >;
+
+      export type Fn<
+        Flavor extends Atom.Flavor.Constraint,
+        ValueDef extends Atom.Def.Constraint,
+        Qualifier extends Atom.Qualifier.Constraint,
+        Parent extends Atom.Parent.Constraint<ValueDef>,
+      > = ValueDef["read"] extends infer Value
+        ? Utils.IsNever<Extract<Value, string>> extends false
+          ? Value extends string | Utils.Nullish
+            ? FnString<Flavor, Value, Qualifier, Parent>
+            : undefined
+          : never
+        : never;
     }
   }
 

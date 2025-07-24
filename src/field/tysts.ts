@@ -847,6 +847,16 @@ const unionField = new Field({ hello: "world", world: true }) as
     // @ts-expect-error
     field.useValue().any;
   }
+
+  // Validating
+  {
+    const field = {} as Field<string, "validating">;
+
+    // @ts-expect-error
+    field.useValue();
+    // @ts-expect-error
+    field.useValue?.();
+  }
 }
 //#endregion
 
@@ -904,6 +914,16 @@ const unionField = new Field({ hello: "world", world: true }) as
 
       return (value ?? 0) > 0;
     }, []);
+  }
+
+  // Validating
+  {
+    const field = {} as Field<string, "validating">;
+
+    // @ts-expect-error
+    field.useCompute((_) => true);
+    // @ts-expect-error
+    field.useCompute?.((_) => true);
   }
 }
 //#endregion
@@ -3761,6 +3781,15 @@ const brandedPrim = new Field({} as Branded<string>);
       field.useCollection();
     }
   }
+
+  // Validating
+  {
+    const field = {} as Field<string, "validating">;
+    // @ts-expect-error
+    field.useCollection();
+    // @ts-expect-error
+    field.useCollection?.();
+  }
 }
 //#endregion
 
@@ -4455,6 +4484,15 @@ const brandedPrim = new Field({} as Branded<string>);
     // @ts-expect-error
     off.any;
   }
+
+  // Validating
+  {
+    const field = {} as Field<string, "validating">;
+    // @ts-expect-error
+    field.useWatch((_value, _event) => {}, []);
+    // @ts-expect-error
+    field.useWatch?.((_value, _event) => {}, []);
+  }
 }
 //#endregion
 
@@ -4689,6 +4727,15 @@ const brandedPrim = new Field({} as Branded<string>);
           value: undefined;
           field: Field<undefined>;
         };
+  }
+
+  // Validating
+  {
+    const field = {} as Field<string, "validating">;
+    // @ts-expect-error
+    field.useDecompose((_newValue, _prevValue) => true, []);
+    // @ts-expect-error
+    field.useDecompose?.((_newValue, _prevValue) => true, []);
   }
 }
 //#endregion
@@ -5304,6 +5351,15 @@ const brandedPrim = new Field({} as Branded<string>);
           };
     }
   }
+
+  // Validating
+  {
+    const field = {} as Field<User | Organization, "validating">;
+    // @ts-expect-error
+    field.useDiscriminate("type");
+    // @ts-expect-error
+    field.useDiscriminate?.("type");
+  }
 }
 //#endregion
 
@@ -5665,6 +5721,15 @@ const brandedPrim = new Field({} as Branded<string>);
     >;
     result satisfies Field<number>;
   }
+
+  // Validating
+  {
+    const field = {} as Field<string, "validating">;
+    // @ts-expect-error
+    field.useInto((_value) => true, []);
+    // @ts-expect-error
+    field.useInto?.((_value) => true, []);
+  }
 }
 //#endregion
 
@@ -5743,6 +5808,15 @@ const brandedPrim = new Field({} as Branded<string>);
     result satisfies Field<string>;
     // @ts-expect-error
     result.any;
+  }
+
+  // Validating
+  {
+    const field = {} as Field<string, "validating">;
+    // @ts-expect-error
+    field.useDefined("string");
+    // @ts-expect-error
+    field.useDefined?.("string");
   }
 }
 //#endregion
