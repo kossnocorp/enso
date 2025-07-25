@@ -1271,18 +1271,48 @@ const unionField = new Field({ hello: "world", world: true }) as
 
 //#region Field#parent
 {
-  // Immutability
+  // Immutablity
   {
-    const organization = {} as Field<User, never, OrganizationParent>;
+    const organization = {} as
+      | Field.Base<User, never, OrganizationParent>
+      | Field.Immutable<User, never, OrganizationParent>
+      | Field.Exact<User, never, OrganizationParent>;
 
     if ("field" in organization.parent) {
-      organization.parent.field satisfies Field.Immutable<Organization>;
-      // @ts-expect-error
-      organization.parent.field satisfies Field.Exact<Organization>;
+      tyst.supertype(organization.parent.field, ($) => {
+        $.of($.exact<Field.Immutable<Organization>>());
+        // @ts-expect-error
+        $.of($.exact<Field.Exact<Organization>>());
+      });
 
-      organization.parent.field.$.owner satisfies Field.Immutable<User>;
-      // @ts-expect-error
-      organization.parent.field.$.owner satisfies Field.Exact<User>;
+      tyst.supertype(organization.parent.field.$.owner, ($) => {
+        $.of($.exact<Field.Immutable<User>>());
+        // @ts-expect-error
+        $.of($.exact<Field.Exact<User>>());
+      });
+    }
+  }
+
+  // Validating
+  {
+    const organization = {} as Field<User, "validating", OrganizationParent>;
+
+    if ("field" in organization.parent) {
+      tyst.supertype(organization.parent.field, ($) => {
+        $.of($.exact<Field.Immutable<Organization, "validating">>());
+        // @ts-expect-error
+        $.of($.exact<Field.Immutable<Organization>>());
+        // @ts-expect-error
+        $.of($.exact<Field.Exact<Organization>>());
+      });
+
+      tyst.supertype(organization.parent.field.$.owner, ($) => {
+        $.of($.exact<Field.Immutable<User, "validating">>());
+        // @ts-expect-error
+        $.of($.exact<Field.Immutable<User>>());
+        // @ts-expect-error
+        $.of($.exact<Field.Exact<User>>());
+      });
     }
   }
 }
