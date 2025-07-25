@@ -2078,7 +2078,7 @@ export namespace Atom {
           | (Flavor extends
               | (infer Kind extends Atom.Flavor.Kind)
               | infer Variant
-              ? Variant extends "base" | "immutable"
+              ? Variant extends "base"
                 ? {
                     value: unknown;
                     field: Envelop<
@@ -2189,7 +2189,7 @@ export namespace Atom {
           | (Flavor extends
               | (infer Kind extends Atom.Flavor.Kind)
               | infer Variant
-              ? Variant extends "base" | "immutable"
+              ? Variant extends "base"
                 ? {
                     discriminator: unknown;
                     field: Envelop<
