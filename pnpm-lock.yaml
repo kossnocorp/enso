@@ -11,6 +11,9 @@ importers:
       nanoid:
         specifier: ^5.0.9
         version: 5.0.9
+      tdollar:
+        specifier: workspace:^
+        version: link:submodules/tdollar
     devDependencies:
       '@arethetypeswrong/cli':
         specifier: ^0.16.2
@@ -105,12 +108,23 @@ importers:
       typescript-eslint:
         specifier: ^8.33.1
         version: 8.33.1(eslint@9.28.0)(typescript@5.9.0-beta)
+      tysts:
+        specifier: workspace:^
+        version: link:submodules/tysts
       vitest:
         specifier: ^3.2.2
         version: 3.2.2(@types/node@22.10.0)(@vitest/browser@3.2.2)(@vitest/ui@3.2.2)(happy-dom@18.0.1)(msw@2.7.0(@types/node@22.10.0)(typescript@5.9.0-beta))
       vitest-browser-react:
         specifier: ^0.2.0
         version: 0.2.0(@types/react-dom@19.1.5(@types/react@19.1.6))(@types/react@19.1.6)(@vitest/browser@3.2.2)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)(vitest@3.2.2)
+
+  submodules/tdollar:
+    devDependencies:
+      typescript:
+        specifier: 5.9.0-beta
+        version: 5.9.0-beta
+
+  submodules/tysts: {}
 
 packages:
 
