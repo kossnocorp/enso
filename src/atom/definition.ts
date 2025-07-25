@@ -31,7 +31,11 @@ export declare class Atom<
 
   constructor(
     value: ValueDef["read"],
-    parent?: Atom.Parent.Ref<Exclude<Flavor, Atom.Flavor.Variant>, Parent>,
+    parent?: Atom.Parent.Ref<
+      Exclude<Flavor, Atom.Flavor.Variant>,
+      Qualifier,
+      Parent
+    >,
   );
 
   deconstruct(): void;
@@ -103,6 +107,7 @@ export declare class Atom<
   get parent(): Atom.Parent.Prop<
     Exclude<Flavor, Atom.Flavor.Variant>,
     ValueDef,
+    Qualifier,
     Parent
   >;
 
@@ -178,7 +183,7 @@ export namespace Atom {
         > = Atom.Parent.Default,
       >(
         value: Value,
-        parent?: Parent.Ref<Kind, Parent>,
+        parent?: Parent.Ref<Kind, Qualifier, Parent>,
       ): Envelop<Kind | "exact", Atom.Def<Value>, Qualifier, Parent>;
 
       // TODO: Ideally it should go into Static and utilize create
@@ -408,58 +413,6 @@ export namespace Atom {
   //#region Parent
 
   export namespace Parent {
-    export type Default = never;
-
-    export type Phantom<
-      ValueDef extends Def.Constraint,
-      Parent extends Constraint<ValueDef>,
-    > = Utils.IsNever<Parent> extends true ? unknown : { parent: Parent };
-
-    export type Envelop<
-      Kind extends Atom.Flavor.Kind,
-      ParentValue,
-    > = Atom.Envelop<
-      Kind | "immutable",
-      Atom.Def<Utils.IsNever<ParentValue> extends true ? any : ParentValue>
-    >;
-
-    export type Prop<
-      Kind extends Atom.Flavor.Kind,
-      ValueDef extends Atom.Def.Constraint,
-      Parent extends Atom.Parent.Constraint<ValueDef>,
-    > = Ref<
-      Kind,
-      Utils.IsNever<Parent> extends true ? Interface<any, any> : Parent
-    >;
-
-    export type Ref<
-      Kind extends Atom.Flavor.Kind,
-      Parent extends Atom.Parent.Constraint<any>,
-    > =
-      Parent extends Interface<infer ParentValue, infer Key>
-        ?
-            | Parent.Direct<Kind, ParentValue, Key>
-            | Parent.Source<Kind, ParentValue>
-        : never;
-
-    export interface Direct<
-      Kind extends Atom.Flavor.Kind,
-      ParentValue,
-      Key extends keyof ParentValue,
-    > {
-      field: Envelop<Kind, ParentValue>;
-      key: Key;
-    }
-
-    export interface Interface<ParentValue, Key extends keyof ParentValue> {
-      value: ParentValue;
-      key: Key;
-    }
-
-    export interface Source<Kind extends Atom.Flavor.Kind, ParentValue> {
-      source: Envelop<Kind, ParentValue>;
-    }
-
     export type Constraint<ValueDef extends Def.Constraint> = Type<
       ValueDef["read"],
       Interface<any, any>
@@ -471,6 +424,71 @@ export namespace Atom {
           ? ParentInterface
           : never
         : never;
+
+    export type Default = never;
+
+    export type Phantom<
+      ValueDef extends Def.Constraint,
+      Parent extends Constraint<ValueDef>,
+    > = Utils.IsNever<Parent> extends true ? unknown : { parent: Parent };
+
+    export type Envelop<
+      Kind extends Atom.Flavor.Kind,
+      Value,
+      Qualifier extends Qualifier.Constraint,
+    > = Atom.Envelop<
+      Kind | "immutable",
+      Atom.Def<Utils.IsNever<Value> extends true ? any : Value>,
+      Parent.Qualifier<Qualifier>
+    >;
+
+    export type Qualifier<Qualifier extends Qualifier.Constraint> =
+      "validating" extends Qualifier ? "validating" : never;
+
+    export type Prop<
+      Kind extends Atom.Flavor.Kind,
+      ValueDef extends Atom.Def.Constraint,
+      Qualifier extends Atom.Qualifier.Constraint,
+      Parent extends Atom.Parent.Constraint<ValueDef>,
+    > = Ref<
+      Kind,
+      Qualifier,
+      Utils.IsNever<Parent> extends true ? Interface<any, any> : Parent
+    >;
+
+    export type Ref<
+      Kind extends Atom.Flavor.Kind,
+      Qualifier extends Atom.Qualifier.Constraint,
+      Parent extends Atom.Parent.Constraint<any>,
+    > =
+      Parent extends Interface<infer Value, infer Key>
+        ?
+            | Parent.Direct<Kind, Value, Key, Qualifier>
+            | Parent.Source<Kind, Value, Qualifier>
+        : never;
+
+    export interface Direct<
+      Kind extends Atom.Flavor.Kind,
+      Value,
+      Key extends keyof Value,
+      Qualifier extends Atom.Qualifier.Constraint,
+    > {
+      field: Envelop<Kind, Value, Qualifier>;
+      key: Key;
+    }
+
+    export interface Interface<ParentValue, Key extends keyof ParentValue> {
+      value: ParentValue;
+      key: Key;
+    }
+
+    export interface Source<
+      Kind extends Atom.Flavor.Kind,
+      Value,
+      Qualifier extends Qualifier.Constraint,
+    > {
+      source: Envelop<Kind, Value, Qualifier>;
+    }
   }
 
   //#endregion
@@ -778,7 +796,12 @@ export namespace Atom {
 
     root: Root<Flavor>;
 
-    parent: Parent.Prop<Exclude<Flavor, Atom.Flavor.Variant>, ValueDef, Parent>;
+    parent: Parent.Prop<
+      Exclude<Flavor, Atom.Flavor.Variant>,
+      ValueDef,
+      Qualifier,
+      Parent
+    >;
 
     readonly key: string;
 

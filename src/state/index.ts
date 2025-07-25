@@ -31,7 +31,7 @@ export class State<
     > = Atom.Parent.Default,
   >(
     value: Value,
-    parent?: Atom.Parent.Ref<"state", Parent>,
+    parent?: Atom.Parent.Ref<"state", Qualifier, Parent>,
   ): State<Value, Qualifier, Parent> {
     return void 0 as any;
   }

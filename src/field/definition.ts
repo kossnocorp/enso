@@ -33,7 +33,7 @@ export declare class Field<
     > = Atom.Parent.Default,
   >(
     value: Value,
-    parent?: Atom.Parent.Ref<"field", Parent>,
+    parent?: Atom.Parent.Ref<"field", Qualifier, Parent>,
   ): Atom.Envelop<"field" | "exact", Atom.Def<Value>, Qualifier, Parent>;
 
   static base<Envelop extends Field<any>>(
