@@ -1082,20 +1082,6 @@ const unionField = new Field({ hello: "world", world: true }) as
 
 //#region Field#pave
 {
-  interface Settings {
-    user?: UserSettings;
-  }
-
-  interface UserSettings {
-    email: string;
-    security?: SecuritySettings;
-  }
-
-  interface SecuritySettings {
-    public?: boolean;
-    twoFactor?: boolean;
-  }
-
   // Basic
   {
     const field = new Field({} as Settings);
@@ -1710,6 +1696,14 @@ const unionField = new Field({ hello: "world", world: true }) as
         $.of($.exact<Field.Ref<string | undefined>>());
       });
     }
+  }
+
+  // Optional
+  {
+    const field = {} as Field.Ref.Optional<Nested>;
+    tyst(field.$.settings.optional().$.user.$.email).is<
+      Field.Ref.Optional<string>
+    >();
   }
 }
 //#endregion
@@ -6534,6 +6528,16 @@ const brandedPrim = new Field({} as Branded<string>);
 }
 //#endregion
 
+//#region Field#optional
+{
+  const field = {} as Field<Nested>;
+  tyst(field.$.settings).is<Field<Settings | undefined, "detachable">>();
+  tyst(field.$.settings.optional()).is<
+    Field.Optional<Settings, "detachable">
+  >();
+}
+//#endregion
+
 //#endregion
 
 //#region Validation
@@ -6895,12 +6899,27 @@ interface Organization {
   owner: User;
 }
 
+interface Settings {
+  user?: UserSettings;
+}
+
+interface UserSettings {
+  email: string;
+  security?: SecuritySettings;
+}
+
+interface SecuritySettings {
+  public?: boolean;
+  twoFactor?: boolean;
+}
+
 interface Nested {
   entities: {
     user: User;
     account: Account;
   };
   organizations: Organization[];
+  settings?: Settings;
 }
 
 type Branded<Type> = Type & { [brand]: true };

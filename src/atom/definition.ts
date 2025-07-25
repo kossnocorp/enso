@@ -502,7 +502,7 @@ export namespace Atom {
     Access extends Child.Access,
   > = Envelop<
     Child.Type<Flavor, Value>,
-    Child.Value<Value, Key, Access>,
+    Child.Value<Flavor, Value, Key, Access>,
     Child.Qualifier<Value, Key, Qualifier>
   >;
 
@@ -523,17 +523,23 @@ export namespace Atom {
           : never);
 
     export type Value<
+      Flavor extends Atom.Flavor.Constraint,
       ParentValue,
       ParentKey extends keyof ParentValue,
       Access extends Child.Access,
     > = Utils.Expose<
       Atom.Def<
-        | ParentValue[ParentKey]
-        | (Access extends "indexed"
-            ? Utils.IsStaticKey<ParentValue, ParentKey> extends true
-              ? never
-              : undefined
-            : never)
+
+          | ParentValue[ParentKey]
+          | (Access extends "indexed"
+              ? Utils.IsStaticKey<ParentValue, ParentKey> extends true
+                ? never
+                : undefined
+              : never) extends infer Value
+          ? "optional" extends Flavor
+            ? Utils.NonNullish<Value>
+            : Value
+          : never
       >
     >;
 
@@ -542,19 +548,18 @@ export namespace Atom {
       ParentKey extends keyof Utils.NonNullish<ParentValue>,
       Qualifier extends Qualifier.Constraint,
     > =
-      Utils.IsAny<ParentValue> extends true
-        ? "detachable"
-        :
-            | ("ref" extends Qualifier ? "ref" : never)
-            | (Utils.IsStaticKey<ParentValue, ParentKey> extends true
-                ? Utils.IsOptionalKey<ParentValue, ParentKey> extends true
-                  ? "detachable"
-                  : never
-                : Utils.IsReadonlyArray<ParentValue> extends true
-                  ? never
-                  : ParentValue extends Utils.Tuple
-                    ? never
-                    : "detachable");
+      | Qualifier.Ref.Preserve<Qualifier>
+      | (Utils.IsAny<ParentValue> extends true
+          ? "detachable"
+          : Utils.IsStaticKey<ParentValue, ParentKey> extends true
+            ? Utils.IsOptionalKey<ParentValue, ParentKey> extends true
+              ? "detachable"
+              : never
+            : Utils.IsReadonlyArray<ParentValue> extends true
+              ? never
+              : ParentValue extends Utils.Tuple
+                ? never
+                : "detachable");
   }
 
   //#endregion
@@ -756,11 +761,16 @@ export namespace Atom {
     > {
       (): Atom.Envelop<
         Exclude<Flavor, Flavor.Variant> | "optional",
-        ValueDef,
+        Optional.Def<ValueDef>,
         Qualifier,
         Parent
       >;
     }
+
+    export type Def<ValueDef extends Atom.Def.Constraint> =
+      ValueDef extends Atom.Def<infer ReadValue, infer WriteValue>
+        ? Atom.Def<Utils.NonNullish<ReadValue>, Utils.NonNullish<WriteValue>>
+        : never;
   }
 
   //#endregion
