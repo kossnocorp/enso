@@ -345,12 +345,14 @@ export namespace Field {
     > = Atom.Parent.Default,
   > = Field.Immutable<Value, Qualifier | "ref", Parent>;
 
-  export namespace AddError {
-    export type Prop = Fn;
-
-    export interface Fn {
-      (error: Error.Type): void;
-    }
+  export namespace Ref {
+    export type Optional<
+      Value,
+      Qualifier extends Atom.Qualifier.Constraint = Atom.Qualifier.Default,
+      Parent extends Atom.Parent.Constraint<
+        Atom.Def<Value>
+      > = Atom.Parent.Default,
+    > = Field.Optional<Value, Qualifier | "ref", Parent>;
   }
 
   //#endregion
@@ -618,6 +620,14 @@ export namespace Field {
       export interface Fn {
         (): Field.Error[];
       }
+    }
+  }
+
+  export namespace AddError {
+    export type Prop = Fn;
+
+    export interface Fn {
+      (error: Error.Type): void;
     }
   }
 
