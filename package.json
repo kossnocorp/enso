@@ -73,6 +73,10 @@
     "url": "https://github.com/kossnocorp/enso/issues"
   },
   "homepage": "https://github.com/kossnocorp/enso#readme",
+  "dependencies": {
+    "nanoid": "^5.0.9",
+    "tdollar": "workspace:^"
+  },
   "devDependencies": {
     "@arethetypeswrong/cli": "^0.16.2",
     "@babel/cli": "^7.24.1",
@@ -105,11 +109,9 @@
     "react-dom": "^19.1.0",
     "typescript": "5.9.0-beta",
     "typescript-eslint": "^8.33.1",
+    "tysts": "workspace:^",
     "vitest": "^3.2.2",
     "vitest-browser-react": "^0.2.0"
   },
-  "packageManager": "pnpm@10.12.3+sha512.467df2c586056165580ad6dfb54ceaad94c5a30f80893ebdec5a44c5aa73c205ae4a5bb9d5ed6bb84ea7c249ece786642bbb49d06a307df218d03da41c317417",
-  "dependencies": {
-    "nanoid": "^5.0.9"
-  }
+  "packageManager": "pnpm@10.12.3+sha512.467df2c586056165580ad6dfb54ceaad94c5a30f80893ebdec5a44c5aa73c205ae4a5bb9d5ed6bb84ea7c249ece786642bbb49d06a307df218d03da41c317417"
 }

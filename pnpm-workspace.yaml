@@ -1,4 +1,9 @@
+packages:
+  - "."
+  - "submodules/tdollar"
+  - "submodules/tysts"
+
 onlyBuiltDependencies:
-  - '@swc/core'
+  - "@swc/core"
   - esbuild
   - msw
