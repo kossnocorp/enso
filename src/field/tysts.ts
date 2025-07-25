@@ -5986,11 +5986,33 @@ const brandedPrim = new Field({} as Branded<string>);
   {
     const field = {} as Field.Ref<User | Organization>;
 
-    field.useDiscriminate satisfies undefined;
-    // @ts-expect-error
-    field.useDiscriminate("type");
-    // @ts-expect-error
-    field.useDiscriminate?.("type");
+    // #discriminate
+    {
+      const result = field.discriminate("type");
+      tyst(result).is<
+        | {
+            discriminator: "user";
+            field: Field.Ref<User>;
+          }
+        | {
+            discriminator: "organization";
+            field: Field.Ref<Organization>;
+          }
+        | {
+            discriminator: unknown;
+            field: never;
+          }
+      >();
+    }
+
+    // #useDiscriminate
+    {
+      field.useDiscriminate satisfies undefined;
+      // @ts-expect-error
+      field.useDiscriminate("type");
+      // @ts-expect-error
+      field.useDiscriminate?.("type");
+    }
   }
 }
 //#endregion

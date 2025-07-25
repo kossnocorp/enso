@@ -147,7 +147,12 @@ export declare class Atom<
 
   discriminate: Atom.Discriminate.Prop<Flavor, ValueDef, Qualifier, Parent>;
 
-  useDiscriminate: Atom.Discriminate.Prop<Flavor, ValueDef, Qualifier, Parent>;
+  useDiscriminate: Atom.Discriminate.Use.Prop<
+    Flavor,
+    ValueDef,
+    Qualifier,
+    Parent
+  >;
 
   into: Atom.Proxy.Into.Prop<Flavor, ValueDef, Qualifier, Parent>;
 
@@ -879,7 +884,7 @@ export namespace Atom {
 
     discriminate: Discriminate.Prop<Flavor, ValueDef, Qualifier, Parent>;
 
-    useDiscriminate: Discriminate.Prop<Flavor, ValueDef, Qualifier, Parent>;
+    useDiscriminate: Discriminate.Use.Prop<Flavor, ValueDef, Qualifier, Parent>;
 
     // TODO: Find a way to simply move it to Exact, rather than using Exact.OnlyFor,
     // but it breaks many tysts.
@@ -2127,10 +2132,7 @@ export namespace Atom {
       ValueDef extends Def.Constraint,
       Qualifier extends Atom.Qualifier.Constraint,
       Parent extends Atom.Parent.Constraint<ValueDef>,
-    > = Qualifier.Ref.DisableFor<
-      Qualifier,
-      Fn<Flavor, ValueDef, Qualifier, Parent>
-    >;
+    > = Fn<Flavor, ValueDef, Qualifier, Parent>;
 
     export interface Fn<
       Flavor extends Atom.Flavor.Constraint,
@@ -2200,6 +2202,18 @@ export namespace Atom {
                 : never
               : never)
       : never;
+
+    export namespace Use {
+      export type Prop<
+        Flavor extends Atom.Flavor.Constraint,
+        ValueDef extends Def.Constraint,
+        Qualifier extends Atom.Qualifier.Constraint,
+        Parent extends Atom.Parent.Constraint<ValueDef>,
+      > = Qualifier.Ref.DisableFor<
+        Qualifier,
+        Fn<Flavor, ValueDef, Qualifier, Parent>
+      >;
+    }
   }
 
   //#endregion
