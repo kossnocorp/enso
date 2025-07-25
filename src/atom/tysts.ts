@@ -264,31 +264,31 @@ import { Atom } from "./index.js";
 {
   // Primitive
   {
-    type NumberProp = Atom.$.Prop<"field", number>;
+    type NumberProp = Atom.$.Prop<"field", number, never>;
 
     const _test: NumberProp = {} as any;
     _test satisfies undefined;
 
-    tyst<NumberProp>(undefined as Atom.$.Prop<"field", number>);
-    tyst<NumberProp>(undefined as Atom.$.Prop<"field", Branded<number>>);
+    tyst<NumberProp>(undefined as Atom.$.Prop<"field", number, never>);
+    tyst<NumberProp>(undefined as Atom.$.Prop<"field", Branded<number>, never>);
   }
 
   // Branded primitive
   {
-    type BrandedProp = Atom.$.Prop<"field", Branded<number>>;
+    type BrandedProp = Atom.$.Prop<"field", Branded<number>, never>;
 
     const _test: BrandedProp = {} as any;
     _test satisfies undefined;
 
-    tyst<BrandedProp>(undefined as Atom.$.Prop<"field", string>);
+    tyst<BrandedProp>(undefined as Atom.$.Prop<"field", string, never>);
   }
 
   // Object
   {
-    type ObjectProp = Atom.$.Prop<"field", Entity>;
+    type ObjectProp = Atom.$.Prop<"field", Entity, never>;
 
-    tyst<ObjectProp>({} as Atom.$.Prop<"field", User>);
-    tyst<ObjectProp>({} as Atom.$.Prop<"field", any>);
+    tyst<ObjectProp>({} as Atom.$.Prop<"field", User, never>);
+    tyst<ObjectProp>({} as Atom.$.Prop<"field", any, never>);
     // @ts-expect-error
     tyst<ObjectProp>({} as User);
     // @ts-expect-error
@@ -297,18 +297,18 @@ import { Atom } from "./index.js";
 
   // Any
   {
-    type AnyProp = Atom.$.Prop<"field", any>;
+    type AnyProp = Atom.$.Prop<"field", any, never>;
 
     tyst<AnyProp>({} as unknown);
     tyst<AnyProp>({} as string);
-    tyst<AnyProp>({} as Atom.$.Prop<"field", any>);
-    tyst<AnyProp>({} as Atom.$.Prop<"field", unknown>);
-    tyst<AnyProp>(undefined as Atom.$.Prop<"field", string>);
+    tyst<AnyProp>({} as Atom.$.Prop<"field", any, never>);
+    tyst<AnyProp>({} as Atom.$.Prop<"field", unknown, never>);
+    tyst<AnyProp>(undefined as Atom.$.Prop<"field", string, never>);
   }
 
   // Unknown
   {
-    type UnknownProp = Atom.$.Prop<"field", unknown>;
+    type UnknownProp = Atom.$.Prop<"field", unknown, never>;
 
     // @ts-expect-error
     tyst<UnknownProp>({} as Atom.$.Prop<"field", any>);

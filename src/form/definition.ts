@@ -55,11 +55,11 @@ export declare class Form<Value> implements Form.Interface<Value> {
 
   //#region Tree
 
-  get $(): Atom.$.Prop<"field", Value>;
+  get $(): Atom.$.Prop<"field", Value, never>;
 
-  at: Atom.At.Prop<"field", Value>;
+  at: Atom.At.Prop<"field", Value, never>;
 
-  try: Atom.Try.Prop<"field", Value>;
+  try: Atom.Try.Prop<"field", Value, never>;
 
   //#endregion
 
@@ -128,11 +128,11 @@ export namespace Form {
 
     //#region Tree
 
-    get $(): Atom.$.Prop<"field", Value>;
+    get $(): Atom.$.Prop<"field", Value, never>;
 
-    at: Atom.At.Prop<"field", Value>;
+    at: Atom.At.Prop<"field", Value, never>;
 
-    try: Atom.Try.Prop<"field", Value>;
+    try: Atom.Try.Prop<"field", Value, never>;
 
     //#endregion
 
