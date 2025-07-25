@@ -157,6 +157,8 @@ export declare class Atom<
 
   shared: Atom.Shared.Prop<Flavor, ValueDef, Qualifier, Parent>;
 
+  optional: Atom.Optional.Prop<Flavor, ValueDef, Qualifier, Parent>;
+
   //#endregion
 }
 
@@ -738,6 +740,27 @@ export namespace Atom {
       Qualifier extends Atom.Qualifier.Constraint = Atom.Qualifier.Default,
       Parent extends Atom.Parent.Constraint<ValueDef> = Atom.Parent.Default,
     > extends Immutable.Self<Flavor, ValueDef, Qualifier, Parent> {}
+
+    export type Prop<
+      Flavor extends Atom.Flavor.Constraint,
+      ValueDef extends Atom.Def.Constraint,
+      Qualifier extends Atom.Qualifier.Constraint,
+      Parent extends Atom.Parent.Constraint<ValueDef>,
+    > = Fn<Flavor, ValueDef, Qualifier, Parent>;
+
+    export interface Fn<
+      Flavor extends Atom.Flavor.Constraint,
+      ValueDef extends Atom.Def.Constraint,
+      Qualifier extends Atom.Qualifier.Constraint,
+      Parent extends Atom.Parent.Constraint<ValueDef>,
+    > {
+      (): Atom.Envelop<
+        Exclude<Flavor, Flavor.Variant> | "optional",
+        ValueDef,
+        Qualifier,
+        Parent
+      >;
+    }
   }
 
   //#endregion
@@ -858,6 +881,8 @@ export namespace Atom {
     useDefined: Defined.Use.Prop<Flavor, ValueDef, Qualifier, Parent>;
 
     shared: Shared.Prop<Flavor, ValueDef, Qualifier, Parent>;
+
+    optional: Optional.Prop<Flavor, ValueDef, Qualifier, Parent>;
 
     //#endregion
   }
