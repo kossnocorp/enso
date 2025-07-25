@@ -1,7 +1,14 @@
+import { R } from "vitest/dist/chunks/environment.d.cL3nLXbE.js";
 import { Atom } from "../atom/index.js";
-import type { ChangesEvent, FieldChange } from "../change/index.ts";
+import {
+  change,
+  type ChangesEvent,
+  type FieldChange,
+} from "../change/index.ts";
 import type { DetachedValue } from "../detached/index.ts";
+import { EventsTree } from "../events/index.ts";
 import { State } from "../state/index.ts";
+import { EnsoUtils as Utils } from "../utils.ts";
 import { Field } from "./index.js";
 
 const unionValue = new Field<Hello | Blah>({ hello: "world", world: true });
@@ -2588,7 +2595,7 @@ const unionField = new Field({ hello: "world", world: true }) as
 }
 //#endregion
 
-//#region Field#self#try
+//#region Field#self.try
 {
   // Basic
   {
@@ -2765,6 +2772,35 @@ const unionField = new Field({ hello: "world", world: true }) as
     // @ts-expect-error
     result.any;
   }
+
+  // Validating
+  {
+    // Basic
+    {
+      const field = {} as Field<User, "validating">;
+
+      tyst.supertype(field.self.try(), ($) => {
+        $.of($.exact<Field<User, "tried" | "validating">>());
+        // @ts-expect-error
+        $.of($.exact<Field<User, "tried">>());
+        // @ts-expect-error
+        $.of($.exact<Field<User>>());
+      });
+    }
+
+    // Mixed
+    {
+      const field = {} as Field<User, "validating" | "detachable">;
+
+      tyst.supertype(field.self.try(), ($) => {
+        $.of($.exact<Field<User, "tried" | "detachable" | "validating">>());
+        // @ts-expect-error
+        $.of($.exact<Field<User, "tried" | "detachable">>());
+        // @ts-expect-error
+        $.of($.exact<Field<User>>());
+      });
+    }
+  }
 }
 //#endregion
 
@@ -2916,29 +2952,15 @@ const brandedPrim = new Field({} as Branded<string>);
   // Readonly array
   {
     const result = readonlyArr.forEach((item, index) => {
-      item satisfies Field.Base<string | boolean>;
-      // @ts-expect-error
-      item satisfies Field.Base<string | boolean, "detachable">;
-      // @ts-expect-error
-      item satisfies Field<string | boolean>;
-      // @ts-expect-error
-      item.any;
-
-      index satisfies number;
-      // @ts-expect-error
-      index.any;
+      tyst(item).is<Field.Base<string | boolean>>();
+      tyst(index).is<number>();
     });
-    result satisfies void;
+    tyst(result).is<void>();
 
     readonlyArr.forEach((item) => {
-      item satisfies Field.Base<string | boolean>;
-      // @ts-expect-error
-      item satisfies Field.Base<string | boolean, "detachable">;
-      // @ts-expect-error
-      item satisfies Field<string | boolean>;
-      // @ts-expect-error
-      item.any;
+      tyst(item).is<Field.Base<string | boolean>>();
     });
+
     arr.forEach(() => {});
   }
 
@@ -3187,6 +3209,23 @@ const brandedPrim = new Field({} as Branded<string>);
       // @ts-expect-error
       field.forEach((_) => {});
     }
+  }
+
+  // Validating
+  {
+    const field = {} as Field<(string | boolean)[], "validating">;
+
+    const result = field.forEach((item, index) => {
+      tyst(item).is<Field<string | boolean, "detachable" | "validating">>();
+      tyst(index).is<number>();
+    });
+    tyst(result).is<void>();
+
+    field.forEach((item) => {
+      tyst(item).is<Field<string | boolean, "detachable" | "validating">>();
+    });
+
+    field.forEach(() => {});
   }
 }
 //#endregion
@@ -3470,6 +3509,24 @@ const brandedPrim = new Field({} as Branded<string>);
       // @ts-expect-error
       field.map((_) => {});
     }
+  }
+
+  // Validating
+  {
+    const field = {} as Field<(string | boolean)[], "validating">;
+
+    const result = field.map((item, index) => {
+      tyst(item).is<Field<string | boolean, "detachable" | "validating">>();
+      tyst(index).is<number>();
+      return true as const;
+    });
+    tyst(result).is<true[]>();
+
+    field.map((item) => {
+      tyst(item).is<Field<string | boolean, "detachable" | "validating">>();
+    });
+
+    field.map(() => {});
   }
 }
 //#endregion
@@ -3789,6 +3846,26 @@ const brandedPrim = new Field({} as Branded<string>);
       // @ts-expect-error
       field.find((_item) => {});
     }
+  }
+
+  // Validating
+  {
+    const field = {} as Field<(string | boolean)[], "validating">;
+
+    const result = field.find((item, index) => {
+      tyst(item).is<Field<string | boolean, "detachable" | "validating">>();
+      tyst(index).is<number>();
+      return true;
+    });
+    tyst(result).is<
+      Field<string | boolean, "detachable" | "validating"> | undefined
+    >();
+
+    field.find((item) => {
+      tyst(item).is<Field<string | boolean, "detachable" | "validating">>();
+    });
+
+    field.find(() => {});
   }
 }
 //#endregion
@@ -4115,6 +4192,24 @@ const brandedPrim = new Field({} as Branded<string>);
       // @ts-expect-error
       field.filter((_item) => {});
     }
+  }
+
+  // Validating
+  {
+    const field = {} as Field<(string | boolean)[], "validating">;
+
+    const result = field.filter((item, index) => {
+      tyst(item).is<Field<string | boolean, "detachable" | "validating">>();
+      tyst(index).is<number>();
+      return true;
+    });
+    tyst(result).is<Field<string | boolean, "detachable" | "validating">[]>();
+
+    field.filter((item) => {
+      tyst(item).is<Field<string | boolean, "detachable" | "validating">>();
+    });
+
+    field.filter(() => {});
   }
 }
 //#endregion
@@ -5009,6 +5104,38 @@ const brandedPrim = new Field({} as Branded<string>);
     field.useWatch((_value, _event) => {}, []);
     // @ts-expect-error
     field.useWatch?.((_value, _event) => {}, []);
+  }
+}
+//#endregion
+
+//#region #events
+{
+  // Basic
+  {
+    const field = new Field("hello");
+    tyst(field.events).is<EventsTree<"field">>();
+  }
+
+  // Validating
+  {
+    const field = {} as Field<"hello", "validating">;
+    tyst(field.events).is.undefined();
+  }
+}
+//#endregion
+
+//#region #trigger
+{
+  // Basic
+  {
+    const field = new Field("hello");
+    field.trigger(change.field.blur);
+  }
+
+  // Validating
+  {
+    const field = {} as Field<"hello", "validating">;
+    tyst(field.trigger).is.undefined();
   }
 }
 //#endregion
@@ -6553,20 +6680,26 @@ const brandedPrim = new Field({} as Branded<string>);
 
 //#endregion
 
-//#region Helpers
+//#region Tyst
 
-function tyst<Type>(_arg: Type): void {}
+declare const tyst: Tyst;
 
-namespace tyst {
-  export declare const extend: Extend;
+interface Tyst {
+  <Type>(value: Type): Tyst.Builder<Type>;
 
-  export interface Extend {
-    <Type extends SuperType, SuperType>(): void;
+  supertype: Tyst.Supertype;
 
-    <Type extends SuperType, SuperType>(type: Type, superType: SuperType): void;
+  exactly: Tyst.Exactly;
+}
+
+namespace Tyst {
+  export interface Builder<Type> {
+    is: Is<Type>;
   }
 
-  export declare const supertype: Supertype;
+  export type Is<Supertype> = Expectation.Exactly<Supertype> & {
+    undefined: Expectation.Proper<Supertype, undefined>;
+  };
 
   export interface Supertype {
     <Type>(type: Type, callback: Supertype.Callback<Type>): void;
@@ -6580,17 +6713,151 @@ namespace tyst {
     }
 
     export interface $<Supertype> {
-      of(type: Value<Supertype>): void;
+      of(signature: Signature<Supertype>): void;
 
-      exact<Type extends Supertype>(): Value<Type>;
+      exact<Type extends Supertype>(): Signature<Type>;
+    }
+  }
+
+  export interface Exactly {
+    <Type>(): Signature<Type>;
+  }
+
+  export interface Signature<Type> {
+    (value: Type): Type;
+  }
+
+  export namespace Expectation {
+    export type Proper<Received, Expected> =
+      Utils.IsExtreme<Received> extends true
+        ? never
+        : [Received] extends [Expected]
+          ? Fn
+          : never;
+
+    export interface Exactly<Expected> {
+      <Received>(
+        ...args: Utils.Or<
+          Utils.IsAny<Expected>,
+          Utils.IsAny<Received>
+        > extends true
+          ? Utils.And<Utils.IsAny<Expected>, Utils.IsAny<Received>> extends true
+            ? []
+            : [Unexpected]
+          : Utils.Or<
+                Utils.IsNever<Expected>,
+                Utils.IsNever<Received>
+              > extends true
+            ? Utils.And<
+                Utils.IsNever<Expected>,
+                Utils.IsNever<Received>
+              > extends true
+              ? []
+              : [Unexpected]
+            : [Received, Expected] extends [Expected, Received]
+              ? []
+              : [Unexpected]
+      ): void;
     }
 
-    export interface Value<Type> {
-      (value: Type): Type;
+    type Unexpected = typeof unexpected;
+
+    declare const unexpected: unique symbol;
+
+    export interface Fn {
+      (): void;
     }
-    declare const wrapPhantom: unique symbol;
   }
 }
+
+// tyst
+{
+  // undefined
+  {
+    tyst(undefined).is<undefined>();
+    tyst({} as string | undefined).is<string | undefined>();
+
+    // @ts-expect-error
+    tyst({} as any).is<undefined>();
+    // @ts-expect-error
+    tyst({} as unknown).is<undefined>();
+    // @ts-expect-error
+    tyst({} as never).is<undefined>();
+    // @ts-expect-error
+    tyst({} as string).is<string | undefined>();
+  }
+
+  // any
+  {
+    tyst({} as any).is<any>();
+
+    // @ts-expect-error
+    tyst({} as unknown).is<any>();
+    // @ts-expect-error
+    tyst({} as never).is<any>();
+    // @ts-expect-error
+    tyst({} as string).is<any>();
+  }
+
+  // unknown
+  {
+    tyst({} as unknown).is<unknown>();
+
+    // @ts-expect-error
+    tyst({} as any).is<unknown>();
+    // @ts-expect-error
+    tyst({} as never).is<unknown>();
+    // @ts-expect-error
+    tyst({} as string).is<unknown>();
+  }
+
+  // never
+  {
+    tyst({} as never).is<never>();
+
+    // @ts-expect-error
+    tyst({} as any).is<never>();
+    // @ts-expect-error
+    tyst({} as unknown).is<never>();
+    // @ts-expect-error
+    tyst({} as string).is<never>();
+  }
+
+  // void
+  {
+    tyst(void 0 as void).is<void>();
+    tyst({} as string | void).is<string | void>();
+
+    // @ts-expect-error
+    tyst({} as any).is<void>();
+    // @ts-expect-error
+    tyst({} as unknown).is<void>();
+    // @ts-expect-error
+    tyst({} as never).is<void>();
+    // @ts-expect-error
+    tyst({} as string).is<string | void>();
+  }
+}
+
+// tyst.undefined
+{
+  tyst(undefined).is.undefined();
+
+  // @ts-expect-error
+  tyst({} as any).is.undefined();
+  // @ts-expect-error
+  tyst({} as unknown).is.undefined();
+  // @ts-expect-error
+  tyst({} as never).is.undefined();
+  // @ts-expect-error
+  tyst({} as string | undefined).undefined();
+}
+
+//#endregion
+
+//#region Helpers
+
+function tyst_<Type>(_arg: Type): void {}
 
 interface Hello {
   hello: string;

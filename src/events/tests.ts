@@ -225,7 +225,7 @@ describe(EventsTree, () => {
         field.$.stuff.$.a.watch(valueASpy);
         const valueBSpy = vi.fn();
         field.$.stuff.$.b.watch(valueBSpy);
-        field.eventsTree.trigger(field.$.stuff.$.a.path, change.field.valid);
+        field.events.trigger(field.$.stuff.$.a.path, change.field.valid);
         await postpone();
         expect(rootSpy).toHaveBeenCalledOnce();
         expect(rootSpy).toReceiveChanges(change.subtree.valid);
@@ -248,7 +248,7 @@ describe(EventsTree, () => {
         field.$.items.at(0).watch(value1Spy);
         const value2Spy = vi.fn();
         field.$.items.at(1).watch(value2Spy);
-        field.eventsTree.trigger(field.$.items.at(0).path, change.field.valid);
+        field.events.trigger(field.$.items.at(0).path, change.field.valid);
         await postpone();
         expect(rootSpy).toHaveBeenCalledOnce();
         expect(rootSpy).toReceiveChanges(change.subtree.valid);
