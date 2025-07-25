@@ -1260,11 +1260,29 @@ const unionField = new Field({ hello: "world", world: true }) as
 {
   // Immutability
   {
-    const user = {} as Field<User>;
+    const user = {} as
+      | Field.Immutable<User>
+      | Field.Base<User>
+      | Field.Exact<User>;
 
-    user.root satisfies Field.Immutable<unknown, "root">;
-    // @ts-expect-error
-    user.root satisfies Field.Exact<unknown, "root">;
+    tyst.supertype(user.root, ($) => {
+      $.of($.exact<Field.Immutable<unknown, "root">>());
+      // @ts-expect-error
+      $.of($.exact<Field<unknown, "root">>());
+    });
+  }
+
+  // Validating
+  {
+    const user = {} as Field<User, "validating">;
+
+    tyst.supertype(user.root, ($) => {
+      $.of($.exact<Field.Immutable<unknown, "root" | "validating">>());
+      // @ts-expect-error
+      $.of($.exact<Field.Immutable<unknown, "root">>());
+      // @ts-expect-error
+      $.of($.exact<Field<unknown, "root" | "validating">>());
+    });
   }
 }
 //#endregion
