@@ -82,7 +82,7 @@ export declare class Atom<
 
   size: Atom.Size.Prop<ValueDef>;
 
-  remove: Atom.RemoveProp<Flavor, ValueDef>;
+  remove: Atom.Remove.Prop<Flavor, ValueDef>;
 
   forEach: Atom.ForEachProp<Flavor, ValueDef, Qualifier>;
 
@@ -129,13 +129,13 @@ export declare class Atom<
 
   //#region Events
 
-  eventsTree: EventsTree<Extract<Flavor, Atom.Flavor.Kind>>;
+  events: Atom.Events.Prop<Flavor, Qualifier>;
 
   watch(callback: Atom.Watch.Callback<ValueDef>): Atom.Unwatch;
 
   useWatch: Atom.Watch.Use.Prop<ValueDef, Qualifier>;
 
-  trigger(changes: FieldChange, notifyParents?: boolean): void;
+  trigger: Atom.Trigger.Prop<Qualifier>;
 
   //#endregion
 
@@ -564,8 +564,8 @@ export namespace Atom {
   export interface Exact<
     Flavor extends Atom.Flavor.Constraint,
     ValueDef extends Atom.Def.Constraint,
-    Qualifier extends Atom.Qualifier.Constraint = Atom.Qualifier.Default,
-    Parent extends Atom.Parent.Constraint<ValueDef> = Atom.Parent.Default,
+    Qualifier extends Atom.Qualifier.Constraint,
+    Parent extends Atom.Parent.Constraint<ValueDef>,
   > extends Immutable<Flavor, ValueDef, Qualifier, Parent> {
     //#region Value
 
@@ -583,17 +583,11 @@ export namespace Atom {
 
     //#region Type
 
-    remove: RemoveProp<Flavor, ValueDef>;
+    remove: Remove.Prop<Flavor, ValueDef>;
 
     insert: Insert.Prop<Flavor, ValueDef, Qualifier, Parent>;
 
     push: Push.Prop<Flavor, ValueDef, Qualifier>;
-
-    //#endregion
-
-    //#region Events
-
-    trigger(changes: FieldChange, notifyParents?: boolean): void;
 
     //#endregion
   }
@@ -753,8 +747,8 @@ export namespace Atom {
   export interface Immutable<
     Flavor extends Atom.Flavor.Constraint,
     ValueDef extends Atom.Def.Constraint,
-    Qualifier extends Atom.Qualifier.Constraint = Atom.Qualifier.Default,
-    Parent extends Atom.Parent.Constraint<ValueDef> = Atom.Parent.Default,
+    Qualifier extends Atom.Qualifier.Constraint,
+    Parent extends Atom.Parent.Constraint<ValueDef>,
   > {
     //#region Phantoms
 
@@ -834,13 +828,13 @@ export namespace Atom {
 
     //#region Events
 
-    eventsTree: EventsTree<Extract<Flavor, Atom.Flavor.Kind>>;
+    events: Events.Prop<Flavor, Qualifier>;
 
     watch(callback: Watch.Callback<ValueDef>): Unwatch;
 
     useWatch: Watch.Use.Prop<ValueDef, Qualifier>;
 
-    trigger(changes: FieldChange, notifyParents?: boolean): void;
+    trigger: Trigger.Prop<Qualifier>;
 
     //#endregion
 
@@ -1270,41 +1264,49 @@ export namespace Atom {
 
   //#region Remove
 
-  export type RemoveProp<
-    Flavor extends Atom.Flavor.Constraint,
-    ValueDef extends Def.Constraint,
-  > = ValueDef["read"] extends infer Value
-    ? Value extends unknown[] | readonly unknown[]
-      ? Utils.IsReadonlyArray<Value> extends true
-        ? undefined
-        : Value extends Utils.Tuple
+  export namespace Remove {
+    export type Prop<
+      Flavor extends Atom.Flavor.Constraint,
+      ValueDef extends Def.Constraint,
+    > = ValueDef["read"] extends infer Value
+      ? Value extends unknown[] | readonly unknown[]
+        ? Utils.IsReadonlyArray<Value> extends true
           ? undefined
-          : Value extends unknown[]
-            ? RemoveArray<Flavor, Value>
-            : never
-      : Value extends object
-        ? Value extends Utils.BrandedPrimitive
-          ? undefined
-          : RemoveObject<Flavor, Value>
-        : undefined
-    : never;
+          : Value extends Utils.Tuple
+            ? undefined
+            : Value extends unknown[]
+              ? Fn.Array<Flavor, Value>
+              : never
+        : Value extends object
+          ? Value extends Utils.BrandedPrimitive
+            ? undefined
+            : Fn.Object<Flavor, Value>
+          : undefined
+      : never;
 
-  export interface RemoveArray<
-    Flavor extends Atom.Flavor.Constraint,
-    Value extends unknown[],
-  > {
-    (
-      item: number,
-    ): Envelop<Flavor, Atom.Def<DetachedValue | Value[number]>, "detachable">;
-  }
+    export namespace Fn {
+      export interface Array<
+        Flavor extends Atom.Flavor.Constraint,
+        Value extends unknown[],
+      > {
+        (
+          item: number,
+        ): Envelop<
+          Flavor,
+          Atom.Def<DetachedValue | Value[number]>,
+          "detachable"
+        >;
+      }
 
-  export interface RemoveObject<
-    Flavor extends Atom.Flavor.Constraint,
-    Value extends object,
-  > {
-    <Key extends Enso.DetachableKeys<Value>>(
-      key: Key,
-    ): Envelop<Flavor, Atom.Def<DetachedValue | Value[Key]>, "detachable">;
+      export interface Object<
+        Flavor extends Atom.Flavor.Constraint,
+        Value extends object,
+      > {
+        <Key extends Enso.DetachableKeys<Value>>(
+          key: Key,
+        ): Envelop<Flavor, Atom.Def<DetachedValue | Value[Key]>, "detachable">;
+      }
+    }
   }
 
   //#endregion
@@ -1925,6 +1927,10 @@ export namespace Atom {
 
   //#region Events
 
+  export type Unwatch = () => void;
+
+  //#region Watch
+
   export namespace Watch {
     export interface Callback<ValueDef extends Def.Constraint> {
       (value: ValueDef["read"], event: ChangesEvent): void;
@@ -1942,7 +1948,34 @@ export namespace Atom {
     }
   }
 
-  export type Unwatch = () => void;
+  //#endregion
+
+  //#region Events
+
+  export namespace Events {
+    export type Prop<
+      Flavor extends Atom.Flavor.Constraint,
+      Qualifier extends Atom.Qualifier.Constraint,
+    > = Qualifier.Validating.DisableFor<
+      Qualifier,
+      EventsTree<Extract<Flavor, Atom.Flavor.Kind>>
+    >;
+  }
+
+  //#endregion
+
+  //#region Trigger
+
+  export namespace Trigger {
+    export type Prop<Qualifier extends Atom.Qualifier.Constraint> =
+      Qualifier.Validating.DisableFor<Qualifier, Fn>;
+
+    export interface Fn {
+      (changes: FieldChange, notifyParents?: boolean): void;
+    }
+  }
+
+  //#endregion
 
   //#endregion
 

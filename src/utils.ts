@@ -195,8 +195,6 @@ export namespace EnsoUtils {
 
   //#region Top (any & unknown)
 
-  export type IsTop<Type> = Type extends {} ? true : false;
-
   export type IsNotTop<Type> = Type extends {} ? true : false;
 
   export type ResolveTop<Type> = IsUnknown<Type> extends true ? never : any;
@@ -210,6 +208,12 @@ export namespace EnsoUtils {
   export type NeverDefault<Type, DefaultType> = [Type] extends [never]
     ? DefaultType
     : Type;
+
+  //#endregion
+
+  //#region Extreme (top and bottom)
+
+  export type IsExtreme<Type> = Or<IsAny<Type>, IsUnknown<Type>, IsNever<Type>>;
 
   //#endregion
 
