@@ -5998,10 +5998,6 @@ const brandedPrim = new Field({} as Branded<string>);
             discriminator: "organization";
             field: Field.Ref<Organization>;
           }
-        | {
-            discriminator: unknown;
-            field: never;
-          }
       >();
     }
 
