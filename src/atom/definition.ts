@@ -102,7 +102,7 @@ export declare class Atom<
 
   //#region Tree
 
-  get root(): Atom.Root<Flavor>;
+  get root(): Atom.Root.Prop<Flavor, Qualifier>;
 
   get parent(): Atom.Parent.Prop<
     Exclude<Flavor, Atom.Flavor.Variant>,
@@ -402,9 +402,9 @@ export namespace Atom {
         Qualifier extends Atom.Qualifier.Constraint,
         Type,
       > = "validating" extends Qualifier ? undefined : Type;
-      // Qualifier.Extends<Qualifier, "validating"> extends true
-      //   ? undefined
-      //   : Type;
+
+      export type Preserve<Qualifier extends Qualifier.Constraint> =
+        "validating" extends Qualifier ? "validating" : never;
     }
   }
 
@@ -439,11 +439,8 @@ export namespace Atom {
     > = Atom.Envelop<
       Kind | "immutable",
       Atom.Def<Utils.IsNever<Value> extends true ? any : Value>,
-      Parent.Qualifier<Qualifier>
+      Qualifier.Validating.Preserve<Qualifier>
     >;
-
-    export type Qualifier<Qualifier extends Qualifier.Constraint> =
-      "validating" extends Qualifier ? "validating" : never;
 
     export type Prop<
       Kind extends Atom.Flavor.Kind,
@@ -794,7 +791,7 @@ export namespace Atom {
 
     //#region Tree
 
-    root: Root<Flavor>;
+    root: Root.Prop<Flavor, Qualifier>;
 
     parent: Parent.Prop<
       Exclude<Flavor, Atom.Flavor.Variant>,
@@ -1775,11 +1772,20 @@ export namespace Atom {
 
   //#region Tree
 
-  export type Root<Flavor extends Atom.Flavor.Constraint> = Envelop<
-    Exclude<Flavor, Flavor.Variant> | "immutable",
-    Atom.Def<unknown>,
-    "root"
-  >;
+  //#region Root
+
+  export namespace Root {
+    export type Prop<
+      Flavor extends Atom.Flavor.Constraint,
+      Qualifier extends Qualifier.Constraint,
+    > = Envelop<
+      Exclude<Flavor, Flavor.Variant> | "immutable",
+      Atom.Def<unknown>,
+      "root" | Qualifier.Validating.Preserve<Qualifier>
+    >;
+  }
+
+  //#endregion
 
   //#region $
 
