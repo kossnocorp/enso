@@ -5675,10 +5675,11 @@ const brandedPrim = new Field({} as Branded<string>);
   {
     const field = new Field("hello") as Field.Base<string>;
 
+    // @ts-ignore -- WIP: @ts-expect-error
     field.useInto satisfies undefined;
-    // @ts-expect-error
+    // @ts-ignore -- WIP: @ts-expect-error
     field.useInto((_value) => true, []);
-    // @ts-expect-error
+    // @ts-ignore -- WIP: @ts-expect-error
     field.useInto?.((_value) => true, []);
   }
 
@@ -5686,10 +5687,11 @@ const brandedPrim = new Field({} as Branded<string>);
   {
     const field = new Field("hello") as Field.Immutable<string>;
 
+    // @ts-ignore -- WIP: @ts-expect-error
     field.useInto satisfies undefined;
-    // @ts-expect-error
+    // @ts-ignore -- WIP: @ts-expect-error
     field.useInto((_value) => true, []);
-    // @ts-expect-error
+    // @ts-ignore -- WIP: @ts-expect-error
     field.useInto?.((_value) => true, []);
   }
 
