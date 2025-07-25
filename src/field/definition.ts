@@ -101,6 +101,8 @@ export declare class Field<
 
   validate: Field.Validate.Prop<Value, Qualifier>;
 
+  addError: Field.AddError.Prop;
+
   //#endregion
 }
 
@@ -333,6 +335,26 @@ export namespace Field {
 
   //#endregion
 
+  //#region Ref
+
+  export type Ref<
+    Value,
+    Qualifier extends Atom.Qualifier.Constraint = Atom.Qualifier.Default,
+    Parent extends Atom.Parent.Constraint<
+      Atom.Def<Value>
+    > = Atom.Parent.Default,
+  > = Field.Immutable<Value, Qualifier | "ref", Parent>;
+
+  export namespace AddError {
+    export type Prop = Fn;
+
+    export interface Fn {
+      (error: Error.Type): void;
+    }
+  }
+
+  //#endregion
+
   //#region Fieldish
 
   export namespace Ish {
@@ -363,6 +385,8 @@ export namespace Field {
       useValid: Field.Valid.Use.Prop<Qualifier>;
 
       validate: Validate.Prop<ValueDef["read"], Qualifier>;
+
+      addError: Field.AddError.Prop;
     }
   }
 
@@ -556,6 +580,10 @@ export namespace Field {
     message: string;
   }
 
+  export namespace Error {
+    export type Type = Error | string;
+  }
+
   export namespace Valid {
     export namespace Use {
       export type Prop<Qualifier extends Atom.Qualifier.Constraint> =
@@ -592,14 +620,6 @@ export namespace Field {
       }
     }
   }
-
-  export type Ref<
-    Value,
-    Qualifier extends Atom.Qualifier.Constraint = Atom.Qualifier.Default,
-    Parent extends Atom.Parent.Constraint<
-      Atom.Def<Value>
-    > = Atom.Parent.Default,
-  > = Field.Immutable<Value, Qualifier | "ref", Parent>;
 
   //#endregion
 }

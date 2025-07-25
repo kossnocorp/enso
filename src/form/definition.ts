@@ -83,6 +83,8 @@ export declare class Form<Value> implements Form.Interface<Value> {
 
   validate(validator: Field.Validator<Value>): Promise<void>;
 
+  addError: Field.AddError.Prop;
+
   //#endregion
 
   //#region Events

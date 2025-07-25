@@ -6668,6 +6668,16 @@ const brandedPrim = new Field({} as Branded<string>);
 }
 //#endregion
 
+//#region addError
+{
+  const field = {} as Field<string>;
+  field.addError("Something went wrong");
+  field.addError({ type: "unknown", message: "Something went wrong" });
+  // @ts-expect-error
+  field.addError();
+}
+//#endregion
+
 //#endregion
 
 //#region Tyst
