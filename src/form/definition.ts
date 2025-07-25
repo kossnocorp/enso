@@ -152,7 +152,7 @@ export namespace Form {
 
   export interface Options<Value> {
     id?: string;
-    validate?: Field.Validator<Atom.Def<Value>>;
+    validate?: Field.Validator<Value>;
   }
 
   export namespace Component {
