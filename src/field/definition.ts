@@ -595,5 +595,11 @@ export namespace Field {
     }
   }
 
+  export type Validating<
+    Value,
+    Qualifier extends Atom.Qualifier.Constraint,
+    Parent extends Atom.Parent.Constraint<Atom.Def<Value>>,
+  > = Field.Immutable<Value, Qualifier | "validating", Parent>;
+
   //#endregion
 }
