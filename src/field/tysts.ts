@@ -1521,6 +1521,108 @@ const unionField = new Field({ hello: "world", world: true }) as
       }
     }
   }
+
+  // Base
+  {
+    // Basic
+    {
+      const field = {} as Field.Base<User>;
+
+      field.$.age satisfies Field<number>;
+      // @ts-expect-error
+      field.$.age.any;
+
+      // @ts-expect-error
+      ({}) as Field.Base<number> satisfies typeof field.$.age;
+
+      field.$.email satisfies Field<string | undefined, "detachable">;
+    }
+
+    // Nested
+    {
+      const field = {} as Field.Base<Nested>;
+
+      field.$.entities.$.user.$.age satisfies Field<number>;
+      // @ts-expect-error
+      field.$.entities.$.user.$.age.any;
+
+      // @ts-expect-error
+      ({}) as Field.Base<number> satisfies typeof field.$.entities.$.user.$.age;
+    }
+  }
+
+  // Immutable
+  {
+    // Basic
+    {
+      const field = {} as Field.Immutable<User>;
+
+      field.$.age satisfies Field.Immutable<number>;
+      // @ts-expect-error
+      field.$.age satisfies Field<number>;
+
+      field.$.email satisfies Field.Immutable<string | undefined, "detachable">;
+      // @ts-expect-error
+      field.$.email satisfies Field<string | undefined, "detachable">;
+    }
+
+    // Nested
+    {
+      const field = {} as Field.Immutable<Nested>;
+
+      field.$.entities.$.user.$.age satisfies Field.Immutable<number>;
+      // @ts-expect-error
+      field.$.entities.$.user.$.age satisfies Field<number>;
+
+      field.$.entities.$.user.$.email satisfies Field.Immutable<
+        string | undefined,
+        "detachable"
+      >;
+      // @ts-expect-error
+      field.$.entities.$.user.$.email satisfies Field<
+        string | undefined,
+        "detachable"
+      >;
+    }
+  }
+
+  // Validating
+  {
+    // Basic
+    {
+      const field = {} as Field<User, "validating">;
+
+      field.$.age satisfies Field<number, "validating">;
+      // @ts-expect-error
+      field.$.age satisfies Field<number>;
+
+      field.$.email satisfies Field<
+        string | undefined,
+        "validating" | "detachable"
+      >;
+      // @ts-expect-error
+      field.$.email satisfies Field<string | undefined, "detachable">;
+    }
+
+    // Nested
+    {
+      const field = {} as Field<Nested, "validating">;
+
+      field.$.entities.$.user.$.age satisfies Field<number, "validating">;
+      // @ts-expect-error
+      field.$.entities.$.user.$.age satisfies Field<number>;
+
+      field.$.entities.$.user.$.email satisfies Field<
+        string | undefined,
+        "validating" | "detachable"
+      >;
+      // @ts-expect-error
+      field.$.entities.$.user.$.email satisfies Field<
+        string | undefined,
+        "detachable"
+      >;
+    }
+  }
 }
 //#endregion
 
@@ -6116,6 +6218,14 @@ interface Container {
 
 interface Organization {
   owner: User;
+}
+
+interface Nested {
+  entities: {
+    user: User;
+    account: Account;
+  };
+  organizations: Organization[];
 }
 
 type Branded<Type> = Type & { [brand]: true };
