@@ -9,7 +9,7 @@ import { ValidationTree } from "../validation/index.ts";
 import { fieldEach, fieldMap } from "./collection/index.ts";
 import { ComputedField, FieldOld } from "./old.tsx";
 import { Field } from "./index.js";
-import { FieldRefOld } from "./ref/index.ts";
+import { FieldRefOld } from "./ref/old.ts";
 
 //#region Field
 

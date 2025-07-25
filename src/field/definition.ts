@@ -2,8 +2,6 @@ import React, { DependencyList, FocusEventHandler, ReactElement } from "react";
 import { Atom } from "../atom/index.js";
 import type { EnsoUtils as Utils } from "../utils.ts";
 
-export * from "./ref/index.js";
-
 const hintSymbol = Symbol();
 
 export declare class Field<

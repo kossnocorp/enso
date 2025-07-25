@@ -2,7 +2,7 @@ import { describe, expect, it, vi } from "vitest";
 import { postpone } from "../../../tests/utils.ts";
 import { change } from "../../change/index.ts";
 import { FieldOld } from "../old.tsx";
-import { FieldRefOld, MaybeFieldRefOld } from "../ref/definition.ts";
+import { FieldRefOld, MaybeFieldRefOld } from "../ref/old.ts";
 import {
   fieldEach,
   fieldFilter,
