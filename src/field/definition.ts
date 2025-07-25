@@ -597,8 +597,10 @@ export namespace Field {
 
   export type Validating<
     Value,
-    Qualifier extends Atom.Qualifier.Constraint,
-    Parent extends Atom.Parent.Constraint<Atom.Def<Value>>,
+    Qualifier extends Atom.Qualifier.Constraint = Atom.Qualifier.Default,
+    Parent extends Atom.Parent.Constraint<
+      Atom.Def<Value>
+    > = Atom.Parent.Default,
   > = Field.Immutable<Value, Qualifier | "validating", Parent>;
 
   //#endregion
