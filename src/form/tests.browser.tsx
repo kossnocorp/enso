@@ -7,7 +7,7 @@ import { render } from "vitest-browser-react";
 import { userEvent } from "@vitest/browser/context";
 import "@vitest/browser/matchers.d.ts";
 import { FieldOld } from "../field/old.tsx";
-import { FieldRefOld } from "../field/ref/definition.ts";
+import { FieldRefOld } from "../field/ref/old.ts";
 import { Form } from "./old.tsx";
 
 describe("Form", () => {

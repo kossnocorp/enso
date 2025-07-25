@@ -33,8 +33,8 @@ import type { Enso } from "../types.ts";
 import type { EnsoUtils as Utils } from "../utils.ts";
 import { ValidationTree } from "../validation/index.ts";
 import { AsCollection } from "./collection/index.ts";
-import { FieldRefOld } from "./ref/definition.ts";
 import { Atom } from "../atom/index.js";
+import { FieldRefOld } from "./ref/old.ts";
 
 export * from "./collection/index.ts";
 export * from "./transform/index.ts";

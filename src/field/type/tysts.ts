@@ -1,5 +1,5 @@
 import { FieldOld } from "../old.tsx";
-import { FieldRefOld, MaybeFieldRefOld } from "../ref/definition.ts";
+import { FieldRefOld, MaybeFieldRefOld } from "../ref/old.ts";
 import { fieldDiscriminate } from "./index.ts";
 
 //#region fieldDiscriminate

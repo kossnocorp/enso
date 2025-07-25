@@ -2,7 +2,7 @@ import React from "react";
 import { act, cleanup, render, screen } from "@testing-library/react";
 import { afterEach, assert, describe, expect, it } from "vitest";
 import { FieldOld } from "../old.tsx";
-import { MaybeFieldRefOld, FieldRefOld } from "../ref/definition.ts";
+import { MaybeFieldRefOld, FieldRefOld } from "../ref/old.ts";
 import { fieldDiscriminate, useFieldDiscriminate } from "./index.ts";
 
 describe(fieldDiscriminate, () => {
