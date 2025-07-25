@@ -357,7 +357,7 @@ export namespace Atom {
       | "detachable"
       | "tried"
       | "bound"
-      | "validating"
+      | "ref"
       | Proxy.Qualifier<unknown>;
 
     export type Default = never;
@@ -381,7 +381,7 @@ export namespace Atom {
           MapChunkBasic<Qualifier, "detachable"> &
           MapChunkBasic<Qualifier, "tried"> &
           MapChunkBasic<Qualifier, "bound"> &
-          MapChunkBasic<Qualifier, "validating"> &
+          MapChunkBasic<Qualifier, "ref"> &
           MapChunkProxy<Qualifier>,
         {}
       >;
@@ -397,14 +397,14 @@ export namespace Atom {
         ? { proxy: SourceValue }
         : {};
 
-    export namespace Validating {
+    export namespace Ref {
       export type DisableFor<
         Qualifier extends Atom.Qualifier.Constraint,
         Type,
-      > = "validating" extends Qualifier ? undefined : Type;
+      > = "ref" extends Qualifier ? undefined : Type;
 
       export type Preserve<Qualifier extends Qualifier.Constraint> =
-        "validating" extends Qualifier ? "validating" : never;
+        "ref" extends Qualifier ? "ref" : never;
     }
   }
 
@@ -439,7 +439,7 @@ export namespace Atom {
     > = Atom.Envelop<
       Kind | "immutable",
       Atom.Def<Utils.IsNever<Value> extends true ? any : Value>,
-      Qualifier.Validating.Preserve<Qualifier>
+      Qualifier.Ref.Preserve<Qualifier>
     >;
 
     export type Prop<
@@ -543,7 +543,7 @@ export namespace Atom {
       Utils.IsAny<ParentValue> extends true
         ? "detachable"
         :
-            | ("validating" extends Qualifier ? "validating" : never)
+            | ("ref" extends Qualifier ? "ref" : never)
             | (Utils.IsStaticKey<ParentValue, ParentKey> extends true
                 ? Utils.IsOptionalKey<ParentValue, ParentKey> extends true
                   ? "detachable"
@@ -1152,7 +1152,7 @@ export namespace Atom {
       export type Prop<
         ValueDef extends Def.Constraint,
         Qualifier extends Atom.Qualifier.Constraint,
-      > = Qualifier.Validating.DisableFor<Qualifier, Fn<ValueDef>>;
+      > = Qualifier.Ref.DisableFor<Qualifier, Fn<ValueDef>>;
 
       export interface Fn<ValueDef extends Def.Constraint> {
         (): Result<ValueDef>;
@@ -1661,7 +1661,7 @@ export namespace Atom {
         ValueDef extends Def.Constraint,
         Qualifier extends Atom.Qualifier.Constraint,
         Parent extends Atom.Parent.Constraint<ValueDef>,
-      > = Qualifier.Validating.DisableFor<
+      > = Qualifier.Ref.DisableFor<
         Qualifier,
         Fn<Flavor, ValueDef, Qualifier, Parent>
       >;
@@ -1783,7 +1783,7 @@ export namespace Atom {
     > = Envelop<
       Exclude<Flavor, Flavor.Variant> | "immutable",
       Atom.Def<unknown>,
-      "root" | Qualifier.Validating.Preserve<Qualifier>
+      "root" | Qualifier.Ref.Preserve<Qualifier>
     >;
   }
 
@@ -1940,7 +1940,7 @@ export namespace Atom {
       export type Prop<
         ValueDef extends Def.Constraint,
         Qualifier extends Atom.Qualifier.Constraint,
-      > = Qualifier.Validating.DisableFor<Qualifier, Fn<ValueDef>>;
+      > = Qualifier.Ref.DisableFor<Qualifier, Fn<ValueDef>>;
 
       export interface Fn<ValueDef extends Def.Constraint> {
         (callback: Watch.Callback<ValueDef>, deps: DependencyList): Unwatch;
@@ -1956,7 +1956,7 @@ export namespace Atom {
     export type Prop<
       Flavor extends Atom.Flavor.Constraint,
       Qualifier extends Atom.Qualifier.Constraint,
-    > = Qualifier.Validating.DisableFor<
+    > = Qualifier.Ref.DisableFor<
       Qualifier,
       EventsTree<Extract<Flavor, Atom.Flavor.Kind>>
     >;
@@ -1968,7 +1968,7 @@ export namespace Atom {
 
   export namespace Trigger {
     export type Prop<Qualifier extends Atom.Qualifier.Constraint> =
-      Qualifier.Validating.DisableFor<Qualifier, Fn>;
+      Qualifier.Ref.DisableFor<Qualifier, Fn>;
 
     export interface Fn {
       (changes: FieldChange, notifyParents?: boolean): void;
@@ -1996,7 +1996,7 @@ export namespace Atom {
       export type Prop<
         ValueDef extends Def.Constraint,
         Qualifier extends Qualifier.Constraint,
-      > = Qualifier.Validating.DisableFor<Qualifier, Fn<ValueDef>>;
+      > = Qualifier.Ref.DisableFor<Qualifier, Fn<ValueDef>>;
 
       export interface Fn<ValueDef extends Def.Constraint> {
         <Result>(
@@ -2058,7 +2058,7 @@ export namespace Atom {
         ValueDef extends Def.Constraint,
         Qualifier extends Atom.Qualifier.Constraint,
         Parent extends Atom.Parent.Constraint<ValueDef>,
-      > = Qualifier.Validating.DisableFor<
+      > = Qualifier.Ref.DisableFor<
         Qualifier,
         Fn<Flavor, ValueDef, Qualifier, Parent>
       >;
@@ -2092,7 +2092,7 @@ export namespace Atom {
       ValueDef extends Def.Constraint,
       Qualifier extends Atom.Qualifier.Constraint,
       Parent extends Atom.Parent.Constraint<ValueDef>,
-    > = Qualifier.Validating.DisableFor<
+    > = Qualifier.Ref.DisableFor<
       Qualifier,
       Fn<Flavor, ValueDef, Qualifier, Parent>
     >;
@@ -2228,13 +2228,13 @@ export namespace Atom {
           ValueDef extends Atom.Def.Constraint,
           Qualifier extends Atom.Qualifier.Constraint,
           Parent extends Atom.Parent.Constraint<ValueDef>,
-        > = Qualifier.Validating.DisableFor<
+        > = Qualifier.Ref.DisableFor<
           Qualifier,
           Fn<Flavor, ValueDef, Qualifier, Parent>
         >;
         // > = Exact.OnlyFor<
         //   Flavor,
-        //   Qualifier.Validating.DisableFor<
+        //   Qualifier.Ref.DisableFor<
         //     Qualifier,
         //     Fn<Flavor, ValueDef, Qualifier, Parent>
         //   >
@@ -2330,7 +2330,7 @@ export namespace Atom {
         ValueDef extends Def.Constraint,
         Qualifier extends Atom.Qualifier.Constraint,
         Parent extends Atom.Parent.Constraint<ValueDef>,
-      > = Qualifier.Validating.DisableFor<
+      > = Qualifier.Ref.DisableFor<
         Qualifier,
         Fn<Flavor, ValueDef, Qualifier, Parent>
       >;
