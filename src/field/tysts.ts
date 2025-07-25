@@ -855,9 +855,9 @@ const unionField = new Field({ hello: "world", world: true }) as
     field.useValue().any;
   }
 
-  // Validating
+  // Ref
   {
-    const field = {} as Field<string, "validating">;
+    const field = {} as Field.Ref<string>;
 
     field.useValue satisfies undefined;
     // @ts-expect-error
@@ -924,9 +924,9 @@ const unionField = new Field({ hello: "world", world: true }) as
     }, []);
   }
 
-  // Validating
+  // Ref
   {
-    const field = {} as Field<string, "validating">;
+    const field = {} as Field.Ref<string>;
 
     field.useCompute satisfies undefined;
     // @ts-expect-error
@@ -965,9 +965,9 @@ const unionField = new Field({ hello: "world", world: true }) as
     result.any;
   }
 
-  // Validating
+  // Ref
   {
-    const field = {} as Field<string, "validating">;
+    const field = {} as Field.Ref<string>;
 
     field.useDirty satisfies undefined;
     // @ts-expect-error
@@ -1207,9 +1207,9 @@ const unionField = new Field({ hello: "world", world: true }) as
     field.commit?.();
   }
 
-  // Validating
+  // Ref
   {
-    const field = {} as Field<string, "validating">;
+    const field = {} as Field.Ref<string>;
     // @ts-expect-error
     field.commit();
     // @ts-expect-error
@@ -1248,9 +1248,9 @@ const unionField = new Field({ hello: "world", world: true }) as
     field.reset?.();
   }
 
-  // Validating
+  // Ref
   {
-    const field = {} as Field<string, "validating">;
+    const field = {} as Field.Ref<string>;
     // @ts-expect-error
     field.reset();
     // @ts-expect-error
@@ -1279,16 +1279,16 @@ const unionField = new Field({ hello: "world", world: true }) as
     });
   }
 
-  // Validating
+  // Ref
   {
-    const user = {} as Field<User, "validating">;
+    const user = {} as Field.Ref<User>;
 
     tyst.supertype(user.root, ($) => {
-      $.of($.exact<Field.Immutable<unknown, "root" | "validating">>());
+      $.of($.exact<Field.Immutable<unknown, "root" | "ref">>());
       // @ts-expect-error
       $.of($.exact<Field.Immutable<unknown, "root">>());
       // @ts-expect-error
-      $.of($.exact<Field<unknown, "root" | "validating">>());
+      $.of($.exact<Field<unknown, "root" | "ref">>());
     });
   }
 }
@@ -1318,13 +1318,13 @@ const unionField = new Field({ hello: "world", world: true }) as
     }
   }
 
-  // Validating
+  // Ref
   {
-    const organization = {} as Field<User, "validating", OrganizationParent>;
+    const organization = {} as Field<User, "ref", OrganizationParent>;
 
     if ("field" in organization.parent) {
       tyst.supertype(organization.parent.field, ($) => {
-        $.of($.exact<Field.Immutable<Organization, "validating">>());
+        $.of($.exact<Field.Immutable<Organization, "ref">>());
         // @ts-expect-error
         $.of($.exact<Field.Immutable<Organization>>());
         // @ts-expect-error
@@ -1332,7 +1332,7 @@ const unionField = new Field({ hello: "world", world: true }) as
       });
 
       tyst.supertype(organization.parent.field.$.owner, ($) => {
-        $.of($.exact<Field.Immutable<User, "validating">>());
+        $.of($.exact<Field.Immutable<User, "ref">>());
         // @ts-expect-error
         $.of($.exact<Field.Immutable<User>>());
         // @ts-expect-error
@@ -1667,14 +1667,14 @@ const unionField = new Field({ hello: "world", world: true }) as
     }
   }
 
-  // Validating
+  // Ref
   {
     // Basic
     {
-      const field = {} as Field<User, "validating">;
+      const field = {} as Field.Ref<User>;
 
       tyst.supertype(field.$.age, ($) => {
-        $.of($.exact<Field<number, "validating">>());
+        $.of($.exact<Field.Ref<number>>());
         // @ts-expect-error
         $.of($.exact<Field<number>>());
         // @ts-expect-error
@@ -1682,20 +1682,20 @@ const unionField = new Field({ hello: "world", world: true }) as
       });
 
       tyst.supertype(field.$.email, ($) => {
-        $.of($.exact<Field<string | undefined, "detachable" | "validating">>());
+        $.of($.exact<Field.Ref<string | undefined, "detachable">>());
         // @ts-expect-error
         $.of($.exact<Field<string | undefined, "detachable">>());
         // @ts-expect-error
-        $.of($.exact<Field<string | undefined, "validating">>());
+        $.of($.exact<Field.Ref<string | undefined>>());
       });
     }
 
     // Nested
     {
-      const field = {} as Field<Nested, "validating">;
+      const field = {} as Field.Ref<Nested>;
 
       tyst.supertype(field.$.entities.$.user.$.age, ($) => {
-        $.of($.exact<Field<number, "validating">>());
+        $.of($.exact<Field.Ref<number>>());
         // @ts-expect-error
         $.of($.exact<Field<number>>());
         // @ts-expect-error
@@ -1703,11 +1703,11 @@ const unionField = new Field({ hello: "world", world: true }) as
       });
 
       tyst.supertype(field.$.entities.$.user.$.email, ($) => {
-        $.of($.exact<Field<string | undefined, "detachable" | "validating">>());
+        $.of($.exact<Field.Ref<string | undefined, "detachable">>());
         // @ts-expect-error
         $.of($.exact<Field<string | undefined, "detachable">>());
         // @ts-expect-error
-        $.of($.exact<Field<string | undefined, "validating">>());
+        $.of($.exact<Field.Ref<string | undefined>>());
       });
     }
   }
@@ -2080,14 +2080,14 @@ const unionField = new Field({ hello: "world", world: true }) as
     }
   }
 
-  // Validating
+  // Ref
   {
     // Basic
     {
-      const field = {} as Field<User, "validating">;
+      const field = {} as Field.Ref<User>;
 
       tyst.supertype(field.at("age"), ($) => {
-        $.of($.exact<Field<number, "validating">>());
+        $.of($.exact<Field.Ref<number>>());
         // @ts-expect-error
         $.of($.exact<Field<number>>());
         // @ts-expect-error
@@ -2095,20 +2095,20 @@ const unionField = new Field({ hello: "world", world: true }) as
       });
 
       tyst.supertype(field.at("email"), ($) => {
-        $.of($.exact<Field<string | undefined, "detachable" | "validating">>());
+        $.of($.exact<Field.Ref<string | undefined, "detachable">>());
         // @ts-expect-error
         $.of($.exact<Field<string | undefined, "detachable">>());
         // @ts-expect-error
-        $.of($.exact<Field<string | undefined, "validating">>());
+        $.of($.exact<Field.Ref<string | undefined>>());
       });
     }
 
     // Nested
     {
-      const field = {} as Field<Nested, "validating">;
+      const field = {} as Field.Ref<Nested>;
 
       tyst.supertype(field.at("entities").at("user").at("age"), ($) => {
-        $.of($.exact<Field<number, "validating">>());
+        $.of($.exact<Field.Ref<number>>());
         // @ts-expect-error
         $.of($.exact<Field<number>>());
         // @ts-expect-error
@@ -2116,11 +2116,11 @@ const unionField = new Field({ hello: "world", world: true }) as
       });
 
       tyst.supertype(field.at("entities").at("user").at("email"), ($) => {
-        $.of($.exact<Field<string | undefined, "detachable" | "validating">>());
+        $.of($.exact<Field.Ref<string | undefined, "detachable">>());
         // @ts-expect-error
         $.of($.exact<Field<string | undefined, "detachable">>());
         // @ts-expect-error
-        $.of($.exact<Field<string | undefined, "validating">>());
+        $.of($.exact<Field.Ref<string | undefined>>());
       });
     }
   }
@@ -2536,14 +2536,14 @@ const unionField = new Field({ hello: "world", world: true }) as
     }
   }
 
-  // Validating
+  // Ref
   {
     // Basic
     {
-      const field = {} as Field<User, "validating">;
+      const field = {} as Field.Ref<User>;
 
       tyst.supertype(field.try("age"), ($) => {
-        $.of($.exact<Field<number, "tried" | "validating">>());
+        $.of($.exact<Field.Ref<number, "tried">>());
         // @ts-expect-error
         $.of($.exact<Field<number, "tried">>());
         // @ts-expect-error
@@ -2551,44 +2551,36 @@ const unionField = new Field({ hello: "world", world: true }) as
       });
 
       tyst.supertype(field.try("email"), ($) => {
-        $.of(
-          $.exact<
-            Field<string, "detachable" | "tried" | "validating"> | undefined
-          >(),
-        );
+        $.of($.exact<Field.Ref<string, "detachable" | "tried"> | undefined>());
         // @ts-expect-error
         $.of($.exact<Field<string, "detachable" | "tried"> | undefined>());
         // @ts-expect-error
-        $.of($.exact<Field<string, "detachable" | "tried" | "validating">>());
+        $.of($.exact<Field<string, "detachable" | "tried" | "ref">>());
         // @ts-expect-error
-        $.of($.exact<Field<string, "detachable" | "validating"> | undefined>());
+        $.of($.exact<Field<string, "detachable" | "ref"> | undefined>());
       });
     }
 
     // Nested
     {
-      const field = {} as Field<Nested, "validating">;
+      const field = {} as Field.Ref<Nested>;
 
       tyst.supertype(field.try("entities").try("user").try("age"), ($) => {
-        $.of($.exact<Field<number, "tried" | "validating">>());
+        $.of($.exact<Field.Ref<number, "tried">>());
         // @ts-expect-error
         $.of($.exact<Field<number, "tried">>());
         // @ts-expect-error
-        $.of($.exact<Field<number, "validating">>());
+        $.of($.exact<Field.Ref<number>>());
       });
 
       tyst.supertype(field.try("entities").try("user").try("email"), ($) => {
-        $.of(
-          $.exact<
-            Field<string, "detachable" | "tried" | "validating"> | undefined
-          >(),
-        );
+        $.of($.exact<Field.Ref<string, "detachable" | "tried"> | undefined>());
         // @ts-expect-error
         $.of($.exact<Field<string, "detachable" | "tried"> | undefined>());
         // @ts-expect-error
-        $.of($.exact<Field<string, "detachable" | "tried" | "validating">>());
+        $.of($.exact<Field<string, "detachable" | "tried" | "ref">>());
         // @ts-expect-error
-        $.of($.exact<Field<string, "detachable" | "validating"> | undefined>());
+        $.of($.exact<Field<string, "detachable" | "ref"> | undefined>());
       });
     }
   }
@@ -2773,14 +2765,14 @@ const unionField = new Field({ hello: "world", world: true }) as
     result.any;
   }
 
-  // Validating
+  // Ref
   {
     // Basic
     {
-      const field = {} as Field<User, "validating">;
+      const field = {} as Field.Ref<User>;
 
       tyst.supertype(field.self.try(), ($) => {
-        $.of($.exact<Field<User, "tried" | "validating">>());
+        $.of($.exact<Field.Ref<User, "tried">>());
         // @ts-expect-error
         $.of($.exact<Field<User, "tried">>());
         // @ts-expect-error
@@ -2790,10 +2782,10 @@ const unionField = new Field({ hello: "world", world: true }) as
 
     // Mixed
     {
-      const field = {} as Field<User, "validating" | "detachable">;
+      const field = {} as Field<User, "ref" | "detachable">;
 
       tyst.supertype(field.self.try(), ($) => {
-        $.of($.exact<Field<User, "tried" | "detachable" | "validating">>());
+        $.of($.exact<Field<User, "tried" | "detachable" | "ref">>());
         // @ts-expect-error
         $.of($.exact<Field<User, "tried" | "detachable">>());
         // @ts-expect-error
@@ -3211,18 +3203,18 @@ const brandedPrim = new Field({} as Branded<string>);
     }
   }
 
-  // Validating
+  // Ref
   {
-    const field = {} as Field<(string | boolean)[], "validating">;
+    const field = {} as Field.Ref<(string | boolean)[]>;
 
     const result = field.forEach((item, index) => {
-      tyst(item).is<Field<string | boolean, "detachable" | "validating">>();
+      tyst(item).is<Field.Ref<string | boolean, "detachable">>();
       tyst(index).is<number>();
     });
     tyst(result).is<void>();
 
     field.forEach((item) => {
-      tyst(item).is<Field<string | boolean, "detachable" | "validating">>();
+      tyst(item).is<Field.Ref<string | boolean, "detachable">>();
     });
 
     field.forEach(() => {});
@@ -3511,19 +3503,19 @@ const brandedPrim = new Field({} as Branded<string>);
     }
   }
 
-  // Validating
+  // Ref
   {
-    const field = {} as Field<(string | boolean)[], "validating">;
+    const field = {} as Field.Ref<(string | boolean)[]>;
 
     const result = field.map((item, index) => {
-      tyst(item).is<Field<string | boolean, "detachable" | "validating">>();
+      tyst(item).is<Field.Ref<string | boolean, "detachable">>();
       tyst(index).is<number>();
       return true as const;
     });
     tyst(result).is<true[]>();
 
     field.map((item) => {
-      tyst(item).is<Field<string | boolean, "detachable" | "validating">>();
+      tyst(item).is<Field.Ref<string | boolean, "detachable">>();
     });
 
     field.map(() => {});
@@ -3848,21 +3840,19 @@ const brandedPrim = new Field({} as Branded<string>);
     }
   }
 
-  // Validating
+  // Ref
   {
-    const field = {} as Field<(string | boolean)[], "validating">;
+    const field = {} as Field.Ref<(string | boolean)[]>;
 
     const result = field.find((item, index) => {
-      tyst(item).is<Field<string | boolean, "detachable" | "validating">>();
+      tyst(item).is<Field.Ref<string | boolean, "detachable">>();
       tyst(index).is<number>();
       return true;
     });
-    tyst(result).is<
-      Field<string | boolean, "detachable" | "validating"> | undefined
-    >();
+    tyst(result).is<Field.Ref<string | boolean, "detachable"> | undefined>();
 
     field.find((item) => {
-      tyst(item).is<Field<string | boolean, "detachable" | "validating">>();
+      tyst(item).is<Field.Ref<string | boolean, "detachable">>();
     });
 
     field.find(() => {});
@@ -4194,19 +4184,19 @@ const brandedPrim = new Field({} as Branded<string>);
     }
   }
 
-  // Validating
+  // Ref
   {
-    const field = {} as Field<(string | boolean)[], "validating">;
+    const field = {} as Field.Ref<(string | boolean)[]>;
 
     const result = field.filter((item, index) => {
-      tyst(item).is<Field<string | boolean, "detachable" | "validating">>();
+      tyst(item).is<Field.Ref<string | boolean, "detachable">>();
       tyst(index).is<number>();
       return true;
     });
-    tyst(result).is<Field<string | boolean, "detachable" | "validating">[]>();
+    tyst(result).is<Field.Ref<string | boolean, "detachable">[]>();
 
     field.filter((item) => {
-      tyst(item).is<Field<string | boolean, "detachable" | "validating">>();
+      tyst(item).is<Field.Ref<string | boolean, "detachable">>();
     });
 
     field.filter(() => {});
@@ -4390,9 +4380,9 @@ const brandedPrim = new Field({} as Branded<string>);
     }
   }
 
-  // Validating
+  // Ref
   {
-    const field = {} as Field<string, "validating">;
+    const field = {} as Field.Ref<string>;
 
     field.useCollection satisfies undefined;
     // @ts-expect-error
@@ -5095,9 +5085,9 @@ const brandedPrim = new Field({} as Branded<string>);
     off.any;
   }
 
-  // Validating
+  // Ref
   {
-    const field = {} as Field<string, "validating">;
+    const field = {} as Field.Ref<string>;
 
     field.useWatch satisfies undefined;
     // @ts-expect-error
@@ -5116,9 +5106,9 @@ const brandedPrim = new Field({} as Branded<string>);
     tyst(field.events).is<EventsTree<"field">>();
   }
 
-  // Validating
+  // Ref
   {
-    const field = {} as Field<"hello", "validating">;
+    const field = {} as Field.Ref<"hello">;
     tyst(field.events).is.undefined();
   }
 }
@@ -5132,9 +5122,9 @@ const brandedPrim = new Field({} as Branded<string>);
     field.trigger(change.field.blur);
   }
 
-  // Validating
+  // Ref
   {
-    const field = {} as Field<"hello", "validating">;
+    const field = {} as Field.Ref<"hello">;
     tyst(field.trigger).is.undefined();
   }
 }
@@ -5373,9 +5363,9 @@ const brandedPrim = new Field({} as Branded<string>);
         };
   }
 
-  // Validating
+  // Ref
   {
-    const field = {} as Field<string, "validating">;
+    const field = {} as Field.Ref<string>;
 
     field.useDecompose satisfies undefined;
     // @ts-expect-error
@@ -5998,9 +5988,9 @@ const brandedPrim = new Field({} as Branded<string>);
     }
   }
 
-  // Validating
+  // Ref
   {
-    const field = {} as Field<User | Organization, "validating">;
+    const field = {} as Field.Ref<User | Organization>;
 
     field.useDiscriminate satisfies undefined;
     // @ts-expect-error
@@ -6330,9 +6320,9 @@ const brandedPrim = new Field({} as Branded<string>);
     result satisfies Field<number>;
   }
 
-  // Validating
+  // Ref
   {
-    const field = {} as Field<string, "validating">;
+    const field = {} as Field.Ref<string>;
 
     field.useInto satisfies undefined;
     // @ts-expect-error
@@ -6420,9 +6410,9 @@ const brandedPrim = new Field({} as Branded<string>);
     result.any;
   }
 
-  // Validating
+  // Ref
   {
-    const field = {} as Field<string, "validating">;
+    const field = {} as Field.Ref<string>;
 
     field.useDefined satisfies undefined;
     // @ts-expect-error
@@ -6576,9 +6566,9 @@ const brandedPrim = new Field({} as Branded<string>);
     result.baseany;
   }
 
-  // Validating
+  // Ref
   {
-    const field = {} as Field<string, "validating">;
+    const field = {} as Field.Ref<string>;
 
     field.useErrors satisfies undefined;
     // @ts-expect-error
@@ -6617,9 +6607,9 @@ const brandedPrim = new Field({} as Branded<string>);
     result.any;
   }
 
-  // Validating
+  // Ref
   {
-    const field = {} as Field<string, "validating">;
+    const field = {} as Field.Ref<string>;
 
     field.useValid satisfies undefined;
     // @ts-expect-error
@@ -6640,7 +6630,7 @@ const brandedPrim = new Field({} as Branded<string>);
       | Field.Immutable<string>;
 
     const result = field.validate((field) => {
-      field satisfies Field.Immutable<string, "validating">;
+      field satisfies Field.Immutable<string, "ref">;
       // @ts-expect-error
       field.any;
     });
@@ -6656,7 +6646,7 @@ const brandedPrim = new Field({} as Branded<string>);
     const field = ({} as Field<string>).shared<[string, string | undefined]>();
 
     const result = field.validate((field) => {
-      field satisfies Field.Immutable<string | undefined, "validating">;
+      field satisfies Field.Immutable<string | undefined, "ref">;
       // @ts-expect-error
       field.any;
     });
@@ -6667,9 +6657,9 @@ const brandedPrim = new Field({} as Branded<string>);
     field.validate(async (_) => {});
   }
 
-  // Validating
+  // Ref
   {
-    const field = {} as Field<string, "validating">;
+    const field = {} as Field.Ref<string>;
     // @ts-expect-error
     field.validate((_) => {});
     // @ts-expect-error

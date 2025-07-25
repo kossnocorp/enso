@@ -380,7 +380,7 @@ export namespace Field {
   export namespace Dirty {
     export namespace Use {
       export type Prop<Qualifier extends Atom.Qualifier.Constraint> =
-        Atom.Qualifier.Validating.DisableFor<Qualifier, Fn>;
+        Atom.Qualifier.Ref.DisableFor<Qualifier, Fn>;
 
       export interface Fn {
         (): boolean;
@@ -390,7 +390,7 @@ export namespace Field {
 
   export namespace Commit {
     export type Prop<Qualifier extends Atom.Qualifier.Constraint> =
-      Atom.Qualifier.Validating.DisableFor<Qualifier, Fn>;
+      Atom.Qualifier.Ref.DisableFor<Qualifier, Fn>;
 
     export interface Fn {
       (): void;
@@ -399,7 +399,7 @@ export namespace Field {
 
   export namespace Reset {
     export type Prop<Qualifier extends Atom.Qualifier.Constraint> =
-      Atom.Qualifier.Validating.DisableFor<Qualifier, Fn>;
+      Atom.Qualifier.Ref.DisableFor<Qualifier, Fn>;
 
     export interface Fn {
       (): void;
@@ -559,7 +559,7 @@ export namespace Field {
   export namespace Valid {
     export namespace Use {
       export type Prop<Qualifier extends Atom.Qualifier.Constraint> =
-        Atom.Qualifier.Validating.DisableFor<Qualifier, Fn>;
+        Atom.Qualifier.Ref.DisableFor<Qualifier, Fn>;
 
       export interface Fn {
         (): boolean;
@@ -568,14 +568,14 @@ export namespace Field {
   }
 
   export interface Validator<Value> {
-    (field: Field.Immutable<Value, "validating">): Promise<void> | void;
+    (field: Field.Immutable<Value, "ref">): Promise<void> | void;
   }
 
   export namespace Validate {
     export type Prop<
       Value,
       Qualifier extends Atom.Qualifier.Constraint,
-    > = Atom.Qualifier.Validating.DisableFor<Qualifier, Fn<Value>>;
+    > = Atom.Qualifier.Ref.DisableFor<Qualifier, Fn<Value>>;
 
     export interface Fn<Value> {
       (validator: Field.Validator<Value>): Promise<void>;
@@ -585,7 +585,7 @@ export namespace Field {
   export namespace Errors {
     export namespace Use {
       export type Prop<Qualifier extends Atom.Qualifier.Constraint> =
-        Atom.Qualifier.Validating.DisableFor<Qualifier, Fn>;
+        Atom.Qualifier.Ref.DisableFor<Qualifier, Fn>;
 
       export interface Fn {
         (): Field.Error[];
@@ -593,13 +593,13 @@ export namespace Field {
     }
   }
 
-  export type Validating<
+  export type Ref<
     Value,
     Qualifier extends Atom.Qualifier.Constraint = Atom.Qualifier.Default,
     Parent extends Atom.Parent.Constraint<
       Atom.Def<Value>
     > = Atom.Parent.Default,
-  > = Field.Immutable<Value, Qualifier | "validating", Parent>;
+  > = Field.Immutable<Value, Qualifier | "ref", Parent>;
 
   //#endregion
 }
