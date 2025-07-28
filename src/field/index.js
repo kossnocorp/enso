@@ -2,8 +2,6 @@
 
 import { Atom } from "../atom/index.js";
 
-export * from "./ref/index.js";
-
 export class Field extends Atom {
   //#region Static
 
