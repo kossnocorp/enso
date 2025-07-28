@@ -1,12 +1,13 @@
 import { EnsoUtils as Utils } from "../utils.ts";
 import { Atom } from "./index.js";
+import { ty } from "tysts";
 
 //#region Static
 
 //#region Atom.safeNullish
 {
-  tyst<undefined>(Atom.safeNullish(undefined));
-  tyst<null>(Atom.safeNullish(null));
+  ty(Atom.safeNullish(undefined)).is(ty<never>());
+  ty(Atom.safeNullish(null)).is(ty<never>());
   tyst<keyof User | Utils.Nullish>(Atom.safeNullish(null));
   tyst<keyof User | Utils.Nullish>(
     Atom.safeNullish({} as keyof User | undefined | null),
@@ -32,69 +33,46 @@ import { Atom } from "./index.js";
 {
   // Primitive
   {
-    type NumberProp = Atom.Value.Opaque<number>;
-
-    tyst<NumberProp>({} as number);
-    // @ts-expect-error
-    tyst<NumberProp>({} as string);
-    // @ts-expect-error
-    tyst<NumberProp>({} as unknown);
+    ty<Atom.Value.Opaque<number>>().is(ty<number>());
   }
 
   // Object
   {
-    type AnyProp = Atom.Value.Opaque<Entity>;
-
-    tyst<AnyProp>({} as Entity);
-    tyst<AnyProp>({} as User);
-    tyst<AnyProp>({} as Atom.Value.Opaque<User>);
-    tyst<AnyProp>({} as Account);
-    tyst<AnyProp>({} as any);
-    // @ts-expect-error
-    tyst<AnyProp>({} as Hello);
-    // @ts-expect-error
-    tyst<AnyProp>({} as unknown);
+    ty<Atom.Value.Opaque<Entity>>()
+      .is(ty.assignableFrom<Entity>())
+      .is(ty.assignableFrom<User>())
+      .is(ty.assignableFrom<Account>())
+      .is.not(ty.assignableFrom<unknown>())
+      .is(ty.assignableFrom<any>());
   }
 
   // Mixed
   {
-    type AnyProp = Atom.Value.Opaque<Entity | number>;
-
-    tyst<AnyProp>({} as Entity);
-    tyst<AnyProp>({} as number);
-    tyst<AnyProp>({} as Atom.Value.Opaque<User>);
-    tyst<AnyProp>({} as Account);
-    tyst<AnyProp>({} as any);
-    // @ts-expect-error
-    tyst<AnyProp>({} as Hello);
-    // @ts-expect-error
-    tyst<AnyProp>(string);
-    // @ts-expect-error
-    tyst<AnyProp>({} as unknown);
+    ty<Atom.Value.Opaque<Entity | number>>()
+      .is(ty.assignableFrom<Entity>())
+      .is(ty.assignableFrom<User>())
+      .is(ty.assignableFrom<Account>())
+      .is(ty.assignableFrom<number>())
+      .is.not(ty.assignableFrom<unknown>())
+      .is(ty.assignableFrom<any>());
   }
 
   // Any
   {
-    type AnyProp = Atom.Value.Opaque<any>;
-
-    tyst<AnyProp>({} as number);
-    tyst<AnyProp>({} as unknown);
+    ty<Atom.Value.Opaque<any>>()
+      .is(ty.assignableFrom<number>())
+      .is(ty.assignableFrom<null>())
+      .is(ty.assignableFrom<unknown>())
+      .is(ty.assignableFrom<any>());
   }
 
   // Unknown
   {
-    type AnyProp = Atom.Value.Opaque<unknown>;
-
-    // @ts-expect-error
-    tyst<AnyProp>({} as any);
-    // @ts-expect-error
-    tyst<AnyProp>({} as number);
-    // @ts-expect-error
-    tyst<AnyProp>({} as unknown);
-    // @ts-expect-error
-    tyst<AnyProp>({} as Atom.Value.Opaque<number>);
-    // @ts-expect-error
-    tyst<AnyProp>({} as Atom.Value.Opaque<User>);
+    ty<Atom.Value.Opaque<unknown>>()
+      .is.not(ty.assignableFrom<number>())
+      .is.not(ty.assignableFrom<null>())
+      .is.not(ty.assignableFrom<unknown>())
+      .is.not(ty.assignableFrom<any>());
   }
 
   // Union
