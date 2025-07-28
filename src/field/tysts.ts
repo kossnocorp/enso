@@ -1,14 +1,8 @@
-import { R } from "vitest/dist/chunks/environment.d.cL3nLXbE.js";
-import { Atom } from "../atom/index.js";
-import {
-  change,
-  type ChangesEvent,
-  type FieldChange,
-} from "../change/index.ts";
+import { ty } from "tysts";
+import { change, type ChangesEvent } from "../change/index.ts";
 import type { DetachedValue } from "../detached/index.ts";
 import { EventsTree } from "../events/index.ts";
 import { State } from "../state/index.ts";
-import { EnsoUtils as Utils } from "../utils.ts";
 import { Field } from "./index.js";
 
 const unionValue = new Field<Hello | Blah>({ hello: "world", world: true });
@@ -24,16 +18,15 @@ const unionField = new Field({ hello: "world", world: true }) as
 
     // Basic
     {
-      _entity = {} as Field.Base<Account | User>;
-      _entity = {} as Field.Base<Account>;
-      _entity = {} as Field.Base<User>;
+      ty<Field.Base<Entity>>()
+        .is(ty.assignableFrom<Field.Base<Account | User>>())
+        .is(ty.assignableFrom<Field.Base<Account>>())
+        .is(ty.assignableFrom<Field.Base<User>>());
 
-      let _account: Field.Base<Account>;
-      // @ts-expect-error
-      _account = {} as Field.Base<Account | User>;
-      _account = {} as Field.Base<Account>;
-      // @ts-expect-error
-      _account = {} as Field.Base<User>;
+      ty<Field.Base<Account>>()
+        .is(ty.assignableFrom<Field.Base<Account>>())
+        .is.not(ty.assignableFrom<Field.Base<Account | User>>())
+        .is.not(ty.assignableFrom<Field.Base<User>>());
     }
 
     // Qualifier
@@ -1253,29 +1246,17 @@ const unionField = new Field({ hello: "world", world: true }) as
 {
   // Immutability
   {
-    const user = {} as
+    const field = {} as
       | Field.Immutable<User>
       | Field.Base<User>
       | Field.Exact<User>;
-
-    tyst.supertype(user.root, ($) => {
-      $.of($.exact<Field.Immutable<unknown, "root">>());
-      // @ts-expect-error
-      $.of($.exact<Field<unknown, "root">>());
-    });
+    ty(field.root).is(ty<Field.Immutable<unknown, "root">>());
   }
 
   // Ref
   {
-    const user = {} as Field.Ref<User>;
-
-    tyst.supertype(user.root, ($) => {
-      $.of($.exact<Field.Immutable<unknown, "root" | "ref">>());
-      // @ts-expect-error
-      $.of($.exact<Field.Immutable<unknown, "root">>());
-      // @ts-expect-error
-      $.of($.exact<Field<unknown, "root" | "ref">>());
-    });
+    const field = {} as Field.Ref<User>;
+    ty(field.root).is(ty<Field.Immutable<unknown, "root" | "ref">>());
   }
 }
 //#endregion
@@ -1284,46 +1265,22 @@ const unionField = new Field({ hello: "world", world: true }) as
 {
   // Immutablity
   {
-    const organization = {} as
+    const field = {} as
       | Field.Base<User, never, OrganizationParent>
       | Field.Immutable<User, never, OrganizationParent>
       | Field.Exact<User, never, OrganizationParent>;
-
-    if ("field" in organization.parent) {
-      tyst.supertype(organization.parent.field, ($) => {
-        $.of($.exact<Field.Immutable<Organization>>());
-        // @ts-expect-error
-        $.of($.exact<Field.Exact<Organization>>());
-      });
-
-      tyst.supertype(organization.parent.field.$.owner, ($) => {
-        $.of($.exact<Field.Immutable<User>>());
-        // @ts-expect-error
-        $.of($.exact<Field.Exact<User>>());
-      });
+    if ("field" in field.parent) {
+      ty(field.parent.field).is(ty<Field.Immutable<Organization>>());
+      ty(field.parent.field.$.owner).is(ty<Field.Immutable<User>>());
     }
   }
 
   // Ref
   {
-    const organization = {} as Field<User, "ref", OrganizationParent>;
-
-    if ("field" in organization.parent) {
-      tyst.supertype(organization.parent.field, ($) => {
-        $.of($.exact<Field.Immutable<Organization, "ref">>());
-        // @ts-expect-error
-        $.of($.exact<Field.Immutable<Organization>>());
-        // @ts-expect-error
-        $.of($.exact<Field.Exact<Organization>>());
-      });
-
-      tyst.supertype(organization.parent.field.$.owner, ($) => {
-        $.of($.exact<Field.Immutable<User, "ref">>());
-        // @ts-expect-error
-        $.of($.exact<Field.Immutable<User>>());
-        // @ts-expect-error
-        $.of($.exact<Field.Exact<User>>());
-      });
+    const field = {} as Field<User, "ref", OrganizationParent>;
+    if ("field" in field.parent) {
+      ty(field.parent.field).is(ty<Field.Immutable<Organization, "ref">>());
+      ty(field.parent.field.$.owner).is(ty<Field.Immutable<User, "ref">>());
     }
   }
 }
@@ -1568,43 +1525,17 @@ const unionField = new Field({ hello: "world", world: true }) as
     // Basic
     {
       const field = {} as Field.Base<User>;
-
-      tyst.supertype(field.$.age, ($) => {
-        $.of($.exact<Field<number>>());
-        // @ts-expect-error
-        $.of($.exact<Field.Base<number>>());
-        // @ts-expect-error
-        $.of($.exact<Field<number, "tried">>());
-      });
-
-      tyst.supertype(field.$.email, ($) => {
-        $.of($.exact<Field<string | undefined, "detachable">>());
-        // @ts-expect-error
-        $.of($.exact<Field<string, "detachable">>());
-        // @ts-expect-error
-        $.of($.exact<Field<string | undefined>>());
-      });
+      ty(field.$.age).is(ty<Field<number>>());
+      ty(field.$.email).is(ty<Field<string | undefined, "detachable">>());
     }
 
     // Nested
     {
       const field = {} as Field.Base<Nested>;
-
-      tyst.supertype(field.$.entities.$.user.$.age, ($) => {
-        $.of($.exact<Field<number>>());
-        // @ts-expect-error
-        $.of($.exact<Field.Base<number>>());
-        // @ts-expect-error
-        $.of($.exact<Field<number, "tried">>());
-      });
-
-      tyst.supertype(field.$.entities.$.user.$.email, ($) => {
-        $.of($.exact<Field<string | undefined, "detachable">>());
-        // @ts-expect-error
-        $.of($.exact<Field<string, "detachable">>());
-        // @ts-expect-error
-        $.of($.exact<Field<string | undefined>>());
-      });
+      ty(field.$.entities.$.user.$.age).is(ty<Field<number>>());
+      ty(field.$.entities.$.user.$.email).is(
+        ty<Field<string | undefined, "detachable">>(),
+      );
     }
   }
 
@@ -1613,43 +1544,19 @@ const unionField = new Field({ hello: "world", world: true }) as
     // Basic
     {
       const field = {} as Field.Immutable<User>;
-
-      tyst.supertype(field.$.age, ($) => {
-        $.of($.exact<Field.Immutable<number>>());
-        // @ts-expect-error
-        $.of($.exact<Field<number>>());
-        // @ts-expect-error
-        $.of($.exact<Field.Immutable<number, "tried">>());
-      });
-
-      tyst.supertype(field.$.email, ($) => {
-        $.of($.exact<Field.Immutable<string | undefined, "detachable">>());
-        // @ts-expect-error
-        $.of($.exact<Field<string | undefined, "detachable">>());
-        // @ts-expect-error
-        $.of($.exact<Field.Immutable<string | undefined>>());
-      });
+      ty(field.$.age).is(ty<Field.Immutable<number>>());
+      ty(field.$.email).is(
+        ty<Field.Immutable<string | undefined, "detachable">>(),
+      );
     }
 
     // Nested
     {
       const field = {} as Field.Immutable<Nested>;
-
-      tyst.supertype(field.$.entities.$.user.$.age, ($) => {
-        $.of($.exact<Field.Immutable<number>>());
-        // @ts-expect-error
-        $.of($.exact<Field<number>>());
-        // @ts-expect-error
-        $.of($.exact<Field.Immutable<number, "tried">>());
-      });
-
-      tyst.supertype(field.$.entities.$.user.$.email, ($) => {
-        $.of($.exact<Field.Immutable<string | undefined, "detachable">>());
-        // @ts-expect-error
-        $.of($.exact<Field<string | undefined, "detachable">>());
-        // @ts-expect-error
-        $.of($.exact<Field.Immutable<string | undefined>>());
-      });
+      ty(field.$.entities.$.user.$.age).is(ty<Field.Immutable<number>>());
+      ty(field.$.entities.$.user.$.email).is(
+        ty<Field.Immutable<string | undefined, "detachable">>(),
+      );
     }
   }
 
@@ -1658,52 +1565,26 @@ const unionField = new Field({ hello: "world", world: true }) as
     // Basic
     {
       const field = {} as Field.Ref<User>;
-
-      tyst.supertype(field.$.age, ($) => {
-        $.of($.exact<Field.Ref<number>>());
-        // @ts-expect-error
-        $.of($.exact<Field<number>>());
-        // @ts-expect-error
-        $.of($.exact<Field<number, "tried">>());
-      });
-
-      tyst.supertype(field.$.email, ($) => {
-        $.of($.exact<Field.Ref<string | undefined, "detachable">>());
-        // @ts-expect-error
-        $.of($.exact<Field<string | undefined, "detachable">>());
-        // @ts-expect-error
-        $.of($.exact<Field.Ref<string | undefined>>());
-      });
+      ty(field.$.age).is(ty<Field.Ref<number>>());
+      ty(field.$.email).is(ty<Field.Ref<string | undefined, "detachable">>());
     }
 
     // Nested
     {
       const field = {} as Field.Ref<Nested>;
-
-      tyst.supertype(field.$.entities.$.user.$.age, ($) => {
-        $.of($.exact<Field.Ref<number>>());
-        // @ts-expect-error
-        $.of($.exact<Field<number>>());
-        // @ts-expect-error
-        $.of($.exact<Field<number, "tried">>());
-      });
-
-      tyst.supertype(field.$.entities.$.user.$.email, ($) => {
-        $.of($.exact<Field.Ref<string | undefined, "detachable">>());
-        // @ts-expect-error
-        $.of($.exact<Field<string | undefined, "detachable">>());
-        // @ts-expect-error
-        $.of($.exact<Field.Ref<string | undefined>>());
-      });
+      ty(field.$.entities.$.user.$.age).is(ty<Field.Ref<number>>());
+      ty(field.$.entities.$.user.$.email).is(
+        ty<Field.Ref<string | undefined, "detachable">>(),
+      );
     }
   }
 
   // Optional
   {
     const field = {} as Field.Ref.Optional<Nested>;
-    tyst(field.$.settings.optional().$.user.$.email).is<
-      Field.Ref.Optional<string>
-    >();
+    ty(field.$.settings.optional().$.user.$.email).is(
+      ty<Field.Ref.Optional<string>>(),
+    );
   }
 }
 //#endregion
@@ -1989,43 +1870,17 @@ const unionField = new Field({ hello: "world", world: true }) as
     // Basic
     {
       const field = {} as Field.Base<User>;
-
-      tyst.supertype(field.at("age"), ($) => {
-        $.of($.exact<Field<number>>());
-        // @ts-expect-error
-        $.of($.exact<Field.Base<number>>());
-        // @ts-expect-error
-        $.of($.exact<Field<number, "tried">>());
-      });
-
-      tyst.supertype(field.at("email"), ($) => {
-        $.of($.exact<Field<string | undefined, "detachable">>());
-        // @ts-expect-error
-        $.of($.exact<Field<string, "detachable">>());
-        // @ts-expect-error
-        $.of($.exact<Field<string | undefined>>());
-      });
+      ty(field.at("age")).is(ty<Field<number>>());
+      ty(field.at("email")).is(ty<Field<string | undefined, "detachable">>());
     }
 
     // Nested
     {
       const field = {} as Field.Base<Nested>;
-
-      tyst.supertype(field.at("entities").at("user").at("age"), ($) => {
-        $.of($.exact<Field<number>>());
-        // @ts-expect-error
-        $.of($.exact<Field.Base<number>>());
-        // @ts-expect-error
-        $.of($.exact<Field<number, "tried">>());
-      });
-
-      tyst.supertype(field.at("entities").at("user").at("email"), ($) => {
-        $.of($.exact<Field<string | undefined, "detachable">>());
-        // @ts-expect-error
-        $.of($.exact<Field<string, "detachable">>());
-        // @ts-expect-error
-        $.of($.exact<Field<string | undefined>>());
-      });
+      ty(field.at("entities").at("user").at("age")).is(ty<Field<number>>());
+      ty(field.at("entities").at("user").at("email")).is(
+        ty<Field<string | undefined, "detachable">>(),
+      );
     }
   }
 
@@ -2034,43 +1889,21 @@ const unionField = new Field({ hello: "world", world: true }) as
     // Basic
     {
       const field = {} as Field.Immutable<User>;
-
-      tyst.supertype(field.at("age"), ($) => {
-        $.of($.exact<Field.Immutable<number>>());
-        // @ts-expect-error
-        $.of($.exact<Field<number>>());
-        // @ts-expect-error
-        $.of($.exact<Field.Immutable<number, "tried">>());
-      });
-
-      tyst.supertype(field.at("email"), ($) => {
-        $.of($.exact<Field.Immutable<string | undefined, "detachable">>());
-        // @ts-expect-error
-        $.of($.exact<Field<string | undefined, "detachable">>());
-        // @ts-expect-error
-        $.of($.exact<Field.Immutable<string | undefined>>());
-      });
+      ty(field.at("age")).is(ty<Field.Immutable<number>>());
+      ty(field.at("email")).is(
+        ty<Field.Immutable<string | undefined, "detachable">>(),
+      );
     }
 
     // Nested
     {
       const field = {} as Field.Immutable<Nested>;
-
-      tyst.supertype(field.at("entities").at("user").at("age"), ($) => {
-        $.of($.exact<Field.Immutable<number>>());
-        // @ts-expect-error
-        $.of($.exact<Field<number>>());
-        // @ts-expect-error
-        $.of($.exact<Field.Immutable<number, "tried">>());
-      });
-
-      tyst.supertype(field.at("entities").at("user").at("email"), ($) => {
-        $.of($.exact<Field.Immutable<string | undefined, "detachable">>());
-        // @ts-expect-error
-        $.of($.exact<Field<string | undefined, "detachable">>());
-        // @ts-expect-error
-        $.of($.exact<Field.Immutable<string | undefined>>());
-      });
+      ty(field.at("entities").at("user").at("age")).is(
+        ty<Field.Immutable<number>>(),
+      );
+      ty(field.at("entities").at("user").at("email")).is(
+        ty<Field.Immutable<string | undefined, "detachable">>(),
+      );
     }
   }
 
@@ -2079,43 +1912,19 @@ const unionField = new Field({ hello: "world", world: true }) as
     // Basic
     {
       const field = {} as Field.Ref<User>;
-
-      tyst.supertype(field.at("age"), ($) => {
-        $.of($.exact<Field.Ref<number>>());
-        // @ts-expect-error
-        $.of($.exact<Field<number>>());
-        // @ts-expect-error
-        $.of($.exact<Field<number, "tried">>());
-      });
-
-      tyst.supertype(field.at("email"), ($) => {
-        $.of($.exact<Field.Ref<string | undefined, "detachable">>());
-        // @ts-expect-error
-        $.of($.exact<Field<string | undefined, "detachable">>());
-        // @ts-expect-error
-        $.of($.exact<Field.Ref<string | undefined>>());
-      });
+      ty(field.at("age")).is(ty<Field.Ref<number>>());
+      ty(field.at("email")).is(
+        ty<Field.Ref<string | undefined, "detachable">>(),
+      );
     }
 
     // Nested
     {
       const field = {} as Field.Ref<Nested>;
-
-      tyst.supertype(field.at("entities").at("user").at("age"), ($) => {
-        $.of($.exact<Field.Ref<number>>());
-        // @ts-expect-error
-        $.of($.exact<Field<number>>());
-        // @ts-expect-error
-        $.of($.exact<Field<number, "tried">>());
-      });
-
-      tyst.supertype(field.at("entities").at("user").at("email"), ($) => {
-        $.of($.exact<Field.Ref<string | undefined, "detachable">>());
-        // @ts-expect-error
-        $.of($.exact<Field<string | undefined, "detachable">>());
-        // @ts-expect-error
-        $.of($.exact<Field.Ref<string | undefined>>());
-      });
+      ty(field.at("entities").at("user").at("age")).is(ty<Field.Ref<number>>());
+      ty(field.at("entities").at("user").at("email")).is(
+        ty<Field.Ref<string | undefined, "detachable">>(),
+      );
     }
   }
 }
@@ -2435,41 +2244,21 @@ const unionField = new Field({ hello: "world", world: true }) as
     // Basic
     {
       const field = {} as Field.Base<User>;
-
-      tyst.supertype(field.try("age"), ($) => {
-        $.of($.exact<Field<number, "tried">>());
-        // @ts-expect-error
-        $.of($.exact<Field.Base<number, "tried">>());
-        // @ts-expect-error
-        $.of($.exact<Field<number>>());
-      });
-
-      tyst.supertype(field.try("email"), ($) => {
-        $.of($.exact<Field<string, "detachable" | "tried"> | undefined>());
-        // @ts-expect-error
-        $.of($.exact<Field<string, "detachable" | "tried">>());
-        // @ts-expect-error
-        $.of($.exact<Field<string, "detachable"> | undefined>());
-      });
+      ty(field.try("age")).is(ty<Field<number, "tried">>());
+      ty(field.try("email")).is(
+        ty<Field<string, "detachable" | "tried"> | undefined>(),
+      );
     }
 
     // Nested
     {
       const field = {} as Field.Base<Nested>;
-
-      tyst.supertype(field.try("entities").try("user").try("age"), ($) => {
-        $.of($.exact<Field<number, "tried">>());
-        // @ts-expect-error
-        $.of($.exact<Field<number>>());
-      });
-
-      tyst.supertype(field.try("entities").try("user").try("email"), ($) => {
-        $.of($.exact<Field<string, "detachable" | "tried"> | undefined>());
-        // @ts-expect-error
-        $.of($.exact<Field<string, "detachable" | "tried">>());
-        // @ts-expect-error
-        $.of($.exact<Field<string, "detachable"> | undefined>());
-      });
+      ty(field.try("entities").try("user").try("age")).is(
+        ty<Field<number, "tried">>(),
+      );
+      ty(field.try("entities").try("user").try("email")).is(
+        ty<Field<string, "detachable" | "tried"> | undefined>(),
+      );
     }
   }
 
@@ -2478,55 +2267,21 @@ const unionField = new Field({ hello: "world", world: true }) as
     // Basic
     {
       const field = {} as Field.Immutable<User>;
-
-      tyst.supertype(field.try("age"), ($) => {
-        $.of($.exact<Field.Immutable<number, "tried">>());
-        // @ts-expect-error
-        $.of($.exact<Field<number, "tried">>());
-        // @ts-expect-error
-        $.of($.exact<Field<number>>());
-      });
-
-      tyst.supertype(field.try("email"), ($) => {
-        $.of(
-          $.exact<
-            Field.Immutable<string, "detachable" | "tried"> | undefined
-          >(),
-        );
-        // @ts-expect-error
-        $.of($.exact<Field<string, "detachable" | "tried"> | undefined>());
-        // @ts-expect-error
-        $.of($.exact<Field.Immutable<string, "detachable" | "tried">>());
-        // @ts-expect-error
-        $.of($.exact<Field.Immutable<string, "detachable"> | undefined>());
-      });
+      ty(field.try("age")).is(ty<Field.Immutable<number, "tried">>());
+      ty(field.try("email")).is(
+        ty<Field.Immutable<string, "detachable" | "tried"> | undefined>(),
+      );
     }
 
     // Nested
     {
       const field = {} as Field.Immutable<Nested>;
-
-      tyst.supertype(field.try("entities").try("user").try("age"), ($) => {
-        $.of($.exact<Field.Immutable<number, "tried">>());
-        // @ts-expect-error
-        $.of($.exact<Field<number, "tried">>());
-        // @ts-expect-error
-        $.of($.exact<Field<number>>());
-      });
-
-      tyst.supertype(field.try("entities").try("user").try("email"), ($) => {
-        $.of(
-          $.exact<
-            Field.Immutable<string, "detachable" | "tried"> | undefined
-          >(),
-        );
-        // @ts-expect-error
-        $.of($.exact<Field<string, "detachable" | "tried"> | undefined>());
-        // @ts-expect-error
-        $.of($.exact<Field.Immutable<string, "detachable" | "tried">>());
-        // @ts-expect-error
-        $.of($.exact<Field.Immutable<string, "detachable"> | undefined>());
-      });
+      ty(field.try("entities").try("user").try("age")).is(
+        ty<Field.Immutable<number, "tried">>(),
+      );
+      ty(field.try("entities").try("user").try("email")).is(
+        ty<Field.Immutable<string, "detachable" | "tried"> | undefined>(),
+      );
     }
   }
 
@@ -2535,47 +2290,21 @@ const unionField = new Field({ hello: "world", world: true }) as
     // Basic
     {
       const field = {} as Field.Ref<User>;
-
-      tyst.supertype(field.try("age"), ($) => {
-        $.of($.exact<Field.Ref<number, "tried">>());
-        // @ts-expect-error
-        $.of($.exact<Field<number, "tried">>());
-        // @ts-expect-error
-        $.of($.exact<Field<number>>());
-      });
-
-      tyst.supertype(field.try("email"), ($) => {
-        $.of($.exact<Field.Ref<string, "detachable" | "tried"> | undefined>());
-        // @ts-expect-error
-        $.of($.exact<Field<string, "detachable" | "tried"> | undefined>());
-        // @ts-expect-error
-        $.of($.exact<Field<string, "detachable" | "tried" | "ref">>());
-        // @ts-expect-error
-        $.of($.exact<Field<string, "detachable" | "ref"> | undefined>());
-      });
+      ty(field.try("age")).is(ty<Field.Ref<number, "tried">>());
+      ty(field.try("email")).is(
+        ty<Field.Ref<string, "detachable" | "tried"> | undefined>(),
+      );
     }
 
     // Nested
     {
       const field = {} as Field.Ref<Nested>;
-
-      tyst.supertype(field.try("entities").try("user").try("age"), ($) => {
-        $.of($.exact<Field.Ref<number, "tried">>());
-        // @ts-expect-error
-        $.of($.exact<Field<number, "tried">>());
-        // @ts-expect-error
-        $.of($.exact<Field.Ref<number>>());
-      });
-
-      tyst.supertype(field.try("entities").try("user").try("email"), ($) => {
-        $.of($.exact<Field.Ref<string, "detachable" | "tried"> | undefined>());
-        // @ts-expect-error
-        $.of($.exact<Field<string, "detachable" | "tried"> | undefined>());
-        // @ts-expect-error
-        $.of($.exact<Field<string, "detachable" | "tried" | "ref">>());
-        // @ts-expect-error
-        $.of($.exact<Field<string, "detachable" | "ref"> | undefined>());
-      });
+      ty(field.try("entities").try("user").try("age")).is(
+        ty<Field.Ref<number, "tried">>(),
+      );
+      ty(field.try("entities").try("user").try("email")).is(
+        ty<Field.Ref<string, "detachable" | "tried"> | undefined>(),
+      );
     }
   }
 }
@@ -2764,27 +2493,15 @@ const unionField = new Field({ hello: "world", world: true }) as
     // Basic
     {
       const field = {} as Field.Ref<User>;
-
-      tyst.supertype(field.self.try(), ($) => {
-        $.of($.exact<Field.Ref<User, "tried">>());
-        // @ts-expect-error
-        $.of($.exact<Field<User, "tried">>());
-        // @ts-expect-error
-        $.of($.exact<Field<User>>());
-      });
+      ty(field.self.try()).is(ty<Field.Ref<User, "tried">>());
     }
 
     // Mixed
     {
       const field = {} as Field<User, "ref" | "detachable">;
-
-      tyst.supertype(field.self.try(), ($) => {
-        $.of($.exact<Field<User, "tried" | "detachable" | "ref">>());
-        // @ts-expect-error
-        $.of($.exact<Field<User, "tried" | "detachable">>());
-        // @ts-expect-error
-        $.of($.exact<Field<User>>());
-      });
+      ty(field.self.try()).is(
+        ty<Field<User, "ref" | "detachable" | "tried">>(),
+      );
     }
   }
 }
@@ -2938,13 +2655,13 @@ const brandedPrim = new Field({} as Branded<string>);
   // Readonly array
   {
     const result = readonlyArr.forEach((item, index) => {
-      tyst(item).is<Field.Base<string | boolean>>();
-      tyst(index).is<number>();
+      ty(item).is(ty<Field.Base<string | boolean>>());
+      ty(index).is(ty<number>());
     });
-    tyst(result).is<void>();
+    ty(result).is(ty<void>());
 
     readonlyArr.forEach((item) => {
-      tyst(item).is<Field.Base<string | boolean>>();
+      ty(item).is(ty<Field.Base<string | boolean>>());
     });
 
     arr.forEach(() => {});
@@ -3202,13 +2919,13 @@ const brandedPrim = new Field({} as Branded<string>);
     const field = {} as Field.Ref<(string | boolean)[]>;
 
     const result = field.forEach((item, index) => {
-      tyst(item).is<Field.Ref<string | boolean, "detachable">>();
-      tyst(index).is<number>();
+      ty(item).is(ty<Field.Ref<string | boolean, "detachable">>());
+      ty(index).is(ty<number>());
     });
-    tyst(result).is<void>();
+    ty(result).is(ty<void>());
 
     field.forEach((item) => {
-      tyst(item).is<Field.Ref<string | boolean, "detachable">>();
+      ty(item).is(ty<Field.Ref<string | boolean, "detachable">>());
     });
 
     field.forEach(() => {});
@@ -3502,14 +3219,14 @@ const brandedPrim = new Field({} as Branded<string>);
     const field = {} as Field.Ref<(string | boolean)[]>;
 
     const result = field.map((item, index) => {
-      tyst(item).is<Field.Ref<string | boolean, "detachable">>();
-      tyst(index).is<number>();
+      ty(item).is(ty<Field.Ref<string | boolean, "detachable">>());
+      ty(index).is(ty<number>());
       return true as const;
     });
-    tyst(result).is<true[]>();
+    ty(result).is(ty<true[]>());
 
     field.map((item) => {
-      tyst(item).is<Field.Ref<string | boolean, "detachable">>();
+      ty(item).is(ty<Field.Ref<string | boolean, "detachable">>());
     });
 
     field.map(() => {});
@@ -3839,14 +3556,14 @@ const brandedPrim = new Field({} as Branded<string>);
     const field = {} as Field.Ref<(string | boolean)[]>;
 
     const result = field.find((item, index) => {
-      tyst(item).is<Field.Ref<string | boolean, "detachable">>();
-      tyst(index).is<number>();
+      ty(item).is(ty<Field.Ref<string | boolean, "detachable">>());
+      ty(index).is(ty<number>());
       return true;
     });
-    tyst(result).is<Field.Ref<string | boolean, "detachable"> | undefined>();
+    ty(result).is(ty<Field.Ref<string | boolean, "detachable"> | undefined>());
 
     field.find((item) => {
-      tyst(item).is<Field.Ref<string | boolean, "detachable">>();
+      ty(item).is(ty<Field.Ref<string | boolean, "detachable">>());
     });
 
     field.find(() => {});
@@ -4183,14 +3900,14 @@ const brandedPrim = new Field({} as Branded<string>);
     const field = {} as Field.Ref<(string | boolean)[]>;
 
     const result = field.filter((item, index) => {
-      tyst(item).is<Field.Ref<string | boolean, "detachable">>();
-      tyst(index).is<number>();
+      ty(item).is(ty<Field.Ref<string | boolean, "detachable">>());
+      ty(index).is(ty<number>());
       return true;
     });
-    tyst(result).is<Field.Ref<string | boolean, "detachable">[]>();
+    ty(result).is(ty<Field.Ref<string | boolean, "detachable">[]>());
 
     field.filter((item) => {
-      tyst(item).is<Field.Ref<string | boolean, "detachable">>();
+      ty(item).is(ty<Field.Ref<string | boolean, "detachable">>());
     });
 
     field.filter(() => {});
@@ -5097,13 +4814,13 @@ const brandedPrim = new Field({} as Branded<string>);
   // Basic
   {
     const field = new Field("hello");
-    tyst(field.events).is<EventsTree<"field">>();
+    ty(field.events).is(ty<EventsTree<"field">>());
   }
 
   // Ref
   {
     const field = {} as Field.Ref<"hello">;
-    tyst(field.events).is.undefined();
+    ty(field.events).is.undefined();
   }
 }
 //#endregion
@@ -5119,7 +4836,7 @@ const brandedPrim = new Field({} as Branded<string>);
   // Ref
   {
     const field = {} as Field.Ref<"hello">;
-    tyst(field.trigger).is.undefined();
+    ty(field.trigger).is.undefined();
   }
 }
 //#endregion
@@ -5989,25 +5706,23 @@ const brandedPrim = new Field({} as Branded<string>);
     // #discriminate
     {
       const result = field.discriminate("type");
-      tyst(result).is<
-        | {
-            discriminator: "user";
-            field: Field.Ref<User>;
-          }
-        | {
-            discriminator: "organization";
-            field: Field.Ref<Organization>;
-          }
-      >();
+      ty(result).is(
+        ty<
+          | {
+              discriminator: "user";
+              field: Field.Ref<User>;
+            }
+          | {
+              discriminator: "organization";
+              field: Field.Ref<Organization>;
+            }
+        >(),
+      );
     }
 
     // #useDiscriminate
     {
-      field.useDiscriminate satisfies undefined;
-      // @ts-expect-error
-      field.useDiscriminate("type");
-      // @ts-expect-error
-      field.useDiscriminate?.("type");
+      ty(field.useDiscriminate).is.undefined();
     }
   }
 }
@@ -6549,10 +6264,10 @@ const brandedPrim = new Field({} as Branded<string>);
 //#region Field#optional
 {
   const field = {} as Field<Nested>;
-  tyst(field.$.settings).is<Field<Settings | undefined, "detachable">>();
-  tyst(field.$.settings.optional()).is<
-    Field.Optional<Settings, "detachable">
-  >();
+  ty(field.$.settings).is(ty<Field<Settings | undefined, "detachable">>());
+  ty(field.$.settings.optional()).is(
+    ty<Field.Optional<Settings, "detachable">>(),
+  );
 }
 //#endregion
 
@@ -6702,184 +6417,7 @@ const brandedPrim = new Field({} as Branded<string>);
 
 //#endregion
 
-//#region Tyst
-
-declare const tyst: Tyst;
-
-interface Tyst {
-  <Type>(value: Type): Tyst.Builder<Type>;
-
-  supertype: Tyst.Supertype;
-
-  exactly: Tyst.Exactly;
-}
-
-namespace Tyst {
-  export interface Builder<Type> {
-    is: Is<Type>;
-  }
-
-  export type Is<Supertype> = Expectation.Exactly<Supertype> & {
-    undefined: Expectation.Proper<Supertype, undefined>;
-  };
-
-  export interface Supertype {
-    <Type>(type: Type, callback: Supertype.Callback<Type>): void;
-
-    <Type>(callback: Supertype.Callback<Type>): void;
-  }
-
-  export namespace Supertype {
-    export interface Callback<Supertype> {
-      ($: $<Supertype>): void;
-    }
-
-    export interface $<Supertype> {
-      of(signature: Signature<Supertype>): void;
-
-      exact<Type extends Supertype>(): Signature<Type>;
-    }
-  }
-
-  export interface Exactly {
-    <Type>(): Signature<Type>;
-  }
-
-  export interface Signature<Type> {
-    (value: Type): Type;
-  }
-
-  export namespace Expectation {
-    export type Proper<Received, Expected> =
-      Utils.IsExtreme<Received> extends true
-        ? never
-        : [Received] extends [Expected]
-          ? Fn
-          : never;
-
-    export interface Exactly<Expected> {
-      <Received>(
-        ...args: Utils.Or<
-          Utils.IsAny<Expected>,
-          Utils.IsAny<Received>
-        > extends true
-          ? Utils.And<Utils.IsAny<Expected>, Utils.IsAny<Received>> extends true
-            ? []
-            : [Unexpected]
-          : Utils.Or<
-                Utils.IsNever<Expected>,
-                Utils.IsNever<Received>
-              > extends true
-            ? Utils.And<
-                Utils.IsNever<Expected>,
-                Utils.IsNever<Received>
-              > extends true
-              ? []
-              : [Unexpected]
-            : [Received, Expected] extends [Expected, Received]
-              ? []
-              : [Unexpected]
-      ): void;
-    }
-
-    type Unexpected = typeof unexpected;
-
-    declare const unexpected: unique symbol;
-
-    export interface Fn {
-      (): void;
-    }
-  }
-}
-
-// tyst
-{
-  // undefined
-  {
-    tyst(undefined).is<undefined>();
-    tyst({} as string | undefined).is<string | undefined>();
-
-    // @ts-expect-error
-    tyst({} as any).is<undefined>();
-    // @ts-expect-error
-    tyst({} as unknown).is<undefined>();
-    // @ts-expect-error
-    tyst({} as never).is<undefined>();
-    // @ts-expect-error
-    tyst({} as string).is<string | undefined>();
-  }
-
-  // any
-  {
-    tyst({} as any).is<any>();
-
-    // @ts-expect-error
-    tyst({} as unknown).is<any>();
-    // @ts-expect-error
-    tyst({} as never).is<any>();
-    // @ts-expect-error
-    tyst({} as string).is<any>();
-  }
-
-  // unknown
-  {
-    tyst({} as unknown).is<unknown>();
-
-    // @ts-expect-error
-    tyst({} as any).is<unknown>();
-    // @ts-expect-error
-    tyst({} as never).is<unknown>();
-    // @ts-expect-error
-    tyst({} as string).is<unknown>();
-  }
-
-  // never
-  {
-    tyst({} as never).is<never>();
-
-    // @ts-expect-error
-    tyst({} as any).is<never>();
-    // @ts-expect-error
-    tyst({} as unknown).is<never>();
-    // @ts-expect-error
-    tyst({} as string).is<never>();
-  }
-
-  // void
-  {
-    tyst(void 0 as void).is<void>();
-    tyst({} as string | void).is<string | void>();
-
-    // @ts-expect-error
-    tyst({} as any).is<void>();
-    // @ts-expect-error
-    tyst({} as unknown).is<void>();
-    // @ts-expect-error
-    tyst({} as never).is<void>();
-    // @ts-expect-error
-    tyst({} as string).is<string | void>();
-  }
-}
-
-// tyst.undefined
-{
-  tyst(undefined).is.undefined();
-
-  // @ts-expect-error
-  tyst({} as any).is.undefined();
-  // @ts-expect-error
-  tyst({} as unknown).is.undefined();
-  // @ts-expect-error
-  tyst({} as never).is.undefined();
-  // @ts-expect-error
-  tyst({} as string | undefined).undefined();
-}
-
-//#endregion
-
 //#region Helpers
-
-function tyst_<Type>(_arg: Type): void {}
 
 interface Hello {
   hello: string;
