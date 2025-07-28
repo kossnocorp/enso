@@ -52,7 +52,7 @@ export class Atom {
     // the events tree.
     this.#set(value);
 
-    this.eventsTree.add(this.path, this);
+    this.events.add(this.path, this);
 
     // const onInput = (event: Event) => {
     //   const target = event.target as HTMLInputElement | HTMLTextAreaElement;
@@ -76,7 +76,7 @@ export class Atom {
   }
 
   deconstruct() {
-    this.eventsTree.delete(this.path, this);
+    this.events.delete(this.path, this);
   }
 
   //#endregion
@@ -227,7 +227,7 @@ export class Atom {
       always(this.#parent && "field" in this.#parent);
       const prevPath = this.path;
       this.#parent.key = newKey;
-      this.eventsTree.move(prevPath, this.path, this);
+      this.events.move(prevPath, this.path, this);
       return this.trigger(fieldChange.key);
     },
 
@@ -367,7 +367,7 @@ export class Atom {
   #subs = new Set();
   #eventsTree;
 
-  get eventsTree() {
+  get events() {
     return (this.root.#eventsTree ??= new EventsTree());
   }
 
