@@ -71,11 +71,11 @@ export declare class Atom<
 
   set<NewValue extends ValueDef["write"]>(
     value: NewValue,
-  ): Atom.Assign.Result<Flavor, ValueDef, NewValue, Qualifier, Parent>;
+  ): Atom.Set.Result<Flavor, ValueDef, NewValue, Qualifier, Parent>;
 
   pave<NewValue extends Utils.NonNullish<ValueDef["write"]>>(
     value: NewValue,
-  ): Atom.Assign.Result<Flavor, ValueDef, NewValue, Qualifier, Parent>;
+  ): Atom.Pave.Result<Flavor, ValueDef, NewValue, Qualifier, Parent>;
 
   get lastChanges(): FieldChange;
 
@@ -619,11 +619,11 @@ export namespace Atom {
 
     set<NewValue extends ValueDef["write"]>(
       value: NewValue,
-    ): Assign.Result<Flavor, ValueDef, NewValue, Qualifier, Parent>;
+    ): Set.Result<Flavor, ValueDef, NewValue, Qualifier, Parent>;
 
     pave<NewValue extends Utils.NonNullish<ValueDef["write"]>>(
       value: NewValue,
-    ): Assign.Result<Flavor, ValueDef, NewValue, Qualifier, Parent>;
+    ): Pave.Result<Flavor, ValueDef, NewValue, Qualifier, Parent>;
 
     // NOTE: The purpose of this is to cause invariance and break compatibility
     // with subtypes.
@@ -1275,7 +1275,7 @@ export namespace Atom {
     }
   }
 
-  export namespace Assign {
+  export namespace Set {
     export type Result<
       Flavor extends Atom.Flavor.Constraint,
       ValueDef extends Atom.Def.Constraint,
@@ -1287,6 +1287,20 @@ export namespace Atom {
     export type Def<Value, NewValue extends Value> = Atom.Def<
       Value extends Value ? (NewValue extends Value ? Value : never) : never,
       Value
+    >;
+  }
+
+  export namespace Pave {
+    export type Result<
+      Flavor extends Atom.Flavor.Constraint,
+      ValueDef extends Atom.Def.Constraint,
+      SetValue extends ValueDef["write"],
+      Qualifier extends Atom.Qualifier.Constraint,
+      Parent extends Atom.Parent.Constraint<ValueDef>,
+    > = Envelop<Flavor, Def<ValueDef["write"], SetValue>, Qualifier, Parent>;
+
+    export type Def<Value, NewValue extends Value> = Atom.Def<
+      Value extends Value ? (NewValue extends Value ? Value : never) : never
     >;
   }
 

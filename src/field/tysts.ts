@@ -1084,6 +1084,25 @@ const unionField = new Field({ hello: "world", world: true }) as
       mixed.set(undefined);
     }
   }
+
+  // Generic
+  {
+    interface Document<Id extends string> {
+      id: Id;
+      title: string;
+      content: string;
+    }
+
+    const field = {} as Field<Document<any> | undefined>;
+    const result = field.set({} as Document<string>);
+    ty(result).is(
+      ty<
+        Field.Exact.Internal<
+          Atom.Def<Document<string>, Document<any> | undefined>
+        >
+      >(),
+    );
+  }
 }
 //#endregion
 
@@ -1094,12 +1113,7 @@ const unionField = new Field({ hello: "world", world: true }) as
     const field = new Field({} as Settings);
 
     const userResult = field.$.user.pave({ email: "user@example.com" });
-    userResult satisfies Field.Exact.Internal<
-      Field.Def<UserSettings, UserSettings | undefined>,
-      "detachable"
-    >;
-    // @ts-expect-error
-    userResult.any;
+    ty(userResult).is(ty<Field<UserSettings, "detachable">>());
 
     // @ts-expect-error
     field.$.user.pave({});
@@ -1111,10 +1125,7 @@ const unionField = new Field({ hello: "world", world: true }) as
     const securityResult = userResult.$.security.pave({
       public: true,
     });
-    securityResult satisfies Field.Exact.Internal<
-      Field.Def<SecuritySettings, SecuritySettings | undefined>,
-      "detachable"
-    >;
+    securityResult satisfies Field<SecuritySettings, "detachable">;
     // @ts-expect-error
     securityResult.any;
 
@@ -1137,12 +1148,8 @@ const unionField = new Field({ hello: "world", world: true }) as
     const field = {} as Field<GlobalSettings | LocalSettings | undefined>;
 
     const result = field.pave({ global: true });
-    result satisfies Field.Exact.Internal<
-      Field.Def<GlobalSettings, GlobalSettings | LocalSettings | undefined>
-    >;
-    // @ts-expect-error
-    result.any;
 
+    ty(result).is(ty<Field<GlobalSettings>>());
     result.$.global.set(false);
   }
 
