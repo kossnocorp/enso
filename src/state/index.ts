@@ -6,7 +6,7 @@ const hintSymbol = Symbol();
 
 export class State<
     Value,
-    Qualifier extends Atom.Qualifier.Constraint = Atom.Qualifier.Default,
+    in out Qualifier extends Atom.Qualifier.Constraint = Atom.Qualifier.Default,
     Parent extends Atom.Parent.Constraint<
       Atom.Def<Value>
     > = Atom.Parent.Default,
@@ -105,7 +105,7 @@ export namespace State {
 
   export interface Exact<
     Value,
-    Qualifier extends Atom.Qualifier.Constraint = Atom.Qualifier.Default,
+    in out Qualifier extends Atom.Qualifier.Constraint = Atom.Qualifier.Default,
     Parent extends Atom.Parent.Constraint<
       Atom.Def<Value>
     > = Atom.Parent.Default,
@@ -114,7 +114,8 @@ export namespace State {
   export namespace Exact {
     export interface Internal<
       ValueDef extends Atom.Def.Constraint,
-      Qualifier extends Atom.Qualifier.Constraint = Atom.Qualifier.Default,
+      in out Qualifier extends
+        Atom.Qualifier.Constraint = Atom.Qualifier.Default,
       Parent extends Atom.Parent.Constraint<ValueDef> = Atom.Parent.Default,
     > extends Hint,
         Atom.Exact<"state" | "exact", ValueDef, Qualifier, Parent> {}
@@ -125,8 +126,8 @@ export namespace State {
   //#region Base
 
   export interface Base<
-    Value,
-    Qualifier extends Atom.Qualifier.Constraint = Atom.Qualifier.Default,
+    /*out*/ Value,
+    in out Qualifier extends Atom.Qualifier.Constraint = Atom.Qualifier.Default,
     Parent extends Atom.Parent.Constraint<
       Atom.Def<Value>
     > = Atom.Parent.Default,
@@ -147,7 +148,7 @@ export namespace State {
 
   export interface Optional<
     Value,
-    Qualifier extends Atom.Qualifier.Constraint = Atom.Qualifier.Default,
+    in out Qualifier extends Atom.Qualifier.Constraint = Atom.Qualifier.Default,
     Parent extends Atom.Parent.Constraint<
       Atom.Def<Value>
     > = Atom.Parent.Default,
@@ -156,8 +157,8 @@ export namespace State {
   export namespace Optional {
     export interface Internal<
       ValueDef extends Atom.Def.Constraint,
-      Qualifier extends Atom.Qualifier.Constraint = Atom.Qualifier.Default,
-      Parent extends Atom.Parent.Constraint<ValueDef> = Atom.Parent.Default,
+      Qualifier extends Atom.Qualifier.Constraint,
+      Parent extends Atom.Parent.Constraint<ValueDef>,
     > extends Hint,
         Atom.Base<"state" | "optional", ValueDef, Qualifier, Parent> {}
   }
@@ -168,7 +169,7 @@ export namespace State {
 
   export interface Immutable<
     Value,
-    Qualifier extends Atom.Qualifier.Constraint = Atom.Qualifier.Default,
+    in out Qualifier extends Atom.Qualifier.Constraint = Atom.Qualifier.Default,
     Parent extends Atom.Parent.Constraint<
       Atom.Def<Value>
     > = Atom.Parent.Default,
@@ -177,7 +178,8 @@ export namespace State {
   export namespace Immutable {
     export interface Internal<
       ValueDef extends Atom.Def.Constraint,
-      Qualifier extends Atom.Qualifier.Constraint = Atom.Qualifier.Default,
+      in out Qualifier extends
+        Atom.Qualifier.Constraint = Atom.Qualifier.Default,
       Parent extends Atom.Parent.Constraint<ValueDef> = Atom.Parent.Default,
     > extends Hint,
         Atom.Immutable<"state" | "immutable", ValueDef, Qualifier, Parent> {}
@@ -189,7 +191,9 @@ export namespace State {
 
   export namespace Value {
     export namespace Use {
-      export type Props = {};
+      export interface Props extends Meta.Props {
+        meta?: boolean | undefined;
+      }
 
       export type IncludeMeta<Props extends Use.Props | undefined> = false;
     }
