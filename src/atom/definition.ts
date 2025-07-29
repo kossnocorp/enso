@@ -45,7 +45,7 @@ export declare class Atom<
 
   [AtomPrivate.immutablePhantom]: Atom.Immutable.Phantom<Flavor, ValueDef>;
 
-  [AtomPrivate.qualifierPhantom](): Atom.Qualifier.Map<Qualifier>;
+  [AtomPrivate.qualifierPhantom]: Atom.Qualifier.Map<Qualifier>;
 
   [AtomPrivate.valuePhantom]: Atom.Value.Phantom<ValueDef>;
 
@@ -405,26 +405,28 @@ export namespace Atom {
       : false;
 
     export type Map<Qualifier extends Atom.Qualifier.Constraint> =
-      Utils.NeverDefault<
+      Utils.Transparent<
         MapChunkBasic<Qualifier, "root"> &
           MapChunkBasic<Qualifier, "detachable"> &
           MapChunkBasic<Qualifier, "tried"> &
           MapChunkBasic<Qualifier, "bound"> &
           MapChunkBasic<Qualifier, "ref"> &
-          MapChunkProxy<Qualifier>,
-        {}
+          MapChunkProxy<Qualifier>
       >;
 
     export type MapChunkBasic<
-      // WIP: Try to make it reusable this inside Ref
       Qualifier extends Atom.Qualifier.Constraint,
       TestQualifier extends keyof any,
     > = TestQualifier extends Qualifier ? { [Key in TestQualifier]: true } : {};
 
     export type MapChunkProxy<Qualifier extends Atom.Qualifier.Constraint> =
-      Qualifier extends Proxy.Qualifier<infer SourceValue>
-        ? { proxy: SourceValue }
-        : {};
+      Extract<Qualifier, Proxy.Qualifier<any>> extends infer ProxyQualifier
+        ? Utils.IsNever<ProxyQualifier> extends true
+          ? {}
+          : ProxyQualifier extends Proxy.Qualifier<infer SourceValue>
+            ? { proxy: SourceValue }
+            : {}
+        : never;
 
     export namespace Ref {
       export type DisableFor<
@@ -825,7 +827,7 @@ export namespace Atom {
     // them.
     [AtomPrivate.immutablePhantom]: Immutable.Phantom<Flavor, ValueDef>;
 
-    [AtomPrivate.qualifierPhantom](): Atom.Qualifier.Map<Qualifier>;
+    [AtomPrivate.qualifierPhantom]: Atom.Qualifier.Map<Qualifier>;
 
     [AtomPrivate.parentPhantom]: Parent.Phantom<ValueDef, Parent>;
 

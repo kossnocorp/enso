@@ -4,6 +4,7 @@ import type { DetachedValue } from "../detached/index.ts";
 import { EventsTree } from "../events/index.ts";
 import { State } from "../state/index.ts";
 import { Field } from "./definition.ts";
+import { Atom } from "../atom/definition.ts";
 
 const unionValue = new Field<Hello | Blah>({ hello: "world", world: true });
 const unionField = new Field({ hello: "world", world: true }) as
@@ -480,6 +481,19 @@ const unionField = new Field({ hello: "world", world: true }) as
       // @ts-expect-error
       _account = ({} as Field<User>).shared<AccountTuple>();
     }
+  }
+
+  // Interfaces
+  {
+    ty<Field<Entity>>()
+      .is(ty.assignableFrom<Field<Entity>>())
+      .is(ty.assignableFrom<Field<Entity, "detachable">>())
+      .is(ty.assignableFrom<Field.Exact<Entity, "detachable">>())
+      .is(
+        ty.assignableFrom<
+          Field.Exact.Internal<Atom.Def<Entity>, "detachable">
+        >(),
+      );
   }
 }
 //#endregion
