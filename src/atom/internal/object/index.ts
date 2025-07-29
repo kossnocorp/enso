@@ -27,7 +27,7 @@ export class AtomValueObject<
       if (!(key in newValue)) {
         this.#children.delete(key);
         child[externalSymbol].clear();
-        this.#undefined.register(key, child);
+        (this.#undefined as any).register(key, child);
         changes |= change.child.detach;
       }
     });
@@ -128,7 +128,7 @@ export class AtomValueObject<
       child.unwatch();
       changes |= change.child.detach;
 
-      this.#undefined.register(key, child);
+      (this.#undefined as any).register(key, child);
     }
 
     return changes;

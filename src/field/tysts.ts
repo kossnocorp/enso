@@ -3,7 +3,7 @@ import { change, type ChangesEvent } from "../change/index.ts";
 import type { DetachedValue } from "../detached/index.ts";
 import { EventsTree } from "../events/index.ts";
 import { State } from "../state/index.ts";
-import { Field } from "./index.js";
+import { Field } from "./definition.ts";
 
 const unionValue = new Field<Hello | Blah>({ hello: "world", world: true });
 const unionField = new Field({ hello: "world", world: true }) as

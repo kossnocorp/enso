@@ -1,4 +1,4 @@
-import { Atom } from "../atom/index.js";
+import { Atom } from "../atom/definition.ts";
 import { Field } from "../field/definition.ts";
 import { Enso } from "../types.ts";
 

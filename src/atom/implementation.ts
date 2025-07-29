@@ -11,14 +11,15 @@ import {
   structuralChanges,
 } from "../change/index.ts";
 // import { detachedValue } from "../detached/index.ts";
-import { detachedValue } from "../detached/index.ts";
+import { DetachedValue, detachedValue } from "../detached/index.ts";
 import { EventsTree } from "../events/index.ts";
 import { useAtomHook } from "./hooks/index.ts";
 import { externalSymbol } from "./internal/base/index.ts";
 import { detectInternalConstructor } from "./internal/index.ts";
 import { AtomValuePrimitive } from "./internal/opaque/index.ts";
+import type { Atom } from "./definition.ts";
 
-export class Atom<Value> {
+export class AtomImpl<Value> {
   //#region Static
 
   /**
@@ -41,11 +42,15 @@ export class Atom<Value> {
     return atom;
   }
 
+  static create<Value>(value: Value, parent?: Atom.Parent.Bare.Ref<any, any>) {
+    return new AtomImpl(value, parent);
+  }
+
   //#endregion
 
   //#region Instance
 
-  constructor(value, parent) {
+  constructor(value: Value, parent?: Atom.Parent.Bare.Ref<any, any>) {
     this.#initial = value;
     this.#parent = parent;
 
@@ -104,10 +109,10 @@ export class Atom<Value> {
     return this.#cachedGet;
   }
 
-  useValue(props) {
+  useValue(props: any) {
     const watchAllMeta = !!props?.meta;
     const watchMeta = watchAllMeta || props?.valid || props?.dirty;
-    const meta = this.useMeta(
+    const meta = (this as any).useMeta(
       watchAllMeta
         ? undefined
         : {
@@ -126,8 +131,8 @@ export class Atom<Value> {
     );
 
     const watch = useCallback(
-      ({ valueRef, rerender }) =>
-        this.watch((payload, event) => {
+      ({ valueRef, rerender }: any) =>
+        this.watch((payload: any, event: any) => {
           // React only on structural changes
           if (!structuralChanges(event.changes)) return;
 
@@ -141,7 +146,7 @@ export class Atom<Value> {
     );
 
     const toResult = useCallback(
-      (result) => (watchMeta ? [result, meta] : result),
+      (result: any) => (watchMeta ? [result, meta] : result),
       [meta, watchMeta],
     );
 
@@ -150,18 +155,18 @@ export class Atom<Value> {
       getValue,
       watch,
       toResult,
-    });
+    } as any);
   }
 
-  set(value, notifyParents = true) {
+  set(value: any, notifyParents = true) {
     const changes = this.#set(value);
     if (changes) this.trigger(changes, notifyParents);
 
-    Atom.lastChanges.set(this, changes);
+    AtomImpl.lastChanges.set(this, changes);
     return this;
   }
 
-  #set(value) {
+  #set(value: any) {
     // Frozen fields should not change!
     if (Object.isFrozen(this)) return 0n;
 
@@ -193,30 +198,30 @@ export class Atom<Value> {
   static lastChanges = new WeakMap();
 
   get lastChanges() {
-    return Atom.lastChanges.get(this) || 0n;
+    return AtomImpl.lastChanges.get(this) || 0n;
   }
 
   //#endregion
 
   //#region Type
 
-  internal = new AtomValuePrimitive(this, detachedValue);
+  internal: any = new AtomValuePrimitive(this, detachedValue);
 
   get _() {
     return {};
   }
 
-  remove(key) {
+  remove(key: any) {
     return this.internal.remove(key);
   }
 
-  self = {
+  self: any = {
     remove: () => {
       return this.set(detachedValue, true);
     },
   };
 
-  forEach(callback) {
+  forEach(callback: any) {
     this.internal.forEach(callback);
   }
 
@@ -265,7 +270,7 @@ export class Atom<Value> {
     // // );
   }
 
-  try(key) {
+  try(key: any) {
     return this.internal.try(key);
   }
 
@@ -278,10 +283,10 @@ export class Atom<Value> {
   }
 
   get name() {
-    return Atom.name(this.path);
+    return AtomImpl.name(this.path);
   }
 
-  static name(path) {
+  static name(path: any) {
     return path.join(".") || ".";
   }
 
@@ -289,18 +294,18 @@ export class Atom<Value> {
 
   //#region Events
 
-  #withholded;
+  #withholded: any;
 
   #batchTarget = new EventTarget();
   #syncTarget = new EventTarget();
   #subs = new Set();
-  #eventsTree;
+  #eventsTree: any;
 
   get events() {
     return (this.root.#eventsTree ??= new EventsTree());
   }
 
-  trigger(changes, notifyParents = false) {
+  trigger(changes: any, notifyParents = false) {
     this.#clearCache();
 
     if (this.#withholded) {
@@ -335,7 +340,7 @@ export class Atom<Value> {
       this.#parent.field.#childTrigger(changes, this.#parent.key);
   }
 
-  #childTrigger(childChanges, key) {
+  #childTrigger(childChanges: any, key: any) {
     let changes =
       // Shift child's field changes into child/subtree range
       shiftChildChanges(childChanges) |
@@ -348,10 +353,10 @@ export class Atom<Value> {
     this.trigger(changes, true);
   }
 
-  watch(callback, sync = false) {
+  watch(callback: any, sync = false) {
     // TODO: Add tests for this
     const target = sync ? this.#syncTarget : this.#batchTarget;
-    const handler = (event) => {
+    const handler = (event: any) => {
       callback(this.value, event);
     };
 
@@ -366,7 +371,7 @@ export class Atom<Value> {
 
   unwatch() {
     // TODO: Add tests for this
-    this.#subs.forEach((sub) => {
+    this.#subs.forEach((sub: any) => {
       this.#batchTarget.removeEventListener("change", sub);
       this.#syncTarget.removeEventListener("change", sub);
     });
@@ -378,19 +383,19 @@ export class Atom<Value> {
 
   //#region Transform
 
-  into(intoMapper) {
+  into(intoMapper: any) {
     return {
-      from: (fromMapper) =>
-        this.constructor.proxy(this, intoMapper, fromMapper),
+      from: (fromMapper: any) =>
+        (this.constructor as any).proxy(this, intoMapper, fromMapper),
     };
   }
 
   // TODO: Add tests
-  useInto(intoMapper, intoDeps) {
+  useInto(intoMapper: any, intoDeps: React.DependencyList) {
     const from = useCallback(
-      (fromMapper, fromDeps) => {
+      (fromMapper: any, fromDeps: React.DependencyList) => {
         const computed = useMemo(
-          () => this.constructor.proxy(this, intoMapper, fromMapper),
+          () => (this.constructor as any).proxy(this, intoMapper, fromMapper),
           // eslint-disable-next-line react-hooks/exhaustive-deps -- We control `intoMapper` and `fromMapper` via `intoDeps` and `fromDeps`.
           [this, ...intoDeps, ...fromDeps],
         );
@@ -408,15 +413,15 @@ export class Atom<Value> {
   //#region External
 
   #external = {
-    move: (newKey) => {
+    move: (newKey: any) => {
       always(this.#parent && "field" in this.#parent);
       const prevPath = this.path;
-      this.#parent.key = newKey;
+      (this.#parent as any).key = newKey;
       this.events.move(prevPath, this.path, this);
       return this.trigger(fieldChange.key);
     },
 
-    create: (value) => {
+    create: (value: any) => {
       const changes = this.#set(value) | change.field.attach;
       this.trigger(changes, false);
       return changes;
@@ -435,8 +440,8 @@ export class Atom<Value> {
 
   //#region Cache
 
-  #cachedGet = detachedValue;
-  #cachedDirty;
+  #cachedGet: Value | DetachedValue | undefined = detachedValue;
+  #cachedDirty: any;
 
   #clearCache() {
     this.#cachedGet = detachedValue;

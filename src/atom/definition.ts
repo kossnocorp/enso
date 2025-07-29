@@ -2,7 +2,7 @@ import { DependencyList } from "react";
 import { ChangesEvent, FieldChange } from "../change/index.ts";
 import { DetachedValue } from "../detached/index.ts";
 import { EventsTree } from "../events/index.ts";
-import { Field } from "../field/definition.ts";
+import type { Field } from "../field/definition.ts";
 import type { State } from "../state/index.ts";
 import type { Enso } from "../types.ts";
 import type { EnsoUtils as Utils } from "../utils.ts";
@@ -498,10 +498,7 @@ export namespace Atom {
       Value,
       Key extends keyof Value,
       Qualifier extends Atom.Qualifier.Constraint,
-    > {
-      field: Envelop<Kind, Value, Qualifier>;
-      key: Key;
-    }
+    > extends Bare.Direct<Envelop<Kind, Value, Qualifier>, Key> {}
 
     export interface Interface<ParentValue, Key extends keyof ParentValue> {
       value: ParentValue;
@@ -512,8 +509,19 @@ export namespace Atom {
       Kind extends Atom.Flavor.Kind,
       Value,
       Qualifier extends Qualifier.Constraint,
-    > {
-      source: Envelop<Kind, Value, Qualifier>;
+    > extends Bare.Source<Envelop<Kind, Value, Qualifier>> {}
+
+    export namespace Bare {
+      export type Ref<AtomType, Key> = Direct<AtomType, Key> | Source<AtomType>;
+
+      export interface Direct<AtomType, Key> {
+        field: AtomType;
+        key: Key;
+      }
+
+      export interface Source<AtomType> {
+        source: AtomType;
+      }
     }
   }
 

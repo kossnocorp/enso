@@ -1,5 +1,5 @@
 import { EnsoUtils as Utils } from "../utils.ts";
-import { Atom } from "./index.js";
+import { Atom } from "./definition.ts";
 import { ty } from "tysts";
 
 //#region Static

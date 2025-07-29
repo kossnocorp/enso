@@ -3,7 +3,7 @@ import type { Atom } from "../../definition.ts";
 export const externalSymbol = Symbol();
 
 export abstract class AtomValue<Kind extends Atom.Flavor.Kind, Value> {
-  constructor(atom: Atom.Envelop<Kind, Atom.Def<Value>>, _value: Value) {
+  constructor(atom: any, _value: Value) {
     this.#external = atom;
   }
 
@@ -40,7 +40,6 @@ export abstract class AtomValue<Kind extends Atom.Flavor.Kind, Value> {
   // @ts-expect-error
   discriminate(discriminator) {
     return {
-      // @ts-expect-error
       discriminator: this.external.$?.[discriminator]?.value,
       field: this.external,
     };
@@ -48,7 +47,6 @@ export abstract class AtomValue<Kind extends Atom.Flavor.Kind, Value> {
 
   // @ts-expect-error
   create(value, parent) {
-    // @ts-expect-error
     return this.#external.constructor.create(value, parent);
   }
 
