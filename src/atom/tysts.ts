@@ -304,34 +304,50 @@ import { ty } from "tysts";
 {
   // Basic
   {
-    tyst<Atom.Qualifier.Map<Atom.Qualifier.Default>>(
-      {} as Atom.Qualifier.Map<"bound">,
-    );
-    tyst<Atom.Qualifier.Map<"bound">>(
-      // @ts-expect-error
-      {} as Atom.Qualifier.Map<Atom.Qualifier.Default>,
-    );
+    ty<Atom.Qualifier.Map<Atom.Qualifier.Default>>()
+      .is(ty.assignableFrom<Atom.Qualifier.Map<Atom.Qualifier.Default>>())
+      .is(ty.assignableFrom<Atom.Qualifier.Map<"bound">>())
+      .is(ty.assignableFrom<Atom.Qualifier.Map<"bound" | "detachable">>());
+
+    ty<Atom.Qualifier.Map<"bound">>()
+      .is(ty.assignableFrom<Atom.Qualifier.Map<"bound" | "detachable">>())
+      .is.not(ty.assignableFrom<Atom.Qualifier.Map<Atom.Qualifier.Default>>())
+      .is.not(ty.assignableFrom<Atom.Qualifier.Map<"detachable">>());
   }
 
   // Proxied
   {
-    tyst<Atom.Qualifier.Map<Atom.Qualifier.Default>>(
-      {} as Atom.Qualifier.Map<Atom.Proxy.Qualifier<string>>,
-    );
-    tyst<Atom.Qualifier.Map<Atom.Proxy.Qualifier<string>>>(
-      {} as Atom.Qualifier.Map<Atom.Proxy.Qualifier<any>>,
-    );
-    tyst<Atom.Qualifier.Map<Atom.Proxy.Qualifier<any>>>(
-      {} as Atom.Qualifier.Map<Atom.Proxy.Qualifier<unknown>>,
-    );
-    tyst<Atom.Qualifier.Map<Atom.Proxy.Qualifier<string>>>(
-      // @ts-expect-error
-      {} as Atom.Qualifier.Map<Atom.Proxy.Qualifier<number>>,
-    );
-    tyst<Atom.Qualifier.Map<Atom.Proxy.Qualifier<any> | "bound">>(
-      // @ts-expect-error
-      {} as Atom.Qualifier.Map<Atom.Proxy.Qualifier<string>>,
-    );
+    ty<Atom.Qualifier.Map<Atom.Qualifier.Default>>()
+      .is(ty.assignableFrom<Atom.Qualifier.Map<Atom.Proxy.Qualifier<string>>>())
+      .is(
+        ty.assignableFrom<
+          Atom.Qualifier.Map<Atom.Proxy.Qualifier<string> | "bound">
+        >(),
+      );
+
+    ty<Atom.Qualifier.Map<Atom.Proxy.Qualifier<string>>>()
+      .is(
+        ty.assignableFrom<
+          Atom.Qualifier.Map<Atom.Proxy.Qualifier<string> | "bound">
+        >(),
+      )
+      .is.not(
+        ty.assignableFrom<Atom.Qualifier.Map<Atom.Proxy.Qualifier<number>>>(),
+      )
+      .is.not(ty.assignableFrom<Atom.Qualifier.Map<"bound">>());
+
+    ty<Atom.Qualifier.Map<Atom.Proxy.Qualifier<string> | "detachable">>()
+      .is(
+        ty.assignableFrom<
+          Atom.Qualifier.Map<
+            Atom.Proxy.Qualifier<string> | "detachable" | "bound"
+          >
+        >(),
+      )
+      .is.not(
+        ty.assignableFrom<Atom.Qualifier.Map<Atom.Proxy.Qualifier<string>>>(),
+      )
+      .is.not(ty.assignableFrom<Atom.Qualifier.Map<"detachable">>());
   }
 }
 //#endregion
