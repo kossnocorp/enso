@@ -65,13 +65,17 @@ export declare class Atom<
 
   useValue: Atom.Value.Use.Prop<Flavor, ValueDef, Qualifier>;
 
-  compute: Atom.Compute.Prop<ValueDef>;
+  compute<Result>(callback: Atom.Compute.Callback<ValueDef, Result>): Result;
 
   useCompute: Atom.Compute.Use.Prop<ValueDef, Qualifier>;
 
-  set: Atom.Set.Prop<Flavor, ValueDef, Qualifier, Parent>;
+  set<NewValue extends ValueDef["write"]>(
+    value: NewValue,
+  ): Atom.Assign.Result<Flavor, ValueDef, NewValue, Qualifier, Parent>;
 
-  pave: Atom.Pave.Prop<Flavor, ValueDef, Qualifier, Parent>;
+  pave<NewValue extends Utils.NonNullish<ValueDef["write"]>>(
+    value: NewValue,
+  ): Atom.Assign.Result<Flavor, ValueDef, NewValue, Qualifier, Parent>;
 
   get lastChanges(): FieldChange;
 
@@ -613,9 +617,13 @@ export namespace Atom {
   > extends Immutable<Flavor, ValueDef, Qualifier, Parent> {
     //#region Value
 
-    set: Set.Prop<Flavor, ValueDef, Qualifier, Parent>;
+    set<NewValue extends ValueDef["write"]>(
+      value: NewValue,
+    ): Assign.Result<Flavor, ValueDef, NewValue, Qualifier, Parent>;
 
-    pave: Pave.Prop<Flavor, ValueDef, Qualifier, Parent>;
+    pave<NewValue extends Utils.NonNullish<ValueDef["write"]>>(
+      value: NewValue,
+    ): Assign.Result<Flavor, ValueDef, NewValue, Qualifier, Parent>;
 
     // NOTE: The purpose of this is to cause invariance and break compatibility
     // with subtypes.
@@ -847,7 +855,7 @@ export namespace Atom {
 
     useValue: Atom.Value.Use.Prop<Flavor, ValueDef, Qualifier>;
 
-    compute: Compute.Prop<ValueDef>;
+    compute<Result>(callback: Compute.Callback<ValueDef, Result>): Result;
 
     useCompute: Compute.Use.Prop<ValueDef, Qualifier>;
 
@@ -1267,45 +1275,19 @@ export namespace Atom {
     }
   }
 
-  export namespace Set {
-    export interface Prop<
+  export namespace Assign {
+    export type Result<
       Flavor extends Atom.Flavor.Constraint,
       ValueDef extends Atom.Def.Constraint,
+      SetValue extends ValueDef["write"],
       Qualifier extends Atom.Qualifier.Constraint,
       Parent extends Atom.Parent.Constraint<ValueDef>,
-    > {
-      <SetValue extends ValueDef["write"]>(
-        value: SetValue,
-      ): Envelop<
-        Flavor,
-        Set.Def<ValueDef["write"], SetValue>,
-        Qualifier,
-        Parent
-      >;
-    }
+    > = Envelop<Flavor, Def<ValueDef["write"], SetValue>, Qualifier, Parent>;
 
-    export type Def<Value, SetValue extends Value> = Atom.Def<
-      Value extends Value ? (SetValue extends Value ? Value : never) : never,
+    export type Def<Value, NewValue extends Value> = Atom.Def<
+      Value extends Value ? (NewValue extends Value ? Value : never) : never,
       Value
     >;
-  }
-
-  export namespace Pave {
-    export interface Prop<
-      Flavor extends Atom.Flavor.Constraint,
-      ValueDef extends Atom.Def.Constraint,
-      Qualifier extends Atom.Qualifier.Constraint,
-      Parent extends Atom.Parent.Constraint<ValueDef>,
-    > {
-      <PavedValue extends Utils.NonNullish<ValueDef["write"]>>(
-        value: PavedValue,
-      ): Envelop<
-        Flavor,
-        Set.Def<ValueDef["write"], PavedValue>,
-        Qualifier,
-        Parent
-      >;
-    }
   }
 
   //#endregion
@@ -2107,10 +2089,6 @@ export namespace Atom {
   //#region Compute
 
   export namespace Compute {
-    export interface Prop<ValueDef extends Def.Constraint> {
-      <Result>(callback: Callback<ValueDef, Result>): Result;
-    }
-
     export interface Callback<ValueDef extends Def.Constraint, Result> {
       (value: ValueDef["read"]): Result;
     }
