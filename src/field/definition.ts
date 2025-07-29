@@ -98,8 +98,6 @@ export declare class Field<
 
   //#region Value
 
-  // useValue: Field.Value.Use.Prop<Atom.Def<Value>, Qualifier>;
-
   get dirty(): boolean;
 
   useDirty: Field.Dirty.Use.Prop<Qualifier>;
@@ -165,8 +163,6 @@ export namespace Field {
 
   //#region Interface
 
-  export type Overrides = never; // "useValue"
-
   //#region Exact
 
   export interface Exact<
@@ -183,10 +179,7 @@ export namespace Field {
       Qualifier extends Atom.Qualifier.Constraint = Atom.Qualifier.Default,
       Parent extends Atom.Parent.Constraint<ValueDef> = Atom.Parent.Default,
     > extends Ish.Value.Write<Qualifier>,
-        Omit<
-          Atom.Exact<"field" | "exact", ValueDef, Qualifier, Parent>,
-          Overrides
-        >,
+        Atom.Exact<"field" | "exact", ValueDef, Qualifier, Parent>,
         Immutable.Interface<"exact", ValueDef, Qualifier, Parent> {}
 
     export interface Interface<
@@ -197,10 +190,7 @@ export namespace Field {
         Atom.Def<Value>
       > = Atom.Parent.Default,
     > extends Ish.Value.Write<Qualifier>,
-        Omit<
-          Atom.Exact<"field" | Variant, Atom.Def<Value>, Qualifier, Parent>,
-          Overrides
-        >,
+        Atom.Exact<"field" | Variant, Atom.Def<Value>, Qualifier, Parent>,
         Immutable.Interface<Variant, Atom.Def<Value>, Qualifier, Parent> {}
   }
 
@@ -314,10 +304,7 @@ export namespace Field {
       Parent extends Atom.Parent.Constraint<ValueDef> = Atom.Parent.Default,
     > extends Ish.Value.Read<ValueDef, Qualifier>,
         Ish.Validation<ValueDef, Qualifier>,
-        Omit<
-          Atom.Immutable<"field" | Variant, ValueDef, Qualifier, Parent>,
-          Overrides
-        > {
+        Atom.Immutable<"field" | Variant, ValueDef, Qualifier, Parent> {
       [hintSymbol]: true;
 
       control<Element extends HTMLElement>(
@@ -423,8 +410,6 @@ export namespace Field {
         ValueDef extends Atom.Def.Constraint,
         Qualifier extends Atom.Qualifier.Constraint,
       > {
-        // useValue: Field.Value.Use.Prop<ValueDef, Qualifier>;
-
         initial: Atom.Value.Prop<ValueDef>;
 
         dirty: boolean;
@@ -472,28 +457,6 @@ export namespace Field {
 
   export namespace Value {
     export namespace Use {
-      export type Prop<
-        ValueDef extends Atom.Def.Constraint,
-        Qualifier extends Atom.Qualifier.Constraint,
-      > = Atom.Qualifier.Ref.DisableFor<Qualifier, Fn<ValueDef>>;
-
-      export interface Fn<ValueDef extends Atom.Def.Constraint> {
-        <Props extends Use.Props | undefined = undefined>(
-          props?: Props,
-        ): Use.Result<ValueDef, Props>;
-      }
-
-      export type Result<
-        ValueDef extends Atom.Def.Constraint,
-        Props extends Use.Props | undefined,
-      > =
-        IncludeMeta<Props> extends true
-          ? [
-              Atom.Value.Use.Result<ValueDef>,
-              Props extends { meta: true } ? Meta<undefined> : Meta<Props>,
-            ]
-          : Atom.Value.Use.Result<ValueDef>;
-
       export type IncludeMeta<Props extends Use.Props | undefined> =
         undefined extends Props
           ? false

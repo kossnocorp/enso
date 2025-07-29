@@ -63,7 +63,7 @@ export declare class Atom<
 
   get value(): Atom.Value.Prop<ValueDef>;
 
-  useValue: Atom.Value.Use.Prop<ValueDef, Qualifier>;
+  useValue: Atom.Value.Use.Prop<Flavor, ValueDef, Qualifier>;
 
   compute: Atom.Compute.Prop<ValueDef>;
 
@@ -843,7 +843,7 @@ export namespace Atom {
 
     value: Atom.Value.Prop<ValueDef>;
 
-    useValue: Atom.Value.Use.Prop<ValueDef, Qualifier>;
+    useValue: Atom.Value.Use.Prop<Flavor, ValueDef, Qualifier>;
 
     compute: Compute.Prop<ValueDef>;
 
@@ -1220,17 +1220,48 @@ export namespace Atom {
 
     export namespace Use {
       export type Prop<
+        Flavor extends Atom.Flavor.Constraint,
         ValueDef extends Def.Constraint,
         Qualifier extends Atom.Qualifier.Constraint,
-      > = Qualifier.Ref.DisableFor<Qualifier, Fn<ValueDef>>;
+      > = Qualifier.Ref.DisableFor<Qualifier, Fn<Flavor, ValueDef>>;
 
-      export interface Fn<ValueDef extends Def.Constraint> {
-        (): Result<ValueDef>;
+      export interface Fn<
+        Flavor extends Atom.Flavor.Constraint,
+        ValueDef extends Def.Constraint,
+      > {
+        <Props extends Use.Props<Flavor> | undefined = undefined>(
+          props?: Props,
+        ): Result<Flavor, ValueDef, Props>;
       }
 
-      export type Result<ValueDef extends Def.Constraint> = Opaque<
-        ValueDef["read"]
-      >;
+      export type Result<
+        Flavor extends Atom.Flavor.Constraint,
+        ValueDef extends Def.Constraint,
+        Props extends Use.Props<Flavor> | undefined,
+      > =
+        IncludeMeta<Flavor, Props> extends true
+          ? [
+              Props extends { meta: true }
+                ? Meta<Flavor, undefined>
+                : Meta<Flavor, Props>,
+            ]
+          : Opaque<ValueDef["read"]>;
+
+      export type Props<Flavor extends Atom.Flavor.Constraint> =
+        "state" extends Flavor
+          ? State.Value.Use.Props
+          : "field" extends Flavor
+            ? Field.Value.Use.Props
+            : never;
+
+      export type IncludeMeta<
+        Flavor extends Atom.Flavor.Constraint,
+        Props extends Use.Props<Flavor> | undefined,
+      > = "state" extends Flavor
+        ? State.Value.Use.IncludeMeta<Props>
+        : "field" extends Flavor
+          ? Field.Value.Use.IncludeMeta<Props>
+          : never;
     }
   }
 
@@ -1276,6 +1307,26 @@ export namespace Atom {
   }
 
   //#endregion
+
+  //#region Meta
+
+  export type Meta<
+    Flavor extends Atom.Flavor.Constraint,
+    Props extends Meta.Props<Flavor> | undefined,
+  > = "state" extends Flavor
+    ? State.Meta<Props>
+    : "field" extends Flavor
+      ? Field.Meta<Props>
+      : never;
+
+  export namespace Meta {
+    export type Props<Flavor extends Atom.Flavor.Constraint> =
+      "state" extends Flavor
+        ? State.Meta.Props
+        : "field" extends Flavor
+          ? Field.Meta.Props
+          : never;
+  }
 
   //#region Type
 

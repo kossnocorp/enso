@@ -185,6 +185,26 @@ export namespace State {
 
   //#endregion
 
+  //#region Value
+
+  export namespace Value {
+    export namespace Use {
+      export type Props = {};
+
+      export type IncludeMeta<Props extends Use.Props | undefined> = false;
+    }
+  }
+
+  //#endregion
+
+  //#region Meta
+
+  export interface Meta<Props extends Meta.Props | undefined> {}
+
+  export namespace Meta {
+    export interface Props {}
+  }
+
   export interface Hint {
     [hintSymbol]: true;
   }
