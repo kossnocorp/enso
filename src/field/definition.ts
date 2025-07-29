@@ -6,7 +6,7 @@ const hintSymbol = Symbol();
 
 export declare class Field<
     Value,
-    Qualifier extends Atom.Qualifier.Constraint = Atom.Qualifier.Default,
+    in out Qualifier extends Atom.Qualifier.Constraint = Atom.Qualifier.Default,
     Parent extends Atom.Parent.Constraint<
       Atom.Def<Value>
     > = Atom.Parent.Default,
@@ -167,7 +167,7 @@ export namespace Field {
 
   export interface Exact<
     Value,
-    Qualifier extends Atom.Qualifier.Constraint = Atom.Qualifier.Default,
+    in out Qualifier extends Atom.Qualifier.Constraint = Atom.Qualifier.Default,
     Parent extends Atom.Parent.Constraint<
       Atom.Def<Value>
     > = Atom.Parent.Default,
@@ -176,7 +176,8 @@ export namespace Field {
   export namespace Exact {
     export interface Internal<
       ValueDef extends Atom.Def.Constraint,
-      Qualifier extends Atom.Qualifier.Constraint = Atom.Qualifier.Default,
+      in out Qualifier extends
+        Atom.Qualifier.Constraint = Atom.Qualifier.Default,
       Parent extends Atom.Parent.Constraint<ValueDef> = Atom.Parent.Default,
     > extends Ish.Value.Write<Qualifier>,
         Atom.Exact<"field" | "exact", ValueDef, Qualifier, Parent>,
@@ -185,7 +186,8 @@ export namespace Field {
     export interface Interface<
       Variant extends Atom.Flavor.Variant,
       Value,
-      Qualifier extends Atom.Qualifier.Constraint = Atom.Qualifier.Default,
+      in out Qualifier extends
+        Atom.Qualifier.Constraint = Atom.Qualifier.Default,
       Parent extends Atom.Parent.Constraint<
         Atom.Def<Value>
       > = Atom.Parent.Default,
@@ -200,7 +202,7 @@ export namespace Field {
 
   export interface Base<
     Value,
-    Qualifier extends Atom.Qualifier.Constraint = Atom.Qualifier.Default,
+    in out Qualifier extends Atom.Qualifier.Constraint = Atom.Qualifier.Default,
     Parent extends Atom.Parent.Constraint<
       Atom.Def<Value>
     > = Atom.Parent.Default,
@@ -209,14 +211,16 @@ export namespace Field {
   export namespace Base {
     export interface Internal<
       ValueDef extends Atom.Def.Constraint,
-      Qualifier extends Atom.Qualifier.Constraint = Atom.Qualifier.Default,
+      in out Qualifier extends
+        Atom.Qualifier.Constraint = Atom.Qualifier.Default,
       Parent extends Atom.Parent.Constraint<ValueDef> = Atom.Parent.Default,
     > extends Base.Interface<"base", ValueDef, Qualifier, Parent> {}
 
     export interface Interface<
       Variant extends Atom.Flavor.Variant,
       ValueDef extends Atom.Def.Constraint,
-      Qualifier extends Atom.Qualifier.Constraint = Atom.Qualifier.Default,
+      in out Qualifier extends
+        Atom.Qualifier.Constraint = Atom.Qualifier.Default,
       Parent extends Atom.Parent.Constraint<ValueDef> = Atom.Parent.Default,
     > extends Immutable.Interface<Variant, ValueDef, Qualifier, Parent> {}
 
@@ -242,7 +246,7 @@ export namespace Field {
 
   export interface Optional<
     Value,
-    Qualifier extends Atom.Qualifier.Constraint = Atom.Qualifier.Default,
+    in out Qualifier extends Atom.Qualifier.Constraint = Atom.Qualifier.Default,
     Parent extends Atom.Parent.Constraint<
       Atom.Def<Value>
     > = Atom.Parent.Default,
@@ -251,14 +255,16 @@ export namespace Field {
   export namespace Optional {
     export interface Internal<
       ValueDef extends Atom.Def.Constraint,
-      Qualifier extends Atom.Qualifier.Constraint = Atom.Qualifier.Default,
+      in out Qualifier extends
+        Atom.Qualifier.Constraint = Atom.Qualifier.Default,
       Parent extends Atom.Parent.Constraint<ValueDef> = Atom.Parent.Default,
     > extends Optional.Interface<"optional", ValueDef, Qualifier, Parent> {}
 
     export interface Interface<
       Variant extends Atom.Flavor.Variant,
       ValueDef extends Atom.Def.Constraint,
-      Qualifier extends Atom.Qualifier.Constraint = Atom.Qualifier.Default,
+      in out Qualifier extends
+        Atom.Qualifier.Constraint = Atom.Qualifier.Default,
       Parent extends Atom.Parent.Constraint<ValueDef> = Atom.Parent.Default,
     > extends Immutable.Interface<Variant, ValueDef, Qualifier, Parent> {}
 
@@ -284,7 +290,7 @@ export namespace Field {
 
   export interface Immutable<
     Value,
-    Qualifier extends Atom.Qualifier.Constraint = Atom.Qualifier.Default,
+    in out Qualifier extends Atom.Qualifier.Constraint = Atom.Qualifier.Default,
     Parent extends Atom.Parent.Constraint<
       Atom.Def<Value>
     > = Atom.Parent.Default,
@@ -293,14 +299,16 @@ export namespace Field {
   export namespace Immutable {
     export interface Internal<
       ValueDef extends Atom.Def.Constraint,
-      Qualifier extends Atom.Qualifier.Constraint = Atom.Qualifier.Default,
+      in out Qualifier extends
+        Atom.Qualifier.Constraint = Atom.Qualifier.Default,
       Parent extends Atom.Parent.Constraint<ValueDef> = Atom.Parent.Default,
     > extends Immutable.Interface<"immutable", ValueDef, Qualifier, Parent> {}
 
     export interface Interface<
       Variant extends Atom.Flavor.Variant,
       ValueDef extends Atom.Def.Constraint,
-      Qualifier extends Atom.Qualifier.Constraint = Atom.Qualifier.Default,
+      in out Qualifier extends
+        Atom.Qualifier.Constraint = Atom.Qualifier.Default,
       Parent extends Atom.Parent.Constraint<ValueDef> = Atom.Parent.Default,
     > extends Ish.Value.Read<ValueDef, Qualifier>,
         Ish.Validation<ValueDef, Qualifier>,
@@ -388,7 +396,7 @@ export namespace Field {
     Parent extends Atom.Parent.Constraint<
       Atom.Def<Value>
     > = Atom.Parent.Default,
-  > = Field.Immutable<Value, Qualifier | "ref", Parent>;
+  > = Field.Immutable<Value, Atom.Qualifier.Concat<Qualifier, "ref">, Parent>;
 
   export namespace Ref {
     export type Optional<
@@ -397,7 +405,7 @@ export namespace Field {
       Parent extends Atom.Parent.Constraint<
         Atom.Def<Value>
       > = Atom.Parent.Default,
-    > = Field.Optional<Value, Qualifier | "ref", Parent>;
+    > = Field.Optional<Value, Atom.Qualifier.Concat<Qualifier, "ref">, Parent>;
   }
 
   //#endregion
@@ -408,7 +416,7 @@ export namespace Field {
     export namespace Value {
       export interface Read<
         ValueDef extends Atom.Def.Constraint,
-        Qualifier extends Atom.Qualifier.Constraint,
+        in out Qualifier extends Atom.Qualifier.Constraint,
       > {
         initial: Atom.Value.Prop<ValueDef>;
 
@@ -417,7 +425,9 @@ export namespace Field {
         useDirty: Dirty.Use.Prop<Qualifier>;
       }
 
-      export interface Write<Qualifier extends Atom.Qualifier.Constraint> {
+      export interface Write<
+        in out Qualifier extends Atom.Qualifier.Constraint,
+      > {
         commit: Commit.Prop<Qualifier>;
 
         reset: Reset.Prop<Qualifier>;
@@ -426,7 +436,7 @@ export namespace Field {
 
     export interface Validation<
       ValueDef extends Atom.Def.Constraint,
-      Qualifier extends Atom.Qualifier.Constraint,
+      in out Qualifier extends Atom.Qualifier.Constraint,
     > {
       errors: Field.Error[];
 
