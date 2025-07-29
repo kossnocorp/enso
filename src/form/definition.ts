@@ -51,6 +51,8 @@ export declare class Form<Value> implements Form.Interface<Value> {
 
   reset(): void;
 
+  get initial(): Atom.Value.Prop<Atom.Def<Value>>;
+
   //#endregion
 
   //#region Tree
@@ -60,6 +62,17 @@ export declare class Form<Value> implements Form.Interface<Value> {
   at: Atom.At.Prop<"field", Value, never>;
 
   try: Atom.Try.Prop<"field", Value, never>;
+
+  //#endregion
+
+  //#region Events
+
+  watch(callback: Atom.Watch.Callback<Atom.Def<Value>>): Atom.Unwatch;
+
+  useWatch(
+    callback: Atom.Watch.Callback<Atom.Def<Value>>,
+    deps: DependencyList,
+  ): Atom.Unwatch;
 
   //#endregion
 
@@ -85,23 +98,14 @@ export declare class Form<Value> implements Form.Interface<Value> {
 
   addError: Field.AddError.Prop;
 
-  //#endregion
-
-  //#region Events
-
-  watch(callback: Atom.Watch.Callback<Atom.Def<Value>>): Atom.Unwatch;
-
-  useWatch(
-    callback: Atom.Watch.Callback<Atom.Def<Value>>,
-    deps: DependencyList,
-  ): Atom.Unwatch;
+  clearErrors(): void;
 
   //#endregion
 }
 
 export namespace Form {
   export interface Interface<Value>
-    extends Field.Ish.Value.Read<never>,
+    extends Field.Ish.Value.Read<Atom.Def<Value>, never>,
       Field.Ish.Value.Write<never>,
       Field.Ish.Validation<Atom.Def<Value>, Atom.Qualifier.Default> {
     //#region Instance

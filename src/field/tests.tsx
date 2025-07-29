@@ -85,7 +85,7 @@ describe(Field, () => {
         expect(field1.id).not.toBe(field2.id);
       });
 
-      it.skip("computed fields returns unique ids", () => {
+      it(" fields returns unique ids", () => {
         const field = new Field({ name: { first: "Sasha" } });
         const computed = field.$.name.$.first.into(toCodes).from(fromCodes);
         expect(computed.id).not.toBe(field.$.name.$.first.id);
@@ -857,29 +857,29 @@ describe(Field, () => {
 
     describe.skip("initial", () => {
       it("returns the initial field", () => {
-        const field = new FieldOld(42);
+        const field = new Field(42);
         field.set(43);
         expect(field.initial).toBe(42);
       });
 
       it("preserves the initial value on type change", () => {
-        const field = new FieldOld<number | object>(42);
+        const field = new Field<number | object>(42);
         field.set({ hello: "world" });
         expect(field.initial).toBe(42);
       });
     });
 
-    describe.skip("dirty", () => {
+    describe("dirty", () => {
       describe("primitive", () => {
         it("returns true if the field has changed", () => {
-          const field = new FieldOld(42);
+          const field = new Field(42);
           expect(field.dirty).toBe(false);
           field.set(43);
           expect(field.dirty).toBe(true);
         });
 
         it("returns false after restoring to the initial value", () => {
-          const field = new FieldOld(42);
+          const field = new Field(42);
           expect(field.dirty).toBe(false);
           field.set(43);
           field.set(42);
@@ -889,7 +889,7 @@ describe(Field, () => {
 
       describe("object", () => {
         it("returns true if any of the children has changed", () => {
-          const field = new FieldOld({
+          const field = new Field({
             name: { first: "Alexander", last: "" },
           });
           expect(field.dirty).toBe(false);
@@ -904,7 +904,7 @@ describe(Field, () => {
         });
 
         it("returns false after restoring to the initial value", () => {
-          const field = new FieldOld({
+          const field = new Field({
             name: { first: "Alexander", last: "" },
           });
           field.$.name.$.first.set("Sasha");
@@ -916,7 +916,7 @@ describe(Field, () => {
         });
 
         it("returns true if a child changed type", () => {
-          const field = new FieldOld<{
+          const field = new Field<{
             name: { first: string; last: string } | string;
           }>({ name: { first: "Alexander", last: "" } });
           expect(field.dirty).toBe(false);
@@ -927,7 +927,7 @@ describe(Field, () => {
         });
 
         it("returns true if a child changed shape", () => {
-          const field = new FieldOld<{
+          const field = new Field<{
             name: { first?: string; last?: string };
           }>({ name: { first: "Alexander" } });
           expect(field.dirty).toBe(false);
@@ -941,7 +941,7 @@ describe(Field, () => {
 
       describe("array", () => {
         it("returns true if any of the items has changed", () => {
-          const field = new FieldOld<number[][]>([[1, 2], [3]]);
+          const field = new Field<number[][]>([[1, 2], [3]]);
           expect(field.dirty).toBe(false);
           expect(field.at(0).dirty).toBe(false);
           expect(field.try(0)?.try(0)?.dirty).toBe(false);
@@ -956,7 +956,7 @@ describe(Field, () => {
         });
 
         it("returns false after restoring to the initial value", () => {
-          const field = new FieldOld<number[][]>([[1, 2], [3]]);
+          const field = new Field<number[][]>([[1, 2], [3]]);
           field.try(1)?.at(0).set(5);
           field.try(1)?.at(0).set(3);
           expect(field.dirty).toBe(false);
@@ -967,7 +967,7 @@ describe(Field, () => {
         });
 
         it("returns true if a child changed type", () => {
-          const field = new FieldOld<Array<string | object>>(["hello", {}]);
+          const field = new Field<Array<string | object>>(["hello", {}]);
           expect(field.dirty).toBe(false);
           field.at(0).set({});
           expect(field.dirty).toBe(true);
@@ -976,7 +976,7 @@ describe(Field, () => {
         });
 
         it("returns true if a child changed shape", () => {
-          const field = new FieldOld<Array<{ first?: string; last?: string }>>([
+          const field = new Field<Array<{ first?: string; last?: string }>>([
             { first: "Alexander" },
             { first: "Sasha" },
           ]);
@@ -990,14 +990,14 @@ describe(Field, () => {
 
       describe("instance", () => {
         it("returns true if the field has changed", () => {
-          const field = new FieldOld(new Map());
+          const field = new Field(new Map());
           expect(field.dirty).toBe(false);
           field.set(new Map());
           expect(field.dirty).toBe(true);
         });
 
         it("returns false after restoring to the initial value", () => {
-          const field = new FieldOld(42);
+          const field = new Field(42);
           expect(field.dirty).toBe(false);
           field.set(43);
           field.set(42);
@@ -1005,22 +1005,22 @@ describe(Field, () => {
         });
       });
 
-      describe("computed", () => {
+      describe("proxy", () => {
         it("returns true if the source field has changed", async () => {
-          const field = new FieldOld<string | undefined>("Hello");
-          const computed = field.into(toString).from(fromString);
-          expect(computed.dirty).toBe(false);
-          computed.set("Hi");
+          const field = new Field<string | undefined>("Hello");
+          const proxy = field.into(toString).from(fromString);
+          expect(proxy.dirty).toBe(false);
+          proxy.set("Hi");
           await postpone();
-          expect(computed.dirty).toBe(true);
+          expect(proxy.dirty).toBe(true);
         });
 
         it("returns false if the source field didn't change", () => {
-          const field = new FieldOld<string | undefined>(undefined);
-          const computed = field.into(toString).from(fromString);
-          expect(computed.dirty).toBe(false);
-          computed.set(" ");
-          expect(computed.dirty).toBe(false);
+          const field = new Field<string | undefined>(undefined);
+          const proxy = field.into(toString).from(fromString);
+          expect(proxy.dirty).toBe(false);
+          proxy.set(" ");
+          expect(proxy.dirty).toBe(false);
         });
 
         function toString(value: string | undefined) {
@@ -2290,27 +2290,27 @@ describe(Field, () => {
     // });
   });
 
-  describe.skip("input", () => {
+  describe("input", () => {
     describe("input", () => {
       it("generates props for a field", () => {
-        const field = new FieldOld({ name: { first: "Alexander" } });
+        const field = new Field({ name: { first: "Alexander" } });
         const props = field.$.name.$.first.control();
         expect(props.name).toEqual("name.first");
         expect(props.ref).toBe(field.$.name.$.first.ref);
       });
 
       it("assigns . name for the root field", () => {
-        const field = new FieldOld({ name: { first: "Alexander" } });
+        const field = new Field({ name: { first: "Alexander" } });
         const props = field.control();
         expect(props.name).toEqual(".");
       });
     });
   });
 
-  describe.skip("errors", () => {
+  describe("errors", () => {
     describe("errors", () => {
       it("returns direct errors of the field", () => {
-        const field = new FieldOld(42);
+        const field = new Field(42);
         field.addError("Something went wrong");
         field.addError("Something went wrong again");
         expect(field.errors).toEqual([
@@ -2320,16 +2320,16 @@ describe(Field, () => {
       });
 
       it("excludes tree errors", () => {
-        const field = new FieldOld({ name: { first: "Sasha" } });
+        const field = new Field({ name: { first: "Sasha" } });
         field.$.name.addError("Something went wrong");
         field.$.name.$.first.addError("Something went wrong again");
         expect(field.errors).toEqual([]);
       });
     });
 
-    describe(FieldOld.prototype.addError, () => {
+    describe(Field.prototype.addError, () => {
       it("adds error to field", () => {
-        const field = new FieldOld(42);
+        const field = new Field(42);
         field.addError({ type: "internal", message: "Something went wrong" });
         expect(field.errors).toEqual([
           { type: "internal", message: "Something went wrong" },
@@ -2337,7 +2337,7 @@ describe(Field, () => {
       });
 
       it("convert string to error", () => {
-        const field = new FieldOld(42);
+        const field = new Field(42);
         field.addError("Something went wrong");
         expect(field.errors).toEqual([{ message: "Something went wrong" }]);
       });
@@ -2345,7 +2345,7 @@ describe(Field, () => {
       describe("changes", () => {
         describe("field", () => {
           it("triggers updates", async () => {
-            const field = new FieldOld(42);
+            const field = new Field(42);
             const spy = vi.fn();
             field.watch(spy);
             field.addError("Something went wrong");
@@ -2356,7 +2356,7 @@ describe(Field, () => {
           });
 
           it("does not trigger invalid changes if the field is already invalid", async () => {
-            const field = new FieldOld(42);
+            const field = new Field(42);
             field.addError("Something went wrong");
             await postpone();
             const spy = vi.fn();
@@ -2369,7 +2369,7 @@ describe(Field, () => {
 
         describe("child", () => {
           it("triggers updates", async () => {
-            const field = new FieldOld({ name: { first: "Sasha" } });
+            const field = new Field({ name: { first: "Sasha" } });
             const spy = vi.fn();
             field.$.name.watch(spy);
             field.$.name.$.first.addError("Something went wrong");
@@ -2382,7 +2382,7 @@ describe(Field, () => {
 
         describe("subtree", () => {
           it("triggers updates", async () => {
-            const field = new FieldOld({ name: { first: "Sasha" } });
+            const field = new Field({ name: { first: "Sasha" } });
             const spy = vi.fn();
             field.watch(spy);
             field.$.name.$.first.addError("Something went wrong");
@@ -2396,7 +2396,7 @@ describe(Field, () => {
 
       describe("computed", () => {
         it("sets the error to the source field", () => {
-          const field = new FieldOld({ name: { first: "Sasha" } });
+          const field = new Field({ name: { first: "Sasha" } });
           const computed = field.$.name.$.first.into(toCodes).from(fromCodes);
           computed.addError("Something went wrong");
           expect(field.$.name.$.first.errors).toEqual([
@@ -2406,9 +2406,9 @@ describe(Field, () => {
       });
     });
 
-    describe(FieldOld.prototype.clearErrors, () => {
+    describe(Field.prototype.clearErrors, () => {
       it("clears the errors", () => {
-        const field = new FieldOld(42);
+        const field = new Field(42);
         field.addError("Something went wrong");
         field.clearErrors();
         expect(field.errors).toHaveLength(0);
@@ -2418,7 +2418,7 @@ describe(Field, () => {
       describe("changes", () => {
         describe("field", () => {
           it("triggers updates", async () => {
-            const field = new FieldOld(42);
+            const field = new Field(42);
             const spy = vi.fn();
             field.watch(spy);
             field.addError("Something went wrong");
@@ -2430,7 +2430,7 @@ describe(Field, () => {
           });
 
           it("ignores updates if the field has no errors", async () => {
-            const field = new FieldOld(42);
+            const field = new Field(42);
             const spy = vi.fn();
             field.watch(spy);
             field.clearErrors();
@@ -2441,7 +2441,7 @@ describe(Field, () => {
 
         describe("child", () => {
           it("triggers updates", async () => {
-            const field = new FieldOld({ name: { first: "Sasha" } });
+            const field = new Field({ name: { first: "Sasha" } });
             field.$.name.$.first.addError("Something went wrong");
             await postpone();
             const spy = vi.fn();
@@ -2456,7 +2456,7 @@ describe(Field, () => {
 
         describe("subtree", () => {
           it("triggers updates", async () => {
-            const field = new FieldOld({ name: { first: "Sasha" } });
+            const field = new Field({ name: { first: "Sasha" } });
             field.$.name.$.first.addError("Something went wrong");
             await postpone();
             const spy = vi.fn();
@@ -2472,7 +2472,7 @@ describe(Field, () => {
 
       describe("computed", () => {
         it("clears errors of the source field", () => {
-          const field = new FieldOld({ name: { first: "Sasha" } });
+          const field = new Field({ name: { first: "Sasha" } });
           const computed = field.$.name.$.first.into(toCodes).from(fromCodes);
           computed.addError("Something went wrong");
           computed.clearErrors();
@@ -2483,7 +2483,7 @@ describe(Field, () => {
 
     describe("valid", () => {
       it("is false if any of the children is invalid", () => {
-        const field = new FieldOld({
+        const field = new Field({
           name: { first: "" },
           age: 370,
           ids: [123, 456],
@@ -2499,7 +2499,7 @@ describe(Field, () => {
       });
 
       it("is false if the source field is invalid", () => {
-        const field = new FieldOld({ name: { first: "", last: "" } });
+        const field = new Field({ name: { first: "", last: "" } });
         const computed = field.$.name.into(toFullName).from(fromFullName);
         expect(computed.valid).toBe(true);
         field.$.name.$.first.addError("First name is required");
@@ -2509,26 +2509,13 @@ describe(Field, () => {
     });
   });
 
-  describe.skip("validation", () => {
-    describe("validationTree", () => {
-      it("is a validation tree instance", () => {
-        const field = new FieldOld(42);
-        expect(field.validationTree).toBeInstanceOf(ValidationTree);
-      });
-
-      it("points to the root parent validation tree", () => {
-        const field = new FieldOld({ a: { b: { c: 42 } } });
-        expect(field.$.a.$.b.validationTree).toBe(field.validationTree);
-        expect(field.$.a.$.b.$.c.validationTree).toBe(field.validationTree);
-      });
-    });
-
-    describe(FieldOld.prototype.validate, () => {
+  describe("validation", () => {
+    describe("#validate", () => {
       describe("primitive", () => {
         it("allows to validate the state", () => {
-          const field = new FieldOld(42);
+          const field = new Field(42);
           field.validate((ref) => {
-            if (ref.get() !== 43) {
+            if (ref.value !== 43) {
               ref.addError("Invalid");
             }
           });
@@ -2537,12 +2524,12 @@ describe(Field, () => {
         });
 
         it("clears previous errors on validation", () => {
-          function validateNum(ref: FieldRefOld<number>) {
-            if (ref.get() !== 43) {
+          function validateNum(ref: Field.Ref<number>) {
+            if (ref.value !== 43) {
               ref.addError("Invalid");
             }
           }
-          const field = new FieldOld(42);
+          const field = new Field(42);
           field.validate(validateNum);
           field.set(43);
           field.validate(validateNum);
@@ -2554,7 +2541,7 @@ describe(Field, () => {
 
       describe("object", () => {
         it("allows to validate the state", () => {
-          const field = new FieldOld<Name>({ first: "" });
+          const field = new Field<Name>({ first: "" });
 
           field.validate(validateName);
 
@@ -2564,7 +2551,7 @@ describe(Field, () => {
         });
 
         it("clears previous errors on validation", () => {
-          const field = new FieldOld<Name>({ first: "" });
+          const field = new Field<Name>({ first: "" });
 
           field.validate(validateName);
 
@@ -2581,7 +2568,7 @@ describe(Field, () => {
         });
 
         it("sends a single watch event on validation", async () => {
-          const field = new FieldOld<Name>({ first: "" });
+          const field = new Field<Name>({ first: "" });
 
           const fieldSpy = vi.fn();
           const nameSpy = vi.fn();
@@ -3298,11 +3285,13 @@ function fromCodes(codes: number[]) {
   return codes.map((c) => String.fromCharCode(c)).join("");
 }
 
-function validateRequired(ref: FieldRefOld.Variable<string | undefined>) {
-  if (!ref.get()?.trim()) ref.addError("Required");
+function validateRequired(
+  ref: Field.Ref<string> | Field.Ref<string | undefined>,
+) {
+  if (!ref.value?.trim()) ref.addError("Required");
 }
 
-function validateName(ref: FieldRefOld<Name>) {
+function validateName(ref: Field.Ref<Name>) {
   validateRequired(ref.$.first);
   validateRequired(ref.$.last);
 }

@@ -97,7 +97,7 @@ export class Atom {
 
   get value() {
     if (this.#cachedGet === detachedValue) {
-      this.#cachedGet = this.#internal.value;
+      this.#cachedGet = this.internal.value;
     }
     return this.#cachedGet;
   }
@@ -166,21 +166,21 @@ export class Atom {
     const Internal = detectInternalConstructor(value);
 
     // The field is already of the same type
-    if (this.#internal instanceof Internal) return this.#internal.set(value);
+    if (this.internal instanceof Internal) return this.internal.set(value);
 
     // The field is of a different type
-    this.#internal.unwatch();
+    this.internal.unwatch();
 
     let changes = 0n;
     // Field is being detached
     if (value === detachedValue) changes |= change.field.detach;
     // Field is being attached
-    else if (this.#internal.detached()) changes |= change.field.attach;
+    else if (this.internal.detached()) changes |= change.field.attach;
     // Field type is changing
     else changes |= change.field.type;
 
-    this.#internal = new Internal(this, value);
-    this.#internal.set(value);
+    this.internal = new Internal(this, value);
+    this.internal.set(value);
     return changes;
   }
 
@@ -198,14 +198,14 @@ export class Atom {
 
   //#region Type
 
-  #internal = new AtomValuePrimitive(this, detachedValue);
+  internal = new AtomValuePrimitive(this, detachedValue);
 
   get _() {
     return {};
   }
 
   remove(key) {
-    return this.#internal.remove(key);
+    return this.internal.remove(key);
   }
 
   self = {
@@ -215,35 +215,7 @@ export class Atom {
   };
 
   forEach(callback) {
-    this.#internal.forEach(callback);
-  }
-
-  //#endregion
-
-  //#region External
-
-  #external = {
-    move: (newKey) => {
-      always(this.#parent && "field" in this.#parent);
-      const prevPath = this.path;
-      this.#parent.key = newKey;
-      this.events.move(prevPath, this.path, this);
-      return this.trigger(fieldChange.key);
-    },
-
-    create: (value) => {
-      const changes = this.#set(value) | change.field.attach;
-      this.trigger(changes, false);
-      return changes;
-    },
-
-    clear: () => {
-      this.#set(undefined);
-    },
-  };
-
-  get [externalSymbol]() {
-    return this.#external;
+    this.internal.forEach(callback);
   }
 
   //#endregion
@@ -272,13 +244,13 @@ export class Atom {
   }
 
   get $() {
-    return this.#internal.$();
+    return this.internal.$();
   }
 
   // @ts-ignore: WIP
   at(key) {
     // WIP:
-    return this.#internal.at(key);
+    return this.internal.at(key);
     // if (
     //   this.#internal instanceof InternalObjectState ||
     //   this.#internal instanceof InternalArrayState
@@ -292,7 +264,7 @@ export class Atom {
   }
 
   try(key) {
-    return this.#internal.try(key);
+    return this.internal.try(key);
   }
 
   get path() {
@@ -309,51 +281,6 @@ export class Atom {
 
   static name(path) {
     return path.join(".") || ".";
-  }
-
-  //#endregion
-
-  //#region Meta
-
-  useMeta(props) {
-    // WIP: Types revamp
-    // const valid = this.useValid(!props || !!props.valid);
-    // const errors = this.useErrors(!props || !!props.errors);
-    // const dirty = this.useDirty(!props || !!props.dirty);
-    const valid = false;
-    const errors = false;
-    const dirty = false;
-    return { valid, errors, dirty };
-  }
-
-  //#endregion
-
-  //#region Watch
-
-  watch(callback, sync = false) {
-    // TODO: Add tests for this
-    const target = sync ? this.#syncTarget : this.#batchTarget;
-    const handler = (event) => {
-      callback(this.value, event);
-    };
-
-    this.#subs.add(handler);
-    target.addEventListener("change", handler);
-
-    return () => {
-      this.#subs.delete(handler);
-      target.removeEventListener("change", handler);
-    };
-  }
-
-  unwatch() {
-    // TODO: Add tests for this
-    this.#subs.forEach((sub) => {
-      this.#batchTarget.removeEventListener("change", sub);
-      this.#syncTarget.removeEventListener("change", sub);
-    });
-    this.#subs.clear();
-    this.#internal.unwatch();
   }
 
   //#endregion
@@ -411,12 +338,95 @@ export class Atom {
       // Shift child's field changes into child/subtree range
       shiftChildChanges(childChanges) |
       // Apply field changes
-      this.#internal.childUpdate(childChanges, key);
+      this.internal.childUpdate(childChanges, key);
 
     // Apply shape change
     changes |= shapeChanges(changes);
 
     this.trigger(changes, true);
+  }
+
+  watch(callback, sync = false) {
+    // TODO: Add tests for this
+    const target = sync ? this.#syncTarget : this.#batchTarget;
+    const handler = (event) => {
+      callback(this.value, event);
+    };
+
+    this.#subs.add(handler);
+    target.addEventListener("change", handler);
+
+    return () => {
+      this.#subs.delete(handler);
+      target.removeEventListener("change", handler);
+    };
+  }
+
+  unwatch() {
+    // TODO: Add tests for this
+    this.#subs.forEach((sub) => {
+      this.#batchTarget.removeEventListener("change", sub);
+      this.#syncTarget.removeEventListener("change", sub);
+    });
+    this.#subs.clear();
+    this.internal.unwatch();
+  }
+
+  //#endregion
+
+  //#region Transform
+
+  into(intoMapper) {
+    return {
+      from: (fromMapper) =>
+        this.constructor.proxy(this, intoMapper, fromMapper),
+    };
+  }
+
+  // TODO: Add tests
+  useInto(intoMapper, intoDeps) {
+    const from = useCallback(
+      (fromMapper, fromDeps) => {
+        const computed = useMemo(
+          () => this.constructor.proxy(this, intoMapper, fromMapper),
+          // eslint-disable-next-line react-hooks/exhaustive-deps -- We control `intoMapper` and `fromMapper` via `intoDeps` and `fromDeps`.
+          [this, ...intoDeps, ...fromDeps],
+        );
+        useEffect(() => computed.deconstruct.bind(computed), [computed]);
+        return computed;
+      },
+      // eslint-disable-next-line react-hooks/exhaustive-deps -- We control `intoMapper` via `intoDeps`
+      [this, ...intoDeps],
+    );
+    return useMemo(() => ({ from }), [from]);
+  }
+
+  //#endregion
+
+  //#region External
+
+  #external = {
+    move: (newKey) => {
+      always(this.#parent && "field" in this.#parent);
+      const prevPath = this.path;
+      this.#parent.key = newKey;
+      this.events.move(prevPath, this.path, this);
+      return this.trigger(fieldChange.key);
+    },
+
+    create: (value) => {
+      const changes = this.#set(value) | change.field.attach;
+      this.trigger(changes, false);
+      return changes;
+    },
+
+    clear: () => {
+      this.#set(undefined);
+    },
+  };
+
+  get [externalSymbol]() {
+    return this.#external;
   }
 
   //#endregion
