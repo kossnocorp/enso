@@ -6,7 +6,6 @@ import { Field } from "../field/definition.ts";
 import type { State } from "../state/index.ts";
 import type { Enso } from "../types.ts";
 import type { EnsoUtils as Utils } from "../utils.ts";
-import { Q } from "vitest/dist/chunks/reporters.d.DL9pg5DB.js";
 
 export declare class Atom<
     Flavor extends Atom.Flavor.Constraint,
@@ -198,6 +197,29 @@ export namespace Atom {
       base<EnvelopType extends Atom.Envelop<Kind, any>>(
         atom: EnvelopType,
       ): Atom.Base.Result<Kind, EnvelopType>;
+
+      proxy<
+        Variant extends Atom.Flavor.Variant,
+        ValueDef extends Atom.Def.Constraint,
+        ComputedValue,
+        MappedValue,
+        Qualifier extends Atom.Qualifier.Constraint,
+        Parent extends Atom.Parent.Constraint<ValueDef>,
+      >(
+        atom: Atom.Envelop<Kind | Variant, ValueDef, Qualifier, Parent>,
+        intoMapper: Atom.Proxy.Into.Mapper<ValueDef, ComputedValue>,
+        fromMapper: Atom.Proxy.From.Mapper<
+          ValueDef,
+          ComputedValue,
+          MappedValue
+        >,
+      ): Atom.Proxy.Envelop<
+        Kind | "exact",
+        ValueDef,
+        ComputedValue,
+        Qualifier,
+        Parent
+      >;
 
       use<Value>(
         initialValue: Value,

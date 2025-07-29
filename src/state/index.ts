@@ -42,6 +42,27 @@ export class State<
     return void 0 as any;
   }
 
+  static proxy<
+    Variant extends Atom.Flavor.Variant,
+    ValueDef extends Atom.Def.Constraint,
+    ComputedValue,
+    MappedValue,
+    Qualifier extends Atom.Qualifier.Constraint,
+    Parent extends Atom.Parent.Constraint<ValueDef>,
+  >(
+    field: Atom.Envelop<"state" | Variant, ValueDef, Qualifier, Parent>,
+    intoMapper: Atom.Proxy.Into.Mapper<ValueDef, ComputedValue>,
+    fromMapper: Atom.Proxy.From.Mapper<ValueDef, ComputedValue, MappedValue>,
+  ): Atom.Proxy.Envelop<
+    "state" | "exact",
+    ValueDef,
+    ComputedValue,
+    Qualifier,
+    Parent
+  > {
+    return {} as any;
+  }
+
   static use<Value>(
     initialValue: Value,
     deps: DependencyList,

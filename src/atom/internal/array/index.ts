@@ -195,12 +195,12 @@ export class AtomValueArray<
     return false;
   }
 
-  withhold() {
+  override withhold() {
     // @ts-expect-error
     this.#children.forEach((field) => field.withhold());
   }
 
-  unleash() {
+  override unleash() {
     // @ts-expect-error
     this.#children.forEach((field) => field.unleash());
   }

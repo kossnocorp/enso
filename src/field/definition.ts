@@ -1,5 +1,5 @@
 import React, { DependencyList, FocusEventHandler, ReactElement } from "react";
-import { Atom } from "../atom/index.js";
+import type { Atom } from "../atom/index.js";
 import type { EnsoUtils as Utils } from "../utils.ts";
 
 const hintSymbol = Symbol();
@@ -37,6 +37,25 @@ export declare class Field<
   static base<Envelop extends Field<any>>(
     field: Envelop,
   ): Atom.Base.Result<"field", Envelop>;
+
+  static proxy<
+    Variant extends Atom.Flavor.Variant,
+    ValueDef extends Atom.Def.Constraint,
+    ComputedValue,
+    MappedValue,
+    Qualifier extends Atom.Qualifier.Constraint,
+    Parent extends Atom.Parent.Constraint<ValueDef>,
+  >(
+    field: Atom.Envelop<"field" | Variant, ValueDef, Qualifier, Parent>,
+    intoMapper: Atom.Proxy.Into.Mapper<ValueDef, ComputedValue>,
+    fromMapper: Atom.Proxy.From.Mapper<ValueDef, ComputedValue, MappedValue>,
+  ): Atom.Proxy.Envelop<
+    "field" | "exact",
+    ValueDef,
+    ComputedValue,
+    Qualifier,
+    Parent
+  >;
 
   static use<Value>(
     initialValue: Value,
@@ -87,6 +106,24 @@ export declare class Field<
 
   reset: Field.Reset.Prop<Qualifier>;
 
+  get initial(): Atom.Value.Prop<Atom.Def<Value>>;
+
+  //#endregion
+
+  //#region Meta
+
+  // TODO: useMeta
+
+  //#endregion
+
+  //#region Interop
+
+  control<Element extends HTMLElement>(
+    props?: Field.Control.Props<Element>,
+  ): Field.Control.Registration<Element>;
+
+  ref<Element extends HTMLElement>(element: Element | null): void;
+
   //#endregion
 
   //#region Validation
@@ -102,6 +139,8 @@ export declare class Field<
   validate: Field.Validate.Prop<Value, Qualifier>;
 
   addError: Field.AddError.Prop;
+
+  clearErrors(): void;
 
   //#endregion
 }
@@ -263,10 +302,16 @@ export namespace Field {
       ValueDef extends Atom.Def.Constraint,
       Qualifier extends Atom.Qualifier.Constraint = Atom.Qualifier.Default,
       Parent extends Atom.Parent.Constraint<ValueDef> = Atom.Parent.Default,
-    > extends Ish.Value.Read<Qualifier>,
+    > extends Ish.Value.Read<ValueDef, Qualifier>,
         Ish.Validation<ValueDef, Qualifier>,
         Atom.Immutable<"field" | Variant, ValueDef, Qualifier, Parent> {
       [hintSymbol]: true;
+
+      control<Element extends HTMLElement>(
+        props?: Field.Control.Props<Element>,
+      ): Field.Control.Registration<Element>;
+
+      ref<Element extends HTMLElement>(element: Element | null): void;
     }
 
     export type Discriminated<
@@ -361,7 +406,12 @@ export namespace Field {
 
   export namespace Ish {
     export namespace Value {
-      export interface Read<Qualifier extends Atom.Qualifier.Constraint> {
+      export interface Read<
+        ValueDef extends Atom.Def.Constraint,
+        Qualifier extends Atom.Qualifier.Constraint,
+      > {
+        initial: Atom.Value.Prop<ValueDef>;
+
         dirty: boolean;
 
         useDirty: Dirty.Use.Prop<Qualifier>;
@@ -389,6 +439,8 @@ export namespace Field {
       validate: Validate.Prop<ValueDef["read"], Qualifier>;
 
       addError: Field.AddError.Prop;
+
+      clearErrors(): void;
     }
   }
 
@@ -515,7 +567,27 @@ export namespace Field {
 
   //#endregion
 
+  //#region Form
+
   //#region Control
+
+  export namespace Control {
+    export interface Props<Element extends HTMLElement> {
+      ref?:
+        | React.RefCallback<Element>
+        | React.RefObject<Element | null>
+        | undefined;
+      onBlur?: FocusEventHandler<Element> | undefined;
+    }
+
+    export interface Registration<Element extends HTMLElement> {
+      name: string;
+      ref: React.RefCallback<Element>;
+      onBlur: FocusEventHandler<Element>;
+    }
+  }
+
+  //#endregion
 
   //#region Component
 

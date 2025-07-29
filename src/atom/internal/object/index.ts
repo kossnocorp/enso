@@ -156,11 +156,11 @@ export class AtomValueObject<
     return false;
   }
 
-  withhold() {
+  override withhold() {
     this.#children.forEach((field) => field.withhold());
   }
 
-  unleash() {
+  override unleash() {
     this.#children.forEach((field) => field.unleash());
   }
 
