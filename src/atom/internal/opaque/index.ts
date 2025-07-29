@@ -9,7 +9,7 @@ export class AtomValuePrimitive<
 > extends AtomValue<Kind, Value> {
   #value;
 
-  constructor(atom: Atom.Envelop<Kind, Atom.Def<Value>>, value: Value) {
+  constructor(atom: any, value: Value) {
     super(atom, value);
     this.#value = value;
   }
@@ -46,7 +46,6 @@ export class AtomValuePrimitive<
   }
 
   remove() {
-    // @ts-expect-error
     return this.external.self.remove();
   }
 

@@ -1,5 +1,5 @@
-import { Field } from "../field/index.js";
-import { Form } from "./index.js";
+import { Field } from "../field/definition.ts";
+import { Form } from "./definition.ts";
 
 //#region Attributes
 

@@ -1,7 +1,7 @@
 "use client";
 
 import type { Atom } from "../atom/definition.ts";
-import { Atom as AtomImpl } from "../atom/implementation.ts";
+import { AtomImpl } from "../atom/implementation.ts";
 import {
   change,
   ChangesEvent,
@@ -10,18 +10,23 @@ import {
 } from "../change/index.ts";
 import { ValidationTree } from "../validation/index.ts";
 
-export class Field<Value> extends AtomImpl<Value> {
+export { FieldImpl as Field, FieldProxyImpl as FieldProxy };
+
+export class FieldImpl<Value> extends AtomImpl<Value> {
   //#region Static
 
-  static create<Value>(value: Value, parent?: any) {
-    return new Field(value, parent);
+  static override create<Value>(
+    value: Value,
+    parent?: Atom.Parent.Bare.Ref<any, any>,
+  ) {
+    return new FieldImpl(value, parent);
   }
 
-  static proxy(field, intoMapper, fromMapper) {
-    return new FieldProxy(field, intoMapper, fromMapper);
+  static proxy(field: any, intoMapper: any, fromMapper: any) {
+    return new FieldProxyImpl(field, intoMapper, fromMapper);
   }
 
-  static Component(props) {
+  static Component(props: any) {
     const { field } = props;
     const value = field.useGet();
     const meta = field.useMeta({
@@ -59,7 +64,7 @@ export class Field<Value> extends AtomImpl<Value> {
 
   //#region Meta
 
-  useMeta(props) {
+  useMeta(props: any) {
     // WIP: Types revamp
     // const valid = this.useValid(!props || !!props.valid);
     // const errors = this.useErrors(!props || !!props.errors);
@@ -74,7 +79,7 @@ export class Field<Value> extends AtomImpl<Value> {
 
   //#region Events
 
-  #withholded;
+  #withholded: any[] | undefined;
 
   /**
    * Withholds the field changes until `unleash` is called. It allows to batch
@@ -94,24 +99,24 @@ export class Field<Value> extends AtomImpl<Value> {
     this.internal.unleash();
     const withholded = this.#withholded;
     this.#withholded = undefined;
-    if (withholded?.[0]) this.trigger(...withholded);
+    if (withholded?.[0]) (this as any).trigger(...withholded);
   }
 
   //#endregion
 
   //#region Interop
 
-  #customRef;
-  #customOnBlur;
+  #customRef: any;
+  #customOnBlur: any;
 
-  control(props) {
+  control(props: any) {
     this.#customRef = props?.ref;
     this.#customOnBlur = props?.onBlur;
 
     return {
       name: this.name,
-      ref: this.ref,
-      onBlur: this.onBlur,
+      ref: (this as any).ref,
+      onBlur: (this as any).onBlur,
     };
   }
 
@@ -125,7 +130,7 @@ export class Field<Value> extends AtomImpl<Value> {
     return this.validationTree.at(this.path);
   }
 
-  addError(error) {
+  addError(error: any) {
     const changes = this.#errorChangesFor(this.valid);
     this.validationTree.add(this.path, this.#normalizeError(error));
     this.events.trigger(this.path, changes);
@@ -140,7 +145,7 @@ export class Field<Value> extends AtomImpl<Value> {
     // TODO: Add test for this case
     this.validationTree.clear(this.path);
 
-    const errorsByPaths = Object.groupBy(errors, ([path]) =>
+    const errorsByPaths = Object.groupBy(errors, ([path]: any) =>
       AtomImpl.name(this.path),
     );
 
@@ -153,11 +158,11 @@ export class Field<Value> extends AtomImpl<Value> {
     });
   }
 
-  #normalizeError(error) {
+  #normalizeError(error: any) {
     return typeof error === "string" ? { message: error } : error;
   }
 
-  #errorChangesFor(wasValid) {
+  #errorChangesFor(wasValid: any) {
     let changes = change.field.errors;
     if (wasValid) changes |= change.field.invalid;
     return changes;
@@ -174,7 +179,7 @@ export class Field<Value> extends AtomImpl<Value> {
     return !this.validationTree.nested(this.path).length;
   }
 
-  async validate(validator) {
+  async validate(validator: any) {
     this.clearErrors();
     // Withhold all the changes until the validation is resolved, so that
     // there're no chain reactions.
@@ -190,14 +195,14 @@ export class Field<Value> extends AtomImpl<Value> {
   //#endregion
 }
 
-export class FieldProxy extends Field {
-  #source;
+export class FieldProxyImpl<Value> extends FieldImpl<Value> {
+  #source: any;
   #brand = Symbol();
-  #into;
-  #from;
-  #unsubs = [];
+  #into: any;
+  #from: any;
+  #unsubs: any[] = [];
 
-  constructor(source, into, from) {
+  constructor(source: any, into: any, from: any) {
     const payload = into(source.value, undefined);
     super(payload, { source });
 
@@ -213,7 +218,7 @@ export class FieldProxy extends Field {
     // on structural changes.
     this.#unsubs.push(
       this.#source.watch(
-        (sourceValue, sourceEvent) => {
+        (sourceValue: any, sourceEvent: any) => {
           // Check if the change was triggered by the computed value and ignore
           // it to stop circular updates.
           if (sourceEvent.context[this.#brand]) return;
@@ -223,7 +228,7 @@ export class FieldProxy extends Field {
           if (structuralChanges(sourceEvent.changes)) {
             // TODO: Second argument is unnecessary expensive and probably can
             // be replaced with simple atom.
-            this.set(this.#into(sourceValue, this.get()));
+            this.set(this.#into(sourceValue, this.value));
           }
         },
         // TODO: Add tests and rationale for this. Without it, though, when
@@ -239,7 +244,7 @@ export class FieldProxy extends Field {
     // (source) value.
     this.#unsubs.push(
       this.watch(
-        (computedValue, computedEvent) => {
+        (computedValue: any, computedEvent: any) => {
           // Check if the change was triggered by the source value and ignore it
           // to stop circular updates.
           if (computedEvent.context[this.#brand]) return;
@@ -273,15 +278,15 @@ export class FieldProxy extends Field {
     );
   }
 
-  deconstruct() {
-    Field.prototype.deconstruct.call(this);
+  override deconstruct() {
+    FieldImpl.prototype.deconstruct.call(this);
     this.#unsubs.forEach((unsub) => unsub());
     this.#unsubs = [];
   }
 
   //#region Computed
 
-  connect(source) {
+  connect(source: any) {
     this.#source = source;
   }
 

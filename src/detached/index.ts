@@ -9,7 +9,7 @@ export class UndefinedStateRegistry<Kind extends Atom.Flavor.Kind> {
   #refsMap = new Map();
   #registry = new FinalizationRegistry((key) => this.#refsMap.delete(key));
 
-  constructor(external: Atom.Envelop<Kind, any>) {
+  constructor(external: any) {
     this.#external = external;
   }
 
@@ -37,7 +37,6 @@ export class UndefinedStateRegistry<Kind extends Atom.Flavor.Kind> {
     if (registered) return registered;
 
     // Or create and register a new one
-    // @ts-expect-error -- WIP:
     const field = this.#external.constructor.create(detachedValue, {
       key,
       field: this.#external,
