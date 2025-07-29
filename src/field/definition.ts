@@ -396,7 +396,11 @@ export namespace Field {
     Parent extends Atom.Parent.Constraint<
       Atom.Def<Value>
     > = Atom.Parent.Default,
-  > = Field.Immutable<Value, Atom.Qualifier.Concat<Qualifier, "ref">, Parent>;
+  > = Field.Immutable<
+    Value,
+    Utils.Transparent<Atom.Qualifier.Concat<Qualifier, "ref">>,
+    Parent
+  >;
 
   export namespace Ref {
     export type Optional<
@@ -405,7 +409,11 @@ export namespace Field {
       Parent extends Atom.Parent.Constraint<
         Atom.Def<Value>
       > = Atom.Parent.Default,
-    > = Field.Optional<Value, Atom.Qualifier.Concat<Qualifier, "ref">, Parent>;
+    > = Field.Optional<
+      Value,
+      Utils.Transparent<Atom.Qualifier.Concat<Qualifier, "ref">>,
+      Parent
+    >;
   }
 
   //#endregion
