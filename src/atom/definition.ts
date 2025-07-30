@@ -11,7 +11,7 @@ import { Variant } from "@testing-library/react";
 export declare class Atom<
     Kind extends Atom.Flavor.Kind,
     Variant extends Atom.Flavor.Variant,
-    ValueDef extends Atom.Def.Constraint,
+    /*out*/ ValueDef extends Atom.Def.Constraint,
     out Qualifier extends Atom.Qualifier.Constraint,
     Parent extends Atom.Parent.Constraint<ValueDef>,
   >
@@ -697,7 +697,7 @@ export namespace Atom {
   export interface Exact<
     Kind extends Atom.Flavor.Kind,
     Variant extends Atom.Flavor.Variant,
-    ValueDef extends Atom.Def.Constraint,
+    /*out*/ ValueDef extends Atom.Def.Constraint,
     out Qualifier extends Atom.Qualifier.Constraint,
     Parent extends Atom.Parent.Constraint<ValueDef>,
   > extends Immutable<Kind, Variant, ValueDef, Qualifier, Parent> {
@@ -746,7 +746,7 @@ export namespace Atom {
     export interface Self<
       Kind extends Atom.Flavor.Kind,
       Variant extends Atom.Flavor.Variant,
-      ValueDef extends Atom.Def.Constraint,
+      /*out*/ ValueDef extends Atom.Def.Constraint,
       out Qualifier extends Atom.Qualifier.Constraint,
       Parent extends Atom.Parent.Constraint<ValueDef>,
     > extends Immutable.Self<Kind, Variant, ValueDef, Qualifier, Parent> {
@@ -761,7 +761,7 @@ export namespace Atom {
   export interface Base<
     Kind extends Atom.Flavor.Kind,
     Variant extends Atom.Flavor.Variant,
-    ValueDef extends Atom.Def.Constraint,
+    /*out*/ ValueDef extends Atom.Def.Constraint,
     out Qualifier extends Atom.Qualifier.Constraint = Atom.Qualifier.Default,
     Parent extends Atom.Parent.Constraint<ValueDef> = Atom.Parent.Default,
   > extends Immutable<Kind, Variant, ValueDef, Qualifier, Parent> {}
@@ -838,7 +838,7 @@ export namespace Atom {
   export interface Optional<
     Kind extends Atom.Flavor.Kind,
     Variant extends Atom.Flavor.Variant,
-    ValueDef extends Atom.Def.Constraint,
+    /*out*/ ValueDef extends Atom.Def.Constraint,
     out Qualifier extends Atom.Qualifier.Constraint = Atom.Qualifier.Default,
     Parent extends Atom.Parent.Constraint<ValueDef> = Atom.Parent.Default,
   > extends Immutable<Kind, Variant, ValueDef, Qualifier, Parent> {}
@@ -903,7 +903,7 @@ export namespace Atom {
   export interface Immutable<
     Kind extends Atom.Flavor.Kind,
     Variant extends Atom.Flavor.Variant,
-    ValueDef extends Atom.Def.Constraint,
+    /*out*/ ValueDef extends Atom.Def.Constraint,
     out Qualifier extends Atom.Qualifier.Constraint,
     Parent extends Atom.Parent.Constraint<ValueDef>,
   > {
@@ -932,9 +932,9 @@ export namespace Atom {
 
     //#region Value
 
-    value: Atom.Value.Prop<ValueDef>;
+    readonly value: Atom.Value.Prop<ValueDef>;
 
-    useValue: Atom.Value.Use.Prop<Kind, Variant, ValueDef, Qualifier>;
+    readonly useValue: Atom.Value.Use.Prop<Kind, Variant, ValueDef, Qualifier>;
 
     compute<Result>(
       callback: Compute.Callback<ValueDef["read"], Result>,
@@ -1296,8 +1296,8 @@ export namespace Atom {
   //#region Value
 
   export interface Def<ReadValue, WriteValue = ReadValue> {
-    read: ReadValue;
-    write: WriteValue;
+    readonly read: ReadValue;
+    readonly write: WriteValue;
     [defBrand]: true;
   }
 
