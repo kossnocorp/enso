@@ -13,7 +13,7 @@ export class UndefinedStateRegistry<Kind extends Atom.Flavor.Kind> {
     this.#external = external;
   }
 
-  register(key: string, field: Atom.Envelop<Kind, any>) {
+  register(key: string, field: Atom.Envelop<Kind, any, any>) {
     const fieldRef = new WeakRef(field);
     this.#refsMap.set(key, fieldRef);
     this.#registry.register(fieldRef, key);

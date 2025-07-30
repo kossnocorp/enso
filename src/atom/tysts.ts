@@ -172,7 +172,8 @@ import { ty } from "tysts";
 //#region Atom.Base.Value.Base
 {
   type BaseValue = Atom.Base.Value.BaseDef<
-    Atom.Envelop<any, Atom.Def<Account>> | Atom.Envelop<any, Atom.Def<User>>
+    | Atom.Envelop<any, any, Atom.Def<Account>>
+    | Atom.Envelop<any, any, Atom.Def<User>>
   >;
 
   tyst<BaseValue>({} as Atom.Def<Account>);
@@ -184,46 +185,17 @@ import { ty } from "tysts";
 }
 //#endregion
 
-//#region Atom.Base.Value.Shared
-{
-  type NoSharedValue = Atom.Base.Value.Shared<
-    Atom.Envelop<any, Atom.Def<Account>> | Atom.Envelop<any, Atom.Def<User>>
-  >;
-
-  tyst<never>({} as NoSharedValue);
-  // @ts-expect-error
-  tyst<NoSharedValue>({} as any);
-
-  type SharedValue = Atom.Base.Value.Shared<
-    | Atom.Envelop<any, Atom.Def<User | undefined>>
-    | Atom.Envelop<any, Atom.Def<User>>
-  >;
-
-  tyst<SharedValue>({} as Atom.Def<User>);
-  // @ts-expect-error
-  tyst<SharedValue>({} as Atom.Def<User | undefined>);
-  // @ts-expect-error
-  tyst<SharedValue>({} as Atom.Def<undefined>);
-  // @ts-expect-error
-  tyst<SharedValue>({} as Atom.Def<Account>);
-  // @ts-expect-error
-  tyst<SharedValue>({} as Atom.Def<Entity>);
-  // @ts-expect-error
-  tyst<SharedValue>({} as Atom.Def<unknown>);
-}
-//#endregion
-
 //#region Atom.Base.Qualifier.Shared
 {
   type NoSharedQualifier = Atom.Base.Qualifier.Shared<
-    | Atom.Envelop<any, any, { bound: true }>
-    | Atom.Envelop<any, any, { detachable: true }>
+    | Atom.Envelop<any, any, any, { bound: true }>
+    | Atom.Envelop<any, any, any, { detachable: true }>
   >;
   ty<NoSharedQualifier>().is(ty<{}>());
 
   type SharedQualifier = Atom.Base.Qualifier.Shared<
-    | Atom.Envelop<any, any, { bound: true }>
-    | Atom.Envelop<any, any, { bound: true; detachable: true }>
+    | Atom.Envelop<any, any, any, { bound: true }>
+    | Atom.Envelop<any, any, any, { bound: true; detachable: true }>
   >;
   ty<SharedQualifier>().is(ty<{ bound: true }>());
 }
@@ -233,31 +205,33 @@ import { ty } from "tysts";
 {
   // Primitive
   {
-    type NumberProp = Atom.$.Prop<"field", number, never>;
+    type NumberProp = Atom.$.Prop<"field", "exact", number, never>;
 
     const _test: NumberProp = {} as any;
     _test satisfies undefined;
 
-    tyst<NumberProp>(undefined as Atom.$.Prop<"field", number, never>);
-    tyst<NumberProp>(undefined as Atom.$.Prop<"field", Branded<number>, never>);
+    tyst<NumberProp>(undefined as Atom.$.Prop<"field", any, number, never>);
+    tyst<NumberProp>(
+      undefined as Atom.$.Prop<"field", any, Branded<number>, never>,
+    );
   }
 
   // Branded primitive
   {
-    type BrandedProp = Atom.$.Prop<"field", Branded<number>, never>;
+    type BrandedProp = Atom.$.Prop<"field", any, Branded<number>, never>;
 
     const _test: BrandedProp = {} as any;
     _test satisfies undefined;
 
-    tyst<BrandedProp>(undefined as Atom.$.Prop<"field", string, never>);
+    tyst<BrandedProp>(undefined as Atom.$.Prop<"field", any, string, never>);
   }
 
   // Object
   {
-    type ObjectProp = Atom.$.Prop<"field", Entity, never>;
+    type ObjectProp = Atom.$.Prop<"field", any, Entity, never>;
 
-    tyst<ObjectProp>({} as Atom.$.Prop<"field", User, never>);
-    tyst<ObjectProp>({} as Atom.$.Prop<"field", any, never>);
+    tyst<ObjectProp>({} as Atom.$.Prop<"field", any, User, never>);
+    tyst<ObjectProp>({} as Atom.$.Prop<"field", any, any, never>);
     // @ts-expect-error
     tyst<ObjectProp>({} as User);
     // @ts-expect-error
@@ -266,18 +240,18 @@ import { ty } from "tysts";
 
   // Any
   {
-    type AnyProp = Atom.$.Prop<"field", any, never>;
+    type AnyProp = Atom.$.Prop<"field", any, any, never>;
 
     tyst<AnyProp>({} as unknown);
     tyst<AnyProp>({} as string);
-    tyst<AnyProp>({} as Atom.$.Prop<"field", any, never>);
-    tyst<AnyProp>({} as Atom.$.Prop<"field", unknown, never>);
-    tyst<AnyProp>(undefined as Atom.$.Prop<"field", string, never>);
+    tyst<AnyProp>({} as Atom.$.Prop<"field", any, any, never>);
+    tyst<AnyProp>({} as Atom.$.Prop<"field", any, unknown, never>);
+    tyst<AnyProp>(undefined as Atom.$.Prop<"field", any, string, never>);
   }
 
   // Unknown
   {
-    type UnknownProp = Atom.$.Prop<"field", unknown, never>;
+    type UnknownProp = Atom.$.Prop<"field", any, unknown, never>;
 
     // @ts-expect-error
     tyst<UnknownProp>({} as Atom.$.Prop<"field", any>);
@@ -345,7 +319,8 @@ import { ty } from "tysts";
     // Wide
     {
       type Tuple = Atom.Shared.Result.Tuple<
-        "field" | "exact",
+        "field",
+        "exact",
         Atom.Def<number>,
         [number, number | undefined]
       >;
@@ -355,7 +330,8 @@ import { ty } from "tysts";
     // Narrow
     {
       type Tuple = Atom.Shared.Result.Tuple<
-        "field" | "exact",
+        "field",
+        "exact",
         Atom.Def<number | undefined>,
         [number, number | undefined]
       >;
@@ -368,7 +344,8 @@ import { ty } from "tysts";
     // Wide
     {
       type Tuple = Atom.Shared.Result.Tuple<
-        "field" | "base",
+        "field",
+        "base",
         Atom.Def<number>,
         [number, number | undefined]
       >;
@@ -378,7 +355,8 @@ import { ty } from "tysts";
     // Narrow
     {
       type Tuple = Atom.Shared.Result.Tuple<
-        "field" | "base",
+        "field",
+        "base",
         Atom.Def<number | undefined>,
         [number, number | undefined]
       >;

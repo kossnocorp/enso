@@ -6,7 +6,7 @@ export class EventsTree<Kind extends Atom.Flavor.Kind> {
 
   at(
     path: Atom.Path,
-  ): Atom.Exact.Envelop<Kind, any, Atom.Qualifier.Default, never>[] {
+  ): Atom.Exact.Envelop<Kind, any, any, Atom.Qualifier.Default, never>[] {
     let node: EventsTree.Node<Kind> | undefined = this.#tree;
     for (const key of path) {
       node = node.children[key];
@@ -33,7 +33,7 @@ export class EventsTree<Kind extends Atom.Flavor.Kind> {
 
   add(
     path: Atom.Path,
-    atom: Atom.Exact.Envelop<Kind, any, Atom.Qualifier.Default, never>,
+    atom: Atom.Exact.Envelop<Kind, any, any, Atom.Qualifier.Default, never>,
   ) {
     let node = this.#tree;
     for (const key of path) {
@@ -44,7 +44,7 @@ export class EventsTree<Kind extends Atom.Flavor.Kind> {
 
   delete(
     path: Atom.Path,
-    atom: Atom.Exact.Envelop<Kind, any, Atom.Qualifier.Default, never>,
+    atom: Atom.Exact.Envelop<Kind, any, any, Atom.Qualifier.Default, never>,
   ): boolean {
     let node: EventsTree.Node<Kind> | undefined = this.#tree;
     for (const key of path) {
@@ -57,7 +57,7 @@ export class EventsTree<Kind extends Atom.Flavor.Kind> {
   move(
     from: Atom.Path,
     to: Atom.Path,
-    atom: Atom.Exact.Envelop<Kind, any, Atom.Qualifier.Default, never>,
+    atom: Atom.Exact.Envelop<Kind, any, any, Atom.Qualifier.Default, never>,
   ): boolean {
     if (this.delete(from, atom)) {
       this.add(to, atom);
@@ -84,7 +84,13 @@ export class EventsTree<Kind extends Atom.Flavor.Kind> {
 export namespace EventsTree {
   export interface Node<Kind extends Atom.Flavor.Kind> {
     atoms: Set<
-      Atom.Exact.Envelop<Kind, Atom.Def<unknown>, Atom.Qualifier.Default, never>
+      Atom.Exact.Envelop<
+        Kind,
+        any,
+        Atom.Def<unknown>,
+        Atom.Qualifier.Default,
+        never
+      >
     >;
     children: Record<keyof any, Node<Kind>>;
   }
@@ -93,6 +99,7 @@ export namespace EventsTree {
     path: Atom.Path,
     atoms: Atom.Exact.Envelop<
       Kind,
+      any,
       Atom.Def<unknown>,
       Atom.Qualifier.Default,
       never

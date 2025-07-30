@@ -14,7 +14,10 @@ export class AtomValueObject<
   #children = new Map();
   #undefined;
 
-  constructor(external: Atom.Envelop<Kind, Atom.Def<Value>>, value: Value) {
+  constructor(
+    external: Atom.Envelop<Kind, any, Atom.Def<Value>>,
+    value: Value,
+  ) {
     super(external, value);
     this.#undefined = new UndefinedStateRegistry(external);
   }
