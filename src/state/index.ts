@@ -11,7 +11,7 @@ export class State<
       Atom.Def<Value>
     > = Atom.Parent.Default,
   >
-  extends Atom<"state" | "exact", Atom.Def<Value>, Qualifier, Parent>
+  extends Atom<"state", "exact", Atom.Def<Value>, Qualifier, Parent>
   implements
     Utils.StaticImplements<
       typeof State<Value, Qualifier, Parent>,
@@ -36,7 +36,7 @@ export class State<
     return void 0 as any;
   }
 
-  static base<Envelop extends State<any>>(
+  static base<Envelop extends State.Envelop<any, any>>(
     atom: Envelop,
   ): Atom.Base.Result<"state", Envelop> {
     return void 0 as any;
@@ -50,11 +50,12 @@ export class State<
     Qualifier extends Atom.Qualifier.Constraint,
     Parent extends Atom.Parent.Constraint<ValueDef>,
   >(
-    field: Atom.Envelop<"state" | Variant, ValueDef, Qualifier, Parent>,
+    field: State.Envelop<Variant, ValueDef, Qualifier, Parent>,
     intoMapper: Atom.Proxy.Into.Mapper<ValueDef, ComputedValue>,
     fromMapper: Atom.Proxy.From.Mapper<ValueDef, ComputedValue, MappedValue>,
   ): Atom.Proxy.Envelop<
-    "state" | "exact",
+    "state",
+    Variant,
     ValueDef,
     ComputedValue,
     Qualifier,
@@ -71,12 +72,12 @@ export class State<
   }
 
   static useEnsure<
-    StateType extends State<any> | Utils.Nullish,
-    MappedValue = undefined,
+    StateType extends State.Envelop<any, any> | Utils.Nullish,
+    MappedType extends State.Envelop<any, any> | Utils.Nullish = undefined,
   >(
     field: StateType,
-    map?: Atom.Static.Ensure.Mapper<"state", StateType, MappedValue>,
-  ): Atom.Static.Ensure.Result<"state", StateType, MappedValue> {
+    map?: Atom.Static.Ensure.Mapper<"state", StateType, MappedType>,
+  ): Atom.Static.Ensure.Result<"state", StateType, MappedType> {
     return void 0 as any;
   }
 
@@ -87,17 +88,17 @@ export class State<
 
 export namespace State {
   export type Envelop<
-    Flavor extends Atom.Flavor.Constraint,
+    Variant extends Atom.Flavor.Variant,
     ValueDef extends Atom.Def.Constraint,
     Qualifier extends Atom.Qualifier.Constraint = Atom.Qualifier.Default,
     Parent extends Atom.Parent.Constraint<ValueDef> = Atom.Parent.Default,
-  > = "immutable" extends Flavor
+  > = "immutable" extends Variant
     ? Immutable.Internal<ValueDef, Qualifier, Parent>
-    : "optional" extends Flavor
+    : "optional" extends Variant
       ? Optional.Internal<ValueDef, Qualifier, Parent>
-      : "base" extends Flavor
+      : "base" extends Variant
         ? Base.Internal<ValueDef, Qualifier, Parent>
-        : "exact" extends Flavor
+        : "exact" extends Variant
           ? Exact.Internal<ValueDef, Qualifier, Parent>
           : never;
 
@@ -117,7 +118,7 @@ export namespace State {
       out Qualifier extends Atom.Qualifier.Constraint = Atom.Qualifier.Default,
       Parent extends Atom.Parent.Constraint<ValueDef> = Atom.Parent.Default,
     > extends Hint,
-        Atom.Exact<"state" | "exact", ValueDef, Qualifier, Parent> {}
+        Atom.Exact<"state", "exact", ValueDef, Qualifier, Parent> {}
   }
 
   //#endregion
@@ -138,7 +139,7 @@ export namespace State {
       Qualifier extends Atom.Qualifier.Constraint = Atom.Qualifier.Default,
       Parent extends Atom.Parent.Constraint<ValueDef> = Atom.Parent.Default,
     > extends Hint,
-        Atom.Base<"state" | "base", ValueDef, Qualifier, Parent> {}
+        Atom.Base<"state", "base", ValueDef, Qualifier, Parent> {}
   }
 
   //#endregion
@@ -159,7 +160,7 @@ export namespace State {
       Qualifier extends Atom.Qualifier.Constraint,
       Parent extends Atom.Parent.Constraint<ValueDef>,
     > extends Hint,
-        Atom.Base<"state" | "optional", ValueDef, Qualifier, Parent> {}
+        Atom.Base<"state", "optional", ValueDef, Qualifier, Parent> {}
   }
 
   //#endregion
@@ -180,7 +181,7 @@ export namespace State {
       out Qualifier extends Atom.Qualifier.Constraint = Atom.Qualifier.Default,
       Parent extends Atom.Parent.Constraint<ValueDef> = Atom.Parent.Default,
     > extends Hint,
-        Atom.Immutable<"state" | "immutable", ValueDef, Qualifier, Parent> {}
+        Atom.Immutable<"state", "immutable", ValueDef, Qualifier, Parent> {}
   }
 
   //#endregion

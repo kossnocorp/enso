@@ -5,6 +5,7 @@ import { EventsTree } from "../events/index.ts";
 import { State } from "../state/index.ts";
 import { Field } from "./definition.ts";
 import { Atom } from "../atom/definition.ts";
+import { EnsoUtils } from "../utils.ts";
 
 const unionValue = new Field<Hello | Blah>({ hello: "world", world: true });
 const unionField = new Field({ hello: "world", world: true }) as
@@ -546,23 +547,13 @@ const unionField = new Field({ hello: "world", world: true }) as
 
     // Mixed
     {
-      const field = {} as
-        | Field<User, "detachable">
-        | Field<Account, "detachable" | "bound">;
-
-      const result = Field.base(field);
-
-      result satisfies Field.Base<User | Account, "detachable">;
-      // @ts-expect-error
-      result satisfies Field.Base<User | Account, "detachable" | "bound">;
-      // @ts-expect-error
-      result satisfies Field<User | Account, "detachable">;
-      // @ts-expect-error
-      result satisfies Field.Base<Hello, "detachable">;
-
-      result.value satisfies User | Account;
-      // @ts-expect-error
-      result.value satisfies Hello;
+      const result = Field.base(
+        {} as
+          | Field<User, "detachable">
+          | Field<Account, "detachable" | "bound">,
+      );
+      ty(result).is(ty<Field.Base<User | Account, "detachable">>());
+      ty(result.value).is(ty<User | Account>());
     }
   }
 
@@ -584,12 +575,8 @@ const unionField = new Field({ hello: "world", world: true }) as
 {
   // Basic
   {
-    const field = new Field("hello") as Field<string> | undefined;
-
-    const result = Field.useEnsure(field);
-    result satisfies Field<string | undefined>;
-    // @ts-expect-error
-    result.any;
+    const result = Field.useEnsure({} as Field<string> | undefined);
+    ty(result).is(ty<Field<string | undefined>>());
   }
 
   // Mapped
@@ -602,12 +589,9 @@ const unionField = new Field({ hello: "world", world: true }) as
       hello: "world";
     }
 
-    const field = new Field({}) as unknown as Field<Parent> | undefined;
-
+    const field = {} as Field<Parent> | undefined;
     const result = Field.useEnsure(field, (field) => field.$.child);
-    result satisfies Field<Child | undefined>;
-    // @ts-expect-error
-    result.any;
+    ty(result).is(ty<Field<Child | undefined>>());
   }
 
   // Defined
@@ -615,11 +599,8 @@ const unionField = new Field({ hello: "world", world: true }) as
     // Basic
     {
       const field = new Field("hello");
-
       const result = Field.useEnsure(field);
-      result satisfies Field<string>;
-      // @ts-expect-error
-      result.any;
+      ty(result).is(ty<Field<string>>());
     }
 
     // Mapped
@@ -633,22 +614,15 @@ const unionField = new Field({ hello: "world", world: true }) as
       }
 
       const field = new Field({}) as unknown as Field<Parent>;
-
       const result = Field.useEnsure(field, (field) => field.$.child);
-      result satisfies Field<Child>;
-      // @ts-expect-error
-      result.any;
+      ty(result).is(ty<Field<Child>>());
     }
   }
 
   // Field.Exact
   {
-    const field = {} as Field.Exact<string> | undefined;
-
-    const result = Field.useEnsure(field);
-    result satisfies Field<string | undefined>;
-    // @ts-expect-error
-    result.any;
+    const result = Field.useEnsure({} as Field.Exact<string> | undefined);
+    ty(result).is(ty<Field.Exact<string | undefined>>());
   }
 
   // Shared
@@ -658,7 +632,7 @@ const unionField = new Field({ hello: "world", world: true }) as
       | Field.Shared<[Account, Account | undefined]>;
 
     const result = Field.useEnsure(field);
-    result satisfies Field<unknown>;
+    ty(result).is(ty<Field<unknown>>());
   }
 }
 //#endregion
@@ -1340,13 +1314,9 @@ const unionField = new Field({ hello: "world", world: true }) as
     // @ts-expect-error
     field.$[0].$;
 
-    field.$[0] satisfies Field<number | undefined, "detachable"> | undefined;
-    // @ts-expect-error
-    field.$[0] satisfies Field<number>;
-    // @ts-expect-error
-    field.$[0] satisfies Field<number> | undefined;
-    // @ts-expect-error
-    field.$[0] satisfies Field<number | undefined>;
+    ty(field.$[0]).is(
+      ty<Field<number | undefined, "detachable"> | undefined>(),
+    );
   }
 
   // Record
@@ -4414,14 +4384,14 @@ const brandedPrim = new Field({} as Branded<string>);
 
   // Base
   {
-    const field = new Field([]) as Field.Base<string[]>;
+    const field = {} as Field.Base<string[]>;
     // @ts-expect-error
     field.insert(0, "hello");
   }
 
   // Immutable
   {
-    const field = new Field([]) as Field.Immutable<string[]>;
+    const field = {} as Field.Immutable<string[]>;
     // @ts-expect-error
     field.insert(0, "hello");
   }
@@ -4581,14 +4551,14 @@ const brandedPrim = new Field({} as Branded<string>);
 
   // Base
   {
-    const field = new Field([]) as Field.Base<string[]>;
+    const field = {} as Field.Base<string[]>;
     // @ts-expect-error
     field.push("hello");
   }
 
   // Immutable
   {
-    const field = new Field([]) as Field.Immutable<string[]>;
+    const field = {} as Field.Immutable<string[]>;
     // @ts-expect-error
     field.push("hello");
   }
@@ -5176,61 +5146,26 @@ const brandedPrim = new Field({} as Branded<string>);
   // Field union
   {
     const result = Field.base(unionField).discriminate("type");
-
-    result satisfies
-      | {
-          discriminator: "user";
-          field: Field.Base<User>;
-        }
-      | {
-          discriminator: "organization";
-          field: Field.Base<Organization>;
-        }
-      | {
-          discriminator: unknown;
-          field: Field.Base<unknown>;
-        };
-    // @ts-expect-error
-    result satisfies
-      | {
-          discriminator: "user";
-          field: Field.Base<User, "detachable">;
-        }
-      | {
-          discriminator: "organization";
-          field: Field.Base<Organization, "detachable">;
-        }
-      | {
-          discriminator: unknown;
-          field: Field.Base<unknown>;
-        };
-    // @ts-expect-error
-    result satisfies
-      | {
-          discriminator: "user";
-          field: Field.Base<User, "tried">;
-        }
-      | {
-          discriminator: "organization";
-          field: Field.Base<Organization, "tried">;
-        }
-      | {
-          discriminator: unknown;
-          field: Field.Base<unknown>;
-        };
-    // @ts-expect-error
-    result.any;
+    ty(result).is(
+      ty<
+        | {
+            discriminator: "user";
+            field: Field.Base<User>;
+          }
+        | {
+            discriminator: "organization";
+            field: Field.Base<Organization>;
+          }
+        | {
+            discriminator: unknown;
+            field: Field.Base<unknown>;
+          }
+      >(),
+    );
 
     if (result.discriminator === "user") {
-      result.field satisfies Field.Base<User>;
-      // @ts-expect-error
-      result.field satisfies Field<User>;
-      // @ts-expect-error
-      result.field satisfies Field.Base<Organization>;
-      // @ts-expect-error
-      result.field.any;
-
-      result.field.value satisfies User;
+      ty(result.field).is(ty.assignableFrom<Field.Base<User>>());
+      ty(result.field.value).is(ty<User>());
     }
 
     const _manual1: Field.Base.Discriminated<User | Organization, "type"> =
@@ -5475,17 +5410,8 @@ const brandedPrim = new Field({} as Branded<string>);
     result.any;
 
     if (result.discriminator === "user") {
-      result.field satisfies Field.Base<User, "detachable">;
-      // @ts-expect-error
-      result.field satisfies Field<User, "detachable">;
-      // @ts-expect-error
-      result.field satisfies Field.Base<User, "tried">;
-      // @ts-expect-error
-      result.field satisfies Field.Base<Organization, "detachable">;
-      // @ts-expect-error
-      result.field.any;
-
-      result.field.value satisfies User;
+      ty(result.field).is(ty.assignableFrom<Field.Base<User, "detachable">>());
+      ty(result.field.value).is(ty<User>());
     }
 
     const _manual1: Field.Base.Discriminated<

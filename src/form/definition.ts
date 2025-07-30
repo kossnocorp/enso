@@ -41,6 +41,7 @@ export declare class Form<Value> implements Form.Interface<Value> {
 
   useValue: Atom.Value.Use.Prop<
     "field",
+    "exact",
     Atom.Def<Value>,
     Atom.Qualifier.Default
   >;
@@ -61,11 +62,11 @@ export declare class Form<Value> implements Form.Interface<Value> {
 
   //#region Tree
 
-  get $(): Atom.$.Prop<"field", Value, Atom.Qualifier.Default>;
+  get $(): Atom.$.Prop<"field", "exact", Value, Atom.Qualifier.Default>;
 
-  at: Atom.At.Prop<"field", Value, Atom.Qualifier.Default>;
+  at: Atom.At.Prop<"field", "exact", Value, Atom.Qualifier.Default>;
 
-  try: Atom.Try.Prop<"field", Value, Atom.Qualifier.Default>;
+  try: Atom.Try.Prop<"field", "exact", Value, Atom.Qualifier.Default>;
 
   //#endregion
 
@@ -132,6 +133,7 @@ export namespace Form {
 
     useValue: Atom.Value.Use.Prop<
       "field",
+      "exact",
       Atom.Def<Value>,
       Atom.Qualifier.Default
     >;
@@ -142,11 +144,11 @@ export namespace Form {
 
     //#region Tree
 
-    get $(): Atom.$.Prop<"field", Value, Atom.Qualifier.Default>;
+    get $(): Atom.$.Prop<"field", "exact", Value, Atom.Qualifier.Default>;
 
-    at: Atom.At.Prop<"field", Value, Atom.Qualifier.Default>;
+    at: Atom.At.Prop<"field", "exact", Value, Atom.Qualifier.Default>;
 
-    try: Atom.Try.Prop<"field", Value, Atom.Qualifier.Default>;
+    try: Atom.Try.Prop<"field", "exact", Value, Atom.Qualifier.Default>;
 
     //#endregion
 

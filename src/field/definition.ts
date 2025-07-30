@@ -13,7 +13,8 @@ export declare class Field<
     > = Atom.Parent.Default,
   >
   extends Atom<
-    "field" | "exact",
+    "field",
+    "exact",
     Atom.Def<Value>,
     Atom.Qualifier.Internalize<Qualifier>,
     Parent
@@ -38,9 +39,9 @@ export declare class Field<
   >(
     value: Value,
     parent?: Atom.Parent.Ref<"field", Qualifier, Parent>,
-  ): Atom.Envelop<"field" | "exact", Atom.Def<Value>, Qualifier, Parent>;
+  ): Atom.Envelop<"field", "exact", Atom.Def<Value>, Qualifier, Parent>;
 
-  static base<Envelop extends Field<any>>(
+  static base<Envelop extends Atom.Envelop<"field", any, any>>(
     field: Envelop,
   ): Atom.Base.Result<"field", Envelop>;
 
@@ -52,11 +53,12 @@ export declare class Field<
     Qualifier extends Atom.Qualifier.Constraint,
     Parent extends Atom.Parent.Constraint<ValueDef>,
   >(
-    field: Atom.Envelop<"field" | Variant, ValueDef, Qualifier, Parent>,
+    field: Field.Envelop<Variant, ValueDef, Qualifier, Parent>,
     intoMapper: Atom.Proxy.Into.Mapper<ValueDef, ComputedValue>,
     fromMapper: Atom.Proxy.From.Mapper<ValueDef, ComputedValue, MappedValue>,
   ): Atom.Proxy.Envelop<
-    "field" | "exact",
+    "field",
+    Variant,
     ValueDef,
     ComputedValue,
     Qualifier,
@@ -69,12 +71,14 @@ export declare class Field<
   ): Field.Exact<Value>;
 
   static useEnsure<
-    FieldType extends Atom.Envelop<"field", any> | Utils.Nullish,
-    MappedValue = undefined,
+    FieldType extends Atom.Envelop<"field", any, any> | Utils.Nullish,
+    MappedType extends
+      | Atom.Envelop<"field", any, any>
+      | Utils.Nullish = undefined,
   >(
     field: FieldType,
-    map?: Atom.Static.Ensure.Mapper<"field", FieldType, MappedValue>,
-  ): Atom.Static.Ensure.Result<"field", FieldType, MappedValue>;
+    map?: Atom.Static.Ensure.Mapper<"field", FieldType, MappedType>,
+  ): Atom.Static.Ensure.Result<"field", FieldType, MappedType>;
 
   // Field
 
@@ -142,7 +146,10 @@ export declare class Field<
 
   useValid: Field.Valid.Use.Prop<Atom.Qualifier.Internalize<Qualifier>>;
 
-  validate: Field.Validate.Prop<Value, Atom.Qualifier.Internalize<Qualifier>>;
+  readonly validate: Field.Validate.Prop<
+    Value,
+    Atom.Qualifier.Internalize<Qualifier>
+  >;
 
   addError: Field.AddError.Prop;
 
@@ -153,18 +160,18 @@ export declare class Field<
 
 export namespace Field {
   export type Envelop<
-    Flavor extends Atom.Flavor.Constraint,
+    Variant extends Atom.Flavor.Variant,
     ValueDef extends Atom.Def.Constraint,
     Qualifier extends Atom.Qualifier.Constraint,
     Parent extends Atom.Parent.Constraint<ValueDef>,
-  > = "immutable" extends Flavor
-    ? Immutable.Internal<ValueDef, Qualifier, Parent>
-    : "optional" extends Flavor
+  > = Variant extends "exact"
+    ? Exact.Internal<ValueDef, Qualifier, Parent>
+    : Variant extends "optional"
       ? Optional.Internal<ValueDef, Qualifier, Parent>
-      : "base" extends Flavor
+      : Variant extends "base"
         ? Base.Internal<ValueDef, Qualifier, Parent>
-        : "exact" extends Flavor
-          ? Exact.Internal<ValueDef, Qualifier, Parent>
+        : Variant extends "immutable"
+          ? Immutable.Internal<ValueDef, Qualifier, Parent>
           : never;
 
   //#region Interface
@@ -190,7 +197,7 @@ export namespace Field {
       out Qualifier extends Atom.Qualifier.Constraint = Atom.Qualifier.Default,
       Parent extends Atom.Parent.Constraint<ValueDef> = Atom.Parent.Default,
     > extends Ish.Value.Write<Qualifier>,
-        Atom.Exact<"field" | "exact", ValueDef, Qualifier, Parent>,
+        Atom.Exact<"field", "exact", ValueDef, Qualifier, Parent>,
         Immutable.Interface<"exact", ValueDef, Qualifier, Parent> {}
 
     export interface Interface<
@@ -201,7 +208,7 @@ export namespace Field {
         Atom.Def<Value>
       > = Atom.Parent.Default,
     > extends Ish.Value.Write<Qualifier>,
-        Atom.Exact<"field" | Variant, Atom.Def<Value>, Qualifier, Parent>,
+        Atom.Exact<"field", Variant, Atom.Def<Value>, Qualifier, Parent>,
         Immutable.Interface<Variant, Atom.Def<Value>, Qualifier, Parent> {}
   }
 
@@ -245,7 +252,8 @@ export namespace Field {
         Atom.Def<Value>
       > = Atom.Parent.Default,
     > = Atom.Discriminate.Result<
-      "field" | "base",
+      "field",
+      "base",
       Atom.Def<Value>,
       Discriminator,
       Atom.Qualifier.Internalize<Qualifier>,
@@ -293,7 +301,8 @@ export namespace Field {
         Atom.Def<Value>
       > = Atom.Parent.Default,
     > = Atom.Discriminate.Result<
-      "field" | "optional",
+      "field",
+      "optional",
       Atom.Def<Value>,
       Discriminator,
       Atom.Qualifier.Internalize<Qualifier>,
@@ -332,7 +341,7 @@ export namespace Field {
       Parent extends Atom.Parent.Constraint<ValueDef> = Atom.Parent.Default,
     > extends Ish.Value.Read<ValueDef, Qualifier>,
         Ish.Validation<ValueDef, Qualifier>,
-        Atom.Immutable<"field" | Variant, ValueDef, Qualifier, Parent> {
+        Atom.Immutable<"field", Variant, ValueDef, Qualifier, Parent> {
       [hintSymbol]: true;
 
       control<Element extends HTMLElement>(
@@ -351,7 +360,8 @@ export namespace Field {
         Atom.Def<Value>
       > = Atom.Parent.Default,
     > = Atom.Discriminate.Result<
-      "field" | "immutable",
+      "field",
+      "immutable",
       Atom.Def<Value>,
       Discriminator,
       Atom.Qualifier.Internalize<Qualifier>,
@@ -487,7 +497,7 @@ export namespace Field {
 
       useValid: Field.Valid.Use.Prop<Qualifier>;
 
-      validate: Validate.Prop<ValueDef["read"], Qualifier>;
+      readonly validate: Validate.Prop<ValueDef["read"], Qualifier>;
 
       addError: Field.AddError.Prop;
 
@@ -586,6 +596,7 @@ export namespace Field {
     > = Atom.Parent.Default,
   > = Atom.Decompose.Result<
     "field",
+    "exact",
     Atom.Def<Value>,
     Atom.Qualifier.Internalize<Qualifier>,
     Parent
@@ -600,7 +611,8 @@ export namespace Field {
       Atom.Def<Value>
     > = Atom.Parent.Default,
   > = Atom.Discriminate.Result<
-    "field" | "exact",
+    "field",
+    "exact",
     Atom.Def<Value>,
     Discriminator,
     Atom.Qualifier.Internalize<Qualifier>,
