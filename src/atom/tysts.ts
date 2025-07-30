@@ -216,25 +216,16 @@ import { ty } from "tysts";
 //#region Atom.Base.Qualifier.Shared
 {
   type NoSharedQualifier = Atom.Base.Qualifier.Shared<
-    Atom.Envelop<any, any, "bound"> | Atom.Envelop<any, any, "detachable">
+    | Atom.Envelop<any, any, { bound: true }>
+    | Atom.Envelop<any, any, { detachable: true }>
   >;
-
-  tyst<never>({} as NoSharedQualifier);
-  // @ts-expect-error
-  tyst<NoSharedQualifier>({} as any);
+  ty<NoSharedQualifier>().is(ty<{}>());
 
   type SharedQualifier = Atom.Base.Qualifier.Shared<
-    | Atom.Envelop<any, any, "bound">
-    | Atom.Envelop<any, any, "bound" | "detachable">
+    | Atom.Envelop<any, any, { bound: true }>
+    | Atom.Envelop<any, any, { bound: true; detachable: true }>
   >;
-
-  tyst<SharedQualifier>("bound");
-  // @ts-expect-error
-  tyst<SharedQualifier>("bound" | "detachable");
-  // @ts-expect-error
-  tyst<SharedQualifier>("detachable");
-  // @ts-expect-error
-  tyst<SharedQualifier>(unknown);
+  ty<SharedQualifier>().is(ty<{ bound: true }>());
 }
 //#endregion
 
@@ -300,54 +291,38 @@ import { ty } from "tysts";
 }
 //#endregion
 
-//#region Atom.Qualifier.Map
+//#region Atom.Qualifier.Internalize
 {
   // Basic
   {
-    ty<Atom.Qualifier.Map<Atom.Qualifier.Default>>()
-      .is(ty.assignableFrom<Atom.Qualifier.Map<Atom.Qualifier.Default>>())
-      .is(ty.assignableFrom<Atom.Qualifier.Map<"bound">>())
-      .is(ty.assignableFrom<Atom.Qualifier.Map<"bound" | "detachable">>());
-
-    ty<Atom.Qualifier.Map<"bound">>()
-      .is(ty.assignableFrom<Atom.Qualifier.Map<"bound" | "detachable">>())
-      .is.not(ty.assignableFrom<Atom.Qualifier.Map<Atom.Qualifier.Default>>())
-      .is.not(ty.assignableFrom<Atom.Qualifier.Map<"detachable">>());
+    ty<Atom.Qualifier.Internalize<Atom.Qualifier.External.Default>>().is(
+      ty<{}>(),
+    );
+    ty<Atom.Qualifier.Internalize<"bound">>().is(ty<{ bound: true }>());
+    ty<Atom.Qualifier.Internalize<"bound" | "detachable">>().is(
+      ty<{ bound: true; detachable: true }>(),
+    );
+    ty<Atom.Qualifier.Internalize<never>>().is(ty<{}>());
+    ty<Atom.Qualifier.Internalize<any>>().is(
+      ty<{
+        root: true;
+        detachable: true;
+        tried: true;
+        bound: true;
+        ref: true;
+      }>(),
+    );
   }
 
   // Proxied
   {
-    ty<Atom.Qualifier.Map<Atom.Qualifier.Default>>()
-      .is(ty.assignableFrom<Atom.Qualifier.Map<Atom.Proxy.Qualifier<string>>>())
-      .is(
-        ty.assignableFrom<
-          Atom.Qualifier.Map<Atom.Proxy.Qualifier<string> | "bound">
-        >(),
-      );
+    ty<Atom.Qualifier.Internalize<Atom.Proxy.Qualifier<string>>>().is(
+      ty<{ source: string }>(),
+    );
 
-    ty<Atom.Qualifier.Map<Atom.Proxy.Qualifier<string>>>()
-      .is(
-        ty.assignableFrom<
-          Atom.Qualifier.Map<Atom.Proxy.Qualifier<string> | "bound">
-        >(),
-      )
-      .is.not(
-        ty.assignableFrom<Atom.Qualifier.Map<Atom.Proxy.Qualifier<number>>>(),
-      )
-      .is.not(ty.assignableFrom<Atom.Qualifier.Map<"bound">>());
-
-    ty<Atom.Qualifier.Map<Atom.Proxy.Qualifier<string> | "detachable">>()
-      .is(
-        ty.assignableFrom<
-          Atom.Qualifier.Map<
-            Atom.Proxy.Qualifier<string> | "detachable" | "bound"
-          >
-        >(),
-      )
-      .is.not(
-        ty.assignableFrom<Atom.Qualifier.Map<Atom.Proxy.Qualifier<string>>>(),
-      )
-      .is.not(ty.assignableFrom<Atom.Qualifier.Map<"detachable">>());
+    ty<
+      Atom.Qualifier.Internalize<Atom.Proxy.Qualifier<string> | "detachable">
+    >().is(ty<{ source: string; detachable: true }>());
   }
 }
 //#endregion

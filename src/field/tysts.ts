@@ -491,7 +491,7 @@ const unionField = new Field({ hello: "world", world: true }) as
       .is(ty.assignableFrom<Field.Exact<Entity, "detachable">>())
       .is(
         ty.assignableFrom<
-          Field.Exact.Internal<Atom.Def<Entity>, "detachable">
+          Field.Exact.Internal<Atom.Def<Entity>, { detachable: true }>
         >(),
       );
   }
@@ -1703,11 +1703,6 @@ const unionField = new Field({ hello: "world", world: true }) as
       "detachable"
     >;
     // @ts-expect-error
-    field.at("email") satisfies State.Immutable<
-      string | undefined,
-      "detachable"
-    >;
-    // @ts-expect-error
     field.at("email") satisfies Field.Immutable<string, "detachable">;
   }
 
@@ -2009,10 +2004,6 @@ const unionField = new Field({ hello: "world", world: true }) as
       | undefined;
     // @ts-expect-error
     field.try("email").id;
-    // @ts-expect-error
-    field.try("email") satisfies
-      | State<string, "detachable" | "tried">
-      | undefined;
   }
 
   // Immutable
@@ -2029,10 +2020,6 @@ const unionField = new Field({ hello: "world", world: true }) as
       | undefined;
     // @ts-expect-error
     field.try("email").id;
-    // @ts-expect-error
-    field.try("email") satisfies
-      | State.Immutable<string, "detachable" | "tried">
-      | undefined;
   }
 
   // Record
@@ -2066,10 +2053,6 @@ const unionField = new Field({ hello: "world", world: true }) as
       | undefined;
     // @ts-expect-error
     entity.try("flag").id;
-    // @ts-expect-error
-    entity.try("flag") satisfies
-      | State<boolean, "detachable" | "tried">
-      | undefined;
   }
 
   // Union field
@@ -2088,10 +2071,6 @@ const unionField = new Field({ hello: "world", world: true }) as
       | undefined;
     // @ts-expect-error
     Field.base(field).try("flag").id;
-    // @ts-expect-error
-    Field.base(field).try("flag") satisfies
-      | State<boolean, "detachable" | "tried">
-      | undefined;
     // @ts-expect-error
     Field.base(field).try("flag") satisfies Field<
       number,
@@ -2382,10 +2361,6 @@ const unionField = new Field({ hello: "world", world: true }) as
     user.at("email").self.try() satisfies Field<string, "bound"> | undefined;
     // @ts-expect-error
     user.at("email").self.try().id;
-    // @ts-expect-error
-    user.at("email").self.try() satisfies
-      | State<string, "detachable" | "tried">
-      | undefined;
   }
 
   // Immutable
@@ -2407,10 +2382,6 @@ const unionField = new Field({ hello: "world", world: true }) as
       | undefined;
     // @ts-expect-error
     user.at("email").self.try().id;
-    // @ts-expect-error
-    user.at("email").self.try() satisfies
-      | State.Immutable<string, "tried">
-      | undefined;
   }
 
   // Union value
@@ -2449,11 +2420,6 @@ const unionField = new Field({ hello: "world", world: true }) as
     >;
     Field.base(entity).at("name").self.try().id;
     // @ts-expect-error
-    Field.base(entity).at("name").self.try() satisfies State.Base<
-      string,
-      "tried"
-    >;
-    // @ts-expect-error
     Field.base(entity).at("name").self.try() satisfies Field.Base<
       number,
       "tried"
@@ -2464,10 +2430,6 @@ const unionField = new Field({ hello: "world", world: true }) as
       | undefined;
     // @ts-expect-error
     Field.base(entity).at("flag").self.try().id;
-    // @ts-expect-error
-    Field.base(entity).at("flag").self.try() satisfies
-      | State.Base<boolean, "tried">
-      | undefined;
     // @ts-expect-error
     Field.base(entity).at("flag").self.try() satisfies Field.Base<
       number,

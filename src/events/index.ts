@@ -4,7 +4,9 @@ import { FieldChange, shiftChildChanges } from "../change/index.ts";
 export class EventsTree<Kind extends Atom.Flavor.Kind> {
   #tree: EventsTree.Node<Kind> = EventsTree.node();
 
-  at(path: Atom.Path): Atom.Exact.Envelop<Kind, any, unknown, never>[] {
+  at(
+    path: Atom.Path,
+  ): Atom.Exact.Envelop<Kind, any, Atom.Qualifier.Default, never>[] {
     let node: EventsTree.Node<Kind> | undefined = this.#tree;
     for (const key of path) {
       node = node.children[key];
@@ -29,7 +31,10 @@ export class EventsTree<Kind extends Atom.Flavor.Kind> {
     queue.reverse().forEach(([path, atoms]) => callback(path, atoms));
   }
 
-  add(path: Atom.Path, atom: Atom.Exact.Envelop<Kind, any, unknown, never>) {
+  add(
+    path: Atom.Path,
+    atom: Atom.Exact.Envelop<Kind, any, Atom.Qualifier.Default, never>,
+  ) {
     let node = this.#tree;
     for (const key of path) {
       node = node.children[key] ??= EventsTree.node();
@@ -39,7 +44,7 @@ export class EventsTree<Kind extends Atom.Flavor.Kind> {
 
   delete(
     path: Atom.Path,
-    atom: Atom.Exact.Envelop<Kind, any, unknown, never>,
+    atom: Atom.Exact.Envelop<Kind, any, Atom.Qualifier.Default, never>,
   ): boolean {
     let node: EventsTree.Node<Kind> | undefined = this.#tree;
     for (const key of path) {
@@ -52,7 +57,7 @@ export class EventsTree<Kind extends Atom.Flavor.Kind> {
   move(
     from: Atom.Path,
     to: Atom.Path,
-    atom: Atom.Exact.Envelop<Kind, any, unknown, never>,
+    atom: Atom.Exact.Envelop<Kind, any, Atom.Qualifier.Default, never>,
   ): boolean {
     if (this.delete(from, atom)) {
       this.add(to, atom);
@@ -78,12 +83,19 @@ export class EventsTree<Kind extends Atom.Flavor.Kind> {
 
 export namespace EventsTree {
   export interface Node<Kind extends Atom.Flavor.Kind> {
-    atoms: Set<Atom.Exact.Envelop<Kind, Atom.Def<unknown>, unknown, never>>;
+    atoms: Set<
+      Atom.Exact.Envelop<Kind, Atom.Def<unknown>, Atom.Qualifier.Default, never>
+    >;
     children: Record<keyof any, Node<Kind>>;
   }
 
   export type TraverseCallback<Kind extends Atom.Flavor.Kind> = (
     path: Atom.Path,
-    atoms: Atom.Exact.Envelop<Kind, Atom.Def<unknown>, unknown, never>[],
+    atoms: Atom.Exact.Envelop<
+      Kind,
+      Atom.Def<unknown>,
+      Atom.Qualifier.Default,
+      never
+    >[],
   ) => void;
 }
