@@ -327,4 +327,33 @@ export namespace EnsoUtils {
   export type Expose<Type> = Type & {};
 
   //#endregion
+
+  export type Extends<Qualifier, QualifierToCheck> =
+    Extract<Qualifier, QualifierToCheck> extends infer RefQualifier
+      ? Not<IsNever<RefQualifier>>
+      : never;
+
+  export namespace Union {
+    export type Shared<Type> = Pick<
+      Type,
+      {
+        [Key in UnionKeys<Type>]: IsSharedKey<Type, Key> extends true
+          ? Key
+          : never;
+      }[UnionKeys<Type>]
+    >;
+
+    export type IsSharedKey<
+      Type,
+      Key extends keyof Type,
+    > = Type extends infer TypeUnion
+      ? Type extends Type
+        ? Key extends keyof TypeUnion
+          ? TypeUnion[Key] extends Type[Key]
+            ? true
+            : false
+          : false
+        : never
+      : never;
+  }
 }

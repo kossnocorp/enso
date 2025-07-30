@@ -39,7 +39,11 @@ export declare class Form<Value> implements Form.Interface<Value> {
 
   get value(): Atom.Value.Prop<Atom.Def<Value>>;
 
-  useValue: Atom.Value.Use.Prop<"field", Atom.Def<Value>, never>;
+  useValue: Atom.Value.Use.Prop<
+    "field",
+    Atom.Def<Value>,
+    Atom.Qualifier.Default
+  >;
 
   set(value: Value): void;
 
@@ -57,11 +61,11 @@ export declare class Form<Value> implements Form.Interface<Value> {
 
   //#region Tree
 
-  get $(): Atom.$.Prop<"field", Value, never>;
+  get $(): Atom.$.Prop<"field", Value, Atom.Qualifier.Default>;
 
-  at: Atom.At.Prop<"field", Value, never>;
+  at: Atom.At.Prop<"field", Value, Atom.Qualifier.Default>;
 
-  try: Atom.Try.Prop<"field", Value, never>;
+  try: Atom.Try.Prop<"field", Value, Atom.Qualifier.Default>;
 
   //#endregion
 
@@ -105,8 +109,8 @@ export declare class Form<Value> implements Form.Interface<Value> {
 
 export namespace Form {
   export interface Interface<Value>
-    extends Field.Ish.Value.Read<Atom.Def<Value>, never>,
-      Field.Ish.Value.Write<never>,
+    extends Field.Ish.Value.Read<Atom.Def<Value>, Atom.Qualifier.Default>,
+      Field.Ish.Value.Write<Atom.Qualifier.Default>,
       Field.Ish.Validation<Atom.Def<Value>, Atom.Qualifier.Default> {
     //#region Instance
 
@@ -126,7 +130,11 @@ export namespace Form {
 
     value: Atom.Value.Prop<Atom.Def<Value>>;
 
-    useValue: Atom.Value.Use.Prop<"field", Atom.Def<Value>, never>;
+    useValue: Atom.Value.Use.Prop<
+      "field",
+      Atom.Def<Value>,
+      Atom.Qualifier.Default
+    >;
 
     set(value: Value): void;
 
@@ -134,11 +142,11 @@ export namespace Form {
 
     //#region Tree
 
-    get $(): Atom.$.Prop<"field", Value, never>;
+    get $(): Atom.$.Prop<"field", Value, Atom.Qualifier.Default>;
 
-    at: Atom.At.Prop<"field", Value, never>;
+    at: Atom.At.Prop<"field", Value, Atom.Qualifier.Default>;
 
-    try: Atom.Try.Prop<"field", Value, never>;
+    try: Atom.Try.Prop<"field", Value, Atom.Qualifier.Default>;
 
     //#endregion
 
