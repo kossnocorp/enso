@@ -260,6 +260,11 @@ export class AtomImpl<Value> {
   }
 
   self: any = {
+    try: () => {
+      if (this.value === undefined || this.value === null) return this.value;
+      return this;
+    },
+
     remove: () => {
       return this.set(detachedValue, true);
     },
@@ -267,6 +272,10 @@ export class AtomImpl<Value> {
 
   forEach(callback: any) {
     this.internal.forEach(callback);
+  }
+
+  map(callback: any) {
+    this.internal.map(callback);
   }
 
   useCollection(): AtomImpl<Value> {
@@ -312,8 +321,7 @@ export class AtomImpl<Value> {
     return this.internal.$();
   }
 
-  // @ts-ignore: WIP
-  at(key) {
+  at(key: keyof Value) {
     if (
       this.internal instanceof AtomValueArray ||
       this.internal instanceof AtomValueObject

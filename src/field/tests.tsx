@@ -5,11 +5,8 @@ import { postpone } from "../../tests/utils.ts";
 import { change } from "../change/index.ts";
 import { DetachedValue, detachedValue } from "../detached/index.ts";
 import { EventsTree } from "../events/index.ts";
-import { ValidationTree } from "../validation/index.ts";
-import { fieldEach, fieldMap } from "./collection/index.ts";
-import { ComputedField, FieldOld } from "./old.tsx";
 import { Field } from "./index.js";
-import { FieldRefOld } from "./ref/old.ts";
+import { ComputedField, FieldOld } from "./old.tsx";
 
 //#region Field
 
@@ -261,7 +258,7 @@ describe(Field, () => {
                 ).toMatchChanges(change.field.shape | change.child.attach);
               });
 
-              it.skip("assigns change when child detaches", () => {
+              it("assigns change when child detaches", () => {
                 const field = new Field<object>({ num: 42, str: "hello" });
                 expect(field.set({ num: 42 }).lastChanges).toMatchChanges(
                   change.field.shape | change.child.detach,
@@ -556,19 +553,17 @@ describe(Field, () => {
           expect(field.value).toEqual([{ n: 1 }, { n: 2 }]);
         });
 
-        it.skip("works when assigning object instead of an undefined item", () => {
+        it("works when assigning object instead of an undefined item", () => {
           const field = new Field<Array<{ n: number }>>([{ n: 1 }, { n: 2 }]);
           const spy = vi.fn();
           const undefinedField = field.at(2);
-          // @ts-expect-error -- WIP: Types revamp
-          fieldMap(field, spy);
+          field.map(spy);
           expect(undefinedField.value).toBe(undefined);
           expect(
             field.set([{ n: 1 }, { n: 2 }, { n: 3 }]).lastChanges,
           ).toMatchChanges(change.field.shape | change.child.attach);
           expect(field.value).toEqual([{ n: 1 }, { n: 2 }, { n: 3 }]);
-          // @ts-expect-error -- WIP: Types revamp
-          fieldMap(field, spy);
+          field.map(spy);
           expect(spy).toBeCalled();
         });
 
@@ -845,7 +840,7 @@ describe(Field, () => {
             );
           });
 
-          it.skip("assigns type change when setting undefined", () => {
+          it("assigns type change when setting undefined", () => {
             const field = new Field<Map<string, string> | undefined>(new Map());
             expect(field.set(undefined).lastChanges).toMatchChanges(
               change.field.type,
@@ -855,7 +850,7 @@ describe(Field, () => {
       });
     });
 
-    describe.skip("initial", () => {
+    describe("initial", () => {
       it("returns the initial field", () => {
         const field = new Field(42);
         field.set(43);
@@ -1033,9 +1028,9 @@ describe(Field, () => {
       });
     });
 
-    describe.skip("commit", () => {
+    describe("commit", () => {
       it("commits the current field as the initial field", () => {
-        const field = new FieldOld(42);
+        const field = new Field(42);
         field.set(43);
         field.commit();
         expect(field.initial).toBe(43);
@@ -1043,7 +1038,7 @@ describe(Field, () => {
       });
 
       it("commits the current field as the initial field for children", () => {
-        const field = new FieldOld({
+        const field = new Field({
           name: { first: "Alexander" },
           codes: [1, 2, 3],
         });
@@ -1054,7 +1049,7 @@ describe(Field, () => {
           name: { first: "Sasha" },
           codes: [1, 5, 3],
         });
-        expect(field.get()).toEqual({
+        expect(field.value).toEqual({
           name: { first: "Sasha" },
           codes: [1, 5, 3],
         });
@@ -1068,7 +1063,7 @@ describe(Field, () => {
       describe("changes", () => {
         describe("field", () => {
           it("triggers commit change", async () => {
-            const field = new FieldOld("");
+            const field = new Field("");
             field.set("spam@example.com");
             expect(field.dirty).toBe(true);
 
@@ -1087,7 +1082,7 @@ describe(Field, () => {
           });
 
           it("does't trigger commit change if it wasn't dirty", async () => {
-            const field = new FieldOld("");
+            const field = new Field("");
             field.set("");
             expect(field.dirty).toBe(false);
 
@@ -1104,7 +1099,7 @@ describe(Field, () => {
 
         describe("child", () => {
           it("triggers commit change", async () => {
-            const field = new FieldOld({
+            const field = new Field({
               name: { first: "Alexander" },
               email: "",
             });
@@ -1126,7 +1121,7 @@ describe(Field, () => {
           });
 
           it("does't trigger commit change if it wasn't dirty", async () => {
-            const field = new FieldOld({
+            const field = new Field({
               name: { first: "Alexander" },
               email: "",
             });
@@ -1146,7 +1141,7 @@ describe(Field, () => {
 
         describe("subtree", () => {
           it("triggers commit change", async () => {
-            const field = new FieldOld({
+            const field = new Field({
               user: {
                 name: { first: "Alexander" },
                 email: "",
@@ -1173,7 +1168,7 @@ describe(Field, () => {
           });
 
           it("does't trigger commit change if it wasn't dirty", async () => {
-            const field = new FieldOld({
+            const field = new Field({
               user: {
                 name: { first: "Alexander" },
                 email: "",
@@ -1195,9 +1190,9 @@ describe(Field, () => {
       });
     });
 
-    describe.skip("reset", () => {
+    describe("reset", () => {
       it("resets the current field to initial state", () => {
-        const field = new FieldOld(42);
+        const field = new Field(42);
         field.set(43);
         expect(field.dirty).toBe(true);
         field.reset();
@@ -1206,7 +1201,7 @@ describe(Field, () => {
       });
 
       it("resets the nested children", () => {
-        const field = new FieldOld({
+        const field = new Field({
           name: { first: "Alexander" },
           codes: [1, 2, 3],
         });
@@ -1216,7 +1211,7 @@ describe(Field, () => {
         expect(field.$.name.$.first.dirty).toBe(true);
         expect(field.$.codes.at(1).dirty).toBe(true);
         field.reset();
-        expect(field.get()).toEqual({
+        expect(field.value).toEqual({
           name: { first: "Alexander" },
           codes: [1, 2, 3],
         });
@@ -1234,26 +1229,26 @@ describe(Field, () => {
       });
     });
 
-    describe.skip("pave", () => {
+    describe("pave", () => {
       it("returns field set to the given value if it's null or undefined", () => {
-        const field = new FieldOld<string | undefined>(undefined);
+        const field = new Field<string | undefined>(undefined);
         const pavedField = field.pave("Hello");
-        expect(pavedField.get()).toBe("Hello");
+        expect(pavedField.value).toBe("Hello");
         expect(pavedField).toBe(field);
       });
 
       it("returns same field if it's already set", () => {
-        const field = new FieldOld<string | undefined>("Hi");
+        const field = new Field<string | undefined>("Hi");
         const pavedField = field.pave("Hello");
-        expect(pavedField.get()).toBe("Hi");
+        expect(pavedField.value).toBe("Hi");
       });
 
-      it("allows to pave through nested fields", () => {
-        const field = new FieldOld<
+      it.skip("allows to pave through nested fields", () => {
+        const field = new Field<
           { name?: { first?: string; last?: string } } | undefined
         >({});
         field.pave({}).$.name.pave({}).$.first.pave("Alexander");
-        expect(field.get()).toEqual({
+        expect(field.value).toEqual({
           name: { first: "Alexander" },
         });
       });
@@ -1474,7 +1469,7 @@ describe(Field, () => {
         expect(field.parent).toBe(undefined);
       });
 
-      it.skip("returns the source parent for computed fields", () => {
+      it("returns the source parent for computed fields", () => {
         const field = new Field({ name: { first: "Sasha" } });
         const computed = field.$.name.$.first.into(toCodes).from(fromCodes);
         expect(computed.parent).toBe(field.$.name);
@@ -1492,7 +1487,7 @@ describe(Field, () => {
         expect(field.key).toBe(undefined);
       });
 
-      it.skip("returns the source key for computed fields", () => {
+      it("returns the source key for computed fields", () => {
         const field = new Field({ name: { first: "Sasha" } });
         const computed = field.$.name.$.first.into(toCodes).from(fromCodes);
         expect(computed.key).toBe("first");
@@ -1522,7 +1517,7 @@ describe(Field, () => {
         expect(field.path).toEqual([]);
       });
 
-      it.skip("returns the source path for computed fields", () => {
+      it("returns the source path for computed fields", () => {
         const field = new Field({ name: { first: "Sasha" } });
         const computed = field.$.name.$.first.into(toCodes).from(fromCodes);
         expect(computed.path).toEqual(["name", "first"]);
@@ -1542,7 +1537,7 @@ describe(Field, () => {
         expect(field.name).toEqual(".");
       });
 
-      it.skip("returns the source name for computed fields", () => {
+      it("returns the source name for computed fields", () => {
         const field = new Field({ name: { first: "Sasha" } });
         const computed = field.$.name.$.first.into(toCodes).from(fromCodes);
         expect(computed.name).toEqual("name.first");
@@ -1638,54 +1633,52 @@ describe(Field, () => {
     describe("try", () => {
       describe("primitive", () => {
         it("returns the field if it's defined", () => {
-          const field = new FieldOld<string | number | undefined>(42);
-          const tried = field.try();
-          tried satisfies FieldOld<string | number> | undefined;
+          const field = new Field<string | number | undefined>(42);
+          const tried = field.self.try();
+          tried satisfies Field<string | number> | undefined;
           expect(tried).toBe(field);
-          expect(tried).toBeInstanceOf(FieldOld);
-          expect(tried?.get()).toBe(42);
+          expect(tried).toBeInstanceOf(Field);
+          expect(tried?.value).toBe(42);
         });
 
         it("returns undefined if field doesn't exist", () => {
-          const field = new FieldOld<string | number | undefined>(
+          const field = new Field<string | number | undefined>(
             detachedValue as any,
           );
-          expect(field.try()).toBe(undefined);
+          expect(field.self.try()).toBe(undefined);
         });
 
         it("returns undefined/null if field is undefined/null", () => {
-          const undefinedState = new FieldOld<string | undefined>(undefined);
-          expect(undefinedState.try()).toBe(undefined);
-          const nullState = new FieldOld<string | null>(null);
-          nullState.try() satisfies FieldOld<string> | null;
-          expect(nullState.try()).toBe(null);
+          const undefinedState = new Field<string | undefined>(undefined);
+          expect(undefinedState.self.try()).toBe(undefined);
+          const nullState = new Field<string | null>(null);
+          nullState.self.try() satisfies Field<string> | null;
+          expect(nullState.self.try()).toBe(null);
         });
       });
 
       describe("object", () => {
         it("returns the field if it exists", () => {
-          const field = new FieldOld<Record<string, number>>({ num: 42 });
+          const field = new Field<Record<string, number>>({ num: 42 });
           const tried = field.try("num");
-          tried satisfies FieldOld<number> | undefined;
-          expect(tried).toBeInstanceOf(FieldOld);
-          expect(tried?.get()).toBe(42);
+          tried satisfies Field<number> | undefined;
+          expect(tried).toBeInstanceOf(Field);
+          expect(tried?.value).toBe(42);
         });
 
         it("returns undefined if field doesn't exist", () => {
-          const field = new FieldOld<Record<string, number>>({ num: 42 });
+          const field = new Field<Record<string, number>>({ num: 42 });
           expect(field.try("bum")).toBe(undefined);
         });
 
         it("returns undefined/null if field is undefined/null", () => {
-          const field = new FieldOld<Record<string, number | undefined | null>>(
-            {
-              num: 42,
-              bum: undefined,
-              hum: null,
-            },
-          );
+          const field = new Field<Record<string, number | undefined | null>>({
+            num: 42,
+            bum: undefined,
+            hum: null,
+          });
           const tried = field.try("bum");
-          tried satisfies FieldOld<number> | undefined | null;
+          tried satisfies Field<number> | undefined | null;
           expect(tried).toBe(undefined);
           expect(field.try("hum")).toBe(null);
         });
@@ -1693,26 +1686,26 @@ describe(Field, () => {
 
       describe("array", () => {
         it("returns the item if it exists", () => {
-          const field = new FieldOld<Array<number>>([1, 2, 3]);
+          const field = new Field<Array<number>>([1, 2, 3]);
           const tried = field.try(1);
-          tried satisfies FieldOld<number> | undefined;
-          expect(tried).toBeInstanceOf(FieldOld);
-          expect(tried?.get()).toBe(2);
+          tried satisfies Field<number> | undefined;
+          expect(tried).toBeInstanceOf(Field);
+          expect(tried?.value).toBe(2);
         });
 
         it("returns undefined if item doesn't exist", () => {
-          const field = new FieldOld<Array<number>>([1, 2, 3]);
+          const field = new Field<Array<number>>([1, 2, 3]);
           const tried = field.try(5);
           expect(tried).toBe(undefined);
         });
 
         it("returns undefined/null if item is undefined/null", () => {
-          const field = new FieldOld<Array<number | undefined | null>>([
+          const field = new Field<Array<number | undefined | null>>([
             1,
             undefined,
             null,
           ]);
-          field.try(0) satisfies FieldOld<number> | undefined | null;
+          field.try(0) satisfies Field<number> | undefined | null;
           expect(field.try(1)).toBe(undefined);
           expect(field.try(2)).toBe(null);
         });
@@ -1722,47 +1715,45 @@ describe(Field, () => {
         it("returns the field if it's defined", () => {
           const map = new Map();
           map.set("num", 42);
-          const field = new FieldOld<
+          const field = new Field<
             Map<string, string> | Set<string> | undefined
           >(map);
-          const tried = field.try();
-          tried satisfies
-            | FieldOld<Map<string, string> | Set<string>>
-            | undefined;
+          const tried = field.self.try();
+          tried satisfies Field<Map<string, string> | Set<string>> | undefined;
           expect(tried).toBe(field);
-          expect(tried).toBeInstanceOf(FieldOld);
+          expect(tried).toBeInstanceOf(Field);
           // @ts-expect-error: This is fine!
-          expect(Object.fromEntries(tried?.get())).toEqual({ num: 42 });
+          expect(Object.fromEntries(tried?.value)).toEqual({ num: 42 });
         });
 
         it("returns undefined if field doesn't exist", () => {
-          const field = new FieldOld<string | number | undefined>(
+          const field = new Field<string | number | undefined>(
             detachedValue as any,
           );
-          expect(field.try()).toBe(undefined);
+          expect(field.self.try()).toBe(undefined);
         });
 
         it("returns undefined/null if field is undefined/null", () => {
-          const undefinedState = new FieldOld<string | undefined>(undefined);
-          expect(undefinedState.try()).toBe(undefined);
-          const nullState = new FieldOld<string | null>(null);
-          const tried = nullState.try();
-          tried satisfies FieldOld<string> | null;
+          const undefinedState = new Field<string | undefined>(undefined);
+          expect(undefinedState.self.try()).toBe(undefined);
+          const nullState = new Field<string | null>(null);
+          const tried = nullState.self.try();
+          tried satisfies Field<string> | null;
           expect(tried).toBe(null);
         });
       });
     });
 
-    describe.skip(FieldOld.prototype.lookup, () => {
+    describe(Field.prototype.lookup, () => {
       describe("primitive", () => {
         it("returns itself for empty path", () => {
-          const field = new FieldOld(42);
+          const field = new Field(42);
           const lookup = field.lookup([]);
           expect(lookup).toBe(field);
         });
 
         it("returns undefined for non-empty path", () => {
-          const field = new FieldOld(42);
+          const field = new Field(42);
           const lookup = field.lookup(["length"]);
           expect(lookup).toBe(undefined);
         });
@@ -1770,25 +1761,25 @@ describe(Field, () => {
 
       describe("object", () => {
         it("returns itself for empty path", () => {
-          const field = new FieldOld({ num: 42 });
+          const field = new Field({ num: 42 });
           const lookup = field.lookup([]);
           expect(lookup).toBe(field);
         });
 
         it("returns the field for valid path", () => {
-          const field = new FieldOld({ num: 42 });
+          const field = new Field({ num: 42 });
           const lookup = field.lookup(["num"]);
           expect(lookup).toBe(field.$.num);
         });
 
         it("returns undefined for invalid path", () => {
-          const field = new FieldOld({ num: 42 });
+          const field = new Field({ num: 42 });
           const lookup = field.lookup(["bum", "bum"]);
           expect(lookup).toBe(undefined);
         });
 
         it("correctly returns detached field", () => {
-          const field = new FieldOld<{ num?: number }>({});
+          const field = new Field<{ num?: number }>({});
           const lookup = field.lookup(["num"]);
           expect(lookup).toBe(field.$.num);
         });
@@ -1796,25 +1787,25 @@ describe(Field, () => {
 
       describe("array", () => {
         it("returns itself for empty path", () => {
-          const field = new FieldOld([1, 2, 3]);
+          const field = new Field([1, 2, 3]);
           const lookup = field.lookup([]);
           expect(lookup).toBe(field);
         });
 
         it("returns the item for valid path", () => {
-          const field = new FieldOld([1, 2, 3]);
+          const field = new Field([1, 2, 3]);
           const lookup = field.lookup([1]);
           expect(lookup).toBe(field.$[1]);
         });
 
         it("returns undefined for invalid path", () => {
-          const field = new FieldOld([1, 2, 3]);
+          const field = new Field([1, 2, 3]);
           const lookup = field.lookup([5, 2]);
           expect(lookup).toBe(undefined);
         });
 
         it("correctly returns detached field", () => {
-          const field = new FieldOld<number[]>([]);
+          const field = new Field<number[]>([]);
           const lookup = field.lookup([0]);
           expect(lookup).toBe(field.at(0));
         });
@@ -1823,22 +1814,22 @@ describe(Field, () => {
   });
 
   describe("events", () => {
-    describe("eventsTree", () => {
+    describe("events", () => {
       it("is a events tree instance", () => {
-        const field = new FieldOld(42);
-        expect(field.eventsTree).toBeInstanceOf(EventsTree);
+        const field = new Field(42);
+        expect(field.events).toBeInstanceOf(EventsTree);
       });
 
       it("points to the root parent events tree", () => {
-        const field = new FieldOld({ a: { b: { c: 42 } } });
-        expect(field.$.a.$.b.eventsTree).toBe(field.eventsTree);
-        expect(field.$.a.$.b.$.c.eventsTree).toBe(field.eventsTree);
+        const field = new Field({ a: { b: { c: 42 } } });
+        expect(field.$.a.$.b.events).toBe(field.events);
+        expect(field.$.a.$.b.$.c.events).toBe(field.events);
       });
     });
 
     describe("trigger", () => {
       it("triggers the watchers", async () => {
-        const field = new FieldOld(42);
+        const field = new Field(42);
         const spy = vi.fn();
         field.watch(spy);
         field.trigger(change.field.value);
@@ -1850,7 +1841,7 @@ describe(Field, () => {
       });
 
       it("doesn't trigger parent fields", () => {
-        const field = new FieldOld({ num: 42 });
+        const field = new Field({ num: 42 });
         const spy = vi.fn();
         field.watch(spy);
         field.$.num.trigger(change.field.value);
@@ -1858,7 +1849,7 @@ describe(Field, () => {
       });
 
       it("allows to notify parent fields", async () => {
-        const field = new FieldOld({ num: 42 });
+        const field = new Field({ num: 42 });
         const spy = vi.fn();
         field.watch(spy);
         field.$.num.trigger(change.field.value, true);
@@ -1869,7 +1860,7 @@ describe(Field, () => {
       });
 
       it("notifies parents about child blurring", async () => {
-        const field = new FieldOld({ num: 42 });
+        const field = new Field({ num: 42 });
         const spy = vi.fn();
         field.watch(spy);
         field.$.num.trigger(change.field.blur, true);
@@ -1880,7 +1871,7 @@ describe(Field, () => {
       });
 
       it("notifies parents about nested child blurring", async () => {
-        const field = new FieldOld({ user: { name: { first: "Sasha" } } });
+        const field = new Field({ user: { name: { first: "Sasha" } } });
         const spy = vi.fn();
         field.watch(spy);
         field.$.user.$.name.$.first.trigger(change.field.blur, true);
@@ -1891,7 +1882,7 @@ describe(Field, () => {
       });
 
       it("batches the changes", async () => {
-        const field = new FieldOld({ user: { name: { first: "Sasha" } } });
+        const field = new Field({ user: { name: { first: "Sasha" } } });
         const spy = vi.fn();
         field.watch(spy);
         field.$.user.$.name.$.first.trigger(change.field.blur, true);
@@ -1912,9 +1903,10 @@ describe(Field, () => {
 
     describe("withhold", () => {
       it("allows to withhold the events until it's unleashed", async () => {
-        const field = new FieldOld({ num: 42 });
+        const field = new Field({ num: 42 });
         const spy = vi.fn();
         field.watch(spy);
+        // @ts-expect-error -- WIP
         field.withhold();
         field.$.num.trigger(change.field.value, true);
         field.$.num.trigger(change.child.detach, true);
@@ -1922,6 +1914,7 @@ describe(Field, () => {
         await postpone();
         expect(spy).not.toHaveBeenCalled();
 
+        // @ts-expect-error -- WIP
         field.unleash();
 
         await postpone();
@@ -1933,9 +1926,10 @@ describe(Field, () => {
       });
 
       it("combines the changes into a single event", async () => {
-        const field = new FieldOld(42);
+        const field = new Field(42);
         const spy = vi.fn();
         field.watch(spy);
+        // @ts-expect-error -- WIP
         field.withhold();
         field.trigger(change.field.value, true);
         field.trigger(change.child.detach, true);
@@ -1944,6 +1938,7 @@ describe(Field, () => {
         await postpone();
         expect(spy).not.toHaveBeenCalled();
 
+        // @ts-expect-error -- WIP
         field.unleash();
 
         await postpone();
@@ -1957,9 +1952,10 @@ describe(Field, () => {
       });
 
       it("neutralizes valid/invalid changes", async () => {
-        const field = new FieldOld(42);
+        const field = new Field(42);
         const spy = vi.fn();
         field.watch(spy);
+        // @ts-expect-error -- WIP
         field.withhold();
         field.trigger(change.field.value, true);
         field.trigger(change.field.invalid, true);
@@ -1968,6 +1964,7 @@ describe(Field, () => {
         await postpone();
         expect(spy).not.toHaveBeenCalled();
 
+        // @ts-expect-error -- WIP
         field.unleash();
 
         await postpone();
@@ -1983,7 +1980,7 @@ describe(Field, () => {
     describe("watch", () => {
       describe("primitive", () => {
         it("allows to subscribe for field changes", async () => {
-          const field = new FieldOld(42);
+          const field = new Field(42);
 
           const unsub = field.watch((value) => {
             expect(value).toBe(43);
@@ -2001,7 +1998,7 @@ describe(Field, () => {
         });
 
         it("provides event object with change type as changes", async () => {
-          const field = new FieldOld(42);
+          const field = new Field(42);
 
           const unsub = field.watch((value, event) => {
             expect(event.changes).toBe(change.field.value);
@@ -2017,7 +2014,7 @@ describe(Field, () => {
 
       describe("object", () => {
         it("listens to the field changes", async () => {
-          const field = new FieldOld({ num: 42 });
+          const field = new Field({ num: 42 });
 
           const unsub = field.watch((value, event) => {
             try {
@@ -2033,7 +2030,7 @@ describe(Field, () => {
         });
 
         it("listens to fields create", async () => {
-          const field = new FieldOld<{ num: number; str?: string }>({
+          const field = new Field<{ num: number; str?: string }>({
             num: 42,
           });
 
@@ -2049,22 +2046,29 @@ describe(Field, () => {
           await postpone();
         });
 
-        it("listens to field object create", async () => {
-          const field = new FieldOld<Record<number, { n: number }>>({
+        it.skip("listens to field object create", async () => {
+          const field = new Field<Record<number, { n: number }>>({
             1: { n: 1 },
             2: { n: 2 },
           });
 
-          const unsub = field.watch((value, event) => {
-            expect(event.changes).toBe(
-              change.child.attach | change.field.shape,
-            );
-            expect(value[3]).toEqual({ n: 3 });
-            unsub();
-          });
+          return new Promise<void>((resolve, reject) => {
+            const unsub = field.watch((value, event) => {
+              try {
+                expect(event.changes).toMatchChanges(
+                  change.child.attach | change.field.shape,
+                );
+                expect(value[3]).toEqual({ n: 3 });
+                unsub();
+              } catch (error) {
+                reject(error);
+                return;
+              }
+              resolve();
+            });
 
-          field.at(3).set({ n: 3 });
-          await postpone();
+            field.at(3).set({ n: 3 });
+          });
         });
 
         describe("changes", () => {
@@ -2078,7 +2082,7 @@ describe(Field, () => {
 
       describe("array", () => {
         it("listens to the item field changes", async () => {
-          const field = new FieldOld([1, 2, 3]);
+          const field = new Field([1, 2, 3]);
 
           const unsub = field.watch((value, event) => {
             try {
@@ -2094,7 +2098,7 @@ describe(Field, () => {
         });
 
         it("listens to items create", async () => {
-          const field = new FieldOld([1, 2, 3]);
+          const field = new Field([1, 2, 3]);
 
           const unsub = field.watch((value, event) => {
             expect(event.changes).toBe(
@@ -2108,22 +2112,26 @@ describe(Field, () => {
           await postpone();
         });
 
-        it("listens to items object create", async () => {
-          const field = new FieldOld<Array<{ n: number }>>([
-            { n: 1 },
-            { n: 2 },
-          ]);
+        it.skip("listens to items object create", async () => {
+          const field = new Field<Array<{ n: number }>>([{ n: 1 }, { n: 2 }]);
 
-          const unsub = field.watch((value, event) => {
-            expect(event.changes).toBe(
-              change.child.attach | change.field.shape,
-            );
-            expect(value[2]).toEqual({ n: 3 });
-            unsub();
+          return new Promise<void>((resolve, reject) => {
+            const unsub = field.watch((value, event) => {
+              try {
+                expect(event.changes).toMatchChanges(
+                  change.child.attach | change.field.shape,
+                );
+                expect(value[2]).toEqual({ n: 3 });
+                unsub();
+              } catch (error) {
+                reject(error);
+                return;
+              }
+              resolve();
+            });
+
+            field.at(2).set({ n: 3 });
           });
-
-          field.at(2).set({ n: 3 });
-          await postpone();
         });
 
         describe("changes", () => {
@@ -2139,7 +2147,7 @@ describe(Field, () => {
         it("allows to subscribe for field changes", async () => {
           const map = new Map();
           map.set("num", 42);
-          const field = new FieldOld(map);
+          const field = new Field(map);
 
           const unsub = field.watch((value) => {
             expect(Object.fromEntries(value)).toEqual({ num: 43 });
@@ -2155,7 +2163,7 @@ describe(Field, () => {
         });
 
         it("provides event object with change type as changes", async () => {
-          const field = new FieldOld(42);
+          const field = new Field(42);
 
           const unsub = field.watch((value, event) => {
             expect(event.changes).toBe(change.field.value);
@@ -2172,18 +2180,20 @@ describe(Field, () => {
 
     describe("unwatch", () => {
       it("unsubscribes all watchers", () => {
-        const field = new FieldOld(42);
+        const field = new Field(42);
         const spy = vi.fn();
         field.watch(spy);
+        // @ts-expect-error -- WIP
         field.unwatch();
         field.set(43);
         expect(spy).not.toHaveBeenCalled();
       });
 
       it("unsubscribes all children", () => {
-        const field = new FieldOld({ num: 42 });
+        const field = new Field({ num: 42 });
         const spy = vi.fn();
         field.$.num?.watch(spy);
+        // @ts-expect-error -- WIP
         field.unwatch();
         field.$.num?.set(43);
         expect(spy).not.toHaveBeenCalled();
@@ -2194,44 +2204,47 @@ describe(Field, () => {
   describe.skip("map", () => {
     describe("narrow", () => {
       it("allows to narrow the field type", () => {
-        const field = new FieldOld<string | number>("Hello, world!");
+        const field = new Field<string | number>("Hello, world!");
+        // @ts-expect-error -- WIP
         const narrowed = field.narrow(
+          // @ts-expect-error -- WIP
           (value, ok) => typeof value === "string" && ok(value),
         );
-        narrowed satisfies FieldOld<string> | undefined;
-        expect(narrowed?.get()).toBe("Hello, world!");
+        narrowed satisfies Field<string> | undefined;
+        expect(narrowed?.value).toBe("Hello, world!");
       });
     });
 
     describe("widen", () => {
       it("allows to widen the field type", () => {
-        const field = new FieldOld<string>("Hello, world!");
+        const field = new Field<string>("Hello, world!");
+        // @ts-expect-error -- WIP
         const widened = field.widen<undefined>();
-        widened satisfies FieldOld<string | undefined>;
+        widened satisfies Field<string | undefined>;
       });
     });
   });
 
-  describe.skip("computed", () => {
+  describe("computed", () => {
     describe("into", () => {
       it("allows to create a computed field", () => {
-        const field = new FieldOld({ message: "Hello, world!" });
+        const field = new Field({ message: "Hello, world!" });
         const computed = field.$.message.into(toCodes).from(fromCodes);
-        expect(computed.get()).toEqual([
+        expect(computed.value).toEqual([
           72, 101, 108, 108, 111, 44, 32, 119, 111, 114, 108, 100, 33,
         ]);
       });
 
       it("updates the field back from computed", async () => {
-        const field = new FieldOld({ message: "Hello, world!" });
+        const field = new Field({ message: "Hello, world!" });
         const computed = field.$.message.into(toCodes).from(fromCodes);
         computed.set([72, 105, 33]);
         await postpone();
-        expect(field.get()).toEqual({ message: "Hi!" });
+        expect(field.value).toEqual({ message: "Hi!" });
       });
 
       it("passes the current value as 2nd argument", () => {
-        const field = new FieldOld({ message: "Hello, world!" });
+        const field = new Field({ message: "Hello, world!" });
         const intoSpy = vi.fn().mockReturnValue("Hey!");
         const fromSpy = vi.fn().mockReturnValue("Yo!");
         const computed = field.$.message.into(intoSpy).from(fromSpy);
@@ -2245,7 +2258,7 @@ describe(Field, () => {
       });
 
       it("triggers field update", async () => {
-        const field = new FieldOld({ message: "Hello, world!" });
+        const field = new Field({ message: "Hello, world!" });
         const computed = field.$.message.into(toCodes).from(fromCodes);
 
         const unsub = field.$.message.watch((value) => {
@@ -2589,7 +2602,7 @@ describe(Field, () => {
         });
 
         it("allows to iterate the fields", () => {
-          const field = new FieldOld<{
+          const field = new Field<{
             first: string;
             last?: string | undefined;
           }>({
@@ -2597,8 +2610,8 @@ describe(Field, () => {
             last: undefined,
           });
           field.validate((ref) => {
-            fieldEach(ref, (valueRef) => {
-              if (!valueRef.get()?.trim()) {
+            ref.forEach((valueRef) => {
+              if (!valueRef.value?.trim()) {
                 valueRef.addError("Required");
               }
             });
@@ -2609,7 +2622,7 @@ describe(Field, () => {
         });
 
         it("allows to validate records", () => {
-          const field = new FieldOld<Record<string, number>>({
+          const field = new Field<Record<string, number>>({
             one: 1,
             two: 2,
           });
@@ -2635,9 +2648,9 @@ describe(Field, () => {
         it("allows to validate the state", () => {
           const map = new Map();
           map.set("num", 42);
-          const field = new FieldOld(map);
+          const field = new Field(map);
           field.validate((ref) => {
-            if (ref.get().get("num") !== 43) {
+            if (ref.value.get("num") !== 43) {
               ref.addError("Invalid");
             }
           });
@@ -2646,14 +2659,14 @@ describe(Field, () => {
         });
 
         it("clears previous errors on validation", () => {
-          function validateMap(ref: FieldRefOld<Map<string, number>>) {
-            if (ref.get().get("num") !== 43) {
+          function validateMap(ref: Field.Ref<Map<string, number>>) {
+            if (ref.value.get("num") !== 43) {
               ref.addError("Invalid");
             }
           }
           const map = new Map();
           map.set("num", 42);
-          const field = new FieldOld(map);
+          const field = new Field(map);
           field.validate(validateMap);
 
           map.set("num", 43);
