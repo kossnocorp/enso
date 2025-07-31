@@ -2460,6 +2460,58 @@ const unionField = new Field({ hello: "world", world: true }) as
 }
 //#endregion
 
+//#region Field#lookup
+{
+  // Exact
+  {
+    ty(({} as Field<User>).lookup(["name"])).is(ty<Field<unknown>>());
+    ty(({} as Field<User, "detachable">).lookup(["name"])).is(
+      ty<Field<unknown>>(),
+    );
+    ty(({} as Field<User, "ref">).lookup(["name"])).is(
+      ty<Field<unknown, "ref">>(),
+    );
+  }
+
+  // Base
+  {
+    ty(({} as Field.Base<User>).lookup(["name"])).is(ty<Field<unknown>>());
+    ty(({} as Field.Base<User, "detachable">).lookup(["name"])).is(
+      ty<Field<unknown>>(),
+    );
+    ty(({} as Field.Base<User, "ref">).lookup(["name"])).is(
+      ty<Field<unknown, "ref">>(),
+    );
+  }
+
+  // Optional
+  {
+    ty(({} as Field.Optional<User>).lookup(["name"])).is(
+      ty<Field.Optional<unknown>>(),
+    );
+    ty(({} as Field.Optional<User, "detachable">).lookup(["name"])).is(
+      ty<Field.Optional<unknown>>(),
+    );
+    ty(({} as Field.Optional<User, "ref">).lookup(["name"])).is(
+      ty<Field.Optional<unknown, "ref">>(),
+    );
+  }
+
+  // Immutable
+  {
+    ty(({} as Field.Immutable<User>).lookup(["name"])).is(
+      ty<Field.Immutable<unknown>>(),
+    );
+    ty(({} as Field.Immutable<User, "detachable">).lookup(["name"])).is(
+      ty<Field.Immutable<unknown>>(),
+    );
+    ty(({} as Field.Immutable<User, "ref">).lookup(["name"])).is(
+      ty<Field.Immutable<unknown, "ref">>(),
+    );
+  }
+}
+//#endregion
+
 //#endregion
 
 //#region Type

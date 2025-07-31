@@ -1,5 +1,4 @@
 import { useEffect, useRef } from "react";
-import { FieldOld } from "../../field/old.tsx";
 import {
   type TypedHook,
   useTypedCallback,
@@ -8,15 +7,18 @@ import {
 import { useRerender } from "../../hooks/rerender.ts";
 import type { Atom } from "../index.js";
 
-export function useAtomHook<Payload, Value, Result = Value>(
-  props: UseFieldHook.Props<Payload, Value, Result>,
-): Result | undefined {
+export function useAtomHook<
+  Kind extends Atom.Flavor.Kind,
+  Variant extends Atom.Flavor.Variant,
+  Value,
+  Result = Value,
+>(props: UseAtomHook.Props<Kind, Variant, Value, Result>): Result | undefined {
   const enable = props.enable ?? true;
   const {
     atom,
     getValue,
     shouldRender = defaultShouldRender as TypedHook.Memoized<
-      UseFieldHook.ShouldRender<Value>
+      UseAtomHook.ShouldRender<Value>
     >,
     watch,
     toResult,
@@ -91,10 +93,15 @@ function defaultShouldRender<Value>(
   return prev !== next;
 }
 
-export namespace UseFieldHook {
-  export interface Props<Payload, Value, Result = Value> {
+export namespace UseAtomHook {
+  export interface Props<
+    Kind extends Atom.Flavor.Kind,
+    Variant extends Atom.Flavor.Variant,
+    Value,
+    Result = Value,
+  > {
     enable?: boolean | undefined;
-    atom: FieldOld<Payload>;
+    atom: Atom.Envelop<Kind, Variant, Atom.Def<Value>>;
     getValue: TypedHook.Memoized<() => Value>;
     shouldRender?: TypedHook.Memoized<ShouldRender<Value>>;
     watch?: TypedHook.Memoized<Watch<Value>>;

@@ -1,10 +1,11 @@
 "use client";
 
 import { nanoid } from "nanoid";
-import React, { useCallback, useEffect, useMemo } from "react";
+import React, { useEffect, useRef } from "react";
 import {
   change,
   ChangesEvent,
+  FieldChange,
   fieldChange,
   shapeChanges,
   shiftChildChanges,
@@ -13,11 +14,16 @@ import {
 // import { detachedValue } from "../detached/index.ts";
 import { DetachedValue, detachedValue } from "../detached/index.ts";
 import { EventsTree } from "../events/index.ts";
+import { useCallback, useMemo } from "../hooks/index.ts";
+import { useRerender } from "../hooks/rerender.ts";
+import { EnsoUtils as Utils } from "../utils.ts";
+import type { Atom } from "./definition.ts";
 import { useAtomHook } from "./hooks/index.ts";
+import { AtomValueArray } from "./internal/array/index.ts";
 import { externalSymbol } from "./internal/base/index.ts";
 import { detectInternalConstructor } from "./internal/index.ts";
+import { AtomValueObject } from "./internal/object/index.ts";
 import { AtomValuePrimitive } from "./internal/opaque/index.ts";
-import type { Atom } from "./definition.ts";
 
 export class AtomImpl<Value> {
   //#region Static
@@ -45,14 +51,36 @@ export class AtomImpl<Value> {
   static create<Value>(value: Value, parent?: Atom.Parent.Bare.Ref<any, any>) {
     return new AtomImpl(value, parent);
   }
+  /**
+   * Ensures that the field is not undefined. It returns a tuple with ensured
+   * field and dummy field. If the field is undefined, the dummy field will
+   * return as the ensured, otherwise the passed field.
+   *
+   * It allows to workaround the React Hooks limitation of not being able to
+   * call hooks conditionally.
+   *
+   * The dummy field is frozen and won't change or trigger any events.
+   *
+   * @param field - The field to ensure. Can be undefined.
+   * @returns Fields tuple, first element - ensured field, second - dummy field
+   */
+  static useEnsure<Value, Result = undefined>(
+    atom: AtomImpl<Value> | Utils.Falsy,
+    mapper?: Atom.Static.Ensure.Bare.Mapper<AtomImpl<Value>, Result>,
+  ): AtomImpl<unknown> {
+    const dummy = this.use(undefined, []);
+    const frozenDummy = useMemo(() => Object.freeze(dummy), [dummy]);
+    const mappedAtom = (mapper && atom && mapper(atom)) || atom;
+    return (mappedAtom || frozenDummy) as any;
+  }
 
   //#endregion
 
   //#region Instance
 
   constructor(value: Value, parent?: Atom.Parent.Bare.Ref<any, any>) {
-    this.#initial = value;
-    this.#parent = parent;
+    // this.#initial = value;
+    this.__parent = parent;
 
     // NOTE: Parent **must** set before, so that when we setting the children
     // values, the path is already set. If not, they won't properly register in
@@ -61,25 +89,8 @@ export class AtomImpl<Value> {
 
     this.events.add(this.path, this);
 
-    // const onInput = (event: Event) => {
-    //   const target = event.target as HTMLInputElement | HTMLTextAreaElement;
-    //   const value = target.value as Payload;
-    //   this.set(value);
-    // };
-
-    // this.#onInput = <Element extends HTMLElement>(element: Element) => {
-    //   switch (true) {
-    //     case element instanceof HTMLInputElement:
-    //     case element instanceof HTMLTextAreaElement:
-    //     // TODO:
-    //     default:
-    //       return onInput;
-    //   }
-    // };
-
     // this.set = this.set.bind(this);
     // this.ref = this.ref.bind(this);
-    // this.onBlur = this.onBlur.bind(this);
   }
 
   deconstruct() {
@@ -90,23 +101,17 @@ export class AtomImpl<Value> {
 
   //#region Attributes
 
-  #id = nanoid();
-
-  get id() {
-    return this.#id;
-  }
+  readonly id = nanoid();
 
   //#endregion
 
   //#region Value
 
-  #initial;
-
-  get value() {
+  get value(): Value {
     if (this.#cachedGet === detachedValue) {
       this.#cachedGet = this.internal.value;
     }
-    return this.#cachedGet;
+    return this.#cachedGet as any;
   }
 
   useValue(props: any) {
@@ -158,7 +163,8 @@ export class AtomImpl<Value> {
     } as any);
   }
 
-  set(value: any, notifyParents = true) {
+  // TODO: Exposing the notify parents flag might be dangerous
+  set(value: Value | DetachedValue, notifyParents = true) {
     const changes = this.#set(value);
     if (changes) this.trigger(changes, notifyParents);
 
@@ -166,14 +172,15 @@ export class AtomImpl<Value> {
     return this;
   }
 
-  #set(value: any) {
+  #set(value: unknown) {
     // Frozen fields should not change!
     if (Object.isFrozen(this)) return 0n;
 
     const Internal = detectInternalConstructor(value);
 
     // The field is already of the same type
-    if (this.internal instanceof Internal) return this.internal.set(value);
+    if (this.internal instanceof Internal)
+      return this.internal.set(value as any);
 
     // The field is of a different type
     this.internal.unwatch();
@@ -186,19 +193,56 @@ export class AtomImpl<Value> {
     // Field type is changing
     else changes |= change.field.type;
 
-    this.internal = new Internal(this, value);
+    this.internal = new Internal(this, value as any);
     this.internal.set(value);
     return changes;
   }
 
-  // NOTE: Since `Atom.useEnsure` freezes the dummy atom but still allows
-  // running operations such as `set` albeit with no effect, we need to ensure
-  // that `lastChanges` is still assigned correctly, so we must use a static
-  // map instead of changing the atom instance directly.
-  static lastChanges = new WeakMap();
+  /**
+   * Paves the field with the provided fallback value if the field is undefined
+   * or null. It ensures that the field has a value, which is useful when
+   * working with deeply nested optional objects, i.e., settings. It allows
+   * creating the necessary fields to assign validation errors to them, even if
+   * the parents and the field itself are not set.
+   *
+   * @param fallback - Fallback value to set if the field is undefined or null.
+   *
+   * @returns Field without null or undefined value in the type.
+   */
+  pave(fallback: Utils.NonNullish<Value>): AtomImpl<Utils.NonNullish<Value>> {
+    const value = this.value;
+    if (value === undefined || value === null) this.set(fallback);
+    return this as AtomImpl<Utils.NonNullish<Value>>;
+  }
 
-  get lastChanges() {
-    return AtomImpl.lastChanges.get(this) || 0n;
+  compute<Computed>(
+    callback: Atom.Compute.Callback<Value, Computed>,
+  ): Computed {
+    return callback(this.value);
+  }
+
+  useCompute<Computed>(
+    callback: Atom.Compute.Callback<Value, Computed>,
+    deps: React.DependencyList,
+  ): Computed {
+    const getValue = useCallback(
+      () => callback(this.value),
+      // eslint-disable-next-line react-hooks/exhaustive-deps -- It can't handle this
+      [this, ...deps],
+    );
+
+    return useAtomHook({
+      atom: this as any,
+      getValue,
+    }) as any;
+  }
+
+  //#endregion
+
+  //#region Meta
+
+  useMeta() {
+    return {};
   }
 
   //#endregion
@@ -225,29 +269,43 @@ export class AtomImpl<Value> {
     this.internal.forEach(callback);
   }
 
+  useCollection(): AtomImpl<Value> {
+    const rerender = useRerender();
+
+    useEffect(
+      () =>
+        this.watch((_, event) => {
+          if (shapeChanges(event.changes)) rerender();
+        }),
+      [this.id, rerender],
+    );
+
+    return this;
+  }
+
   //#endregion
 
   //#region Tree
 
-  #parent;
+  __parent: Atom.Parent.Bare.Ref<any, any> | undefined;
 
   get root() {
-    return this.#parent && "source" in this.#parent
-      ? this.#parent.source.root
-      : this.#parent?.field.root || this;
+    return this.__parent && "source" in this.__parent
+      ? this.__parent.source.root
+      : this.__parent?.field.root || this;
   }
 
   get parent() {
-    return this.#parent && "source" in this.#parent
-      ? this.#parent.source.parent
-      : this.#parent?.field;
+    return this.__parent && "source" in this.__parent
+      ? this.__parent.source.parent
+      : this.__parent?.field;
   }
 
   get key() {
-    if (!this.#parent) return;
-    return "source" in this.#parent
-      ? this.#parent.source.key
-      : this.#parent.key;
+    if (!this.__parent) return;
+    return "source" in this.__parent
+      ? this.__parent.source.key
+      : this.__parent.key;
   }
 
   get $() {
@@ -256,18 +314,15 @@ export class AtomImpl<Value> {
 
   // @ts-ignore: WIP
   at(key) {
+    if (
+      this.internal instanceof AtomValueArray ||
+      this.internal instanceof AtomValueObject
+    )
+      return this.internal.at(key);
     // WIP:
-    return this.internal.at(key);
-    // if (
-    //   this.#internal instanceof InternalObjectState ||
-    //   this.#internal instanceof InternalArrayState
-    // )
-    //   // @ts-ignore: TODO:
-    //   return this.#internal.at(key);
-    // // WIP:
-    // // throw new Error(
-    // //   `Field at ${this.path.join(".")} is not an object or array`,
-    // // );
+    // throw new Error(
+    //   `Field at ${this.path.join(".")} is not an object or array`,
+    // );
   }
 
   try(key: any) {
@@ -275,10 +330,10 @@ export class AtomImpl<Value> {
   }
 
   get path() {
-    return this.#parent && "source" in this.#parent
-      ? this.#parent.source.path
-      : this.#parent
-        ? [...this.#parent.field.path, this.#parent.key]
+    return this.__parent && "source" in this.__parent
+      ? this.__parent.source.path
+      : this.__parent
+        ? [...this.__parent.field.path, this.__parent.key]
         : [];
   }
 
@@ -290,23 +345,35 @@ export class AtomImpl<Value> {
     return path.join(".") || ".";
   }
 
+  lookup(path: Atom.Path): AtomImpl<unknown> | undefined {
+    return this.internal.lookup(path);
+  }
+
   //#endregion
 
   //#region Events
 
-  #withholded: any;
-
   #batchTarget = new EventTarget();
   #syncTarget = new EventTarget();
   #subs = new Set();
-  #eventsTree: any;
+  #eventsTree: EventsTree<any> | undefined;
+
+  // NOTE: Since `Atom.useEnsure` freezes the dummy atom but still allows
+  // running operations such as `set` albeit with no effect, we need to ensure
+  // that `lastChanges` is still assigned correctly, so we must use a static
+  // map instead of changing the atom instance directly.
+  static lastChanges = new WeakMap();
+
+  get lastChanges() {
+    return AtomImpl.lastChanges.get(this) || 0n;
+  }
 
   get events() {
     return (this.root.#eventsTree ??= new EventsTree());
   }
 
-  trigger(changes: any, notifyParents = false) {
-    this.#clearCache();
+  trigger(changes: FieldChange, notifyParents = false) {
+    this.clearCache();
 
     if (this.#withholded) {
       this.#withholded[0] |= changes;
@@ -333,11 +400,11 @@ export class AtomImpl<Value> {
     // If the updates should flow upstream, trigger parents too
     if (
       notifyParents &&
-      this.#parent &&
-      "field" in this.#parent &&
-      this.#parent.field
+      this.__parent &&
+      "field" in this.__parent &&
+      this.__parent.field
     )
-      this.#parent.field.#childTrigger(changes, this.#parent.key);
+      this.__parent.field.#childTrigger(changes, this.__parent.key);
   }
 
   #childTrigger(childChanges: any, key: any) {
@@ -353,11 +420,11 @@ export class AtomImpl<Value> {
     this.trigger(changes, true);
   }
 
-  watch(callback: any, sync = false) {
+  watch(callback: Atom.Watch.Bare.Callback<Value>, sync = false): Atom.Unwatch {
     // TODO: Add tests for this
     const target = sync ? this.#syncTarget : this.#batchTarget;
     const handler = (event: any) => {
-      callback(this.value, event);
+      callback(this.value as any, event);
     };
 
     this.#subs.add(handler);
@@ -369,6 +436,21 @@ export class AtomImpl<Value> {
     };
   }
 
+  useWatch(callback: Atom.Watch.Bare.Callback<Value>): void {
+    // Preserve id to detected the active field swap.
+    const idRef = useRef(this.id);
+
+    useEffect(() => {
+      // If the field id changes, trigger the callback with the swapped change.
+      if (idRef.current !== this.id) {
+        idRef.current = this.id;
+        callback(this.value as any, new ChangesEvent(change.field.id));
+      }
+
+      return this.watch(callback);
+    }, [this.id, callback]);
+  }
+
   unwatch() {
     // TODO: Add tests for this
     this.#subs.forEach((sub: any) => {
@@ -377,6 +459,29 @@ export class AtomImpl<Value> {
     });
     this.#subs.clear();
     this.internal.unwatch();
+  }
+
+  #withholded: any[] | undefined;
+
+  /**
+   * Withholds the field changes until `unleash` is called. It allows to batch
+   * changes when submittiing a form and send the submitting even to the field
+   * along with the submitting state.
+   *
+   * TODO: I added automatic batching of changes, so all the changes are send
+   * after the current stack is cleared. Check if this functionality is still
+   * needed.
+   */
+  withhold() {
+    this.#withholded = [0n, false];
+    this.internal.withhold();
+  }
+
+  unleash() {
+    this.internal.unleash();
+    const withholded = this.#withholded;
+    this.#withholded = undefined;
+    if (withholded?.[0]) (this as any).trigger(...withholded);
   }
 
   //#endregion
@@ -414,9 +519,9 @@ export class AtomImpl<Value> {
 
   #external = {
     move: (newKey: any) => {
-      always(this.#parent && "field" in this.#parent);
+      always(this.__parent && "field" in this.__parent);
       const prevPath = this.path;
-      (this.#parent as any).key = newKey;
+      (this.__parent as any).key = newKey;
       this.events.move(prevPath, this.path, this);
       return this.trigger(fieldChange.key);
     },
@@ -440,12 +545,10 @@ export class AtomImpl<Value> {
 
   //#region Cache
 
-  #cachedGet: Value | DetachedValue | undefined = detachedValue;
-  #cachedDirty: any;
+  #cachedGet: Value | DetachedValue = detachedValue;
 
-  #clearCache() {
+  clearCache() {
     this.#cachedGet = detachedValue;
-    this.#cachedDirty = undefined;
   }
 
   //#endregion
