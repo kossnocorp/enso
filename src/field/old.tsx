@@ -10,7 +10,7 @@ import React, {
   useEffect,
   useRef,
 } from "react";
-import { useAtomHook, UseFieldHook } from "../atom/hooks/index.ts";
+import { useAtomHook, UseAtomHook } from "../atom/hooks/index.ts";
 import {
   change,
   ChangesEvent,
@@ -254,7 +254,7 @@ export class FieldOld<Payload>
       ],
     );
 
-    const watch = useCallback<UseFieldHook.Watch<Payload>>(
+    const watch = useCallback<UseAtomHook.Watch<Payload>>(
       ({ valueRef, rerender }) =>
         this.watch((payload, event) => {
           // React only on structural changes
@@ -270,7 +270,7 @@ export class FieldOld<Payload>
     );
 
     const toResult = useCallback<
-      UseFieldHook.ToResult<Payload, Enso.UseGet<Payload, Props>>
+      UseAtomHook.ToResult<Payload, Enso.UseGet<Payload, Props>>
     >(
       (result) =>
         (watchMeta ? [result, meta] : result) as Enso.UseGet<Payload, Props>,
@@ -278,6 +278,7 @@ export class FieldOld<Payload>
     );
 
     return useAtomHook({
+      // @ts-ignore
       atom: this as FieldOld<any>,
       getValue,
       watch,
@@ -441,6 +442,7 @@ export class FieldOld<Payload>
 
     return useAtomHook({
       enable,
+      // @ts-ignore
       atom: this as FieldOld<any>,
       getValue,
     }) as Enso.ToggleableResult<Enable, boolean>;
@@ -655,6 +657,7 @@ export class FieldOld<Payload>
     );
 
     return useAtomHook({
+      // @ts-ignore
       atom: this as FieldOld<any>,
       getValue,
     }) as Computed;
@@ -687,6 +690,7 @@ export class FieldOld<Payload>
     );
 
     return useAtomHook({
+      // @ts-ignore
       atom: this as FieldOld<any>,
       getValue,
     });
@@ -925,7 +929,7 @@ export class FieldOld<Payload>
     );
 
     const shouldRender = useCallback<
-      UseFieldHook.ShouldRender<FieldOld.Error[]>
+      UseAtomHook.ShouldRender<FieldOld.Error[]>
     >(
       (prev, next) =>
         !(
@@ -938,6 +942,7 @@ export class FieldOld<Payload>
 
     return useAtomHook({
       enable,
+      // @ts-ignore
       atom: this as FieldOld<any>,
       getValue,
       shouldRender,
@@ -1003,6 +1008,7 @@ export class FieldOld<Payload>
 
     return useAtomHook({
       enable,
+      // @ts-ignore
       atom: this as FieldOld<any>,
       getValue,
     });

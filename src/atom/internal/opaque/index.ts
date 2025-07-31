@@ -1,15 +1,12 @@
 import { change } from "../../../change/index.ts";
 import { detachedValue } from "../../../detached/index.ts";
-import type { Atom } from "../../definition.ts";
+import type { AtomImpl } from "../../implementation.ts";
 import { AtomValue } from "../base/index.ts";
 
-export class AtomValuePrimitive<
-  Kind extends Atom.Flavor.Kind,
-  Value,
-> extends AtomValue<Kind, Value> {
+export class AtomValuePrimitive<Value> extends AtomValue<Value> {
   #value;
 
-  constructor(atom: any, value: Value) {
+  constructor(atom: AtomImpl<unknown>, value: Value) {
     super(atom, value);
     this.#value = value;
   }

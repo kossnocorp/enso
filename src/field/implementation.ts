@@ -1,14 +1,19 @@
 "use client";
 
 import type { Atom } from "../atom/definition.ts";
+import { UseAtomHook, useAtomHook } from "../atom/hooks/index.ts";
 import { AtomImpl } from "../atom/implementation.ts";
+import { AtomValueArray } from "../atom/internal/array/index.ts";
+import { AtomValueObject } from "../atom/internal/object/index.ts";
 import {
   change,
   ChangesEvent,
   metaChanges,
   structuralChanges,
 } from "../change/index.ts";
+import { useCallback } from "../hooks/index.ts";
 import { ValidationTree } from "../validation/index.ts";
+import { Field } from "./definition.ts";
 
 export { FieldImpl as Field, FieldProxyImpl as FieldProxy };
 
@@ -26,9 +31,9 @@ export class FieldImpl<Value> extends AtomImpl<Value> {
     return new FieldProxyImpl(field, intoMapper, fromMapper);
   }
 
-  static Component(props: any) {
+  static Component<Value>(props: Field.Component.Props<Value>) {
     const { field } = props;
-    const value = field.useGet();
+    const value = field.useValue();
     const meta = field.useMeta({
       dirty: props.meta || !!props.dirty,
       errors: props.meta || !!props.errors,
@@ -42,36 +47,142 @@ export class FieldImpl<Value> extends AtomImpl<Value> {
       onBlur: () => field.trigger(change.field.blur, true),
     };
 
-    return props.render(control, meta);
+    return props.render(control as any, meta);
   }
 
-  // static use<Value>(
-  //   initialValue: Value,
-  //   deps: DependencyList,
-  // ): Field.Envelop<never, Value> {
-  //   const field = useMemo(() => new Field(initialValue), deps);
-  //   useEffect(() => () => field.deconstruct(), [field]);
-  //   return field;
-  // }
+  //#endregion
+
+  //#region Instance
+
+  constructor(value: Value, parent?: Atom.Parent.Bare.Ref<any, any>) {
+    super(value, parent);
+
+    this.#initial = value;
+
+    const onInput = (event: Event) => {
+      const target = event.target as HTMLInputElement | HTMLTextAreaElement;
+      const value = target.value as Value;
+      this.set(value);
+    };
+
+    this.#onInput = <Element extends HTMLElement>(element: Element) => {
+      switch (true) {
+        case element instanceof HTMLInputElement:
+        case element instanceof HTMLTextAreaElement:
+        // TODO:
+        default:
+          return onInput;
+      }
+    };
+
+    this.#onBlur = <Element extends HTMLElement>(
+      event: React.FocusEvent<Element>,
+    ) => {
+      this.trigger(change.field.blur, true);
+      this.#customOnBlur?.(event);
+    };
+  }
 
   //#endregion
 
   //#region Value
 
-  // TODO:
+  #initial: Value;
+
+  get dirty(): boolean {
+    if (this.__parent && "source" in this.__parent)
+      return this.__parent.source.dirty;
+
+    if (this.#cachedDirty === undefined)
+      this.#cachedDirty = this.internal.dirty(this.#initial);
+    return this.#cachedDirty as any;
+  }
+
+  useDirty<Enable extends boolean | undefined = undefined>(
+    enable?: Enable,
+  ): Atom.Hooks.Result<Enable, boolean> {
+    const getValue = useCallback(
+      () => this.dirty,
+      [
+        // eslint-disable-next-line react-hooks/exhaustive-deps -- It can't handle this
+        this,
+      ],
+    );
+
+    return useAtomHook({
+      enable,
+      // @ts-ignore
+      atom: this as FieldOld<any>,
+      getValue,
+    }) as any;
+  }
+
+  get initial(): Value {
+    return this.#initial;
+  }
+
+  commit() {
+    this.#commit(this.value as any);
+
+    // const wasDirty = this.dirty;
+    // this.#initial = this.get();
+
+    // TODO: Add tests for the new approach, before it was:
+    //
+    //   if (
+    //     this.#internal instanceof InternalObjectState ||
+    //     this.#internal instanceof InternalArrayState
+    //   ) {
+    //     this.#internal.forEach((field: any) => field.commit());
+    //   }
+    //   if (wasDirty) this.trigger(change.field.commit, true);
+    //
+    // The problem was is that initial is set to `this.get()` and get
+    // a new reference on field level. So a root initial internals have
+    // different references than the children's `this.#initial` and produce
+    // incorrect `this.dirty` value. The new approach fixes this issue.
+    // I found it trying to make the `reset` method work correctly. I couln't
+    // reproduce it fully in tests, so it still needs to be done.
+  }
+
+  // TODO: Add tests for this new approach
+  #commit(newInitial: Value, notify = true) {
+    const wasDirty = notify && this.dirty;
+
+    this.#initial = newInitial;
+    if (
+      this.internal instanceof AtomValueObject ||
+      this.internal instanceof AtomValueArray
+    ) {
+      this.internal.forEach((field: any, key: any) =>
+        field.#commit((newInitial as any)[key], notify),
+      );
+    }
+    this.clearCache();
+
+    if (notify && wasDirty) this.trigger(change.field.commit, true);
+  }
+
+  // TODO: Add tests
+  reset() {
+    const newInitial = this.#initial;
+    this.set(newInitial);
+    this.#commit(newInitial, false);
+
+    // TODO: Add tests for the new approach, before it was (see `commit`):
+    //   this.set(this.#initial);
+  }
 
   //#endregion
 
   //#region Meta
 
-  useMeta(props: any) {
-    // WIP: Types revamp
-    // const valid = this.useValid(!props || !!props.valid);
-    // const errors = this.useErrors(!props || !!props.errors);
-    // const dirty = this.useDirty(!props || !!props.dirty);
-    const valid = false;
-    const errors = false;
-    const dirty = false;
+  override useMeta<Props extends Field.Meta.Props | undefined = undefined>(
+    props?: Props,
+  ) {
+    const valid = this.useValid(!props || !!props.valid);
+    const errors = this.useErrors(!props || !!props.errors);
+    const dirty = this.useDirty(!props || !!props.dirty);
     return { valid, errors, dirty };
   }
 
@@ -79,35 +190,16 @@ export class FieldImpl<Value> extends AtomImpl<Value> {
 
   //#region Events
 
-  #withholded: any[] | undefined;
-
-  /**
-   * Withholds the field changes until `unleash` is called. It allows to batch
-   * changes when submittiing a form and send the submitting even to the field
-   * along with the submitting state.
-   *
-   * TODO: I added automatic batching of changes, so all the changes are send
-   * after the current stack is cleared. Check if this functionality is still
-   * needed.
-   */
-  withhold() {
-    this.#withholded = [0n, false];
-    this.internal.withhold();
-  }
-
-  unleash() {
-    this.internal.unleash();
-    const withholded = this.#withholded;
-    this.#withholded = undefined;
-    if (withholded?.[0]) (this as any).trigger(...withholded);
-  }
+  // ...
 
   //#endregion
 
   //#region Interop
 
-  #customRef: any;
   #customOnBlur: any;
+
+  #onInput;
+  #onBlur;
 
   control(props: any) {
     this.#customRef = props?.ref;
@@ -120,6 +212,46 @@ export class FieldImpl<Value> extends AtomImpl<Value> {
     };
   }
 
+  #element: HTMLElement | null = null;
+  #elementUnwatch: Atom.Unwatch | undefined;
+  #customRef:
+    | React.RefCallback<Element>
+    | React.RefObject<Element | null>
+    | undefined;
+
+  ref<Element extends HTMLElement>(element: Element | null) {
+    if (this.#customRef) {
+      if (typeof this.#customRef === "function") this.#customRef(element);
+      else this.#customRef.current = element;
+    }
+
+    if (this.#element === element) return;
+
+    if (this.#element)
+      this.#element.removeEventListener("input", this.#onInput(this.#element));
+
+    if (this.#elementUnwatch) {
+      this.#elementUnwatch();
+      this.#elementUnwatch = undefined;
+    }
+
+    if (!element) return;
+
+    switch (true) {
+      case element instanceof HTMLInputElement:
+      case element instanceof HTMLTextAreaElement:
+        // TODO: Watch for changes and set the value
+        element.value = String(this.value);
+        this.#elementUnwatch = this.watch((value) => {
+          element.value = String(value) as string;
+        });
+        break;
+    }
+
+    element.addEventListener("input", this.#onInput(element));
+    this.#element = element;
+  }
+
   //#endregion
 
   //#region Validation
@@ -128,6 +260,36 @@ export class FieldImpl<Value> extends AtomImpl<Value> {
     // if (this.#cachedErrors)return this.#cachedErrors;
     // return (this.#cachedErrors = this.validation.at(this.path));
     return this.validationTree.at(this.path);
+  }
+
+  useErrors<Enable extends boolean | undefined = undefined>(
+    enable?: Enable,
+  ): Atom.Hooks.Result<Enable, Field.Error[]> {
+    const getValue = useCallback(
+      () => this.errors,
+      [
+        // eslint-disable-next-line react-hooks/exhaustive-deps -- It can't handle this
+        this,
+      ],
+    );
+
+    const shouldRender = useCallback<UseAtomHook.ShouldRender<Field.Error[]>>(
+      (prev, next) =>
+        !(
+          next === prev ||
+          (next.length === prev?.length &&
+            next.every((error, index) => prev?.[index] === error))
+        ),
+      [],
+    );
+
+    return useAtomHook({
+      enable,
+      // @ts-ignore
+      atom: this as FieldOld<any>,
+      getValue,
+      shouldRender,
+    }) as any;
   }
 
   addError(error: any) {
@@ -179,6 +341,24 @@ export class FieldImpl<Value> extends AtomImpl<Value> {
     return !this.validationTree.nested(this.path).length;
   }
 
+  useValid<Enable extends boolean | undefined = undefined>(
+    enable?: Enable,
+  ): Atom.Hooks.Result<Enable, boolean> {
+    const getValue = useCallback(
+      () => this.valid,
+      [
+        // eslint-disable-next-line react-hooks/exhaustive-deps -- It can't handle this
+        this,
+      ],
+    );
+
+    return useAtomHook({
+      enable,
+      atom: this as any,
+      getValue,
+    }) as any;
+  }
+
   async validate(validator: any) {
     this.clearErrors();
     // Withhold all the changes until the validation is resolved, so that
@@ -193,16 +373,27 @@ export class FieldImpl<Value> extends AtomImpl<Value> {
   }
 
   //#endregion
+
+  //#region Cache
+
+  #cachedDirty: boolean | undefined;
+
+  override clearCache() {
+    AtomImpl.prototype.clearCache.call(this);
+    this.#cachedDirty = undefined;
+  }
+
+  //#endregion
 }
 
 export class FieldProxyImpl<Value> extends FieldImpl<Value> {
-  #source: any;
+  #source: FieldImpl<unknown>;
   #brand = Symbol();
   #into: any;
   #from: any;
-  #unsubs: any[] = [];
+  #unsubs: Atom.Unwatch[] = [];
 
-  constructor(source: any, into: any, from: any) {
+  constructor(source: FieldImpl<unknown>, into: any, from: any) {
     const payload = into(source.value, undefined);
     super(payload, { source });
 
@@ -218,7 +409,7 @@ export class FieldProxyImpl<Value> extends FieldImpl<Value> {
     // on structural changes.
     this.#unsubs.push(
       this.#source.watch(
-        (sourceValue: any, sourceEvent: any) => {
+        (sourceValue, sourceEvent) => {
           // Check if the change was triggered by the computed value and ignore
           // it to stop circular updates.
           if (sourceEvent.context[this.#brand]) return;
@@ -244,7 +435,7 @@ export class FieldProxyImpl<Value> extends FieldImpl<Value> {
     // (source) value.
     this.#unsubs.push(
       this.watch(
-        (computedValue: any, computedEvent: any) => {
+        (computedValue, computedEvent) => {
           // Check if the change was triggered by the source value and ignore it
           // to stop circular updates.
           if (computedEvent.context[this.#brand]) return;
@@ -257,7 +448,7 @@ export class FieldProxyImpl<Value> extends FieldImpl<Value> {
             if (structuralChanges(computedEvent.changes)) {
               // TODO: Second argument is unnecessary expensive and probably can
               // be replaced with simple atom.
-              this.#source.set(this.#from(computedValue, this.#source.get()));
+              this.#source.set(this.#from(computedValue, this.#source.value));
             }
 
             // Trigger meta changes.
@@ -286,7 +477,7 @@ export class FieldProxyImpl<Value> extends FieldImpl<Value> {
 
   //#region Computed
 
-  connect(source: any) {
+  connect(source: FieldImpl<unknown>) {
     this.#source = source;
   }
 

@@ -4,17 +4,14 @@ import {
   shiftChildChanges,
 } from "../../../change/index.ts";
 import { UndefinedStateRegistry } from "../../../detached/index.ts";
-import type { Atom } from "../../definition.ts";
+import type { AtomImpl } from "../../implementation.ts";
 import { AtomValue, externalSymbol } from "../base/index.ts";
 
-export class AtomValueArray<
-  Kind extends Atom.Flavor.Kind,
-  Value,
-> extends AtomValue<Kind, Value> {
+export class AtomValueArray<Value> extends AtomValue<Value> {
   #children = [];
   #undefined;
 
-  constructor(external: any, value: Value) {
+  constructor(external: AtomImpl<Value>, value: Value) {
     super(external, value);
 
     this.#undefined = new UndefinedStateRegistry(external);

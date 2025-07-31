@@ -1,8 +1,6 @@
-import type { Atom } from "../../definition.ts";
-
 export const externalSymbol = Symbol();
 
-export abstract class AtomValue<Kind extends Atom.Flavor.Kind, Value> {
+export abstract class AtomValue<Value> {
   constructor(atom: any, _value: Value) {
     this.#external = atom;
   }

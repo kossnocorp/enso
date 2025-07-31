@@ -6,7 +6,6 @@ import type { Field } from "../field/definition.ts";
 import type { State } from "../state/index.ts";
 import type { Enso } from "../types.ts";
 import type { EnsoUtils as Utils } from "../utils.ts";
-import { Variant } from "@testing-library/react";
 
 export declare class Atom<
     Kind extends Atom.Flavor.Kind,
@@ -87,6 +86,12 @@ export declare class Atom<
 
   //#endregion
 
+  //#region Meta
+
+  useMeta: Atom.Meta.Use.Prop<Kind, Variant, ValueDef, Qualifier, Parent>;
+
+  //#endregion
+
   //#region Type
 
   size: Atom.Size.Prop<ValueDef>;
@@ -134,6 +139,10 @@ export declare class Atom<
   get name(): string;
 
   readonly self: Atom.Self.Envelop<Kind, Variant, ValueDef, Qualifier, Parent>;
+
+  lookup(
+    path: Atom.Path,
+  ): Atom.Lookup.Result<Kind, Variant, ValueDef, Qualifier, Parent>;
 
   //#endregion
 
@@ -272,15 +281,14 @@ export namespace Atom {
         Kind extends Atom.Flavor.Kind,
         EnvelopType extends Envelop<Kind, any, any> | Utils.Nullish,
         MappedType extends Envelop<Kind, any, any> | Utils.Nullish,
-      > {
-        (
-          atom: Envelop<
+      > extends Bare.Mapper<
+          Envelop<
             Kind,
             Variant.Parse<EnvelopType>,
             AtomValueDef<Kind, EnvelopType>
           >,
-        ): MappedType;
-      }
+          MappedType
+        > {}
 
       export type Result<
         Kind extends Atom.Flavor.Kind,
@@ -349,6 +357,12 @@ export namespace Atom {
         >
           ? Qualifier
           : never;
+
+      export namespace Bare {
+        export interface Mapper<AtomType, MappedType> {
+          (atom: AtomType): MappedType;
+        }
+      }
     }
   }
 
@@ -944,6 +958,12 @@ export namespace Atom {
 
     //#endregion
 
+    //#region Meta
+
+    useMeta: Meta.Use.Prop<Kind, Variant, ValueDef, Qualifier, Parent>;
+
+    //#endregion
+
     //#region Tree
 
     root: Root.Prop<Kind, Variant, Qualifier>;
@@ -963,6 +983,10 @@ export namespace Atom {
     try: Atom.Try.Prop<Kind, Variant, ValueDef["read"], Qualifier>;
 
     readonly self: Self.Envelop<Kind, Variant, ValueDef, Qualifier, Parent>;
+
+    lookup(
+      path: Atom.Path,
+    ): Lookup.Result<Kind, Variant, ValueDef, Qualifier, Parent>;
 
     //#endregion
 
@@ -1460,6 +1484,31 @@ export namespace Atom {
         : "field" extends Flavor
           ? Field.Meta.Props
           : never;
+
+    export namespace Use {
+      export type Prop<
+        Kind extends Atom.Flavor.Kind,
+        Variant extends Atom.Flavor.Variant,
+        ValueDef extends Def.Constraint,
+        Qualifier extends Atom.Qualifier.Constraint,
+        Parent extends Atom.Parent.Constraint<ValueDef>,
+      > = Qualifier.Ref.DisableFor<
+        Qualifier,
+        Fn<Kind, Variant, ValueDef, Qualifier, Parent>
+      >;
+
+      export interface Fn<
+        Kind extends Atom.Flavor.Kind,
+        Variant extends Atom.Flavor.Variant,
+        ValueDef extends Def.Constraint,
+        Qualifier extends Atom.Qualifier.Constraint,
+        Parent extends Atom.Parent.Constraint<ValueDef>,
+      > {
+        <Props extends Meta.Props<Kind> | undefined = undefined>(
+          props?: Props,
+        ): Meta<Kind, Variant, Props>;
+      }
+    }
   }
 
   //#region Type
@@ -2270,6 +2319,36 @@ export namespace Atom {
 
   //#endregion
 
+  //#region Lookup
+
+  export namespace Lookup {
+    export type Result<
+      Kind extends Atom.Flavor.Kind,
+      Variant extends Atom.Flavor.Variant,
+      ValueDef extends Def.Constraint,
+      Qualifier extends Atom.Qualifier.Constraint,
+      Parent extends Atom.Parent.Constraint<ValueDef>,
+    > = Envelop<
+      Kind,
+      Lookup.Variant<Variant>,
+      Def<unknown>,
+      Lookup.Qualifier<Qualifier>,
+      never
+    >;
+
+    export type Variant<Variant extends Atom.Flavor.Variant> =
+      Utils.Extends<Variant, "exact"> extends true
+        ? "exact"
+        : Utils.Extends<Variant, "base"> extends true
+          ? "exact"
+          : Variant;
+
+    export type Qualifier<Qualifier extends Atom.Qualifier.Constraint> =
+      Qualifier.Ref.Preserve<Qualifier>;
+  }
+
+  //#endregion
+
   //#endregion
 
   //#region Events
@@ -2279,9 +2358,9 @@ export namespace Atom {
   //#region Watch
 
   export namespace Watch {
-    export interface Callback<ValueDef extends Def.Constraint> {
-      (value: ValueDef["read"], event: ChangesEvent): void;
-    }
+    export type Callback<ValueDef extends Def.Constraint> = Bare.Callback<
+      ValueDef["read"]
+    >;
 
     export namespace Use {
       export type Prop<
@@ -2291,6 +2370,12 @@ export namespace Atom {
 
       export interface Fn<ValueDef extends Def.Constraint> {
         (callback: Watch.Callback<ValueDef>, deps: DependencyList): Unwatch;
+      }
+    }
+
+    export namespace Bare {
+      export interface Callback<ValueType> {
+        (value: ValueType, event: ChangesEvent): void;
       }
     }
   }
@@ -2740,6 +2825,17 @@ export namespace Atom {
   }
 
   //#endregion
+
+  //#endregion
+
+  //#region Hooks
+
+  export namespace Hooks {
+    export type Result<
+      Enable extends boolean | undefined,
+      Type,
+    > = Enable extends true | undefined ? Type : undefined;
+  }
 
   //#endregion
 }
