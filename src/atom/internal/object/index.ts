@@ -5,9 +5,12 @@ import {
 } from "../../../change/index.ts";
 import { UndefinedStateRegistry } from "../../../detached/index.ts";
 import type { AtomImpl } from "../../implementation.ts";
-import { AtomValue, externalSymbol } from "../base/index.ts";
+import { externalSymbol } from "../base/index.ts";
+import { AtomInternalCollection } from "../collection/index.ts";
 
-export class AtomValueObject<Value> extends AtomValue<Value> {
+export class AtomInternalObject<
+  Value extends object,
+> extends AtomInternalCollection<Value> {
   //#region Instance
 
   constructor(external: AtomImpl<Value>, value: Value) {
@@ -26,7 +29,6 @@ export class AtomValueObject<Value> extends AtomValue<Value> {
     let changes = 0n;
 
     this.#children.forEach((child, key) => {
-      // @ts-expect-error
       if (!(key in newValue)) {
         this.#children.delete(key);
         child[externalSymbol].clear();
@@ -35,7 +37,6 @@ export class AtomValueObject<Value> extends AtomValue<Value> {
       }
     });
 
-    // @ts-expect-error
     for (const [key, value] of Object.entries(newValue)) {
       const child = this.#children.get(key);
       if (child) {
@@ -85,39 +86,42 @@ export class AtomValueObject<Value> extends AtomValue<Value> {
 
   //#region Type
 
-  size() {
+  get size(): number {
     return this.#children.size;
   }
 
-  forEach(callback: AtomInternalObject.Callback) {
+  remove(key: keyof Value) {
+    return this.at(key).remove();
+  }
+
+  forEach(callback: AtomInternalCollection.Callback<Value>): void {
     this.#children.forEach((field, key) => callback(field, key));
   }
 
-  map(callback: AtomInternalObject.Callback<unknown>) {
-    const result: unknown[] = [];
+  map<Result>(
+    callback: AtomInternalCollection.Callback<Value, Result>,
+  ): Result[] {
+    const result: Result[] = [];
     this.#children.forEach((field, key) => result.push(callback(field, key)));
     return result;
   }
 
-  // @ts-expect-error
-  find(predicate) {
+  find(
+    predicate: AtomInternalCollection.Predicate<Value>,
+  ): AtomImpl<unknown> | undefined {
     for (const [key, value] of this.#children.entries()) {
       if (predicate(value, key)) return value;
     }
   }
 
-  // @ts-expect-error
-  filter(predicate) {
-    return Array.from(this.#children.entries()).reduce(
+  filter(
+    predicate: AtomInternalCollection.Predicate<Value>,
+  ): AtomImpl<unknown>[] {
+    return Array.from(this.#children.entries()).reduce<AtomImpl<unknown>[]>(
       (acc, [key, value]) =>
-        // @ts-expect-error
         predicate(value, key) ? (acc.push(value), acc) : acc,
       [],
     );
-  }
-
-  remove(key: keyof Value) {
-    return this.at(key).remove();
   }
 
   //#endregion
@@ -211,10 +215,4 @@ export class AtomValueObject<Value> extends AtomValue<Value> {
   }
 
   //#endregion
-}
-
-export namespace AtomInternalObject {
-  export interface Callback<Result = void> {
-    (item: unknown, index: any): Result;
-  }
 }

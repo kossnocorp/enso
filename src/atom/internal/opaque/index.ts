@@ -1,12 +1,12 @@
 import { change } from "../../../change/index.ts";
 import { detachedValue } from "../../../detached/index.ts";
 import type { AtomImpl } from "../../implementation.ts";
-import { AtomValue } from "../base/index.ts";
+import { AtomInternal } from "../base/index.ts";
 
-export class AtomValuePrimitive<Value> extends AtomValue<Value> {
+export class AtomInternalOpaque<Value> extends AtomInternal<Value> {
   //#region Instance
 
-  constructor(atom: AtomImpl<unknown>, value: Value) {
+  constructor(atom: AtomImpl<Value>, value: Value) {
     super(atom, value);
     this.#value = value;
   }

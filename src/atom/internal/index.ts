@@ -1,27 +1,25 @@
 import { AtomImpl } from "../implementation.ts";
-import { AtomValueArray } from "./array/index.ts";
-import { AtomValueObject } from "./object/index.ts";
-import { AtomValuePrimitive } from "./opaque/index.ts";
+import { AtomInternalArray } from "./array/index.ts";
+import { AtomInternalObject } from "./object/index.ts";
+import { AtomInternalOpaque } from "./opaque/index.ts";
 
-export function detectInternalConstructor<Value>(
-  value: Value,
-): AtomValue.Constructor<AtomValue<Value>> {
+export function detectInternalConstructor(
+  value: unknown,
+): AtomInternalConstructor {
   if (value !== null && typeof value === "object")
     return Array.isArray(value)
-      ? AtomValueArray
+      ? AtomInternalArray
       : Object.prototype.toString.call(value) === "[object Object]"
-        ? AtomValueObject
-        : AtomValuePrimitive;
-  return AtomValuePrimitive;
+        ? AtomInternalObject
+        : AtomInternalOpaque;
+  return AtomInternalOpaque;
 }
 
-export type AtomValue<Value> =
-  | AtomValueArray<Value>
-  | AtomValueObject<Value>
-  | AtomValuePrimitive<Value>;
+export type AtomInternal =
+  | AtomInternalArray<any>
+  | AtomInternalObject<any>
+  | AtomInternalOpaque<any>;
 
-export namespace AtomValue {
-  export interface Constructor<Value> {
-    new (atom: AtomImpl<Value>, value: Value): AtomValue<Value>;
-  }
+export interface AtomInternalConstructor {
+  new (atom: AtomImpl<any>, value: any): AtomInternal;
 }

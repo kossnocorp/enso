@@ -19,11 +19,11 @@ import { useRerender } from "../hooks/rerender.ts";
 import { EnsoUtils as Utils } from "../utils.ts";
 import type { Atom } from "./definition.ts";
 import { useAtomHook } from "./hooks/index.ts";
-import { AtomValueArray } from "./internal/array/index.ts";
+import { AtomInternalArray } from "./internal/array/index.ts";
 import { externalSymbol } from "./internal/base/index.ts";
-import { detectInternalConstructor } from "./internal/index.ts";
-import { AtomValueObject } from "./internal/object/index.ts";
-import { AtomValuePrimitive } from "./internal/opaque/index.ts";
+import { AtomInternal, detectInternalConstructor } from "./internal/index.ts";
+import { AtomInternalObject } from "./internal/object/index.ts";
+import { AtomInternalOpaque } from "./internal/opaque/index.ts";
 
 export class AtomImpl<Value> {
   //#region Static
@@ -249,14 +249,14 @@ export class AtomImpl<Value> {
 
   //#region Type
 
-  internal: any = new AtomValuePrimitive(this, detachedValue);
+  internal: AtomInternal = new AtomInternalOpaque(this, detachedValue as any);
 
   get _() {
     return {};
   }
 
-  remove(key: any) {
-    return this.internal.remove(key);
+  remove(key: keyof Value) {
+    return this.internal.remove(key as any);
   }
 
   self: any = {
@@ -271,10 +271,12 @@ export class AtomImpl<Value> {
   };
 
   forEach(callback: any) {
+    // @ts-expect-error
     this.internal.forEach(callback);
   }
 
   map(callback: any) {
+    // @ts-expect-error
     this.internal.map(callback);
   }
 
@@ -323,8 +325,8 @@ export class AtomImpl<Value> {
 
   at(key: keyof Value) {
     if (
-      this.internal instanceof AtomValueArray ||
-      this.internal instanceof AtomValueObject
+      this.internal instanceof AtomInternalArray ||
+      this.internal instanceof AtomInternalObject
     )
       return this.internal.at(key);
     // WIP:
