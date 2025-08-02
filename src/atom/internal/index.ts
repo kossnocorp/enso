@@ -22,6 +22,6 @@ export type AtomValue<Value> =
 
 export namespace AtomValue {
   export interface Constructor<Value> {
-    new (atom: AtomImpl<unknown>, value: Value): AtomValue<Value>;
+    new (atom: AtomImpl<Value>, value: Value): AtomValue<Value>;
   }
 }

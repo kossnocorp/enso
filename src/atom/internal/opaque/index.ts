@@ -4,21 +4,24 @@ import type { AtomImpl } from "../../implementation.ts";
 import { AtomValue } from "../base/index.ts";
 
 export class AtomValuePrimitive<Value> extends AtomValue<Value> {
-  #value;
+  //#region Instance
 
   constructor(atom: AtomImpl<unknown>, value: Value) {
     super(atom, value);
     this.#value = value;
   }
 
-  #create() {
-    // this.#external
+  //#endregion
+
+  //#region Value
+
+  #value;
+
+  get value(): Value {
+    return this.#value === detachedValue ? (undefined as any) : this.#value;
   }
 
-  //#region Old
-
-  // @ts-expect-error
-  set(value) {
+  set(value: Value) {
     let changes = 0n;
     if (this.#value === detachedValue && value !== detachedValue)
       changes |= change.field.attach;
@@ -38,13 +41,23 @@ export class AtomValuePrimitive<Value> extends AtomValue<Value> {
     return changes;
   }
 
-  get value() {
-    return this.#value === detachedValue ? undefined : this.#value;
+  dirty(initial: Value): boolean {
+    return initial !== this.#value;
   }
+
+  override detached(): boolean {
+    return this.#value === detachedValue;
+  }
+
+  //#endregion
+
+  //#region Type
 
   remove() {
     return this.external.self.remove();
   }
+
+  //#endregion
 
   //#region Tree
 
@@ -60,12 +73,9 @@ export class AtomValuePrimitive<Value> extends AtomValue<Value> {
 
   //#endregion
 
-  unwatch() {}
+  //#region Events
 
-  // @ts-expect-error
-  dirty(initial) {
-    return initial !== this.#value;
-  }
+  unwatch() {}
 
   //#endregion
 }

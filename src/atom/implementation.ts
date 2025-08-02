@@ -193,7 +193,7 @@ export class AtomImpl<Value> {
     // Field type is changing
     else changes |= change.field.type;
 
-    this.internal = new Internal(this, value as any);
+    this.internal = new Internal(this as any, value as any);
     this.internal.set(value);
     return changes;
   }
@@ -415,7 +415,7 @@ export class AtomImpl<Value> {
       this.__parent.field.#childTrigger(changes, this.__parent.key);
   }
 
-  #childTrigger(childChanges: any, key: any) {
+  #childTrigger(childChanges: FieldChange, key: any) {
     let changes =
       // Shift child's field changes into child/subtree range
       shiftChildChanges(childChanges) |
