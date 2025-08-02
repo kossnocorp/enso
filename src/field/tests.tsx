@@ -6,9 +6,6 @@ import { change } from "../change/index.ts";
 import { DetachedValue, detachedValue } from "../detached/index.ts";
 import { EventsTree } from "../events/index.ts";
 import { Field } from "./index.js";
-import { ComputedField, FieldOld } from "./old.tsx";
-
-//#region Field
 
 describe(Field, () => {
   describe("static", () => {
@@ -1243,7 +1240,7 @@ describe(Field, () => {
         expect(pavedField.value).toBe("Hi");
       });
 
-      it.skip("allows to pave through nested fields", () => {
+      it("allows to pave through nested fields", () => {
         const field = new Field<
           { name?: { first?: string; last?: string } } | undefined
         >({});
@@ -1974,9 +1971,7 @@ describe(Field, () => {
         );
       });
     });
-  });
 
-  describe("watch", () => {
     describe("watch", () => {
       describe("primitive", () => {
         it("allows to subscribe for field changes", async () => {
@@ -2046,7 +2041,7 @@ describe(Field, () => {
           await postpone();
         });
 
-        it.skip("listens to field object create", async () => {
+        it("listens to field object create", async () => {
           const field = new Field<Record<number, { n: number }>>({
             1: { n: 1 },
             2: { n: 2 },
@@ -2112,7 +2107,7 @@ describe(Field, () => {
           await postpone();
         });
 
-        it.skip("listens to items object create", async () => {
+        it("listens to items object create", async () => {
           const field = new Field<Array<{ n: number }>>([{ n: 1 }, { n: 2 }]);
 
           return new Promise<void>((resolve, reject) => {
@@ -2201,44 +2196,20 @@ describe(Field, () => {
     });
   });
 
-  describe.skip("map", () => {
-    describe("narrow", () => {
-      it("allows to narrow the field type", () => {
-        const field = new Field<string | number>("Hello, world!");
-        // @ts-expect-error -- WIP
-        const narrowed = field.narrow(
-          // @ts-expect-error -- WIP
-          (value, ok) => typeof value === "string" && ok(value),
-        );
-        narrowed satisfies Field<string> | undefined;
-        expect(narrowed?.value).toBe("Hello, world!");
-      });
-    });
-
-    describe("widen", () => {
-      it("allows to widen the field type", () => {
-        const field = new Field<string>("Hello, world!");
-        // @ts-expect-error -- WIP
-        const widened = field.widen<undefined>();
-        widened satisfies Field<string | undefined>;
-      });
-    });
-  });
-
-  describe("computed", () => {
+  describe("transform", () => {
     describe("into", () => {
-      it("allows to create a computed field", () => {
+      it("allows to create a proxy field", () => {
         const field = new Field({ message: "Hello, world!" });
-        const computed = field.$.message.into(toCodes).from(fromCodes);
-        expect(computed.value).toEqual([
+        const proxy = field.$.message.into(toCodes).from(fromCodes);
+        expect(proxy.value).toEqual([
           72, 101, 108, 108, 111, 44, 32, 119, 111, 114, 108, 100, 33,
         ]);
       });
 
-      it("updates the field back from computed", async () => {
+      it("updates the field back from proxy", async () => {
         const field = new Field({ message: "Hello, world!" });
-        const computed = field.$.message.into(toCodes).from(fromCodes);
-        computed.set([72, 105, 33]);
+        const proxy = field.$.message.into(toCodes).from(fromCodes);
+        proxy.set([72, 105, 33]);
         await postpone();
         expect(field.value).toEqual({ message: "Hi!" });
       });
@@ -2247,8 +2218,8 @@ describe(Field, () => {
         const field = new Field({ message: "Hello, world!" });
         const intoSpy = vi.fn().mockReturnValue("Hey!");
         const fromSpy = vi.fn().mockReturnValue("Yo!");
-        const computed = field.$.message.into(intoSpy).from(fromSpy);
-        computed.set("Hi!");
+        const proxy = field.$.message.into(intoSpy).from(fromSpy);
+        proxy.set("Hi!");
         // into
         expect(intoSpy).toHaveBeenCalledOnce();
         expect(intoSpy).toBeCalledWith("Hello, world!", undefined);
@@ -2259,48 +2230,628 @@ describe(Field, () => {
 
       it("triggers field update", async () => {
         const field = new Field({ message: "Hello, world!" });
-        const computed = field.$.message.into(toCodes).from(fromCodes);
+        const proxy = field.$.message.into(toCodes).from(fromCodes);
 
         const unsub = field.$.message.watch((value) => {
           expect(value).toBe("Hi!");
           unsub();
         });
 
-        computed.set([72, 105, 33]);
+        proxy.set([72, 105, 33]);
         await postpone();
       });
+
+      describe("value", () => {
+        describe("#set", () => {
+          it("allows chaining multiple computed fields", async () => {
+            const source = new Field<{
+              name?: { first?: string; last?: string };
+            }>({});
+            const name = source.$.name
+              .into((name) => name || {})
+              .from((name) => name);
+            const first = name.$.first
+              .into((first) => first || "")
+              .from((first) => first);
+            const last = name.$.last
+              .into((last) => last || "")
+              .from((last) => last);
+            first.set("Sasha");
+            await postpone();
+            expect(first.value).toBe("Sasha");
+            expect(name.value).toEqual({ first: "Sasha" });
+            expect(source.value).toEqual({ name: { first: "Sasha" } });
+            last.set("Koss");
+            await postpone();
+            expect(last.value).toBe("Koss");
+            expect(name.value).toEqual({ first: "Sasha", last: "Koss" });
+            expect(source.value).toEqual({
+              name: { first: "Sasha", last: "Koss" },
+            });
+          });
+        });
+      });
+
+      describe("events", () => {
+        it("delegates events to the source field", async () => {
+          const source = new Field<string>("Hello, world!");
+          const proxy = source.into(() => "Hi!").from((value) => value);
+          const spy = vi.fn();
+          source.watch(spy);
+          proxy.trigger(change.field.blur, true);
+          await postpone();
+          expect(spy).toHaveBeenCalledOnce();
+          expect(spy).toReceiveChanges(change.field.blur);
+        });
+
+        it("delegates events through a detached field", async () => {
+          const source = new Field<{
+            name?: { first?: string; last?: string };
+          }>({});
+          const sourceSpy = vi.fn();
+          source.watch(sourceSpy);
+          const detachedSpy = vi.fn();
+          source.$.name.watch(detachedSpy);
+          const proxy = source.$.name
+            .into((name) => [name?.first, name?.last].join(" "))
+            .from(fromFullName);
+          proxy.trigger(change.field.blur, true);
+          await postpone();
+          expect(sourceSpy).toHaveBeenCalledOnce();
+          expect(sourceSpy).toReceiveChanges(change.child.blur);
+          expect(detachedSpy).toHaveBeenCalledOnce();
+          expect(detachedSpy).toReceiveChanges(change.field.blur);
+        });
+
+        it("delegates events through proxy chains", async () => {
+          const source = new Field<{
+            name?: { first?: string; last?: string };
+          }>({});
+          const sourceSpy = vi.fn();
+          source.watch(sourceSpy);
+          const name = source.$.name
+            .into((name) => name || {})
+            .from((name) => name);
+          const nameSpy = vi.fn();
+          name.watch(nameSpy);
+          const first = name.$.first
+            .into((first) => first || "")
+            .from((first) => first);
+          first.trigger(change.field.blur, true);
+          await postpone();
+          expect(sourceSpy).toHaveBeenCalledOnce();
+          expect(sourceSpy).toReceiveChanges(change.subtree.blur);
+          expect(nameSpy).toHaveBeenCalledOnce();
+          expect(nameSpy).toReceiveChanges(change.child.blur);
+        });
+
+        it("receives all validation events", async () => {
+          const source = new Field<string | undefined>(undefined);
+          const proxy = source.into((val) => val || "").from((str) => str);
+          const spy = vi.fn();
+          proxy.watch(spy);
+          proxy.addError("Something went wrong");
+          await postpone();
+          expect(spy).toHaveBeenCalledOnce();
+          expect(spy).toReceiveChanges(
+            change.field.errors | change.field.invalid,
+          );
+          expect(proxy.errors).toEqual([{ message: "Something went wrong" }]);
+          expect(proxy.valid).toBe(false);
+          source.clearErrors();
+          await postpone();
+          expect(spy).toHaveBeenCalledTimes(2);
+          expect(spy).toReceiveChanges(
+            change.field.valid | change.field.errors,
+          );
+          expect(proxy.errors).toHaveLength(0);
+          expect(proxy.valid).toBe(true);
+        });
+
+        it("receives validation events through computed chains", async () => {
+          const source = new Field<{
+            name?: { first?: string; last?: string };
+          }>({});
+          const sourceSpyInvalid = vi.fn();
+          source.watch(sourceSpyInvalid);
+          const name = source.$.name
+            .into((name) => name || {})
+            .from((name) => name);
+          const nameSpyInvalid = vi.fn();
+          name.watch(nameSpyInvalid);
+          const first = name.$.first
+            .into((first) => first || "")
+            .from((first) => first);
+          const firstSpyInvalid = vi.fn();
+          first.watch(firstSpyInvalid);
+          first.addError("Something went wrong");
+          await postpone();
+          expect(sourceSpyInvalid).toHaveBeenCalledOnce();
+          expect(sourceSpyInvalid).toReceiveChanges(
+            change.subtree.errors | change.subtree.invalid,
+          );
+          expect(nameSpyInvalid).toHaveBeenCalledOnce();
+          expect(nameSpyInvalid).toHaveBeenCalledBefore(sourceSpyInvalid);
+          expect(nameSpyInvalid).toReceiveChanges(
+            change.child.errors | change.child.invalid,
+          );
+          expect(firstSpyInvalid).toHaveBeenCalledOnce();
+          expect(firstSpyInvalid).toHaveBeenCalledBefore(nameSpyInvalid);
+          expect(firstSpyInvalid).toReceiveChanges(
+            change.field.errors | change.field.invalid,
+          );
+          expect(first.errors).toEqual([{ message: "Something went wrong" }]);
+          expect(first.valid).toBe(false);
+          const sourceSpyValid = vi.fn();
+          source.watch(sourceSpyValid);
+          const nameSpyValid = vi.fn();
+          name.watch(nameSpyValid);
+          const firstSpyValid = vi.fn();
+          first.watch(firstSpyValid);
+          source.clearErrors();
+          await postpone();
+          expect(sourceSpyValid).toHaveBeenCalledOnce();
+          expect(sourceSpyValid).toReceiveChanges(
+            change.subtree.valid | change.subtree.errors,
+          );
+          expect(nameSpyValid).toHaveBeenCalledOnce();
+          expect(nameSpyValid).toHaveBeenCalledBefore(sourceSpyValid);
+          expect(nameSpyValid).toReceiveChanges(
+            change.child.valid | change.child.errors,
+          );
+          expect(firstSpyValid).toHaveBeenCalledOnce();
+          expect(firstSpyValid).toHaveBeenCalledBefore(nameSpyValid);
+          expect(firstSpyValid).toReceiveChanges(
+            change.field.valid | change.field.errors,
+          );
+          expect(first.errors).toHaveLength(0);
+          expect(first.valid).toBe(true);
+        });
+
+        it.skip("receives validation events through maybe refs", async () => {
+          const source = new Field<{
+            user?: { name?: { first?: string; last?: string } };
+          }>({});
+          const sourceSpyInvalid = vi.fn();
+          source.watch(sourceSpyInvalid);
+          const user = source.$.user
+            .into((user) => user || {})
+            .from((user) => user);
+          const userSpyInvalid = vi.fn();
+          user.watch(userSpyInvalid);
+          const name = user.$.name
+            .into((name) => name || {})
+            .from((name) => name);
+          const nameSpyInvalid = vi.fn();
+          name.watch(nameSpyInvalid);
+          const first = name.$.first
+            .into((first) => first || "")
+            .from((first) => first);
+          source.validate((ref) => {
+            ref
+              .optional()
+              .at("user")
+              .at("name")
+              .at("first")
+              .addError("Something went wrong");
+          });
+          const firstSpyInvalid = vi.fn();
+          first.watch(firstSpyInvalid);
+          await postpone();
+          expect(sourceSpyInvalid).toHaveBeenCalledOnce();
+          expect(sourceSpyInvalid).toReceiveChanges(
+            change.subtree.errors | change.subtree.invalid,
+          );
+          expect(userSpyInvalid).toHaveBeenCalledOnce();
+          expect(userSpyInvalid).toHaveBeenCalledBefore(sourceSpyInvalid);
+          expect(userSpyInvalid).toReceiveChanges(
+            change.subtree.invalid | change.subtree.errors,
+          );
+          expect(nameSpyInvalid).toHaveBeenCalledOnce();
+          expect(nameSpyInvalid).toHaveBeenCalledBefore(userSpyInvalid);
+          expect(nameSpyInvalid).toReceiveChanges(
+            change.child.invalid | change.child.errors,
+          );
+          expect(firstSpyInvalid).toHaveBeenCalledOnce();
+          expect(firstSpyInvalid).toHaveBeenCalledBefore(nameSpyInvalid);
+          expect(firstSpyInvalid).toReceiveChanges(
+            change.field.invalid | change.field.errors,
+          );
+          expect(first.errors).toEqual([{ message: "Something went wrong" }]);
+          expect(first.valid).toBe(false);
+          const sourceSpyValid = vi.fn();
+          source.watch(sourceSpyValid);
+          const userSpyValid = vi.fn();
+          user.watch(userSpyValid);
+          const nameSpyValid = vi.fn();
+          name.watch(nameSpyValid);
+          const firstSpyValid = vi.fn();
+          first.watch(firstSpyValid);
+          source.clearErrors();
+          await postpone();
+          expect(sourceSpyValid).toHaveBeenCalledOnce();
+          expect(sourceSpyValid).toReceiveChanges(
+            change.subtree.valid | change.subtree.errors,
+          );
+          expect(userSpyValid).toHaveBeenCalledOnce();
+          expect(userSpyValid).toHaveBeenCalledBefore(sourceSpyValid);
+          expect(userSpyValid).toReceiveChanges(
+            change.subtree.valid | change.subtree.errors,
+          );
+          expect(nameSpyValid).toHaveBeenCalledOnce();
+          expect(nameSpyValid).toHaveBeenCalledBefore(userSpyValid);
+          expect(nameSpyValid).toReceiveChanges(
+            change.child.valid | change.child.errors,
+          );
+          expect(firstSpyValid).toHaveBeenCalledOnce();
+          expect(firstSpyValid).toHaveBeenCalledBefore(nameSpyValid);
+          expect(firstSpyValid).toReceiveChanges(
+            change.field.valid | change.field.errors,
+          );
+          expect(first.errors).toHaveLength(0);
+          expect(first.valid).toBe(true);
+        });
+
+        it.skip("receives add error events despited existing fields", async () => {
+          // 1. When source is {}
+          const source1 = new Field<{
+            name?: { first?: string; last?: string };
+          }>({});
+          const sourceSpy1 = vi.fn();
+          source1.watch(sourceSpy1);
+          const name1 = source1.$.name
+            .into((name) => name || {})
+            .from((name) => name);
+          const nameSpy1 = vi.fn();
+          name1.watch(nameSpy1);
+          const first1 = name1.$.first
+            .into((first) => first || "")
+            .from((first) => first);
+          source1.validate((ref) => {
+            ref
+              .optional()
+              .at("name")
+              .at("first")
+              .addError("Something went wrong");
+          });
+          const firstSpy1 = vi.fn();
+          first1.watch(firstSpy1);
+          await postpone();
+          expect(sourceSpy1).toHaveBeenCalledOnce();
+          expect(sourceSpy1).toReceiveChanges(
+            change.subtree.invalid | change.subtree.errors,
+          );
+          expect(nameSpy1).toHaveBeenCalledOnce();
+          expect(nameSpy1).toHaveBeenCalledBefore(sourceSpy1);
+          expect(nameSpy1).toReceiveChanges(
+            change.child.invalid | change.child.errors,
+          );
+          expect(firstSpy1).toHaveBeenCalledOnce();
+          expect(firstSpy1).toHaveBeenCalledBefore(nameSpy1);
+          expect(firstSpy1).toReceiveChanges(
+            change.field.invalid | change.field.errors,
+          );
+          expect(first1.errors).toEqual([{ message: "Something went wrong" }]);
+          expect(first1.valid).toBe(false);
+          // 2. When source is { name: {} }
+          const source2 = new Field<{
+            name?: { first?: string; last?: string };
+          }>({ name: {} });
+          const sourceSpy2 = vi.fn();
+          source2.watch(sourceSpy2);
+          const name2 = source2.$.name
+            .into((name) => name || {})
+            .from((name) => name);
+          const nameSpy2 = vi.fn();
+          name2.watch(nameSpy2);
+          const first2 = name2.$.first
+            .into((first) => first || "")
+            .from((first) => first);
+          source2.validate((ref) => {
+            ref
+              .optional()
+              .at("name")
+              .at("first")
+              .addError("Something went wrong");
+          });
+          const firstSpy2 = vi.fn();
+          first2.watch(firstSpy2);
+          await postpone();
+          expect(sourceSpy2).toHaveBeenCalledOnce();
+          expect(sourceSpy2).toReceiveChanges(
+            change.subtree.invalid | change.subtree.errors,
+          );
+          expect(nameSpy2).toHaveBeenCalledOnce();
+          expect(nameSpy2).toHaveBeenCalledBefore(sourceSpy2);
+          expect(nameSpy2).toReceiveChanges(
+            change.child.invalid | change.child.errors,
+          );
+          expect(firstSpy2).toHaveBeenCalledOnce();
+          expect(firstSpy2).toHaveBeenCalledBefore(nameSpy2);
+          expect(firstSpy2).toReceiveChanges(
+            change.field.invalid | change.field.errors,
+          );
+          expect(first2.errors).toEqual([{ message: "Something went wrong" }]);
+          expect(first2.valid).toBe(false);
+        });
+
+        it.skip("receives clear error events despited existing fields", async () => {
+          // 1. When source is {}
+          const source1 = new Field<{
+            name?: { first?: string; last?: string };
+          }>({});
+          const name1 = source1.$.name
+            .into((name) => name || {})
+            .from((name) => name);
+          const first1 = name1.$.first
+            .into((first) => first || "")
+            .from((first) => first);
+          source1.validate((ref) => {
+            ref
+              .optional()
+              .at("name")
+              .at("first")
+              .addError("Something went wrong");
+          });
+          await postpone();
+          const sourceSpy1 = vi.fn();
+          source1.watch(sourceSpy1);
+          const nameSpy1 = vi.fn();
+          name1.watch(nameSpy1);
+          const firstSpy1 = vi.fn();
+          first1.watch(firstSpy1);
+          source1.clearErrors();
+          await postpone();
+          expect(sourceSpy1).toHaveBeenCalledOnce();
+          expect(sourceSpy1).toReceiveChanges(
+            change.subtree.valid | change.subtree.errors,
+          );
+          expect(nameSpy1).toHaveBeenCalledOnce();
+          expect(nameSpy1).toHaveBeenCalledBefore(sourceSpy1);
+          expect(nameSpy1).toReceiveChanges(
+            change.child.valid | change.child.errors,
+          );
+          expect(firstSpy1).toHaveBeenCalledOnce();
+          expect(firstSpy1).toHaveBeenCalledBefore(nameSpy1);
+          expect(firstSpy1).toReceiveChanges(
+            change.field.valid | change.field.errors,
+          );
+          expect(first1.errors).toEqual([]);
+          expect(first1.valid).toBe(true);
+          // 2. When source is { name: {}}
+          const source2 = new Field<{
+            name?: { first?: string; last?: string };
+          }>({ name: {} });
+          const name2 = source2.$.name
+            .into((name) => name || {})
+            .from((name) => name);
+          const first2 = name2.$.first
+            .into((first) => first || "")
+            .from((first) => first);
+          source2.validate((ref) => {
+            ref
+              .optional()
+              .at("name")
+              .at("first")
+              .addError("Something went wrong");
+          });
+          await postpone();
+          const sourceSpy2 = vi.fn();
+          source2.watch(sourceSpy2);
+          const nameSpy2 = vi.fn();
+          name2.watch(nameSpy2);
+          const firstSpy2 = vi.fn();
+          first2.watch(firstSpy2);
+          source2.clearErrors();
+          await postpone();
+          expect(sourceSpy2).toHaveBeenCalledOnce();
+          expect(sourceSpy2).toReceiveChanges(
+            change.subtree.valid | change.subtree.errors,
+          );
+          expect(nameSpy2).toHaveBeenCalledOnce();
+          expect(nameSpy2).toHaveBeenCalledBefore(sourceSpy2);
+          expect(nameSpy2).toReceiveChanges(
+            change.child.valid | change.child.errors,
+          );
+          expect(firstSpy2).toHaveBeenCalledOnce();
+          expect(firstSpy2).toHaveBeenCalledBefore(nameSpy2);
+          expect(firstSpy2).toReceiveChanges(
+            change.field.valid | change.field.errors,
+          );
+          expect(first2.errors).toEqual([]);
+          expect(first2.valid).toBe(true);
+        });
+
+        it.skip("delivers valid events to parallel proxy fields", async () => {
+          // 1. When source is {}
+          const source1 = new Field<{
+            name?: { first?: string; last?: string };
+          }>({});
+          const hasName1 = source1.$.name
+            .into((name) => !!name)
+            .from((hasName, prevValue) =>
+              hasName ? prevValue || { first: "", last: "" } : undefined,
+            );
+          const hasNameSpyInvalid1 = vi.fn();
+          hasName1.watch(hasNameSpyInvalid1);
+          const name1 = source1.$.name
+            .into((name) => name || {})
+            .from((name) => name);
+          const first1 = name1.$.first
+            .into((first) => first || "")
+            .from((first) => first);
+          source1.validate((ref) => {
+            ref
+              .optional()
+              .at("name")
+              .at("first")
+              .addError("Something went wrong");
+          });
+          await postpone();
+          expect(hasNameSpyInvalid1).toHaveBeenCalledOnce();
+          expect(hasNameSpyInvalid1).toReceiveChanges(
+            change.child.invalid | change.child.errors,
+          );
+          expect(hasName1.errors).toEqual([]);
+          expect(hasName1.valid).toBe(false);
+          const hasNameSpyValid1 = vi.fn();
+          hasName1.watch(hasNameSpyValid1);
+          source1.clearErrors();
+          await postpone();
+          expect(hasNameSpyValid1).toHaveBeenCalledOnce();
+          expect(hasNameSpyValid1).toReceiveChanges(
+            change.child.valid | change.child.errors,
+          );
+          expect(first1.errors).toEqual([]);
+          expect(first1.valid).toBe(true);
+          // 2. When source is { name: {} }
+          const source2 = new Field<{
+            name?: { first?: string; last?: string };
+          }>({ name: {} });
+          const hasName2 = source2.$.name
+            .into((name) => !!name)
+            .from((hasName, prevValue) =>
+              hasName ? prevValue || { first: "", last: "" } : undefined,
+            );
+          const hasNameSpyInvalid2 = vi.fn();
+          hasName2.watch(hasNameSpyInvalid2);
+          const name2 = source2.$.name
+            .into((name) => name || {})
+            .from((name) => name);
+          const first2 = name2.$.first
+            .into((first) => first || "")
+            .from((first) => first);
+          source2.validate((ref) => {
+            ref
+              .optional()
+              .at("name")
+              .at("first")
+              .addError("Something went wrong");
+          });
+          await postpone();
+          expect(hasNameSpyInvalid2).toHaveBeenCalledOnce();
+          expect(hasNameSpyInvalid2).toReceiveChanges(
+            change.child.invalid | change.child.errors,
+          );
+          expect(hasName2.errors).toEqual([]);
+          expect(hasName2.valid).toBe(false);
+          const hasNameSpyValid2 = vi.fn();
+          hasName2.watch(hasNameSpyValid2);
+          source2.clearErrors();
+          await postpone();
+          expect(hasNameSpyValid2).toHaveBeenCalledOnce();
+          expect(hasNameSpyValid2).toReceiveChanges(
+            change.child.valid | change.child.errors,
+          );
+          expect(first2.errors).toEqual([]);
+          expect(first2.valid).toBe(true);
+        });
+
+        it.skip("listens to validation events through data updates", async () => {
+          const source = new Field<{
+            user?: { name?: { first?: string | undefined; last?: string } };
+          }>({});
+          const sourceSpyInvalid = vi.fn();
+          source.watch(sourceSpyInvalid);
+          const user = source.$.user
+            .into((user) => user || {})
+            .from((user) => user);
+          const userSpyInvalid = vi.fn();
+          user.watch(userSpyInvalid);
+          const name = user.$.name
+            .into((name) => name || {})
+            .from((name) => name);
+          const nameSpyInvalid = vi.fn();
+          name.watch(nameSpyInvalid);
+          const first = name.$.first
+            .into((first) => first || "")
+            .from((first) => first);
+          source.validate((ref) => {
+            ref
+              .optional()
+              .at("user")
+              .at("name")
+              .at("first")
+              .addError("Something went wrong");
+          });
+          const firstSpyInvalid = vi.fn();
+          first.watch(firstSpyInvalid);
+          await postpone();
+          expect(sourceSpyInvalid).toHaveBeenCalledOnce();
+          expect(sourceSpyInvalid).toReceiveChanges(
+            change.subtree.errors | change.subtree.invalid,
+          );
+          expect(userSpyInvalid).toHaveBeenCalledOnce();
+          expect(userSpyInvalid).toHaveBeenCalledBefore(sourceSpyInvalid);
+          expect(userSpyInvalid).toReceiveChanges(
+            change.subtree.invalid | change.subtree.errors,
+          );
+          expect(nameSpyInvalid).toHaveBeenCalledOnce();
+          expect(nameSpyInvalid).toHaveBeenCalledBefore(userSpyInvalid);
+          expect(nameSpyInvalid).toReceiveChanges(
+            change.child.invalid | change.child.errors,
+          );
+          expect(firstSpyInvalid).toHaveBeenCalledOnce();
+          expect(firstSpyInvalid).toHaveBeenCalledBefore(nameSpyInvalid);
+          expect(firstSpyInvalid).toReceiveChanges(
+            change.field.invalid | change.field.errors,
+          );
+          expect(first.errors).toEqual([{ message: "Something went wrong" }]);
+          expect(first.valid).toBe(false);
+          const sourceSpyValid = vi.fn();
+          source.watch(sourceSpyValid);
+          const userSpyValid = vi.fn();
+          user.watch(userSpyValid);
+          const nameSpyValid = vi.fn();
+          name.watch(nameSpyValid);
+          const firstSpyValid = vi.fn();
+          first.watch(firstSpyValid);
+          source.set({ user: { name: { first: undefined } } });
+          source.clearErrors();
+          await postpone();
+          expect(sourceSpyValid).toHaveBeenCalledOnce();
+          expect(sourceSpyValid).toReceiveChanges(
+            change.field.shape |
+              change.child.attach |
+              change.subtree.valid |
+              change.subtree.errors,
+          );
+          expect(userSpyValid).toHaveBeenCalledOnce();
+          expect(userSpyValid).toHaveBeenCalledBefore(sourceSpyValid);
+          expect(userSpyValid).toReceiveChanges(
+            change.field.shape |
+              change.child.attach |
+              change.subtree.valid |
+              change.subtree.errors,
+          );
+          expect(nameSpyValid).toHaveBeenCalledOnce();
+          expect(nameSpyValid).toHaveBeenCalledBefore(userSpyValid);
+          expect(nameSpyValid).toReceiveChanges(
+            change.field.shape |
+              change.child.attach |
+              change.child.valid |
+              change.child.errors,
+          );
+          expect(firstSpyValid).toHaveBeenCalledOnce();
+          // TODO:
+          // expect(firstSpyValid).toHaveBeenCalledBefore(nameSpyValid);
+          expect(firstSpyValid).toReceiveChanges(
+            change.field.valid | change.field.errors,
+          );
+          expect(first.errors).toHaveLength(0);
+          expect(first.valid).toBe(true);
+        });
+      });
+
+      describe("validation", () => {
+        it("points to the source field validation", () => {
+          const source = new Field<string>("Hello!");
+          const proxy = source.into(() => "Hi!").from((value) => value);
+          // @ts-expect-error -- WIP
+          expect(proxy.validationTree).toBe(source.validationTree);
+        });
+      });
     });
-
-    // describe("computedMap", () => {
-    //   it("is a computed map instance", () => {
-    //     const field = new Field(123);
-    //     expect(field.computedMap).toBeInstanceOf(ComputedMap);
-    //   });
-
-    //   it("points to the root computed map", () => {
-    //     const field = new Field({ a: { b: { c: 42 } } });
-    //     expect(field.$.a.$.b.computedMap).toBe(field.computedMap);
-    //     expect(field.$.a.$.b.$.c.computedMap).toBe(field.computedMap);
-    //   });
-    // });
-
-    // describe("computedFields", () => {
-    //   it("returns computed fields", () => {
-    //     const field = new Field([1, 2, 3]);
-    //     const intoSum = (arr: number[]) =>
-    //       arr.reduce((acc, num) => acc + num, 0);
-    //     const fromArr = () => [];
-    //     const computed1 = field.into(intoSum).from(fromArr);
-    //     const computed2 = field.into(intoSum).from(fromArr);
-    //     const computed3 = field
-    //       .at(0)
-    //       .into((num) => (num || 0) * 2)
-    //       .from(() => 0);
-    //     expect(field.computedFields).toEqual([computed1, computed2]);
-    //     expect(field.at(0).computedFields).toEqual([computed3]);
-    //     expect(field.at(1).computedFields).toEqual([]);
-    //   });
-    // });
   });
 
   describe("input", () => {
@@ -2320,7 +2871,7 @@ describe(Field, () => {
     });
   });
 
-  describe("errors", () => {
+  describe("validation", () => {
     describe("errors", () => {
       it("returns direct errors of the field", () => {
         const field = new Field(42);
@@ -2520,9 +3071,7 @@ describe(Field, () => {
         expect(computed.valid).toBe(false);
       });
     });
-  });
 
-  describe("validation", () => {
     describe("#validate", () => {
       describe("primitive", () => {
         it("allows to validate the state", () => {
@@ -2679,600 +3228,6 @@ describe(Field, () => {
     });
   });
 });
-
-//#endregion
-
-//#region ComputedField
-
-describe.skip(ComputedField, () => {
-  describe("value", () => {
-    describe(ComputedField.prototype.set, () => {
-      it("allows chaining multiple computed fields", async () => {
-        const source = new FieldOld<{
-          name?: { first?: string; last?: string };
-        }>({});
-        const name = source.$.name
-          .into((name) => name || {})
-          .from((name) => name);
-        const first = name.$.first
-          .into((first) => first || "")
-          .from((first) => first);
-        const last = name.$.last
-          .into((last) => last || "")
-          .from((last) => last);
-        first.set("Sasha");
-        await postpone();
-        expect(first.get()).toBe("Sasha");
-        expect(name.get()).toEqual({ first: "Sasha" });
-        expect(source.get()).toEqual({ name: { first: "Sasha" } });
-        last.set("Koss");
-        await postpone();
-        expect(last.get()).toBe("Koss");
-        expect(name.get()).toEqual({ first: "Sasha", last: "Koss" });
-        expect(source.get()).toEqual({
-          name: { first: "Sasha", last: "Koss" },
-        });
-      });
-    });
-  });
-
-  describe("events", () => {
-    it("delegates events to the source field", async () => {
-      const source = new FieldOld<string>("Hello, world!");
-      const computed = new ComputedField<string, string>(
-        source,
-        () => "Hi!",
-        (value) => value,
-      );
-      const spy = vi.fn();
-      source.watch(spy);
-      computed.trigger(change.field.blur, true);
-      await postpone();
-      expect(spy).toHaveBeenCalledOnce();
-      expect(spy).toReceiveChanges(change.field.blur);
-    });
-
-    it("delegates events through a detached field", async () => {
-      const source = new FieldOld<{ name?: { first?: string; last?: string } }>(
-        {},
-      );
-      const sourceSpy = vi.fn();
-      source.watch(sourceSpy);
-      const detachedSpy = vi.fn();
-      source.$.name.watch(detachedSpy);
-      const computed = source.$.name
-        .into((name) => [name?.first, name?.last].join(" "))
-        .from(fromFullName);
-      computed.trigger(change.field.blur, true);
-      await postpone();
-      expect(sourceSpy).toHaveBeenCalledOnce();
-      expect(sourceSpy).toReceiveChanges(change.child.blur);
-      expect(detachedSpy).toHaveBeenCalledOnce();
-      expect(detachedSpy).toReceiveChanges(change.field.blur);
-    });
-
-    it("delegates events through computed chains", async () => {
-      const source = new FieldOld<{ name?: { first?: string; last?: string } }>(
-        {},
-      );
-      const sourceSpy = vi.fn();
-      source.watch(sourceSpy);
-      const name = source.$.name
-        .into((name) => name || {})
-        .from((name) => name);
-      const nameSpy = vi.fn();
-      name.watch(nameSpy);
-      const first = name.$.first
-        .into((first) => first || "")
-        .from((first) => first);
-      first.trigger(change.field.blur, true);
-      await postpone();
-      expect(sourceSpy).toHaveBeenCalledOnce();
-      expect(sourceSpy).toReceiveChanges(change.subtree.blur);
-      expect(nameSpy).toHaveBeenCalledOnce();
-      expect(nameSpy).toReceiveChanges(change.child.blur);
-    });
-
-    it("receives all validation events", async () => {
-      const source = new FieldOld<string | undefined>(undefined);
-      const computed = source.into((val) => val || "").from((str) => str);
-      const spy = vi.fn();
-      computed.watch(spy);
-      computed.addError("Something went wrong");
-      await postpone();
-      expect(spy).toHaveBeenCalledOnce();
-      expect(spy).toReceiveChanges(change.field.errors | change.field.invalid);
-      expect(computed.errors).toEqual([{ message: "Something went wrong" }]);
-      expect(computed.valid).toBe(false);
-      source.clearErrors();
-      await postpone();
-      expect(spy).toHaveBeenCalledTimes(2);
-      expect(spy).toReceiveChanges(change.field.valid | change.field.errors);
-      expect(computed.errors).toHaveLength(0);
-      expect(computed.valid).toBe(true);
-    });
-
-    it("receives validation events through computed chains", async () => {
-      const source = new FieldOld<{ name?: { first?: string; last?: string } }>(
-        {},
-      );
-      const sourceSpyInvalid = vi.fn();
-      source.watch(sourceSpyInvalid);
-      const name = source.$.name
-        .into((name) => name || {})
-        .from((name) => name);
-      const nameSpyInvalid = vi.fn();
-      name.watch(nameSpyInvalid);
-      const first = name.$.first
-        .into((first) => first || "")
-        .from((first) => first);
-      const firstSpyInvalid = vi.fn();
-      first.watch(firstSpyInvalid);
-      first.addError("Something went wrong");
-      await postpone();
-      expect(sourceSpyInvalid).toHaveBeenCalledOnce();
-      expect(sourceSpyInvalid).toReceiveChanges(
-        change.subtree.errors | change.subtree.invalid,
-      );
-      expect(nameSpyInvalid).toHaveBeenCalledOnce();
-      expect(nameSpyInvalid).toHaveBeenCalledBefore(sourceSpyInvalid);
-      expect(nameSpyInvalid).toReceiveChanges(
-        change.child.errors | change.child.invalid,
-      );
-      expect(firstSpyInvalid).toHaveBeenCalledOnce();
-      expect(firstSpyInvalid).toHaveBeenCalledBefore(nameSpyInvalid);
-      expect(firstSpyInvalid).toReceiveChanges(
-        change.field.errors | change.field.invalid,
-      );
-      expect(first.errors).toEqual([{ message: "Something went wrong" }]);
-      expect(first.valid).toBe(false);
-      const sourceSpyValid = vi.fn();
-      source.watch(sourceSpyValid);
-      const nameSpyValid = vi.fn();
-      name.watch(nameSpyValid);
-      const firstSpyValid = vi.fn();
-      first.watch(firstSpyValid);
-      source.clearErrors();
-      await postpone();
-      expect(sourceSpyValid).toHaveBeenCalledOnce();
-      expect(sourceSpyValid).toReceiveChanges(
-        change.subtree.valid | change.subtree.errors,
-      );
-      expect(nameSpyValid).toHaveBeenCalledOnce();
-      expect(nameSpyValid).toHaveBeenCalledBefore(sourceSpyValid);
-      expect(nameSpyValid).toReceiveChanges(
-        change.child.valid | change.child.errors,
-      );
-      expect(firstSpyValid).toHaveBeenCalledOnce();
-      expect(firstSpyValid).toHaveBeenCalledBefore(nameSpyValid);
-      expect(firstSpyValid).toReceiveChanges(
-        change.field.valid | change.field.errors,
-      );
-      expect(first.errors).toHaveLength(0);
-      expect(first.valid).toBe(true);
-    });
-
-    it("receives validation events through maybe refs", async () => {
-      const source = new FieldOld<{
-        user?: { name?: { first?: string; last?: string } };
-      }>({});
-      const sourceSpyInvalid = vi.fn();
-      source.watch(sourceSpyInvalid);
-      const user = source.$.user
-        .into((user) => user || {})
-        .from((user) => user);
-      const userSpyInvalid = vi.fn();
-      user.watch(userSpyInvalid);
-      const name = user.$.name.into((name) => name || {}).from((name) => name);
-      const nameSpyInvalid = vi.fn();
-      name.watch(nameSpyInvalid);
-      const first = name.$.first
-        .into((first) => first || "")
-        .from((first) => first);
-      source.validate((ref) => {
-        ref
-          .maybe()
-          .at("user")
-          .at("name")
-          .at("first")
-          .addError("Something went wrong");
-      });
-      const firstSpyInvalid = vi.fn();
-      first.watch(firstSpyInvalid);
-      await postpone();
-      expect(sourceSpyInvalid).toHaveBeenCalledOnce();
-      expect(sourceSpyInvalid).toReceiveChanges(
-        change.subtree.errors | change.subtree.invalid,
-      );
-      expect(userSpyInvalid).toHaveBeenCalledOnce();
-      expect(userSpyInvalid).toHaveBeenCalledBefore(sourceSpyInvalid);
-      expect(userSpyInvalid).toReceiveChanges(
-        change.subtree.invalid | change.subtree.errors,
-      );
-      expect(nameSpyInvalid).toHaveBeenCalledOnce();
-      expect(nameSpyInvalid).toHaveBeenCalledBefore(userSpyInvalid);
-      expect(nameSpyInvalid).toReceiveChanges(
-        change.child.invalid | change.child.errors,
-      );
-      expect(firstSpyInvalid).toHaveBeenCalledOnce();
-      expect(firstSpyInvalid).toHaveBeenCalledBefore(nameSpyInvalid);
-      expect(firstSpyInvalid).toReceiveChanges(
-        change.field.invalid | change.field.errors,
-      );
-      expect(first.errors).toEqual([{ message: "Something went wrong" }]);
-      expect(first.valid).toBe(false);
-      const sourceSpyValid = vi.fn();
-      source.watch(sourceSpyValid);
-      const userSpyValid = vi.fn();
-      user.watch(userSpyValid);
-      const nameSpyValid = vi.fn();
-      name.watch(nameSpyValid);
-      const firstSpyValid = vi.fn();
-      first.watch(firstSpyValid);
-      source.clearErrors();
-      await postpone();
-      expect(sourceSpyValid).toHaveBeenCalledOnce();
-      expect(sourceSpyValid).toReceiveChanges(
-        change.subtree.valid | change.subtree.errors,
-      );
-      expect(userSpyValid).toHaveBeenCalledOnce();
-      expect(userSpyValid).toHaveBeenCalledBefore(sourceSpyValid);
-      expect(userSpyValid).toReceiveChanges(
-        change.subtree.valid | change.subtree.errors,
-      );
-      expect(nameSpyValid).toHaveBeenCalledOnce();
-      expect(nameSpyValid).toHaveBeenCalledBefore(userSpyValid);
-      expect(nameSpyValid).toReceiveChanges(
-        change.child.valid | change.child.errors,
-      );
-      expect(firstSpyValid).toHaveBeenCalledOnce();
-      expect(firstSpyValid).toHaveBeenCalledBefore(nameSpyValid);
-      expect(firstSpyValid).toReceiveChanges(
-        change.field.valid | change.field.errors,
-      );
-      expect(first.errors).toHaveLength(0);
-      expect(first.valid).toBe(true);
-    });
-
-    it("receives add error events despited existing fields", async () => {
-      // 1. When source is {}
-      const source1 = new FieldOld<{
-        name?: { first?: string; last?: string };
-      }>({});
-      const sourceSpy1 = vi.fn();
-      source1.watch(sourceSpy1);
-      const name1 = source1.$.name
-        .into((name) => name || {})
-        .from((name) => name);
-      const nameSpy1 = vi.fn();
-      name1.watch(nameSpy1);
-      const first1 = name1.$.first
-        .into((first) => first || "")
-        .from((first) => first);
-      source1.validate((ref) => {
-        ref.maybe().at("name").at("first").addError("Something went wrong");
-      });
-      const firstSpy1 = vi.fn();
-      first1.watch(firstSpy1);
-      await postpone();
-      expect(sourceSpy1).toHaveBeenCalledOnce();
-      expect(sourceSpy1).toReceiveChanges(
-        change.subtree.invalid | change.subtree.errors,
-      );
-      expect(nameSpy1).toHaveBeenCalledOnce();
-      expect(nameSpy1).toHaveBeenCalledBefore(sourceSpy1);
-      expect(nameSpy1).toReceiveChanges(
-        change.child.invalid | change.child.errors,
-      );
-      expect(firstSpy1).toHaveBeenCalledOnce();
-      expect(firstSpy1).toHaveBeenCalledBefore(nameSpy1);
-      expect(firstSpy1).toReceiveChanges(
-        change.field.invalid | change.field.errors,
-      );
-      expect(first1.errors).toEqual([{ message: "Something went wrong" }]);
-      expect(first1.valid).toBe(false);
-      // 2. When source is { name: {} }
-      const source2 = new FieldOld<{
-        name?: { first?: string; last?: string };
-      }>({ name: {} });
-      const sourceSpy2 = vi.fn();
-      source2.watch(sourceSpy2);
-      const name2 = source2.$.name
-        .into((name) => name || {})
-        .from((name) => name);
-      const nameSpy2 = vi.fn();
-      name2.watch(nameSpy2);
-      const first2 = name2.$.first
-        .into((first) => first || "")
-        .from((first) => first);
-      source2.validate((ref) => {
-        ref.maybe().at("name").at("first").addError("Something went wrong");
-      });
-      const firstSpy2 = vi.fn();
-      first2.watch(firstSpy2);
-      await postpone();
-      expect(sourceSpy2).toHaveBeenCalledOnce();
-      expect(sourceSpy2).toReceiveChanges(
-        change.subtree.invalid | change.subtree.errors,
-      );
-      expect(nameSpy2).toHaveBeenCalledOnce();
-      expect(nameSpy2).toHaveBeenCalledBefore(sourceSpy2);
-      expect(nameSpy2).toReceiveChanges(
-        change.child.invalid | change.child.errors,
-      );
-      expect(firstSpy2).toHaveBeenCalledOnce();
-      expect(firstSpy2).toHaveBeenCalledBefore(nameSpy2);
-      expect(firstSpy2).toReceiveChanges(
-        change.field.invalid | change.field.errors,
-      );
-      expect(first2.errors).toEqual([{ message: "Something went wrong" }]);
-      expect(first2.valid).toBe(false);
-    });
-
-    it("receives clear error events despited existing fields", async () => {
-      // 1. When source is {}
-      const source1 = new FieldOld<{
-        name?: { first?: string; last?: string };
-      }>({});
-      const name1 = source1.$.name
-        .into((name) => name || {})
-        .from((name) => name);
-      const first1 = name1.$.first
-        .into((first) => first || "")
-        .from((first) => first);
-      source1.validate((ref) => {
-        ref.maybe().at("name").at("first").addError("Something went wrong");
-      });
-      await postpone();
-      const sourceSpy1 = vi.fn();
-      source1.watch(sourceSpy1);
-      const nameSpy1 = vi.fn();
-      name1.watch(nameSpy1);
-      const firstSpy1 = vi.fn();
-      first1.watch(firstSpy1);
-      source1.clearErrors();
-      await postpone();
-      expect(sourceSpy1).toHaveBeenCalledOnce();
-      expect(sourceSpy1).toReceiveChanges(
-        change.subtree.valid | change.subtree.errors,
-      );
-      expect(nameSpy1).toHaveBeenCalledOnce();
-      expect(nameSpy1).toHaveBeenCalledBefore(sourceSpy1);
-      expect(nameSpy1).toReceiveChanges(
-        change.child.valid | change.child.errors,
-      );
-      expect(firstSpy1).toHaveBeenCalledOnce();
-      expect(firstSpy1).toHaveBeenCalledBefore(nameSpy1);
-      expect(firstSpy1).toReceiveChanges(
-        change.field.valid | change.field.errors,
-      );
-      expect(first1.errors).toEqual([]);
-      expect(first1.valid).toBe(true);
-      // 2. When source is { name: {}}
-      const source2 = new FieldOld<{
-        name?: { first?: string; last?: string };
-      }>({ name: {} });
-      const name2 = source2.$.name
-        .into((name) => name || {})
-        .from((name) => name);
-      const first2 = name2.$.first
-        .into((first) => first || "")
-        .from((first) => first);
-      source2.validate((ref) => {
-        ref.maybe().at("name").at("first").addError("Something went wrong");
-      });
-      await postpone();
-      const sourceSpy2 = vi.fn();
-      source2.watch(sourceSpy2);
-      const nameSpy2 = vi.fn();
-      name2.watch(nameSpy2);
-      const firstSpy2 = vi.fn();
-      first2.watch(firstSpy2);
-      source2.clearErrors();
-      await postpone();
-      expect(sourceSpy2).toHaveBeenCalledOnce();
-      expect(sourceSpy2).toReceiveChanges(
-        change.subtree.valid | change.subtree.errors,
-      );
-      expect(nameSpy2).toHaveBeenCalledOnce();
-      expect(nameSpy2).toHaveBeenCalledBefore(sourceSpy2);
-      expect(nameSpy2).toReceiveChanges(
-        change.child.valid | change.child.errors,
-      );
-      expect(firstSpy2).toHaveBeenCalledOnce();
-      expect(firstSpy2).toHaveBeenCalledBefore(nameSpy2);
-      expect(firstSpy2).toReceiveChanges(
-        change.field.valid | change.field.errors,
-      );
-      expect(first2.errors).toEqual([]);
-      expect(first2.valid).toBe(true);
-    });
-
-    it("delivers valid events to parallel computed fields", async () => {
-      // 1. When source is {}
-      const source1 = new FieldOld<{
-        name?: { first?: string; last?: string };
-      }>({});
-      const hasName1 = source1.$.name
-        .into((name) => !!name)
-        .from((hasName, prevValue) =>
-          hasName ? prevValue || { first: "", last: "" } : undefined,
-        );
-      const hasNameSpyInvalid1 = vi.fn();
-      hasName1.watch(hasNameSpyInvalid1);
-      const name1 = source1.$.name
-        .into((name) => name || {})
-        .from((name) => name);
-      const first1 = name1.$.first
-        .into((first) => first || "")
-        .from((first) => first);
-      source1.validate((ref) => {
-        ref.maybe().at("name").at("first").addError("Something went wrong");
-      });
-      await postpone();
-      expect(hasNameSpyInvalid1).toHaveBeenCalledOnce();
-      expect(hasNameSpyInvalid1).toReceiveChanges(
-        change.child.invalid | change.child.errors,
-      );
-      expect(hasName1.errors).toEqual([]);
-      expect(hasName1.valid).toBe(false);
-      const hasNameSpyValid1 = vi.fn();
-      hasName1.watch(hasNameSpyValid1);
-      source1.clearErrors();
-      await postpone();
-      expect(hasNameSpyValid1).toHaveBeenCalledOnce();
-      expect(hasNameSpyValid1).toReceiveChanges(
-        change.child.valid | change.child.errors,
-      );
-      expect(first1.errors).toEqual([]);
-      expect(first1.valid).toBe(true);
-      // 2. When source is { name: {} }
-      const source2 = new FieldOld<{
-        name?: { first?: string; last?: string };
-      }>({ name: {} });
-      const hasName2 = source2.$.name
-        .into((name) => !!name)
-        .from((hasName, prevValue) =>
-          hasName ? prevValue || { first: "", last: "" } : undefined,
-        );
-      const hasNameSpyInvalid2 = vi.fn();
-      hasName2.watch(hasNameSpyInvalid2);
-      const name2 = source2.$.name
-        .into((name) => name || {})
-        .from((name) => name);
-      const first2 = name2.$.first
-        .into((first) => first || "")
-        .from((first) => first);
-      source2.validate((ref) => {
-        ref.maybe().at("name").at("first").addError("Something went wrong");
-      });
-      await postpone();
-      expect(hasNameSpyInvalid2).toHaveBeenCalledOnce();
-      expect(hasNameSpyInvalid2).toReceiveChanges(
-        change.child.invalid | change.child.errors,
-      );
-      expect(hasName2.errors).toEqual([]);
-      expect(hasName2.valid).toBe(false);
-      const hasNameSpyValid2 = vi.fn();
-      hasName2.watch(hasNameSpyValid2);
-      source2.clearErrors();
-      await postpone();
-      expect(hasNameSpyValid2).toHaveBeenCalledOnce();
-      expect(hasNameSpyValid2).toReceiveChanges(
-        change.child.valid | change.child.errors,
-      );
-      expect(first2.errors).toEqual([]);
-      expect(first2.valid).toBe(true);
-    });
-
-    it("listens to validation events through data updates", async () => {
-      const source = new FieldOld<{
-        user?: { name?: { first?: string | undefined; last?: string } };
-      }>({});
-      const sourceSpyInvalid = vi.fn();
-      source.watch(sourceSpyInvalid);
-      const user = source.$.user
-        .into((user) => user || {})
-        .from((user) => user);
-      const userSpyInvalid = vi.fn();
-      user.watch(userSpyInvalid);
-      const name = user.$.name.into((name) => name || {}).from((name) => name);
-      const nameSpyInvalid = vi.fn();
-      name.watch(nameSpyInvalid);
-      const first = name.$.first
-        .into((first) => first || "")
-        .from((first) => first);
-      source.validate((ref) => {
-        ref
-          .maybe()
-          .at("user")
-          .at("name")
-          .at("first")
-          .addError("Something went wrong");
-      });
-      const firstSpyInvalid = vi.fn();
-      first.watch(firstSpyInvalid);
-      await postpone();
-      expect(sourceSpyInvalid).toHaveBeenCalledOnce();
-      expect(sourceSpyInvalid).toReceiveChanges(
-        change.subtree.errors | change.subtree.invalid,
-      );
-      expect(userSpyInvalid).toHaveBeenCalledOnce();
-      expect(userSpyInvalid).toHaveBeenCalledBefore(sourceSpyInvalid);
-      expect(userSpyInvalid).toReceiveChanges(
-        change.subtree.invalid | change.subtree.errors,
-      );
-      expect(nameSpyInvalid).toHaveBeenCalledOnce();
-      expect(nameSpyInvalid).toHaveBeenCalledBefore(userSpyInvalid);
-      expect(nameSpyInvalid).toReceiveChanges(
-        change.child.invalid | change.child.errors,
-      );
-      expect(firstSpyInvalid).toHaveBeenCalledOnce();
-      expect(firstSpyInvalid).toHaveBeenCalledBefore(nameSpyInvalid);
-      expect(firstSpyInvalid).toReceiveChanges(
-        change.field.invalid | change.field.errors,
-      );
-      expect(first.errors).toEqual([{ message: "Something went wrong" }]);
-      expect(first.valid).toBe(false);
-      const sourceSpyValid = vi.fn();
-      source.watch(sourceSpyValid);
-      const userSpyValid = vi.fn();
-      user.watch(userSpyValid);
-      const nameSpyValid = vi.fn();
-      name.watch(nameSpyValid);
-      const firstSpyValid = vi.fn();
-      first.watch(firstSpyValid);
-      source.set({ user: { name: { first: undefined } } });
-      source.clearErrors();
-      await postpone();
-      expect(sourceSpyValid).toHaveBeenCalledOnce();
-      expect(sourceSpyValid).toReceiveChanges(
-        change.field.shape |
-          change.child.attach |
-          change.subtree.valid |
-          change.subtree.errors,
-      );
-      expect(userSpyValid).toHaveBeenCalledOnce();
-      expect(userSpyValid).toHaveBeenCalledBefore(sourceSpyValid);
-      expect(userSpyValid).toReceiveChanges(
-        change.field.shape |
-          change.child.attach |
-          change.subtree.valid |
-          change.subtree.errors,
-      );
-      expect(nameSpyValid).toHaveBeenCalledOnce();
-      expect(nameSpyValid).toHaveBeenCalledBefore(userSpyValid);
-      expect(nameSpyValid).toReceiveChanges(
-        change.field.shape |
-          change.child.attach |
-          change.child.valid |
-          change.child.errors,
-      );
-      expect(firstSpyValid).toHaveBeenCalledOnce();
-      // TODO:
-      // expect(firstSpyValid).toHaveBeenCalledBefore(nameSpyValid);
-      expect(firstSpyValid).toReceiveChanges(
-        change.field.valid | change.field.errors,
-      );
-      expect(first.errors).toHaveLength(0);
-      expect(first.valid).toBe(true);
-    });
-  });
-
-  describe("validation", () => {
-    it("points to the source field validation", () => {
-      const source = new FieldOld<string>("Hello!");
-      const computed = new ComputedField<string, string>(
-        source,
-        () => "Hi!",
-        (value) => value,
-      );
-      expect(computed.validationTree).toBe(source.validationTree);
-    });
-  });
-});
-
-//#endregion
 
 //#region Helpers
 
