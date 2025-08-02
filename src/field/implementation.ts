@@ -3,8 +3,8 @@
 import type { Atom } from "../atom/definition.ts";
 import { UseAtomHook, useAtomHook } from "../atom/hooks/index.ts";
 import { AtomImpl } from "../atom/implementation.ts";
-import { AtomValueArray } from "../atom/internal/array/index.ts";
-import { AtomValueObject } from "../atom/internal/object/index.ts";
+import { AtomInternalArray } from "../atom/internal/array/index.ts";
+import { AtomInternalObject } from "../atom/internal/object/index.ts";
 import {
   change,
   ChangesEvent,
@@ -151,8 +151,8 @@ export class FieldImpl<Value> extends AtomImpl<Value> {
 
     this.#initial = newInitial;
     if (
-      this.internal instanceof AtomValueObject ||
-      this.internal instanceof AtomValueArray
+      this.internal instanceof AtomInternalObject ||
+      this.internal instanceof AtomInternalArray
     ) {
       this.internal.forEach((field: any, key: any) =>
         field.#commit((newInitial as any)[key], notify),

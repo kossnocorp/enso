@@ -5,9 +5,12 @@ import {
 } from "../../../change/index.ts";
 import { UndefinedStateRegistry } from "../../../detached/index.ts";
 import type { AtomImpl } from "../../implementation.ts";
-import { AtomValue, externalSymbol } from "../base/index.ts";
+import { externalSymbol } from "../base/index.ts";
+import { AtomInternalCollection } from "../collection/index.ts";
 
-export class AtomValueArray<Value> extends AtomValue<Value> {
+export class AtomInternalArray<
+  Value extends Array<unknown>,
+> extends AtomInternalCollection<Value> {
   //#region Instance
 
   constructor(external: AtomImpl<Value>, value: Value) {
@@ -94,21 +97,39 @@ export class AtomValueArray<Value> extends AtomValue<Value> {
 
   //#region Type
 
-  get length() {
+  // Collection
+
+  get size() {
     return this.#children.length;
   }
 
-  forEach(callback: AtomInternalArray.Callback) {
+  remove(key: keyof Value) {
+    return this.at(key).remove();
+  }
+
+  forEach(callback: AtomInternalCollection.Callback<Value>): void {
     this.#children.forEach(callback);
   }
 
-  map(callback: AtomInternalArray.Callback) {
+  map<Result>(
+    callback: AtomInternalCollection.Callback<Value, Result>,
+  ): Result[] {
     return this.#children.map(callback);
   }
 
-  size() {
-    return this.#children.length;
+  find(
+    predicate: AtomInternalCollection.Predicate<Value>,
+  ): AtomImpl<unknown> | undefined {
+    return this.#children.find(predicate);
   }
+
+  filter(
+    predicate: AtomInternalCollection.Predicate<Value>,
+  ): AtomImpl<unknown>[] {
+    return this.#children.filter(predicate);
+  }
+
+  // Array
 
   // @ts-expect-error
   push(item) {
@@ -140,20 +161,6 @@ export class AtomValueArray<Value> extends AtomValue<Value> {
 
     this.external.trigger(change.field.shape | change.child.attach, true);
     return field;
-  }
-
-  remove(key: number) {
-    return this.at(key).remove();
-  }
-
-  // @ts-expect-error
-  find(predicate) {
-    return this.#children.find(predicate);
-  }
-
-  // @ts-expect-error
-  filter(predicate) {
-    return this.#children.filter(predicate);
   }
 
   //#endregion
@@ -279,10 +286,4 @@ export class AtomValueArray<Value> extends AtomValue<Value> {
   }
 
   //#endregion
-}
-
-export namespace AtomInternalArray {
-  export interface Callback {
-    (item: unknown, index: number): void;
-  }
 }

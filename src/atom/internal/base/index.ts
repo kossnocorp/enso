@@ -4,10 +4,10 @@ import type { AtomImpl } from "../../implementation.ts";
 
 export const externalSymbol = Symbol();
 
-export abstract class AtomValue<Value> {
+export abstract class AtomInternal<Value> {
   //#region Instance
 
-  constructor(atom: AtomImpl<unknown>, _value: Value) {
+  constructor(atom: AtomImpl<Value>, _value: Value) {
     this.#external = atom;
   }
 
@@ -71,6 +71,7 @@ export abstract class AtomValue<Value> {
   // @ts-expect-error
   discriminate(discriminator) {
     return {
+      // @ts-expect-error
       discriminator: this.external.$?.[discriminator]?.value,
       field: this.external,
     };
