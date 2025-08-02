@@ -401,10 +401,6 @@ export class FieldProxyImpl<Value> extends FieldImpl<Value> {
     this.#into = into;
     this.#from = from;
 
-    // Add itself to the computed map, so that we can find it later by the path,
-    // i.e. for validation through maybe references.
-    // this.computedMap.add(this as any as ComputedField<unknown, unknown>);
-
     // Watch for the atom (source) and update the computed value
     // on structural changes.
     this.#unsubs.push(
