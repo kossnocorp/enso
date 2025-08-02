@@ -226,7 +226,7 @@ describe(Field, () => {
               );
             });
 
-            it.skip("assigns attach change when attaching", () => {
+            it("assigns attach change when attaching", () => {
               const field = new Field<{ name?: object }>({});
               expect(
                 field.$.name.set({ first: "Sasha" }).lastChanges,

@@ -8,8 +8,7 @@ import type { AtomImpl } from "../../implementation.ts";
 import { AtomValue, externalSymbol } from "../base/index.ts";
 
 export class AtomValueArray<Value> extends AtomValue<Value> {
-  #children = [];
-  #undefined;
+  //#region Instance
 
   constructor(external: AtomImpl<Value>, value: Value) {
     super(external, value);
@@ -17,7 +16,14 @@ export class AtomValueArray<Value> extends AtomValue<Value> {
     this.#undefined = new UndefinedStateRegistry(external);
   }
 
-  get value() {
+  //#endregion
+
+  //#region Value
+
+  #children = [];
+  #undefined;
+
+  get value(): Value {
     // @ts-expect-error
     return this.#children.map((child) => child.value);
   }
@@ -66,6 +72,92 @@ export class AtomValueArray<Value> extends AtomValue<Value> {
     return changes;
   }
 
+  // @ts-expect-error
+  dirty(initial) {
+    if (!initial || typeof initial !== "object" || !Array.isArray(initial))
+      return true;
+
+    if (initial.length !== this.#children.length) return true;
+
+    for (const index in initial) {
+      const value = initial[index];
+      const field = this.#children[index];
+
+      // @ts-expect-error
+      if (!field || field.initial !== value || field.dirty) return true;
+    }
+
+    return false;
+  }
+
+  //#endregion
+
+  //#region Type
+
+  get length() {
+    return this.#children.length;
+  }
+
+  forEach(callback: AtomInternalArray.Callback) {
+    this.#children.forEach(callback);
+  }
+
+  map(callback: AtomInternalArray.Callback) {
+    return this.#children.map(callback);
+  }
+
+  size() {
+    return this.#children.length;
+  }
+
+  // @ts-expect-error
+  push(item) {
+    const length = this.#children.length;
+    const field = this.create(item, {
+      key: String(length),
+      field: this.external,
+    });
+    // @ts-expect-error
+    this.#children[length] = field;
+
+    this.external.trigger(change.field.shape | change.child.attach, true);
+    return field;
+  }
+
+  // @ts-expect-error
+  insert(index, item) {
+    const field = this.create(item, {
+      key: String(index),
+      field: this.external,
+    });
+    // @ts-expect-error
+    this.#children.splice(index, 0, field);
+
+    this.#children.slice(index).forEach((item, index) => {
+      // @ts-expect-error
+      item[externalSymbol].move(String(index));
+    });
+
+    this.external.trigger(change.field.shape | change.child.attach, true);
+    return field;
+  }
+
+  remove(key: number) {
+    return this.at(key).remove();
+  }
+
+  // @ts-expect-error
+  find(predicate) {
+    return this.#children.find(predicate);
+  }
+
+  // @ts-expect-error
+  filter(predicate) {
+    return this.#children.filter(predicate);
+  }
+
+  //#endregion
+
   //#region Tree
 
   $() {
@@ -110,6 +202,8 @@ export class AtomValueArray<Value> extends AtomValue<Value> {
   }
 
   //#endregion
+
+  //#region Events
 
   // @ts-expect-error
   childUpdate(childChanges, key) {
@@ -174,24 +268,6 @@ export class AtomValueArray<Value> extends AtomValue<Value> {
     this.#children.length = 0;
   }
 
-  // @ts-expect-error
-  dirty(initial) {
-    if (!initial || typeof initial !== "object" || !Array.isArray(initial))
-      return true;
-
-    if (initial.length !== this.#children.length) return true;
-
-    for (const index in initial) {
-      const value = initial[index];
-      const field = this.#children[index];
-
-      // @ts-expect-error
-      if (!field || field.initial !== value || field.dirty) return true;
-    }
-
-    return false;
-  }
-
   override withhold() {
     // @ts-expect-error
     this.#children.forEach((field) => field.withhold());
@@ -200,70 +276,6 @@ export class AtomValueArray<Value> extends AtomValue<Value> {
   override unleash() {
     // @ts-expect-error
     this.#children.forEach((field) => field.unleash());
-  }
-
-  //#region Collection
-
-  get length() {
-    return this.#children.length;
-  }
-
-  forEach(callback: AtomInternalArray.Callback) {
-    this.#children.forEach(callback);
-  }
-
-  map(callback: AtomInternalArray.Callback) {
-    return this.#children.map(callback);
-  }
-
-  size() {
-    return this.#children.length;
-  }
-
-  // @ts-expect-error
-  push(item) {
-    const length = this.#children.length;
-    const field = this.create(item, {
-      key: String(length),
-      field: this.external,
-    });
-    // @ts-expect-error
-    this.#children[length] = field;
-
-    this.external.trigger(change.field.shape | change.child.attach, true);
-    return field;
-  }
-
-  // @ts-expect-error
-  insert(index, item) {
-    const field = this.create(item, {
-      key: String(index),
-      field: this.external,
-    });
-    // @ts-expect-error
-    this.#children.splice(index, 0, field);
-
-    this.#children.slice(index).forEach((item, index) => {
-      // @ts-expect-error
-      item[externalSymbol].move(String(index));
-    });
-
-    this.external.trigger(change.field.shape | change.child.attach, true);
-    return field;
-  }
-
-  remove(key: number) {
-    return this.at(key).remove();
-  }
-
-  // @ts-expect-error
-  find(predicate) {
-    return this.#children.find(predicate);
-  }
-
-  // @ts-expect-error
-  filter(predicate) {
-    return this.#children.filter(predicate);
   }
 
   //#endregion

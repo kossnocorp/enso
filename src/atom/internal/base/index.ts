@@ -1,9 +1,17 @@
+import { FieldChange } from "../../../change/index.ts";
+import { DetachedValue } from "../../../detached/index.ts";
+import type { AtomImpl } from "../../implementation.ts";
+
 export const externalSymbol = Symbol();
 
 export abstract class AtomValue<Value> {
-  constructor(atom: any, _value: Value) {
+  //#region Instance
+
+  constructor(atom: AtomImpl<unknown>, _value: Value) {
     this.#external = atom;
   }
+
+  //#endregion
 
   //#region Atom
 
@@ -13,12 +21,30 @@ export abstract class AtomValue<Value> {
     return this.#external;
   }
 
+  // @ts-expect-error
+  create(value, parent) {
+    // @ts-expect-error
+    return this.#external.constructor.create(value, parent);
+  }
+
+  //#endregion
+
+  //#region Value
+
+  abstract set(value: Value | DetachedValue): FieldChange;
+
+  abstract get value(): Value;
+
+  // TODO: Find a better name for it.
+  detached(): boolean {
+    return false;
+  }
+
   //#endregion
 
   //#region Tree
 
   try() {
-    // @ts-expect-error
     const value = this.value;
     if (value === undefined || value === null) return value;
     return this.external;
@@ -26,14 +52,21 @@ export abstract class AtomValue<Value> {
 
   //#endregion
 
-  // @ts-expect-error
-  childUpdate(type, _key) {
-    return type;
+  //#region Events
+
+  withhold(): void {}
+
+  unleash(): void {}
+
+  // TODO: It is not needed in the base class, but it makes it easier to use.
+  // I should probably use `in` operator instead.
+  childUpdate(changes: FieldChange, _key: keyof Value): FieldChange {
+    return changes;
   }
 
-  detached() {
-    return false;
-  }
+  //#endregion
+
+  //#region Transform
 
   // @ts-expect-error
   discriminate(discriminator) {
@@ -42,17 +75,6 @@ export abstract class AtomValue<Value> {
       field: this.external,
     };
   }
-
-  // @ts-expect-error
-  create(value, parent) {
-    return this.#external.constructor.create(value, parent);
-  }
-
-  //#region Events
-
-  withhold(): void {}
-
-  unleash(): void {}
 
   //#endregion
 }

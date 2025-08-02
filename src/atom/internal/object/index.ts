@@ -8,13 +8,19 @@ import type { AtomImpl } from "../../implementation.ts";
 import { AtomValue, externalSymbol } from "../base/index.ts";
 
 export class AtomValueObject<Value> extends AtomValue<Value> {
-  #children = new Map();
-  #undefined;
+  //#region Instance
 
   constructor(external: AtomImpl<Value>, value: Value) {
     super(external, value);
     this.#undefined = new UndefinedStateRegistry(external);
   }
+
+  //#endregion
+
+  //#region Value
+
+  #children = new Map();
+  #undefined: UndefinedStateRegistry<AtomImpl<unknown>>;
 
   set(newValue: Value) {
     let changes = 0n;
@@ -24,7 +30,7 @@ export class AtomValueObject<Value> extends AtomValue<Value> {
       if (!(key in newValue)) {
         this.#children.delete(key);
         child[externalSymbol].clear();
-        (this.#undefined as any).register(key, child);
+        this.#undefined.register(key, child);
         changes |= change.child.detach;
       }
     });
@@ -58,84 +64,6 @@ export class AtomValueObject<Value> extends AtomValue<Value> {
     );
   }
 
-  //#region Tree
-
-  $() {
-    return this.#$;
-  }
-
-  #$ = new Proxy(
-    {},
-    {
-      get: (_, key) => this.#$field(key),
-    },
-  );
-
-  // @ts-expect-error
-  at(key) {
-    return this.#$field(String(key));
-  }
-
-  // @ts-expect-error
-  lookup(path) {
-    if (path.length === 0) return this.external;
-    const [key, ...restPath] = path;
-    return this.#$field(String(key))?.lookup(restPath);
-  }
-
-  //#endregion
-
-  // @ts-expect-error
-  #$field(key) {
-    const field = this.#children.get(key);
-    if (field) return field;
-
-    return this.#undefined.ensure(key);
-  }
-
-  // @ts-expect-error
-  try(key) {
-    if (key !== undefined && key !== null) {
-      return this.#children.get(key)?.try();
-    } else {
-      return this.external;
-    }
-  }
-
-  // @ts-expect-error
-  childUpdate(childChanges, key) {
-    let changes = 0n;
-
-    // Handle when child goes from undefined to defined
-    if (childChanges & change.field.attach) {
-      const child = this.#undefined.claim(key);
-      if (!child)
-        throw new Error("Failed to find the child field when updating");
-
-      this.#children.set(key, child);
-      changes |= change.child.attach;
-    }
-
-    if (childChanges & change.field.detach) {
-      const child = this.#children.get(key);
-      if (!child)
-        throw new Error("Failed to find the child field when updating");
-
-      this.#children.delete(key);
-      child.unwatch();
-      changes |= change.child.detach;
-
-      (this.#undefined as any).register(key, child);
-    }
-
-    return changes;
-  }
-
-  unwatch() {
-    this.#children.forEach((child) => child.unwatch());
-    this.#children.clear();
-  }
-
   // @ts-expect-error
   dirty(initial) {
     if (!initial || typeof initial !== "object" || Array.isArray(initial))
@@ -153,15 +81,9 @@ export class AtomValueObject<Value> extends AtomValue<Value> {
     return false;
   }
 
-  override withhold() {
-    this.#children.forEach((field) => field.withhold());
-  }
+  //#endregion
 
-  override unleash() {
-    this.#children.forEach((field) => field.unleash());
-  }
-
-  //#region Collection
+  //#region Type
 
   size() {
     return this.#children.size;
@@ -196,6 +118,96 @@ export class AtomValueObject<Value> extends AtomValue<Value> {
 
   remove(key: keyof Value) {
     return this.at(key).remove();
+  }
+
+  //#endregion
+
+  //#region Tree
+
+  $() {
+    return this.#$;
+  }
+
+  #$ = new Proxy(
+    {},
+    {
+      get: (_, key) => this.#$field(key),
+    },
+  );
+
+  // @ts-expect-error
+  at(key) {
+    return this.#$field(String(key));
+  }
+
+  // @ts-expect-error
+  lookup(path) {
+    if (path.length === 0) return this.external;
+    const [key, ...restPath] = path;
+    return this.#$field(String(key))?.lookup(restPath);
+  }
+
+  // @ts-expect-error
+  #$field(key) {
+    const field = this.#children.get(key);
+    if (field) return field;
+
+    return this.#undefined.ensure(key);
+  }
+
+  // @ts-expect-error
+  try(key) {
+    if (key !== undefined && key !== null) {
+      return this.#children.get(key)?.try();
+    } else {
+      return this.external;
+    }
+  }
+
+  //#endregion
+
+  //#region Events
+
+  // @ts-expect-error
+  childUpdate(childChanges, key) {
+    let changes = 0n;
+
+    // Handle when child goes from undefined to defined
+    if (childChanges & change.field.attach) {
+      const child = this.#undefined.claim(key);
+      if (!child)
+        throw new Error("Failed to find the child field when updating");
+
+      this.#children.set(key, child);
+      changes |= change.child.attach;
+    }
+
+    if (childChanges & change.field.detach) {
+      const child = this.#children.get(key);
+      if (!child)
+        throw new Error("Failed to find the child field when updating");
+
+      this.#children.delete(key);
+      child.unwatch();
+      changes |= change.child.detach;
+
+      this.#undefined.register(key, child);
+    }
+
+    return changes;
+  }
+
+  unwatch() {
+    this.#children.forEach((child) => child.unwatch());
+    this.#children.clear();
+  }
+
+  override withhold() {
+    this.#children.forEach((field) => field.withhold());
+  }
+
+  override unleash() {
+    this.#children.forEach((field) => field.unleash());
   }
 
   //#endregion

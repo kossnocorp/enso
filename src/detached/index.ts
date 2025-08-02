@@ -4,7 +4,7 @@ export const detachedValue = Symbol();
 
 export type DetachedValue = typeof detachedValue;
 
-export class UndefinedStateRegistry<Kind extends Atom.Flavor.Kind> {
+export class UndefinedStateRegistry<AtomType extends object> {
   #external;
   #refsMap = new Map();
   #registry = new FinalizationRegistry((key) => this.#refsMap.delete(key));
@@ -13,10 +13,10 @@ export class UndefinedStateRegistry<Kind extends Atom.Flavor.Kind> {
     this.#external = external;
   }
 
-  register(key: string, field: Atom.Envelop<Kind, any, any>) {
-    const fieldRef = new WeakRef(field);
-    this.#refsMap.set(key, fieldRef);
-    this.#registry.register(fieldRef, key);
+  register(key: string, atom: AtomType) {
+    const ref = new WeakRef(atom);
+    this.#refsMap.set(key, ref);
+    this.#registry.register(ref, key);
   }
 
   claim(key: string) {
