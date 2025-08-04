@@ -80,6 +80,8 @@ export namespace EnsoUtils {
    */
   export type Falsy = false | 0 | "" | Nullish;
 
+  export type NonFalsy<Type> = Exclude<Type, Falsy>;
+
   export type Static<
     Class extends Interface & { new (...args: any[]): any },
     Interface,

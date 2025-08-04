@@ -6,9 +6,8 @@ import { render } from "vitest-browser-react";
 // https://github.com/vitest-dev/vitest/issues/6965
 import { userEvent } from "@vitest/browser/context";
 import "@vitest/browser/matchers.d.ts";
-import { FieldOld } from "../field/old.tsx";
-import { FieldRefOld } from "../field/ref/old.ts";
-import { Form } from "./old.tsx";
+import { Form } from "./index.js";
+import { Field } from "../field/index.js";
 
 describe("Form", () => {
   describe("control", () => {
@@ -22,7 +21,7 @@ describe("Form", () => {
 
         function Component() {
           const count = useRenderCount();
-          const form = Form.use({ hello: "world" });
+          const form = Form.use({ hello: "world" }, []);
 
           return (
             <div>
@@ -96,7 +95,7 @@ describe("Form", () => {
 
         function Component() {
           const count = useRenderCount();
-          const form = Form.use({ hello: "world" });
+          const form = Form.use({ hello: "world" }, []);
           const dirty = form.useDirty();
 
           return (
@@ -179,7 +178,7 @@ describe("Form", () => {
 
         function Component() {
           const count = useRenderCount();
-          const form = Form.use({ hello: "world" });
+          const form = Form.use({ hello: "world" }, []);
           const dirty = form.useDirty();
 
           return (
@@ -259,7 +258,7 @@ describe("Form", () => {
 
         function Component() {
           const count = useRenderCount();
-          const form = Form.use({ hello: "world" });
+          const form = Form.use({ hello: "world" }, []);
 
           return (
             <div>
@@ -287,8 +286,8 @@ describe("Form", () => {
       it("handles reset", async () => {
         function Component() {
           const count = useRenderCount();
-          const form = Form.use({ hello: "world" });
-          const hello = form.$.hello.useGet();
+          const form = Form.use({ hello: "world" }, []);
+          const hello = form.$.hello.useValue();
 
           return (
             <div>
@@ -339,8 +338,8 @@ describe("Form", () => {
 
         function Component() {
           const count = useRenderCount();
-          const form = Form.use({ hello: "world" });
-          const hello = form.$.hello.useGet();
+          const form = Form.use({ hello: "world" }, []);
+          const hello = form.$.hello.useValue();
 
           return (
             <div>
@@ -399,7 +398,7 @@ describe("Form", () => {
 
         function Component() {
           const count = useRenderCount();
-          const form = Form.use({ hello: "world" });
+          const form = Form.use({ hello: "world" }, []);
 
           return (
             <div>
@@ -469,7 +468,7 @@ describe("Form", () => {
         let formId: string | undefined;
 
         function Component() {
-          const form = Form.use({ hello: "world" });
+          const form = Form.use({ hello: "world" }, []);
           formId = form.id;
           return (
             <Form.Component
@@ -497,7 +496,9 @@ describe("Form", () => {
 
       function Component() {
         const count = useRenderCount();
-        const form = Form.use({ hello: "world" }, { validate: validateHello });
+        const form = Form.use<Hello>({ hello: "world" }, [], {
+          validate: validateHello,
+        });
 
         return (
           <div>
@@ -506,7 +507,7 @@ describe("Form", () => {
             <button onClick={() => form.$.hello.set("Sasha")}>Set hello</button>
 
             <Form.Component form={form} onSubmit={spy}>
-              <FieldOld.Component
+              <Field.Component
                 field={form.$.hello}
                 errors
                 render={(control, { errors }) => {
@@ -579,14 +580,16 @@ describe("Form", () => {
 
       function Component() {
         const count = useRenderCount();
-        const form = Form.use({ hello: "world" }, { validate: validateHello });
+        const form = Form.use({ hello: "world" }, [], {
+          validate: validateHello,
+        });
 
         return (
           <div>
             <div data-testid="render-validate">{count}</div>
 
             <Form.Component form={form} onSubmit={spy}>
-              <FieldOld.Component
+              <Field.Component
                 field={form.$.hello}
                 errors
                 render={(control, { errors }) => (
@@ -641,11 +644,11 @@ interface Hello {
   hello: string;
 }
 
-function validateHello(ref: FieldRefOld<Hello>) {
-  if (!ref.$.hello.get().trim()) ref.$.hello.addError("Hello is required");
+function validateHello(ref: Field.Ref<Hello>) {
+  if (!ref.$.hello.value.trim()) ref.$.hello.addError("Hello is required");
 }
 
-function joinErrors(errors: FieldOld.Error[] | undefined) {
+function joinErrors(errors: Field.Error[] | undefined) {
   if (!errors) return "";
   return errors.map((error) => error.message).join(", ");
 }

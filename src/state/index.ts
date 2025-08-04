@@ -72,10 +72,10 @@ export class State<
   }
 
   static useEnsure<
-    FieldType extends Atom.Envelop<"state", any, any> | Utils.Nullish,
+    FieldType extends Atom.Envelop<"state", any, any> | Utils.Falsy,
     MappedType extends
       | Atom.Envelop<"state", any, any>
-      | Utils.Nullish = undefined,
+      | Utils.Falsy = undefined,
   >(
     field: FieldType,
     map?: Atom.Static.Ensure.Mapper<"state", FieldType, MappedType>,

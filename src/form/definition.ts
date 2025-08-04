@@ -2,6 +2,8 @@ import { DependencyList, FormEvent, ReactElement } from "react";
 import type { Atom } from "../atom/definition.ts";
 import { Field } from "../field/definition.ts";
 
+export declare const formChange: Form.Change;
+
 const hintSymbol = Symbol();
 
 export declare class Form<Value> implements Form.Interface<Value> {
@@ -14,7 +16,7 @@ export declare class Form<Value> implements Form.Interface<Value> {
   ): Form<Value>;
 
   static Component<Payload, IsServer extends boolean | undefined = undefined>(
-    props: Form.Component.Props<Payload, IsServer>,
+    props: Form.ComponentProps<Payload, IsServer>,
   ): ReactElement<HTMLFormElement>;
 
   //#endregion
@@ -50,7 +52,7 @@ export declare class Form<Value> implements Form.Interface<Value> {
 
   get dirty(): boolean;
 
-  useDirty(): boolean;
+  useDirty: Field.Dirty.Use.Prop<Atom.Qualifier.Default>;
 
   commit(): void;
 
@@ -103,13 +105,21 @@ export declare class Form<Value> implements Form.Interface<Value> {
 
   get valid(): boolean;
 
-  useValid(): boolean;
+  useValid: Field.Valid.Use.Prop<Atom.Qualifier.Default>;
 
   validate(validator: Field.Validator<Value>): Promise<void>;
 
   addError: Field.AddError.Prop;
 
   clearErrors(): void;
+
+  //#endregion
+
+  //#region Form
+
+  control<IsServer extends boolean | undefined = undefined>(
+    props?: Form.ControlProps<Value, IsServer> | undefined,
+  ): Form.ControlRegistration;
 
   //#endregion
 }
@@ -176,30 +186,43 @@ export namespace Form {
     //#endregion
   }
 
+  //#region Events
+
+  export interface Change {
+    formSubmitting: bigint;
+    formSubmitted: bigint;
+    formValid: bigint;
+    formInvalid: bigint;
+  }
+
+  //#endregion
+
+  //#region Form
+
   export interface Options<Value> {
     id?: string;
     validate?: Field.Validator<Value>;
   }
 
-  export namespace Component {
-    export interface Props<Value, IsServer extends boolean | undefined>
-      extends Control.Props<Value, IsServer>,
-        Omit<
-          React.FormHTMLAttributes<HTMLFormElement>,
-          "onSubmit" | "onReset"
-        > {
-      form: Form<Value>;
-      children?: React.ReactNode;
-    }
+  export interface ComponentProps<Value, IsServer extends boolean | undefined>
+    extends ControlProps<Value, IsServer>,
+      Omit<React.FormHTMLAttributes<HTMLFormElement>, "onSubmit" | "onReset"> {
+    form: Form<Value>;
+    children?: React.ReactNode;
+  }
+
+  export interface ControlProps<Value, IsServer extends boolean | undefined> {
+    onSubmit?: Control.OnSubmit<Value, IsServer> | undefined;
+    onReset?: Control.OnReset | undefined;
+    server?: IsServer;
+  }
+
+  export interface ControlRegistration {
+    onSubmit(event: React.FormEvent<HTMLFormElement>): void;
+    onReset(event: React.FormEvent<HTMLFormElement>): void;
   }
 
   export namespace Control {
-    export interface Props<Value, IsServer extends boolean | undefined> {
-      onSubmit?: OnSubmit<Value, IsServer> | undefined;
-      onReset?: OnReset | undefined;
-      server?: IsServer;
-    }
-
     export type OnSubmit<
       Value,
       IsServer extends boolean | undefined,
@@ -214,4 +237,6 @@ export namespace Form {
       (event: FormEvent<HTMLFormElement>): unknown | Promise<unknown>;
     }
   }
+
+  //#endregion
 }

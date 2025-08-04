@@ -264,8 +264,8 @@ export namespace Atom {
       ): Atom.Envelop<Kind, "exact", Atom.Def<Value>>;
 
       useEnsure<
-        EnvelopType extends Atom.Envelop<Kind, any, any> | Utils.Nullish,
-        MappedType extends Envelop<Kind, any, any> | Utils.Nullish = undefined,
+        EnvelopType extends Atom.Envelop<Kind, any, any> | Utils.Falsy,
+        MappedType extends Envelop<Kind, any, any> | Utils.Falsy = undefined,
       >(
         atom: EnvelopType,
         map?: Ensure.Mapper<Kind, EnvelopType, MappedType>,
@@ -275,8 +275,8 @@ export namespace Atom {
     export namespace Ensure {
       export interface Mapper<
         Kind extends Atom.Flavor.Kind,
-        EnvelopType extends Envelop<Kind, any, any> | Utils.Nullish,
-        MappedType extends Envelop<Kind, any, any> | Utils.Nullish,
+        EnvelopType extends Envelop<Kind, any, any> | Utils.Falsy,
+        MappedType extends Envelop<Kind, any, any> | Utils.Falsy,
       > extends Bare.Mapper<
           Envelop<
             Kind,
@@ -288,22 +288,22 @@ export namespace Atom {
 
       export type Result<
         Kind extends Atom.Flavor.Kind,
-        EnvelopType extends Envelop<Kind, any, any> | Utils.Nullish,
-        MappedType extends Envelop<Kind, any, any> | Utils.Nullish,
+        EnvelopType extends Envelop<Kind, any, any> | Utils.Falsy,
+        MappedType extends Envelop<Kind, any, any> | Utils.Falsy,
       > = MappedType extends undefined
         ? ResultDirect<Kind, EnvelopType>
         : ResultMapped<Kind, EnvelopType, MappedType>;
 
       export type ResultDirect<
         Kind extends Atom.Flavor.Kind,
-        EnvelopType extends Envelop<Kind, any, any> | Utils.Nullish,
+        EnvelopType extends Envelop<Kind, any, any> | Utils.Falsy,
       > = Utils.Expose<
         Envelop<
           Kind,
           Variant.Parse<EnvelopType>,
           Def.Union<
             AtomValueDef<Kind, EnvelopType>,
-            Utils.Extends<EnvelopType, Utils.Nullish> extends true
+            Utils.Extends<EnvelopType, Utils.Falsy> extends true
               ? undefined
               : never
           >,
@@ -313,15 +313,15 @@ export namespace Atom {
 
       export type ResultMapped<
         Kind extends Atom.Flavor.Kind,
-        EnvelopType extends Envelop<Kind, any, any> | Utils.Nullish,
-        MappedType extends Envelop<Kind, any, any> | Utils.Nullish,
+        EnvelopType extends Envelop<Kind, any, any> | Utils.Falsy,
+        MappedType extends Envelop<Kind, any, any> | Utils.Falsy,
       > = Utils.Expose<
         Envelop<
           Kind,
           Variant.Parse<MappedType>,
           Def.Union<
             AtomValueDef<Kind, MappedType>,
-            Utils.Extends<EnvelopType, Utils.Nullish> extends true
+            Utils.Extends<EnvelopType, Utils.Falsy> extends true
               ? undefined
               : never
           >,
@@ -331,9 +331,9 @@ export namespace Atom {
 
       export type AtomValueDef<
         Kind extends Atom.Flavor.Kind,
-        EnvelopType extends Envelop<Kind, any, any> | Utils.Nullish,
+        EnvelopType extends Envelop<Kind, any, any> | Utils.Falsy,
       > =
-        Utils.NonNullish<EnvelopType> extends Envelop<Kind, any, infer ValueDef>
+        Utils.NonFalsy<EnvelopType> extends Envelop<Kind, any, infer ValueDef>
           ? ValueDef extends Atom.Def<infer ReadValue, infer WriteValue>
             ? [WriteValue, ReadValue] extends [ReadValue, WriteValue]
               ? ValueDef
@@ -343,9 +343,9 @@ export namespace Atom {
 
       export type AtomQualifier<
         Kind extends Atom.Flavor.Kind,
-        EnvelopType extends Envelop<Kind, any, any> | Utils.Nullish,
+        EnvelopType extends Envelop<Kind, any, any> | Utils.Falsy,
       > =
-        Utils.NonNullish<EnvelopType> extends Envelop<
+        Utils.NonFalsy<EnvelopType> extends Envelop<
           Kind,
           any,
           any,
@@ -432,7 +432,7 @@ export namespace Atom {
               : {};
 
     export type Parse<Type> =
-      Utils.NonNullish<Type> extends {
+      Utils.NonFalsy<Type> extends {
         readonly [AtomPrivate.variantPhantom]: infer TypePhantom;
       }
         ? TypePhantom extends Phantom<"exact">
@@ -1379,6 +1379,7 @@ export namespace Atom {
       > =
         IncludeMeta<Kind, Variant, Props> extends true
           ? [
+              Opaque<ValueDef["read"]>,
               Props extends { meta: true }
                 ? Meta<Kind, Variant, undefined>
                 : Meta<Kind, Variant, Props>,
