@@ -613,7 +613,7 @@ const unionField = new Field({ hello: "world", world: true }) as
         hello: "world";
       }
 
-      const field = new Field({}) as unknown as Field<Parent>;
+      const field = {} as Field<Parent>;
       const result = Field.useEnsure(field, (field) => field.$.child);
       ty(result).is(ty<Field<Child>>());
     }
@@ -2095,17 +2095,9 @@ const unionField = new Field({ hello: "world", world: true }) as
   // Any
   {
     const field = {} as Field<any>;
-
-    const result = field.try?.(0);
-    result satisfies Field<any, "tried" | "detachable"> | null | undefined;
-    undefined satisfies typeof result;
-
-    // @ts-expect-error
-    field.try(0);
-    // @ts-expect-error
-    field.try(0).$.any;
-
-    field.try?.({} as keyof any)?.$;
+    ty(field.try({} as keyof any)).is(
+      ty<Field<any, "tried" | "detachable"> | null | undefined>(),
+    );
   }
 
   // Union
@@ -2113,10 +2105,7 @@ const unionField = new Field({ hello: "world", world: true }) as
     // Value union
     {
       const field = {} as Field<User | Account>;
-
-      field.try("name") satisfies Field<string>;
-      //@ts-expect-error
-      field.try("name").any;
+      ty(field.try("name")).is(ty<Field<string, "tried">>());
 
       // @ts-expect-error
       field.try("email");
@@ -2132,57 +2121,34 @@ const unionField = new Field({ hello: "world", world: true }) as
     // Undefined
     {
       const field = {} as Field<User | undefined>;
-
-      const result = field.try?.("name");
-      result satisfies Field<string> | undefined;
-      undefined satisfies typeof result;
-      // @ts-expect-error
-      field.try("name");
+      ty(field.try("name")).is(ty<Field<string, "tried"> | undefined>());
     }
 
     // Primitive
     {
       const field = {} as Field<User | number>;
-
-      const result = field.try?.("name");
-      result satisfies Field<string> | undefined;
-      undefined satisfies typeof result;
-      // @ts-expect-error
-      field.try("name");
+      ty(field.try("name")).is(ty<Field<string, "tried"> | undefined>());
     }
 
     // Branded primitive
     {
       const field = {} as Field<User | Branded<number>>;
-
-      const result = field.try?.("name");
-      result satisfies Field<string> | undefined;
-      undefined satisfies typeof result;
-      // @ts-expect-error
-      field.try("name");
+      ty(field.try?.("name")).is(ty<Field<string, "tried"> | undefined>());
     }
   }
 
   // Shared
   {
-    // Supported
+    // Defined
     {
       const field = ({} as Field<User>).shared<[User, User]>();
-
-      field.try("name") satisfies Field<string>;
-      //@ts-expect-error
-      field.try("name").any;
+      ty(field.try("name")).is(ty<Field<string, "tried">>());
     }
 
-    // Unsupported
+    // Undefined
     {
       const field = ({} as Field<User>).shared<[User, User | undefined]>();
-
-      const result = field.try?.("name");
-      result satisfies Field<string> | undefined;
-      undefined satisfies typeof result;
-      // @ts-expect-error
-      field.try("name");
+      ty(field.try("name")).is(ty<Field<string, "tried"> | undefined>());
     }
   }
 

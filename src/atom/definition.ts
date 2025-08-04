@@ -6,6 +6,7 @@ import type { Field } from "../field/definition.ts";
 import type { State } from "../state/index.ts";
 import type { Enso } from "../types.ts";
 import type { EnsoUtils as Utils } from "../utils.ts";
+import { E } from "vitest/dist/chunks/environment.d.cL3nLXbE.js";
 
 export declare class Atom<
     Kind extends Atom.Flavor.Kind,
@@ -40,17 +41,13 @@ export declare class Atom<
 
   //#region Phantoms
 
-  [AtomPrivate.immutablePhantom]: Atom.Immutable.Phantom<
-    Kind,
-    Variant,
-    ValueDef
-  >;
+  [AtomPrivate.immutablePhantom]: Atom.Immutable.Phantom<Kind, ValueDef>;
 
   readonly [AtomPrivate.variantPhantom]: Atom.Variant.Phantom<Variant>;
 
   [AtomPrivate.qualifierPhantom]: Atom.Qualifier.Phantom<Qualifier>;
 
-  [AtomPrivate.valuePhantom]: Atom.Value.Phantom<ValueDef>;
+  [AtomPrivate.valueExactPhantom]: Atom.ValueExactPhantom<ValueDef["read"]>;
 
   [AtomPrivate.parentPhantom]: Atom.Parent.Phantom<ValueDef, Parent>;
 
@@ -132,7 +129,7 @@ export declare class Atom<
 
   at: Atom.At.Prop<Kind, Variant, ValueDef["read"], Qualifier>;
 
-  try: Atom.Try.Prop<Kind, Variant, ValueDef["read"], Qualifier>;
+  try: Atom.TryProp<Kind, Variant, ValueDef, Qualifier, Parent>;
 
   get path(): string[];
 
@@ -267,8 +264,7 @@ export namespace Atom {
       ): Atom.Envelop<Kind, "exact", Atom.Def<Value>>;
 
       useEnsure<
-        Variant extends Atom.Flavor.Variant,
-        EnvelopType extends Atom.Envelop<Kind, Variant, any> | Utils.Nullish,
+        EnvelopType extends Atom.Envelop<Kind, any, any> | Utils.Nullish,
         MappedType extends Envelop<Kind, any, any> | Utils.Nullish = undefined,
       >(
         atom: EnvelopType,
@@ -654,13 +650,15 @@ export namespace Atom {
     export type Access = "indexed" | "iterated";
 
     export type Variant<Variant extends Atom.Flavor.Variant, Value> =
-      Utils.IsReadonlyArray<Value> extends true
-        ? Variant extends "immutable"
-          ? "immutable"
-          : "base"
-        : Variant extends "base"
-          ? "exact"
-          : Variant;
+      Utils.IsAny<Value> extends true
+        ? "exact"
+        : Utils.IsReadonlyArray<Value> extends true
+          ? Variant extends "immutable"
+            ? "immutable"
+            : "base"
+          : Variant extends "base"
+            ? "exact"
+            : Variant;
 
     export type Value<
       Kind extends Atom.Flavor.Kind,
@@ -727,7 +725,7 @@ export namespace Atom {
 
     // NOTE: The purpose of this is to cause invariance and break compatibility
     // with subtypes.
-    [AtomPrivate.valuePhantom]: Atom.Value.Phantom<ValueDef>;
+    [AtomPrivate.valueExactPhantom]: Atom.ValueExactPhantom<ValueDef["read"]>;
 
     lastChanges: FieldChange;
 
@@ -926,7 +924,7 @@ export namespace Atom {
     // NOTE: As immutable atoms never resolve exact children like base,
     // we must manually provide phantom type to ensure proper variance between
     // them.
-    [AtomPrivate.immutablePhantom]: Immutable.Phantom<Kind, Variant, ValueDef>;
+    [AtomPrivate.immutablePhantom]: Immutable.Phantom<Kind, ValueDef>;
 
     readonly [AtomPrivate.variantPhantom]: Atom.Variant.Phantom<Variant>;
 
@@ -980,7 +978,7 @@ export namespace Atom {
 
     at: At.Prop<Kind, Variant, ValueDef["read"], Qualifier>;
 
-    try: Atom.Try.Prop<Kind, Variant, ValueDef["read"], Qualifier>;
+    try: Atom.TryProp<Kind, Variant, ValueDef, Qualifier, Parent>;
 
     readonly self: Self.Envelop<Kind, Variant, ValueDef, Qualifier, Parent>;
 
@@ -1077,21 +1075,8 @@ export namespace Atom {
   export namespace Immutable {
     export type Phantom<
       Kind extends Atom.Flavor.Kind,
-      Variant extends Atom.Flavor.Variant,
       ValueDef extends Def.Constraint,
     > = $.Prop<Kind, "base", ValueDef["read"], never>;
-
-    export type Envelop<
-      Kind extends Atom.Flavor.Kind,
-      Variant extends Atom.Flavor.Variant,
-      ValueDef extends Atom.Def.Constraint,
-      Qualifier extends Atom.Qualifier.Constraint,
-      Parent extends Atom.Parent.Constraint<ValueDef>,
-    > = Kind extends "state"
-      ? State.Immutable<ValueDef, Qualifier, Parent>
-      : Kind extends "field"
-        ? Field.Immutable<ValueDef, Qualifier, Parent>
-        : never;
 
     export interface Self<
       Kind extends Atom.Flavor.Kind,
@@ -1336,6 +1321,8 @@ export namespace Atom {
         : never;
   }
 
+  //#region Value
+
   export namespace Value {
     export type Prop<ValueDef extends Def.Constraint> = Opaque<
       ValueDef["read"]
@@ -1362,10 +1349,6 @@ export namespace Atom {
           : Utils.IsAny<Value> extends true
             ? any
             : Value;
-
-    export interface Phantom<ValueDef extends Def.Constraint> {
-      (value: ValueDef["read"]): void;
-    }
 
     export type FromEnvelop<EnvelopType extends Atom.Envelop<any, any, any>> =
       EnvelopType extends Atom.Envelop<any, any, infer Value> ? Value : never;
@@ -1419,6 +1402,16 @@ export namespace Atom {
           : never;
     }
   }
+
+  export type ValueExactPhantom<Value> = (value: Value) => void;
+
+  export type ValueExactPhantomArg<Value> =
+    Utils.IsUnknown<Value> extends true ? any : Value;
+
+  export type ValueExactPhantomResult<Value> =
+    Utils.IsUnknown<Value> extends true ? Value : void;
+
+  //#endregion
 
   export namespace Set {
     export type Result<
@@ -2260,62 +2253,105 @@ export namespace Atom {
 
   //#region Try
 
-  export namespace Try {
-    export type Prop<
-      Kind extends Atom.Flavor.Kind,
-      Variant extends Atom.Flavor.Variant,
-      Value,
-      Qualifier extends Qualifier.Constraint,
-    > =
-      | (Utils.HasNonObject<Value> extends true ? undefined : never)
-      | (Utils.OnlyObject<Value> | Utils.OnlyAny<Value> extends infer Value
-          ? Utils.IsNever<Value> extends false
-            ? keyof Value extends infer Key extends keyof Value
-              ? <ArgKey extends Key>(
-                  key: ArgKey | Enso.SafeNullish<ArgKey>,
-                ) => Child<Kind, Variant, Value, ArgKey, Qualifier>
-              : never
-            : never
-          : never);
+  export type TryProp<
+    Kind extends Atom.Flavor.Kind,
+    Variant extends Atom.Flavor.Variant,
+    ValueDef extends Atom.Def.Constraint,
+    Qualifier extends Qualifier.Constraint,
+    Parent extends Atom.Parent.Constraint<ValueDef>,
+  > =
+    // TODO: Add self try option after figuring types variance
+    // TrySelfFn<Kind, Variant, ValueDef, Qualifier, Parent> &
 
-    export type Child<
-      Kind extends Atom.Flavor.Kind,
-      Variant extends Atom.Flavor.Variant,
-      Value,
-      Key extends keyof Utils.NonNullish<Value>,
-      Qualifier extends Atom.Qualifier.Constraint,
-    > = Key extends Key
-      ?
-          | Envelop<
-              Kind,
-              Variant,
-              Utils.NonNullish<Value>[Key],
-              Child.Qualifier<Value, Key, Qualifier>
-            >
-          // Add undefined if the key is not static (i.e. a record key).
-          | (Utils.IsStaticKey<Utils.NonNullish<Value>, Key> extends true
-              ? never
-              : undefined)
+
+      | Utils.OnlyObject<ValueDef["read"]>
+      | Utils.OnlyAny<ValueDef["read"]> extends infer Value
+      ? Utils.IsNever<Value> extends false
+        ? keyof Value extends infer Key extends keyof Value
+          ? <ArgKey extends Key>(
+              key: ArgKey | Enso.SafeNullish<ArgKey>,
+            ) =>
+              | TryChild<Kind, Variant, Value, ArgKey, Qualifier>
+              | (Utils.HasNonObject<ValueDef["read"]> extends true
+                  ? undefined
+                  : never)
+          : never
+        : never // {}
       : never;
 
-    export type Envelop<
-      Kind extends Atom.Flavor.Kind,
-      Variant extends Atom.Flavor.Variant,
-      Value,
-      Qualifier extends Atom.Qualifier.Constraint,
-    > =
-      // Add null to the union
-      | (null extends Value ? null : never)
-      // Add undefined to the union
-      | (undefined extends Value ? undefined : never)
-      // Resolve branded field without null or undefined
-      | Atom.Envelop<
-          Kind,
-          Child.Variant<Variant, Value>,
-          Atom.Def<Utils.NonNullish<Value>>,
-          Qualifier & { tried: true }
-        >;
+  export type TryChild<
+    Kind extends Atom.Flavor.Kind,
+    Variant extends Atom.Flavor.Variant,
+    Value,
+    Key extends keyof Utils.NonNullish<Value>,
+    Qualifier extends Atom.Qualifier.Constraint,
+  > = Key extends Key
+    ?
+        | TryEnvelop<
+            Kind,
+            Variant,
+            Utils.NonNullish<Value>[Key],
+            Child.Qualifier<Value, Key, Qualifier>
+          >
+        // Add undefined if the key is not static (i.e. a record key).
+        | (Utils.Or<
+            Utils.IsStaticKey<Utils.NonNullish<Value>, Key>,
+            Utils.IsAny<Value>
+          > extends true
+            ? never
+            : undefined)
+    : never;
+
+  export type TryEnvelop<
+    Kind extends Atom.Flavor.Kind,
+    Variant extends Atom.Flavor.Variant,
+    Value,
+    Qualifier extends Atom.Qualifier.Constraint,
+  > =
+    // Add null to the union
+    | (null extends Value ? null : never)
+    // Add undefined to the union
+    | (undefined extends Value ? undefined : never)
+    // Resolve branded field without null or undefined
+    | Atom.Envelop<
+        Kind,
+        Child.Variant<Variant, Value>,
+        Atom.Def<Utils.NonNullish<Value>>,
+        Qualifier & { tried: true }
+      >;
+
+  export interface TrySelfFn<
+    Kind extends Atom.Flavor.Kind,
+    Variant extends Atom.Flavor.Variant,
+    ValueDef extends Atom.Def.Constraint,
+    Qualifier extends Atom.Qualifier.Constraint,
+    Parent extends Atom.Parent.Constraint<ValueDef>,
+  > {
+    (): TrySelfResult<Kind, Variant, ValueDef, Qualifier, Parent>;
   }
+
+  export type TrySelfResult<
+    Kind extends Atom.Flavor.Kind,
+    Variant extends Atom.Flavor.Variant,
+    ValueDef extends Atom.Def.Constraint,
+    Qualifier extends Atom.Qualifier.Constraint,
+    Parent extends Atom.Parent.Constraint<ValueDef>,
+  > = ValueDef["read"] extends infer Value
+    ? Utils.IsAny<Value> extends true
+      ? any
+      : // Add null to the union
+        | (null extends Value ? null : never)
+          // Add undefined to the union
+          | (undefined extends Value ? undefined : never)
+          // Resolve branded field without null or undefined
+          | Atom.Envelop<
+              Kind,
+              Variant,
+              Atom.Def<Utils.NonNullish<Value>>,
+              Qualifier & { tried: true },
+              Parent
+            >
+    : never;
 
   //#endregion
 
@@ -2844,6 +2880,6 @@ namespace AtomPrivate {
   export declare const immutablePhantom: unique symbol;
   export declare const qualifierPhantom: unique symbol;
   export declare const variantPhantom: unique symbol;
-  export declare const valuePhantom: unique symbol;
+  export declare const valueExactPhantom: unique symbol;
   export declare const parentPhantom: unique symbol;
 }
