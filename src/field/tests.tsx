@@ -1254,7 +1254,7 @@ describe(Field, () => {
 
   describe("type", () => {
     describe("collection", () => {
-      describe.skip("#size", () => {
+      describe("#size", () => {
         describe(Array, () => {
           it("returns size", () => {
             const field = new Field([1, 2, 3]);
@@ -1482,7 +1482,7 @@ describe(Field, () => {
         });
       });
 
-      describe.skip("#map", () => {
+      describe("#map", () => {
         describe(Array, () => {
           const field = new Field([1, 2, 3]);
           const fieldUnd = new Field<number[] | undefined>(undefined);
@@ -1526,7 +1526,7 @@ describe(Field, () => {
         });
       });
 
-      describe.skip("#find", () => {
+      describe("#find", () => {
         describe(Array, () => {
           it("finds an item in the array", () => {
             const field = new Field([1, 2, 3]);
@@ -1572,7 +1572,7 @@ describe(Field, () => {
         });
       });
 
-      describe.skip("#filter", () => {
+      describe("#filter", () => {
         describe(Array, () => {
           it("filters items in the array", () => {
             const field = new Field([1, 2, 3, 4]);
@@ -1615,7 +1615,7 @@ describe(Field, () => {
       });
 
       describe("array", () => {
-        describe.skip("#push", () => {
+        describe("#push", () => {
           it("pushes items to array fields", () => {
             const field = new Field([1, 2, 3]);
             field.push(4);
@@ -1677,7 +1677,7 @@ describe(Field, () => {
           });
         });
 
-        describe.skip("#insert", () => {
+        describe("#insert", () => {
           it("inserts an item at given index", () => {
             const field = new Field([1, 2, 3]);
             field.insert(0, 4);

@@ -51,14 +51,6 @@ export class AtomInternalOpaque<Value> extends AtomInternal<Value> {
 
   //#endregion
 
-  //#region Type
-
-  remove() {
-    return this.external.self.remove();
-  }
-
-  //#endregion
-
   //#region Tree
 
   $() {

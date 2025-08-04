@@ -91,7 +91,7 @@ export class AtomInternalObject<
   }
 
   remove(key: keyof Value) {
-    return this.at(key).remove();
+    return this.at(key).self.remove();
   }
 
   forEach(callback: AtomInternalCollection.Callback<Value>): void {
