@@ -402,6 +402,14 @@ export class AtomImpl<Value> {
 
   //#endregion
 
+  //#region Ref
+
+  optional(): AtomImpl<Value> {
+    return this;
+  }
+
+  //#endregion
+
   //#region Events
 
   #batchTarget = new EventTarget();

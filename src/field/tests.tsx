@@ -2100,6 +2100,16 @@ describe(Field, () => {
     });
   });
 
+  describe("ref", () => {
+    describe("#optional", () => {
+      it("returns optional field", () => {
+        const field = new Field<string | number | undefined>(undefined);
+        const ref = field.optional();
+        expect(ref.value).toBeUndefined();
+      });
+    });
+  });
+
   describe("events", () => {
     describe("events", () => {
       it("is a events tree instance", () => {
@@ -3157,6 +3167,164 @@ describe(Field, () => {
         const field = new Field({ name: { first: "Alexander" } });
         const props = field.control();
         expect(props.name).toEqual(".");
+      });
+
+      describe.skip("#at", () => {
+        describe("primitive", () => {
+          it("returns the undefined field as is if it's defined", () => {
+            const field = new Field<string | number | undefined>(undefined);
+            const ref = field.optional();
+            expect(ref.value).toBeUndefined();
+          });
+        });
+
+        describe("object", () => {
+          it("returns the undefined field as is if it's defined", () => {
+            const field = new Field<{ a: string } | undefined>(undefined);
+            const ref = field.optional();
+            expect(ref.value).toBeUndefined();
+          });
+
+          it("allows to access properties by key", () => {
+            const field = new Field<{ a?: string } | undefined>(undefined);
+            const ref = field.optional().at("a");
+            expect(ref.value).toBeUndefined();
+          });
+
+          it("allows accessing maybe undefined properties", () => {
+            const field = new Field<
+              { a?: { b?: { c?: number | string } } } | undefined
+            >(undefined);
+            const ref = field.optional().at("a").at("b").at("c");
+            expect(ref.value).toBeUndefined();
+          });
+
+          it("resolves proper field for deep nested properties", () => {
+            const field = new Field<
+              { a?: { b?: { c?: number | string } } } | undefined
+            >({ a: { b: { c: 123 } } });
+            const ref = field.optional().at("a").at("b").at("c");
+            expect(ref.value).toBe(123);
+          });
+        });
+
+        describe("array", () => {
+          it("returns the undefined field as is if it's defined", () => {
+            const field = new Field<string[] | undefined>(undefined);
+            const ref = field.optional();
+            expect(ref.value).toBeUndefined();
+          });
+
+          it("allows to access items by index", () => {
+            const field = new Field<string[] | undefined>(undefined);
+            const ref = field.optional().at(0);
+            expect(ref.value).toBeUndefined();
+          });
+
+          it("allows accessing maybe undefined items", () => {
+            const field = new Field<string[][][] | undefined>(undefined);
+            const ref = field.optional().at(0).at(0).at(0);
+            expect(ref.value).toBeUndefined();
+          });
+
+          it("resolves proper field for deep nested items", () => {
+            const field = new Field<string[][][] | undefined>([[["a"]]]);
+            const ref = field.optional().at(0).at(0).at(0);
+            expect(ref.value).toBe("a");
+          });
+        });
+
+        describe("instance", () => {
+          it("returns the undefined field as is if it's defined", () => {
+            const field = new Field<Set<string> | undefined>(undefined);
+            const ref = field.optional();
+            expect(ref.value).toBeUndefined();
+          });
+
+          it.todo("does not allow to access items by key", () => {
+            const field = new Field<Set<string> | undefined>(undefined);
+            // TODO:
+            // const ref = fieldRef
+            //   .maybe(new Set<string>())
+            //   // @ts-expect-error: It should not be available
+            //   .maybe("has", (val: string) => false);
+            // ref satisfies never;
+            // expect(ref instanceof MaybeFieldRef).toBe(true);
+            // expect(() => ref.at("a")).toThrowError(
+            //   "Cannot access items of a Set by key"
+            // );
+          });
+        });
+      });
+
+      describe.skip("#addError", () => {
+        it("adds errors to present fields", () => {
+          const field = new Field<string | number | undefined>("hello");
+          const ref = field.optional();
+          ref.addError("Something went wrong");
+          expect(field.errors).toEqual([{ message: "Something went wrong" }]);
+        });
+
+        it("adds errors to undefined fields", () => {
+          const field = new Field<{ hello?: string }>({});
+          const ref = field.optional().at("hello");
+          ref.addError("Something went wrong");
+          expect(field.$.hello.errors).toEqual([
+            { message: "Something went wrong" },
+          ]);
+        });
+
+        it("adds errors to shadow fields", () => {
+          const field = new Field<{ hello?: { world?: string } }>({});
+          const ref = field.optional().at("hello").at("world");
+          ref.addError("Something went wrong");
+          expect(field.valid).toBe(false);
+          const pavedField = field.$.hello.pave({}).$.world;
+          expect(pavedField.errors).toEqual([
+            { message: "Something went wrong" },
+          ]);
+        });
+
+        it("allows to clear shadow fields errors", () => {
+          const field = new Field<{ hello?: { world?: string } }>({});
+          const ref = field.optional().at("hello").at("world");
+          ref.addError("Something went wrong");
+          expect(field.valid).toBe(false);
+          const pavedField = field.$.hello.pave({}).$.world;
+          expect(pavedField.errors).toEqual([
+            { message: "Something went wrong" },
+          ]);
+          field.clearErrors();
+          expect(pavedField.errors).toEqual([]);
+        });
+
+        describe("changes", () => {
+          it("causes target field trigger", async () => {
+            const field = new Field<string | number | undefined>("hello");
+            const ref = field.optional();
+            const spy = vi.fn();
+            field.watch(spy);
+            ref.addError("Something went wrong");
+            await postpone();
+            expect(spy).toHaveBeenCalledTimes(1);
+            expect(spy).toReceiveChanges(
+              change.field.errors | change.field.invalid,
+            );
+          });
+
+          it("trigger event on the closest target", async () => {
+            const field = new Field<{ name?: { first?: string } }>({});
+            const ref = field.optional().at("name").at("first");
+            const spy = vi.fn();
+            field.$.name.watch(spy);
+            ref.addError("Something went wrong");
+            await postpone();
+            expect(spy).toHaveBeenCalledTimes(1);
+            expect(spy).toReceiveChanges(
+              change.child.errors | change.child.invalid,
+            );
+          });
+        });
       });
     });
   });
