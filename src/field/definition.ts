@@ -71,10 +71,10 @@ export declare class Field<
   ): Field.Exact<Value>;
 
   static useEnsure<
-    FieldType extends Atom.Envelop<"field", any, any> | Utils.Nullish,
+    FieldType extends Atom.Envelop<"field", any, any> | Utils.Falsy,
     MappedType extends
       | Atom.Envelop<"field", any, any>
-      | Utils.Nullish = undefined,
+      | Utils.Falsy = undefined,
   >(
     field: FieldType,
     map?: Atom.Static.Ensure.Mapper<"field", FieldType, MappedType>,
@@ -545,7 +545,9 @@ export namespace Field {
         Atom.Qualifier.Ref.DisableFor<Qualifier, Fn>;
 
       export interface Fn {
-        (): boolean;
+        <Enable extends boolean | undefined = undefined>(
+          enable?: Enable,
+        ): Atom.Hooks.Result<Enable, boolean>;
       }
     }
   }
@@ -757,7 +759,9 @@ export namespace Field {
         Atom.Qualifier.Ref.DisableFor<Qualifier, Fn>;
 
       export interface Fn {
-        (): boolean;
+        <Enable extends boolean | undefined = undefined>(
+          enable?: Enable,
+        ): Atom.Hooks.Result<Enable, boolean>;
       }
     }
   }
@@ -783,7 +787,9 @@ export namespace Field {
         Atom.Qualifier.Ref.DisableFor<Qualifier, Fn>;
 
       export interface Fn {
-        (): Field.Error[];
+        <Enable extends boolean | undefined = undefined>(
+          enable?: Enable,
+        ): Atom.Hooks.Result<Enable, Field.Error[]>;
       }
     }
   }

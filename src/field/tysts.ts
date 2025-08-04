@@ -619,6 +619,20 @@ const unionField = new Field({ hello: "world", world: true }) as
     }
   }
 
+  // Mixed
+  {
+    const field = {} as Field<string> | undefined;
+    const result = Field.useEnsure(field);
+    ty(result).is(ty<Field<string | undefined>>());
+  }
+
+  // Falsy
+  {
+    const field = {} as Field<string> | false;
+    const result = Field.useEnsure(field);
+    ty(result).is(ty<Field<string | undefined>>());
+  }
+
   // Field.Exact
   {
     const result = Field.useEnsure({} as Field.Exact<string> | undefined);

@@ -10,13 +10,13 @@ import { Enso } from "../types.ts";
 //#region Form
 
 // TODO: Implement for common interfaces?
-export class Form<Payload> implements Enso.InterfaceSystem {
+export class FormOld<Payload> implements Enso.InterfaceSystem {
   static use<Payload>(
     value: Payload,
-    options?: Form.Options<Payload>,
-  ): Form<Payload> {
+    options?: FormOld.Options<Payload>,
+  ): FormOld<Payload> {
     const id = useId();
-    const form = useMemo(() => new Form(value, { ...options, id }), [id]);
+    const form = useMemo(() => new FormOld(value, { ...options, id }), [id]);
     useEffect(() => () => form.deconstruct(), [form]);
     const rerender = useRerender();
 
@@ -47,7 +47,7 @@ export class Form<Payload> implements Enso.InterfaceSystem {
   }
 
   static Component<Payload, IsServer extends boolean | undefined = undefined>(
-    props: Form.ComponentProps<Payload, IsServer>,
+    props: FormOld.ComponentProps<Payload, IsServer>,
   ): React.ReactElement<HTMLFormElement> {
     const { form, onSubmit, onReset, server, children, ...restProps } = props;
     return (
@@ -65,7 +65,7 @@ export class Form<Payload> implements Enso.InterfaceSystem {
   #id: string;
   #field: FieldOld<Payload>;
 
-  constructor(initial: Payload, options?: Form.Options<Payload>) {
+  constructor(initial: Payload, options?: FormOld.Options<Payload>) {
     this.#id = options?.id || nanoid();
     this.#field = new FieldOld(initial);
     this.#validator = options?.validate;
@@ -232,8 +232,8 @@ export class Form<Payload> implements Enso.InterfaceSystem {
   //#endregion
 
   control<IsServer extends boolean | undefined = undefined>(
-    props?: Form.ControlProps<Payload, IsServer> | undefined,
-  ): Form.Control {
+    props?: FormOld.ControlProps<Payload, IsServer> | undefined,
+  ): FormOld.Control {
     const { onSubmit, onReset, server } = props || {};
     return {
       // @ts-ignore: We're checking the server flag to determine if
@@ -251,7 +251,7 @@ export class Form<Payload> implements Enso.InterfaceSystem {
 
   async #submit<IsServer extends boolean | undefined = undefined>(
     event: React.FormEvent<HTMLFormElement>,
-    callback: Form.ControlOnSubmit<Payload, IsServer>,
+    callback: FormOld.ControlOnSubmit<Payload, IsServer>,
     server: IsServer,
   ) {
     event.preventDefault();
@@ -300,7 +300,7 @@ export class Form<Payload> implements Enso.InterfaceSystem {
   }
 }
 
-export namespace Form {
+export namespace FormOld {
   export interface Options<Payload> {
     id?: string;
     validate?: FieldOld.Validator<Payload, undefined>;
@@ -329,7 +329,7 @@ export namespace Form {
   export interface ComponentProps<Payload, IsServer extends boolean | undefined>
     extends ControlProps<Payload, IsServer>,
       Omit<React.FormHTMLAttributes<HTMLFormElement>, "onSubmit" | "onReset"> {
-    form: Form<Payload>;
+    form: FormOld<Payload>;
     children?: React.ReactNode;
   }
 
