@@ -23,7 +23,7 @@ export class AtomInternalArray<
 
   //#region Value
 
-  #children = [];
+  #children: AtomImpl<Value[number]>[] = [];
   #undefined;
 
   get value(): Value {
@@ -38,7 +38,6 @@ export class AtomInternalArray<
     this.#children.forEach((item, index) => {
       if (!(index in newValue)) {
         delete this.#children[index];
-        // @ts-expect-error
         item[externalSymbol].clear();
         this.#undefined.register(index.toString(), item);
         changes |= change.child.detach;
@@ -49,9 +48,7 @@ export class AtomInternalArray<
     this.#children = newValue.map((value, index) => {
       const child = this.#children[index];
       if (child) {
-        // @ts-expect-error
         child.set(value, false);
-        // @ts-expect-error
         changes |= shiftChildChanges(child.lastChanges);
         return child;
       } else {
@@ -104,7 +101,7 @@ export class AtomInternalArray<
   }
 
   remove(key: keyof Value) {
-    return this.at(key).remove();
+    return this.at(key).self.remove();
   }
 
   forEach(callback: AtomInternalCollection.Callback<Value>): void {
@@ -131,31 +128,31 @@ export class AtomInternalArray<
 
   // Array
 
-  // @ts-expect-error
-  push(item) {
+  push<ItemValue extends Value[keyof Value]>(
+    item: ItemValue,
+  ): AtomImpl<ItemValue> {
     const length = this.#children.length;
     const field = this.create(item, {
       key: String(length),
       field: this.external,
     });
-    // @ts-expect-error
     this.#children[length] = field;
 
     this.external.trigger(change.field.shape | change.child.attach, true);
     return field;
   }
 
-  // @ts-expect-error
-  insert(index, item) {
+  insert<ItemValue extends Value[keyof Value]>(
+    index: number,
+    item: ItemValue,
+  ): AtomImpl<ItemValue> {
     const field = this.create(item, {
       key: String(index),
       field: this.external,
     });
-    // @ts-expect-error
     this.#children.splice(index, 0, field);
 
     this.#children.slice(index).forEach((item, index) => {
-      // @ts-expect-error
       item[externalSymbol].move(String(index));
     });
 
@@ -227,16 +224,13 @@ export class AtomInternalArray<
       // Item already exists at this index, so we need to move it
       if (existingItem) {
         // Insert the attaching item
-        // @ts-expect-error
         this.#children.splice(idx, 0, item);
 
         // Shift children keys
         this.#children.slice(idx).forEach((item, index) => {
-          // @ts-expect-error
           item[externalSymbol].move(String(idx + index));
         });
       } else {
-        // @ts-expect-error
         this.#children[idx] = item;
       }
 
@@ -253,13 +247,11 @@ export class AtomInternalArray<
       // Remove the child from the array
       const idx = Number(key);
       this.#children.splice(idx, 1);
-      // @ts-expect-error
       item.unwatch();
       changes |= change.child.detach;
 
       // Shift children keys
       this.#children.slice(idx).forEach((item, index) => {
-        // @ts-expect-error
         item[externalSymbol].move(String(idx + index));
       });
 
@@ -270,18 +262,15 @@ export class AtomInternalArray<
   }
 
   unwatch() {
-    // @ts-expect-error
     this.#children.forEach((child) => child.unwatch());
     this.#children.length = 0;
   }
 
   override withhold() {
-    // @ts-expect-error
     this.#children.forEach((field) => field.withhold());
   }
 
   override unleash() {
-    // @ts-expect-error
     this.#children.forEach((field) => field.unleash());
   }
 

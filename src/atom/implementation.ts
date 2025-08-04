@@ -21,9 +21,13 @@ import type { Atom } from "./definition.ts";
 import { useAtomHook } from "./hooks/index.ts";
 import { AtomInternalArray } from "./internal/array/index.ts";
 import { externalSymbol } from "./internal/base/index.ts";
-import { AtomInternal, detectInternalConstructor } from "./internal/index.ts";
-import { AtomInternalObject } from "./internal/object/index.ts";
-import { AtomInternalOpaque } from "./internal/opaque/index.ts";
+import {
+  AtomInternal,
+  detectInternalConstructor,
+  AtomInternalObject,
+  AtomInternalOpaque,
+  AtomInternalCollection,
+} from "./internal/index.ts";
 
 export class AtomImpl<Value> {
   //#region Static
@@ -251,12 +255,42 @@ export class AtomImpl<Value> {
 
   internal: AtomInternal = new AtomInternalOpaque(this, detachedValue as any);
 
-  get _() {
-    return {};
+  // Collection
+
+  get size(): number {
+    always(this.internal instanceof AtomInternalCollection);
+    return this.internal.size;
   }
 
   remove(key: keyof Value) {
+    always(this.internal instanceof AtomInternalCollection);
     return this.internal.remove(key as any);
+  }
+
+  forEach(callback: AtomInternalCollection.Callback<Value>): void {
+    always(this.internal instanceof AtomInternalCollection);
+    this.internal.forEach(callback);
+  }
+
+  map<Result>(
+    callback: AtomInternalCollection.Callback<Value, Result>,
+  ): Result[] {
+    always(this.internal instanceof AtomInternalCollection);
+    return this.internal.map(callback);
+  }
+
+  find(
+    predicate: AtomInternalCollection.Predicate<Value>,
+  ): AtomImpl<unknown> | undefined {
+    always(this.internal instanceof AtomInternalCollection);
+    return this.internal.find(predicate);
+  }
+
+  filter(
+    predicate: AtomInternalCollection.Predicate<Value>,
+  ): AtomImpl<unknown>[] {
+    always(this.internal instanceof AtomInternalCollection);
+    return this.internal.filter(predicate);
   }
 
   self: any = {
@@ -270,14 +304,21 @@ export class AtomImpl<Value> {
     },
   };
 
-  forEach(callback: any) {
-    // @ts-expect-error
-    this.internal.forEach(callback);
+  // Array
+
+  push<ItemValue extends Value[keyof Value]>(
+    item: ItemValue,
+  ): AtomImpl<ItemValue> {
+    always(this.internal instanceof AtomInternalArray);
+    return this.internal.push(item);
   }
 
-  map(callback: any) {
-    // @ts-expect-error
-    this.internal.map(callback);
+  insert<ItemValue extends Value[keyof Value]>(
+    index: number,
+    item: ItemValue,
+  ): AtomImpl<ItemValue> {
+    always(this.internal instanceof AtomInternalArray);
+    return this.internal.insert(index, item);
   }
 
   useCollection(): AtomImpl<Value> {
@@ -564,6 +605,6 @@ export class AtomImpl<Value> {
   //#endregion
 }
 
-function always(condition: unknown) {
+function always(condition: unknown): asserts condition {
   if (!condition) throw new Error("Assertion failed");
 }

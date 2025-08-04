@@ -2,6 +2,14 @@ import { AtomImpl } from "../implementation.ts";
 import { AtomInternalArray } from "./array/index.ts";
 import { AtomInternalObject } from "./object/index.ts";
 import { AtomInternalOpaque } from "./opaque/index.ts";
+import { AtomInternalCollection } from "./collection/index.ts";
+
+export {
+  AtomInternalArray,
+  AtomInternalObject,
+  AtomInternalOpaque,
+  AtomInternalCollection,
+};
 
 export function detectInternalConstructor(
   value: unknown,
