@@ -72,12 +72,14 @@ export class State<
   }
 
   static useEnsure<
-    StateType extends State.Envelop<any, any> | Utils.Nullish,
-    MappedType extends State.Envelop<any, any> | Utils.Nullish = undefined,
+    FieldType extends Atom.Envelop<"state", any, any> | Utils.Nullish,
+    MappedType extends
+      | Atom.Envelop<"state", any, any>
+      | Utils.Nullish = undefined,
   >(
-    field: StateType,
-    map?: Atom.Static.Ensure.Mapper<"state", StateType, MappedType>,
-  ): Atom.Static.Ensure.Result<"state", StateType, MappedType> {
+    field: FieldType,
+    map?: Atom.Static.Ensure.Mapper<"state", FieldType, MappedType>,
+  ): Atom.Static.Ensure.Result<"state", FieldType, MappedType> {
     return void 0 as any;
   }
 

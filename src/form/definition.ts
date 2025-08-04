@@ -66,7 +66,13 @@ export declare class Form<Value> implements Form.Interface<Value> {
 
   at: Atom.At.Prop<"field", "exact", Value, Atom.Qualifier.Default>;
 
-  try: Atom.Try.Prop<"field", "exact", Value, Atom.Qualifier.Default>;
+  try: Atom.TryProp<
+    "field",
+    "exact",
+    Atom.Def<Value>,
+    Atom.Qualifier.Default,
+    Atom.Parent.Default
+  >;
 
   //#endregion
 
@@ -148,7 +154,13 @@ export namespace Form {
 
     at: Atom.At.Prop<"field", "exact", Value, Atom.Qualifier.Default>;
 
-    try: Atom.Try.Prop<"field", "exact", Value, Atom.Qualifier.Default>;
+    try: Atom.TryProp<
+      "field",
+      "exact",
+      Atom.Def<Value>,
+      Atom.Qualifier.Default,
+      Atom.Parent.Default
+    >;
 
     //#endregion
 
