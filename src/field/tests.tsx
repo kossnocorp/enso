@@ -1254,7 +1254,116 @@ describe(Field, () => {
 
   describe("type", () => {
     describe("collection", () => {
+      describe.skip("#size", () => {
+        describe(Array, () => {
+          it("returns size", () => {
+            const field = new Field([1, 2, 3]);
+            expect(field.size).toBe(3);
+          });
+        });
+
+        describe(Object, () => {
+          it("returns size", () => {
+            const field = new Field({ a: 1, b: 2, c: 3 });
+            expect(field.size).toBe(3);
+          });
+        });
+      });
+
       describe("#remove", () => {
+        describe(Object, () => {
+          it("removes a record field by key", () => {
+            const field = new Field<Record<string, number>>({
+              one: 1,
+              two: 2,
+              three: 3,
+            });
+            field.remove("one");
+            expect(field.value).toEqual({ two: 2, three: 3 });
+          });
+
+          it("returns the removed field", () => {
+            const field = new Field<Record<string, number>>({
+              one: 1,
+              two: 2,
+              three: 3,
+            });
+            const oneField = field.$.one;
+            const removedField = field.remove("one");
+            expect(removedField).toBe(oneField);
+            expect(removedField.value).toBe(undefined);
+          });
+
+          it("removes child", () => {
+            const parent = new Field<Record<string, number>>({
+              one: 1,
+              two: 2,
+              three: 3,
+            });
+            const field = parent.at("one");
+            field.self.remove();
+            expect(parent.value).toEqual({ two: 2, three: 3 });
+            expect(field.value).toBe(undefined);
+          });
+
+          it("removes a optional field by key", () => {
+            const field = new Field<{ one: 1; two: 2 | undefined; three?: 3 }>({
+              one: 1,
+              two: 2,
+              three: 3,
+            });
+            field.remove("three");
+            expect(field.value).toEqual({ one: 1, two: 2 });
+          });
+
+          it("doesn't throw on removing non-existing field", () => {
+            const field = new Field<Record<string, number>>({ one: 1 });
+            expect(() => field.remove("two")).not.toThrow();
+          });
+
+          describe("changes", () => {
+            describe("child", () => {
+              it("triggers updates", async () => {
+                const spy = vi.fn();
+                const field = new Field<Record<string, number>>({
+                  one: 1,
+                  two: 2,
+                  three: 3,
+                });
+                field.watch(spy);
+                field.remove("one");
+                await postpone();
+                const [[value, event]]: any = spy.mock.calls;
+                expect(value).toEqual({ two: 2, three: 3 });
+                expect(event.changes).toMatchChanges(
+                  change.field.shape | change.child.detach,
+                );
+              });
+            });
+
+            describe("subtree", () => {
+              it("triggers updates", async () => {
+                const spy = vi.fn();
+                const field = new Field<{ qwe: Record<string, number> }>({
+                  qwe: {
+                    one: 1,
+                    two: 2,
+                    three: 3,
+                  },
+                });
+                field.watch(spy);
+                field.$.qwe.remove("one");
+                await postpone();
+                const [[value, event]]: any = spy.mock.calls;
+                expect(value).toEqual({ qwe: { two: 2, three: 3 } });
+                expect(event.changes).toMatchChanges(
+                  change.child.shape | change.subtree.detach,
+                );
+              });
+            });
+          });
+        });
+
         describe(Array, () => {
           it("removes a field by index", () => {
             const field = new Field([1, 2, 3]);
@@ -1312,107 +1421,10 @@ describe(Field, () => {
                 const spy = vi.fn();
                 const field = new Field([[1, 2, 3, 4]]);
                 field.watch(spy);
-                field.try(0)?.remove(1);
+                field.at(0).self.try()?.remove(1);
                 await postpone();
                 const [[value, event]]: any = spy.mock.calls;
                 expect(value).toEqual([[1, 3, 4]]);
-                expect(event.changes).toMatchChanges(
-                  change.child.shape | change.subtree.detach,
-                );
-              });
-            });
-          });
-        });
-
-        describe(Object, () => {
-          it("removes a record field by key", () => {
-            const field = new Field<Record<string, number>>({
-              one: 1,
-              two: 2,
-              three: 3,
-            });
-            field.remove("one");
-            expect(field.value).toEqual({ two: 2, three: 3 });
-          });
-
-          it("returns the removed field", () => {
-            const field = new Field<Record<string, number>>({
-              one: 1,
-              two: 2,
-              three: 3,
-            });
-            const oneField = field.$.one;
-            const removedField = field.remove("one");
-            expect(removedField).toBe(oneField);
-            expect(removedField.value).toBe(undefined);
-          });
-
-          it("removes child", () => {
-            const parent = new Field<Record<string, number>>({
-              one: 1,
-              two: 2,
-              three: 3,
-            });
-            const field = parent.at("one");
-            field.self.remove();
-            expect(parent.value).toEqual({ two: 2, three: 3 });
-            expect(field.value).toBe(undefined);
-          });
-
-          it("removes a optional field by key", () => {
-            const field = new Field<{
-              one: 1;
-              two: 2 | undefined;
-              three?: 3;
-            }>({
-              one: 1,
-              two: 2,
-              three: 3,
-            });
-            field.remove("three");
-            expect(field.value).toEqual({ one: 1, two: 2 });
-          });
-
-          it("doesn't throw on removing non-existing field", () => {
-            const field = new Field<Record<string, number>>({ one: 1 });
-            expect(() => field.remove("two")).not.toThrow();
-          });
-
-          describe("changes", () => {
-            describe("child", () => {
-              it("triggers updates", async () => {
-                const spy = vi.fn();
-                const field = new Field<Record<string, number>>({
-                  one: 1,
-                  two: 2,
-                  three: 3,
-                });
-                field.watch(spy);
-                field.remove("one");
-                await postpone();
-                const [[value, event]]: any = spy.mock.calls;
-                expect(value).toEqual({ two: 2, three: 3 });
-                expect(event.changes).toMatchChanges(
-                  change.field.shape | change.child.detach,
-                );
-              });
-            });
-
-            describe("subtree", () => {
-              it("triggers updates", async () => {
-                const spy = vi.fn();
-                const field = new Field<{ qwe: Record<string, number> }>({
-                  qwe: {
-                    one: 1,
-                    two: 2,
-                    three: 3,
-                  },
-                });
-                field.watch(spy);
-                field.$.qwe.remove("one");
-                await postpone();
-                const [[value, event]]: any = spy.mock.calls;
-                expect(value).toEqual({ qwe: { two: 2, three: 3 } });
                 expect(event.changes).toMatchChanges(
                   change.child.shape | change.subtree.detach,
                 );
@@ -1424,8 +1436,10 @@ describe(Field, () => {
 
       describe("#forEach", () => {
         describe(Array, () => {
+          const field = new Field([1, 2, 3]);
+          const fieldUnd = new Field<number[] | undefined>(undefined);
+
           it("iterates items", () => {
-            const field = new Field([1, 2, 3]);
             const mapped: [number, number][] = [];
             field.forEach((item, index) =>
               mapped.push([index, item.value * 2]),
@@ -1436,11 +1450,21 @@ describe(Field, () => {
               [2, 6],
             ]);
           });
+
+          it("accepts undefined field", () => {
+            const spy = vi.fn();
+            fieldUnd.self.try()?.forEach(spy);
+            expect(spy).not.toHaveBeenCalled();
+          });
         });
 
         describe(Object, () => {
+          const field = new Field({ a: 1, b: 2, c: 3 });
+          const fieldUnd = new Field<{ [k: string]: number } | undefined>(
+            undefined,
+          );
+
           it("iterates items and keys", () => {
-            const field = new Field({ a: 1, b: 2, c: 3 });
             const mapped: [string, number][] = [];
             field.forEach((item, key) => mapped.push([key, item.value]));
             expect(mapped).toEqual([
@@ -1448,6 +1472,272 @@ describe(Field, () => {
               ["b", 2],
               ["c", 3],
             ]);
+          });
+
+          it("accepts undefined field", () => {
+            const spy = vi.fn();
+            fieldUnd.self.try()?.forEach(spy);
+            expect(spy).not.toHaveBeenCalled();
+          });
+        });
+      });
+
+      describe.skip("#map", () => {
+        describe(Array, () => {
+          const field = new Field([1, 2, 3]);
+          const fieldUnd = new Field<number[] | undefined>(undefined);
+
+          it("maps items", () => {
+            const mapped = field.map((item, index) => [index, item.value * 2]);
+            expect(mapped).toEqual([
+              [0, 2],
+              [1, 4],
+              [2, 6],
+            ]);
+          });
+
+          it("accepts undefined field", () => {
+            const spy = vi.fn();
+            fieldUnd.self.try()?.map(spy);
+            expect(spy).not.toHaveBeenCalled();
+          });
+        });
+
+        describe(Object, () => {
+          const field = new Field({ a: 1, b: 2, c: 3 });
+          const fieldUnd = new Field<{ [k: string]: number } | undefined>(
+            undefined,
+          );
+
+          it("maps items and keys", () => {
+            const mapped = field.map((item, key) => [key, item.value]);
+            expect(mapped).toEqual([
+              ["a", 1],
+              ["b", 2],
+              ["c", 3],
+            ]);
+          });
+
+          it("accepts undefined field", () => {
+            const spy = vi.fn();
+            fieldUnd.self.try()?.map(spy);
+            expect(spy).not.toHaveBeenCalled();
+          });
+        });
+      });
+
+      describe.skip("#find", () => {
+        describe(Array, () => {
+          it("finds an item in the array", () => {
+            const field = new Field([1, 2, 3]);
+            const item = field.find((item) => item.value === 2);
+            expect(item?.value).toBe(2);
+          });
+
+          it("returns undefined if item not found", () => {
+            const field = new Field([1, 2, 3]);
+            const item = field.find((item) => item.value === 4);
+            expect(item).toBe(undefined);
+          });
+
+          it("passes index to the predicate", () => {
+            const field = new Field([1, 2, 3]);
+            const item = field.find(
+              (item, index) => item.value === 2 && index === 1,
+            );
+            expect(item?.value).toBe(2);
+          });
+        });
+
+        describe(Object, () => {
+          it("finds an item in the object", () => {
+            const field = new Field({ a: 1, b: 2, c: 3 });
+            const item = field.find((item) => item.value === 2);
+            expect(item?.value).toBe(2);
+          });
+
+          it("returns undefined if item not found", () => {
+            const field = new Field({ a: 1, b: 2, c: 3 });
+            const item = field.find((item) => item.value === 4);
+            expect(item).toBe(undefined);
+          });
+
+          it("passes key to the predicate", () => {
+            const field = new Field({ a: 1, b: 2, c: 3 });
+            const item = field.find(
+              (item, key) => item.value === 2 && key === "b",
+            );
+            expect(item?.value).toBe(2);
+          });
+        });
+      });
+
+      describe.skip("#filter", () => {
+        describe(Array, () => {
+          it("filters items in the array", () => {
+            const field = new Field([1, 2, 3, 4]);
+            const items = field.filter((item) => item.value % 2 === 0);
+            expect(items.map((f) => f.value)).toEqual([2, 4]);
+          });
+
+          it("returns empty array if none match", () => {
+            const field = new Field([1, 3, 5]);
+            const items = field.filter((item) => item.value === 2);
+            expect(items).toEqual([]);
+          });
+
+          it("passes index to the predicate", () => {
+            const field = new Field([1, 2, 3]);
+            const items = field.filter((item, index) => index === 1);
+            expect(items.map((f) => f.value)).toEqual([2]);
+          });
+        });
+
+        describe(Object, () => {
+          it("filters items in the object", () => {
+            const field = new Field({ a: 1, b: 2, c: 3, d: 4 });
+            const items = field.filter((item) => item.value % 2 === 0);
+            expect(items.map((f) => f.value)).toEqual([2, 4]);
+          });
+
+          it("returns empty array if none match", () => {
+            const field = new Field({ a: 1, b: 3 });
+            const items = field.filter((item) => item.value === 2);
+            expect(items).toEqual([]);
+          });
+
+          it("passes key to the predicate", () => {
+            const field = new Field({ a: 1, b: 2, c: 3 });
+            const items = field.filter((item, key) => key === "b");
+            expect(items.map((f) => f.value)).toEqual([2]);
+          });
+        });
+      });
+
+      describe("array", () => {
+        describe.skip("#push", () => {
+          it("pushes items to array fields", () => {
+            const field = new Field([1, 2, 3]);
+            field.push(4);
+            expect(field.value).toEqual([1, 2, 3, 4]);
+          });
+
+          it("returns new field", () => {
+            const field = new Field([1, 2, 3]);
+            const result = field.push(4);
+            expect(result).toBeInstanceOf(Field);
+            expect(result.value).toEqual(4);
+          });
+
+          describe("changes", () => {
+            describe("field", () => {
+              it("triggers updates", async () => {
+                const field = new Field([1, 2, 3]);
+                const spy = vi.fn();
+                field.watch(spy);
+                field.push(4);
+                await postpone();
+                const [[value, event]]: any = spy.mock.calls;
+                expect(value).toEqual([1, 2, 3, 4]);
+                expect(event.changes).toMatchChanges(
+                  change.field.shape | change.child.attach,
+                );
+              });
+            });
+
+            describe("child", () => {
+              it("triggers updates", async () => {
+                const field = new Field([[1, 2, 3]]);
+                const spy = vi.fn();
+                field.watch(spy);
+                field.at(0).self.try()?.push(4);
+                await postpone();
+                const [[value, event]]: any = spy.mock.calls;
+                expect(value).toEqual([[1, 2, 3, 4]]);
+                expect(event.changes).toMatchChanges(
+                  change.child.shape | change.subtree.attach,
+                );
+              });
+            });
+
+            describe("subtree", () => {
+              it("triggers updates", async () => {
+                const field = new Field([[[1, 2, 3]]]);
+                const spy = vi.fn();
+                field.watch(spy);
+                field.at(0).self.try()?.at(0).self.try()?.push(4);
+                await postpone();
+                const [[value, event]]: any = spy.mock.calls;
+                expect(value).toEqual([[[1, 2, 3, 4]]]);
+                expect(event.changes).toMatchChanges(
+                  change.subtree.shape | change.subtree.attach,
+                );
+              });
+            });
+          });
+        });
+
+        describe.skip("#insert", () => {
+          it("inserts an item at given index", () => {
+            const field = new Field([1, 2, 3]);
+            field.insert(0, 4);
+            expect(field.value).toEqual([4, 1, 2, 3]);
+            field.insert(2, 5);
+            expect(field.value).toEqual([4, 1, 5, 2, 3]);
+          });
+
+          it("returns new field", () => {
+            const field = new Field([1, 2, 3]);
+            const newField = field.insert(0, 4);
+            expect(newField).toBeInstanceOf(Field);
+            expect(newField.value).toEqual(4);
+          });
+
+          describe("changes", () => {
+            describe("field", () => {
+              it("triggers updates", async () => {
+                const field = new Field([1, 2, 3]);
+                const spy = vi.fn();
+                field.watch(spy);
+                field.insert(0, 4);
+                await postpone();
+                const [[value, event]]: any = spy.mock.calls;
+                expect(value).toEqual([4, 1, 2, 3]);
+                expect(event.changes).toMatchChanges(
+                  change.field.shape | change.child.attach,
+                );
+              });
+            });
+
+            describe("child", () => {
+              it("triggers updates", async () => {
+                const field = new Field([[1, 2, 3]]);
+                const spy = vi.fn();
+                field.watch(spy);
+                field.at(0).self.try()?.insert(0, 4);
+                await postpone();
+                const [[value, event]]: any = spy.mock.calls;
+                expect(value).toEqual([[4, 1, 2, 3]]);
+                expect(event.changes).toMatchChanges(
+                  change.child.shape | change.subtree.attach,
+                );
+              });
+            });
+
+            describe("subtree", () => {
+              it("triggers updates", async () => {
+                const field = new Field([[[1, 2, 3]]]);
+                const spy = vi.fn();
+                field.watch(spy);
+                field.at(0).self.try()?.at(0).self.try()?.insert(0, 4);
+                await postpone();
+                const [[value, event]]: any = spy.mock.calls;
+                expect(value).toEqual([[[4, 1, 2, 3]]]);
+                expect(event.changes).toMatchChanges(
+                  change.subtree.shape | change.subtree.attach,
+                );
+              });
+            });
           });
         });
       });
