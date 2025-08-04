@@ -349,6 +349,9 @@ export namespace Field {
       ): Field.Control.Registration<Element>;
 
       ref<Element extends HTMLElement>(element: Element | null): void;
+
+      //TODO: Consider removing this as form has its own validate method.
+      readonly validate: Field.Validate.Prop<ValueDef, Qualifier>;
     }
 
     export type Discriminated<
@@ -496,8 +499,6 @@ export namespace Field {
       valid: boolean;
 
       useValid: Field.Valid.Use.Prop<Qualifier>;
-
-      readonly validate: Validate.Prop<ValueDef, Qualifier>;
 
       addError: Field.AddError.Prop;
 

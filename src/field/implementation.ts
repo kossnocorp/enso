@@ -81,6 +81,9 @@ export class FieldImpl<Value> extends AtomImpl<Value> {
       this.trigger(change.field.blur, true);
       this.#customOnBlur?.(event);
     };
+
+    this.set = this.set.bind(this);
+    this.ref = this.ref.bind(this);
   }
 
   //#endregion

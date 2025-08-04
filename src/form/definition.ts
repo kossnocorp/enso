@@ -60,6 +60,8 @@ export declare class Form<Value> implements Form.Interface<Value> {
 
   get initial(): Atom.Value.Prop<Atom.Def<Value>>;
 
+  useCompute: Atom.Compute.Use.Prop<Atom.Def<Value>, Atom.Qualifier.Default>;
+
   //#endregion
 
   //#region Tree
@@ -69,6 +71,26 @@ export declare class Form<Value> implements Form.Interface<Value> {
   at: Atom.At.Prop<"field", "exact", Value, Atom.Qualifier.Default>;
 
   try: Atom.TryProp<
+    "field",
+    "exact",
+    Atom.Def<Value>,
+    Atom.Qualifier.Default,
+    Atom.Parent.Default
+  >;
+
+  //#endregion
+
+  //#region Transform
+
+  into: Atom.Proxy.Into.Prop<
+    "field",
+    "exact",
+    Atom.Def<Value>,
+    Atom.Qualifier.Default,
+    Atom.Parent.Default
+  >;
+
+  useInto: Atom.Proxy.Into.Use.Prop<
     "field",
     "exact",
     Atom.Def<Value>,
@@ -107,7 +129,7 @@ export declare class Form<Value> implements Form.Interface<Value> {
 
   useValid: Field.Valid.Use.Prop<Atom.Qualifier.Default>;
 
-  validate(validator: Field.Validator<Value>): Promise<void>;
+  validate(): Promise<void>;
 
   addError: Field.AddError.Prop;
 
@@ -156,6 +178,8 @@ export namespace Form {
 
     set(value: Value): void;
 
+    useCompute: Atom.Compute.Use.Prop<Atom.Def<Value>, Atom.Qualifier.Default>;
+
     //#endregion
 
     //#region Tree
@@ -174,6 +198,26 @@ export namespace Form {
 
     //#endregion
 
+    //#region Transform
+
+    into: Atom.Proxy.Into.Prop<
+      "field",
+      "exact",
+      Atom.Def<Value>,
+      Atom.Qualifier.Default,
+      Atom.Parent.Default
+    >;
+
+    useInto: Atom.Proxy.Into.Use.Prop<
+      "field",
+      "exact",
+      Atom.Def<Value>,
+      Atom.Qualifier.Default,
+      Atom.Parent.Default
+    >;
+
+    //#endregion
+
     //#region Events
 
     watch(callback: Atom.Watch.Callback<Atom.Def<Value>>): Atom.Unwatch;
@@ -182,6 +226,12 @@ export namespace Form {
       callback: Atom.Watch.Callback<Atom.Def<Value>>,
       deps: DependencyList,
     ): Atom.Unwatch;
+
+    //#endregion
+
+    //#region Validation
+
+    validate(): Promise<void>;
 
     //#endregion
   }
