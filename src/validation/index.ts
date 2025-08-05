@@ -6,7 +6,7 @@ export class ValidationTree {
   #errors: Field.Error[] = [];
   #tree: ValidationTree.Node = ValidationTree.node();
 
-  at(path: Enso.Path): Field.Error[] {
+  at(path: Atom.Path): Field.Error[] {
     let node = this.#tree;
     for (const key of path) {
       if (!node.children[key]) return [];
@@ -21,7 +21,7 @@ export class ValidationTree {
     );
   }
 
-  nested(path: Enso.Path): ValidationTree.ErrorsList {
+  nested(path: Atom.Path): ValidationTree.ErrorsList {
     let node = this.#tree;
     for (const key of path) {
       if (!node.children[key]) return [];
@@ -42,8 +42,8 @@ export class ValidationTree {
 
   static traverse(
     node: ValidationTree.Node,
-    callback: (path: Enso.Path, node: ValidationTree.Node) => void,
-    path: Enso.Path = [],
+    callback: (path: Atom.Path, node: ValidationTree.Node) => void,
+    path: Atom.Path = [],
   ): void {
     callback(path, node);
 
@@ -53,7 +53,7 @@ export class ValidationTree {
     });
   }
 
-  add(path: Enso.Path, error: Field.Error): ValidationTree.Index {
+  add(path: Atom.Path, error: Field.Error): ValidationTree.Index {
     const index = (this.#errors.push(error) - 1) as ValidationTree.Index;
 
     let node = this.#tree;
@@ -68,7 +68,7 @@ export class ValidationTree {
     return index;
   }
 
-  clear(path: Enso.Path): void {
+  clear(path: Atom.Path): void {
     let node = this.#tree;
     const pathErrors: ValidationTree.ErrorsMap[] = [];
     for (const key of path) {

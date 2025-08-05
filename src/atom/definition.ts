@@ -6,7 +6,6 @@ import type { Field } from "../field/definition.ts";
 import type { State } from "../state/index.ts";
 import type { Enso } from "../types.ts";
 import type { EnsoUtils as Utils } from "../utils.ts";
-import { E } from "vitest/dist/chunks/environment.d.cL3nLXbE.js";
 
 export declare class Atom<
     Kind extends Atom.Flavor.Kind,
@@ -199,7 +198,7 @@ export declare class Atom<
 export namespace Atom {
   //#region Basics
 
-  export type Path = readonly (keyof any)[];
+  export type Path = readonly (string | number)[];
 
   //#endregion
 
@@ -1601,7 +1600,7 @@ export namespace Atom {
         Variant extends Atom.Flavor.Variant,
         Value extends object,
       > {
-        <Key extends Enso.DetachableKeys<Value>>(
+        <Key extends ObjectDetachableKeys<Value>>(
           key: Key,
         ): Envelop<
           Kind,
@@ -1610,6 +1609,17 @@ export namespace Atom {
           { detachable: true }
         >;
       }
+
+      export type ObjectDetachableKeys<Value> = Exclude<
+        {
+          [Key in keyof Value]: Utils.IsStaticKey<Value, Key> extends true
+            ? Utils.IsOptionalKey<Value, Key> extends true
+              ? Key
+              : never
+            : Key;
+        }[keyof Value],
+        undefined
+      >;
     }
   }
 
