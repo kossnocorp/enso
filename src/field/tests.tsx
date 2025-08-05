@@ -3270,7 +3270,7 @@ describe("Field", () => {
         expect(ref.value).toBeUndefined();
       });
 
-      describe.skip("#at", () => {
+      describe("#at", () => {
         describe("primitive", () => {
           it("returns the undefined field as is if it's defined", () => {
             const field = new Field<string | number | undefined>(undefined);
@@ -3358,7 +3358,7 @@ describe("Field", () => {
         });
       });
 
-      describe.skip("#addError", () => {
+      describe("#addError", () => {
         it("adds errors to present fields", () => {
           const field = new Field<string | number | undefined>("hello");
           const ref = field.optional();
@@ -4171,7 +4171,7 @@ describe("Field", () => {
           expect(first.valid).toBe(true);
         });
 
-        it.skip("receives validation events through maybe refs", async () => {
+        it("receives validation events through maybe refs", async () => {
           const source = new Field<{
             user?: { name?: { first?: string; last?: string } };
           }>({});
@@ -4255,7 +4255,7 @@ describe("Field", () => {
           expect(first.valid).toBe(true);
         });
 
-        it.skip("receives add error events despited existing fields", async () => {
+        it("receives add error events despited existing fields", async () => {
           // 1. When source is {}
           const source1 = new Field<{
             name?: { first?: string; last?: string };
@@ -4338,7 +4338,7 @@ describe("Field", () => {
           expect(first2.valid).toBe(false);
         });
 
-        it.skip("receives clear error events despited existing fields", async () => {
+        it("receives clear error events despited existing fields", async () => {
           // 1. When source is {}
           const source1 = new Field<{
             name?: { first?: string; last?: string };
@@ -4425,7 +4425,7 @@ describe("Field", () => {
           expect(first2.valid).toBe(true);
         });
 
-        it.skip("delivers valid events to parallel proxy fields", async () => {
+        it("delivers valid events to parallel proxy fields", async () => {
           // 1. When source is {}
           const source1 = new Field<{
             name?: { first?: string; last?: string };
@@ -4510,7 +4510,7 @@ describe("Field", () => {
           expect(first2.valid).toBe(true);
         });
 
-        it.skip("listens to validation events through data updates", async () => {
+        it("listens to validation events through data updates", async () => {
           const source = new Field<{
             user?: { name?: { first?: string | undefined; last?: string } };
           }>({});

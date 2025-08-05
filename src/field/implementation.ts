@@ -12,10 +12,13 @@ import {
   structuralChanges,
 } from "../change/index.ts";
 import { useCallback } from "../hooks/index.ts";
+import { EnsoUtils as Utils } from "../utils.ts";
 import { ValidationTree } from "../validation/index.ts";
 import { Field } from "./definition.ts";
 
 export { FieldImpl as Field, FieldProxyImpl as FieldProxy };
+
+//#region Field
 
 export class FieldImpl<Value> extends AtomImpl<Value> {
   //#region Static
@@ -29,6 +32,10 @@ export class FieldImpl<Value> extends AtomImpl<Value> {
 
   static proxy(field: any, intoMapper: any, fromMapper: any) {
     return new FieldProxyImpl(field, intoMapper, fromMapper);
+  }
+
+  static optional(field: FieldImpl<unknown>) {
+    return new FieldOptionalImpl({ type: "direct", field: field as any });
   }
 
   static Component<Value>(props: Field.Component.Props<Value>) {
@@ -48,6 +55,16 @@ export class FieldImpl<Value> extends AtomImpl<Value> {
     };
 
     return props.render(control as any, meta);
+  }
+
+  static normalizeError(error: Field.Error.Type) {
+    return typeof error === "string" ? { message: error } : error;
+  }
+
+  static errorChangesFor(wasValid: boolean) {
+    let changes = change.field.errors;
+    if (wasValid) changes |= change.field.invalid;
+    return changes;
   }
 
   //#endregion
@@ -296,8 +313,8 @@ export class FieldImpl<Value> extends AtomImpl<Value> {
   }
 
   addError(error: any) {
-    const changes = this.#errorChangesFor(this.valid);
-    this.validationTree.add(this.path, this.#normalizeError(error));
+    const changes = FieldImpl.errorChangesFor(this.valid);
+    this.validationTree.add(this.path, FieldImpl.normalizeError(error));
     this.events.trigger(this.path, changes);
   }
 
@@ -321,16 +338,6 @@ export class FieldImpl<Value> extends AtomImpl<Value> {
       if (!path) return;
       this.events.trigger(path, clearChanges);
     });
-  }
-
-  #normalizeError(error: any) {
-    return typeof error === "string" ? { message: error } : error;
-  }
-
-  #errorChangesFor(wasValid: any) {
-    let changes = change.field.errors;
-    if (wasValid) changes |= change.field.invalid;
-    return changes;
   }
 
   #validation = undefined;
@@ -389,6 +396,10 @@ export class FieldImpl<Value> extends AtomImpl<Value> {
   //#endregion
 }
 
+//#endregion
+
+//#region FieldProxy
+
 export class FieldProxyImpl<Value> extends FieldImpl<Value> {
   #source: FieldImpl<unknown>;
   #brand = Symbol();
@@ -397,8 +408,8 @@ export class FieldProxyImpl<Value> extends FieldImpl<Value> {
   #unsubs: Atom.Unwatch[] = [];
 
   constructor(source: FieldImpl<unknown>, into: any, from: any) {
-    const payload = into(source.value, undefined);
-    super(payload, { source });
+    const value = into(source.value, undefined);
+    super(value, { source });
 
     this.#source = source;
     this.#into = into;
@@ -482,3 +493,113 @@ export class FieldProxyImpl<Value> extends FieldImpl<Value> {
 
   //#endregion
 }
+
+//#endregion
+
+//#region FieldOptional
+
+export class FieldOptionalImpl<Value> extends FieldImpl<Value> {
+  //#region Static
+
+  static instances = new WeakMap<
+    FieldImpl<unknown>,
+    FieldOptionalImpl<unknown>
+  >();
+
+  static instance(field: FieldImpl<unknown>): FieldOptionalImpl<unknown> {
+    let ref = FieldOptionalImpl.instances.get(field);
+    if (!ref) {
+      ref = new FieldOptionalImpl({ type: "direct", field });
+      FieldOptionalImpl.instances.set(field, ref);
+    }
+    return ref;
+  }
+
+  //#endregion
+
+  #target: Atom.BareOptionalTarget<FieldImpl<unknown>>;
+
+  constructor(target: Atom.BareOptionalTarget<FieldImpl<unknown>>) {
+    super(FieldOptionalImpl.value(target) as any);
+    this.#target = target;
+  }
+
+  override get value(): Value {
+    return FieldOptionalImpl.value(this.#target) as any;
+  }
+
+  //#region Value
+
+  static value(target: Atom.BareOptionalTarget<FieldImpl<unknown>>) {
+    if (target.type !== "direct") return undefined;
+    return target.field.value;
+  }
+
+  //#endregion
+
+  //#region Tree
+
+  override at<Key extends keyof Utils.NonNullish<Value>>(key: Key): any {
+    let target: Atom.BareOptionalTarget<FieldImpl<unknown>>;
+    if (this.#target.type === "direct") {
+      const field = (this.#target.field.at as any)(key as any);
+      target = field
+        ? ({
+            type: "direct",
+            field,
+          } as any)
+        : { type: "shadow", closest: this.#target.field, path: [key] };
+    } else {
+      target = {
+        type: "shadow",
+        closest: this.#target.closest,
+        path: [...this.#target.path, String(key)],
+      };
+    }
+
+    return new FieldOptionalImpl(target);
+  }
+
+  override try(...[key]: any[]): any {
+    // If it is a shadow field, there can't be anything to try.
+    if (this.#target.type !== "direct") return;
+    const field = this.#target.field.try(key);
+    return field && FieldOptionalImpl.instance(field);
+  }
+
+  //#endregion
+
+  //#region Validation
+
+  override addError(error: Field.Error | string): void {
+    const path = this.#targetPath();
+    const root = this.#targetRoot();
+
+    // If there are any nested errors at this path, field is not valid.
+    const wasValid = !root.validationTree.nested(path).length;
+    const changes = FieldImpl.errorChangesFor(wasValid);
+
+    root.validationTree.add(path, FieldImpl.normalizeError(error));
+    root.events.trigger(path, changes);
+  }
+
+  //#endregion
+
+  //#region Optional
+
+  #targetPath(): Atom.Path {
+    return this.#target.type === "direct"
+      ? this.#target.field.path
+      : [...this.#target.closest.path, ...this.#target.path];
+  }
+
+  #targetRoot(): FieldImpl<any> {
+    return this.#target.type === "direct"
+      ? (this.#target.field.root as any)
+      : (this.#target.closest.root as any);
+  }
+
+  //#endregion
+}
+
+//#endregion
