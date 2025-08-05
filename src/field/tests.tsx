@@ -2977,6 +2977,22 @@ describe("Field", () => {
           });
         });
       });
+
+      describe(".remove", () => {
+        it("removes the field", () => {
+          const field = new Field<UserName>({ first: "Sasha", last: "Koss" });
+          field.$.last.self.remove();
+          expect(field.value).toEqual({ first: "Sasha" });
+        });
+
+        it("returns the removed field", () => {
+          const field = new Field<UserName>({ first: "Sasha", last: "Koss" });
+          const lastField = field.$.last;
+          const removedField = lastField.self.remove();
+          expect(removedField).toBe(field.$.last);
+          expect(removedField.value).toBe(undefined);
+        });
+      });
     });
   });
 
