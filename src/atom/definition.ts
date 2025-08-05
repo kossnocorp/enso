@@ -103,14 +103,6 @@ export declare class Atom<
 
   filter: Atom.FilterProp<Kind, Variant, ValueDef, Qualifier>;
 
-  useCollection: Atom.Collection.Use.Prop<
-    Kind,
-    Variant,
-    ValueDef,
-    Qualifier,
-    Parent
-  >;
-
   insert: Atom.Insert.Prop<Kind, Variant, ValueDef, Qualifier, Parent>;
 
   push: Atom.Push.Prop<Kind, Variant, ValueDef, Qualifier>;
@@ -152,6 +144,8 @@ export declare class Atom<
   useWatch: Atom.Watch.Use.Prop<ValueDef, Qualifier>;
 
   trigger: Atom.Trigger.Prop<Qualifier>;
+
+  useBind: Atom.BindUseProp<Kind, Variant, ValueDef, Qualifier, Parent>;
 
   //#endregion
 
@@ -1000,14 +994,6 @@ export namespace Atom {
 
     filter: FilterProp<Kind, Variant, ValueDef, Qualifier>;
 
-    useCollection: Collection.Use.Prop<
-      Kind,
-      Variant,
-      ValueDef,
-      Qualifier,
-      Parent
-    >;
-
     //#endregion
 
     //#region Events
@@ -1019,6 +1005,8 @@ export namespace Atom {
     useWatch: Watch.Use.Prop<ValueDef, Qualifier>;
 
     trigger: Trigger.Prop<Qualifier>;
+
+    useBind: BindUseProp<Kind, Variant, ValueDef, Qualifier, Parent>;
 
     //#endregion
 
@@ -2016,39 +2004,6 @@ export namespace Atom {
     }
 
     //#endregion
-
-    export namespace Use {
-      export type Prop<
-        Kind extends Atom.Flavor.Kind,
-        Variant extends Atom.Flavor.Variant,
-        ValueDef extends Def.Constraint,
-        Qualifier extends Atom.Qualifier.Constraint,
-        Parent extends Atom.Parent.Constraint<ValueDef>,
-      > = Qualifier.Ref.DisableFor<
-        Qualifier,
-        Fn<Kind, Variant, ValueDef, Qualifier, Parent>
-      >;
-
-      export type Fn<
-        Kind extends Atom.Flavor.Kind,
-        Variant extends Atom.Flavor.Variant,
-        ValueDef extends Def.Constraint,
-        Qualifier extends Atom.Qualifier.Constraint,
-        Parent extends Atom.Parent.Constraint<ValueDef>,
-      > = ValueDef["read"] extends infer Value
-        ? Value extends object
-          ? Value extends Utils.BrandedPrimitive
-            ? undefined
-            : () => Envelop<
-                Kind,
-                Variant,
-                Atom.Def<Value>,
-                Qualifier & { bound: true },
-                Parent
-              >
-          : undefined
-        : never;
-    }
   }
 
   export type ForEachProp<
@@ -2443,6 +2398,31 @@ export namespace Atom {
   }
 
   //#endregion
+
+  //#endregion
+
+  //#region Bind
+
+  export type BindUseProp<
+    Kind extends Atom.Flavor.Kind,
+    Variant extends Atom.Flavor.Variant,
+    ValueDef extends Def.Constraint,
+    Qualifier extends Atom.Qualifier.Constraint,
+    Parent extends Atom.Parent.Constraint<ValueDef>,
+  > = Qualifier.Ref.DisableFor<
+    Qualifier,
+    BindUseFn<Kind, Variant, ValueDef, Qualifier, Parent>
+  >;
+
+  export interface BindUseFn<
+    Kind extends Atom.Flavor.Kind,
+    Variant extends Atom.Flavor.Variant,
+    ValueDef extends Def.Constraint,
+    Qualifier extends Atom.Qualifier.Constraint,
+    Parent extends Atom.Parent.Constraint<ValueDef>,
+  > {
+    (): Envelop<Kind, Variant, ValueDef, Qualifier & { bound: true }, Parent>;
+  }
 
   //#endregion
 
