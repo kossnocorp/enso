@@ -3900,12 +3900,12 @@ const brandedPrim = new Field({} as Branded<string>);
 }
 //#endregion
 
-//#region Field#useBind
+//#region Field#useCollection
 {
   // Readonly array
   {
     const field = new Field({} as readonly string[]);
-    const result = field.useBind();
+    const result = field.useCollection();
     result satisfies Field<readonly string[], "bound">;
     // @ts-expect-error
     result satisfies Field<string[], "bound">;
@@ -3916,7 +3916,7 @@ const brandedPrim = new Field({} as Branded<string>);
   // Tuple
   {
     const field = new Field({} as ["a", "b", "c"]);
-    const result = field.useBind();
+    const result = field.useCollection();
     result satisfies Field<["a", "b", "c"], "bound">;
     // @ts-expect-error
     result satisfies Field<string[], "bound">;
@@ -3927,7 +3927,7 @@ const brandedPrim = new Field({} as Branded<string>);
   // Array
   {
     const field = new Field<string[]>([]);
-    const result = field.useBind();
+    const result = field.useCollection();
     result satisfies Field<string[], "bound">;
     // @ts-expect-error
     result satisfies Field<number[], "bound">;
@@ -3938,7 +3938,7 @@ const brandedPrim = new Field({} as Branded<string>);
   // Object
   {
     const field = new Field({} as Hello);
-    const result = field.useBind();
+    const result = field.useCollection();
     result satisfies Field<Hello, "bound">;
     // @ts-expect-error
     result satisfies Field<Blah, "bound">;
@@ -3949,7 +3949,7 @@ const brandedPrim = new Field({} as Branded<string>);
   // Record
   {
     const field = new Field({} as Record<string, string | boolean>);
-    const result = field.useBind();
+    const result = field.useCollection();
     result satisfies Field<Record<string, string | boolean>, "bound">;
     // @ts-expect-error
     result satisfies Field<Record<string, string>, "bound">;
@@ -3960,7 +3960,7 @@ const brandedPrim = new Field({} as Branded<string>);
   // Qualifier
   {
     const field = {} as Field<Hello, "detachable">;
-    const result = field.useBind();
+    const result = field.useCollection();
     result satisfies Field<Hello, "bound" | "detachable">;
     // @ts-expect-error
     result satisfies Field<Hello, "bound" | "tried">;
@@ -3973,50 +3973,79 @@ const brandedPrim = new Field({} as Branded<string>);
   // Primitive
   {
     const field = new Field("hello");
-    const result = field.useBind();
-    ty(result).is(ty<Field<string, "bound">>());
+
+    field.useCollection satisfies undefined;
+    // @ts-expect-error
+    field.useCollection();
+    // @ts-expect-error
+    field.useCollection?.();
   }
 
   // Branded primitive
   {
     const field = new Field({} as Branded<string>);
-    const result = field.useBind();
-    ty(result).is(ty<Field<Branded<string>, "bound">>());
+
+    field.useCollection satisfies undefined;
+    // @ts-expect-error
+    field.useCollection();
+    // @ts-expect-error
+    field.useCollection?.();
   }
 
   // Union
   {
     // Value union
     {
-      const result = unionValue.useBind();
-      ty(result).is(ty<Field<Hello | Blah, "bound">>());
+      const result = unionValue.useCollection();
+
+      result satisfies Field<Hello, "bound"> | Field<Blah, "bound">;
+      // @ts-expect-error
+      result.any;
     }
 
     // Field union
     {
-      const result = unionField.useBind();
-      ty(result).is(ty<Field<Hello, "bound"> | Field<Blah, "bound">>());
+      const result = unionField.useCollection();
+
+      result satisfies Field<Hello, "bound"> | Field<Blah, "bound">;
+      // @ts-expect-error
+      result.any;
     }
 
     // Undefined
     {
       const field = {} as Field<string[] | undefined>;
-      const result = field.useBind();
-      ty(result).is(ty<Field<string[] | undefined, "bound">>());
+
+      const result = field.useCollection?.();
+      result satisfies Field<string[], "bound"> | undefined;
+      // @ts-expect-error
+      result satisfies undefined;
+      // @ts-expect-error
+      field.useCollection();
     }
 
     // Primitive
     {
       const field = {} as Field<string[] | number>;
-      const result = field.useBind();
-      ty(result).is(ty<Field<string[] | number, "bound">>());
+
+      const result = field.useCollection?.();
+      result satisfies Field<string[], "bound"> | undefined;
+      // @ts-expect-error
+      result satisfies undefined;
+      // @ts-expect-error
+      field.useCollection();
     }
 
     // Branded primitive
     {
       const field = {} as Field<string[] | Branded<number>>;
-      const result = field.useBind();
-      ty(result).is(ty<Field<string[] | Branded<number>, "bound">>());
+
+      const result = field.useCollection?.();
+      result satisfies Field<string[], "bound"> | undefined;
+      // @ts-expect-error
+      result satisfies undefined;
+      // @ts-expect-error
+      field.useCollection();
     }
   }
 
@@ -4025,8 +4054,11 @@ const brandedPrim = new Field({} as Branded<string>);
     // Supported
     {
       const field = ({} as Field<string[]>).shared<[string[], string[]]>();
-      const result = field.useBind();
-      ty(result).is(ty<Field<string[], "bound">>());
+      const result = field.useCollection();
+
+      result satisfies Field<string[], "bound">;
+      // @ts-expect-error
+      result.any;
     }
 
     // Unsupported
@@ -4034,17 +4066,25 @@ const brandedPrim = new Field({} as Branded<string>);
       const field = ({} as Field<string[]>).shared<
         [string[], string[] | undefined]
       >();
-      const result = field.useBind();
-      ty(result).is(
-        ty<Field.Shared<[string[], string[] | undefined], "bound">>(),
-      );
+
+      const result = field.useCollection?.();
+      result satisfies Field<string[], "bound"> | undefined;
+      // @ts-expect-error
+      result satisfies undefined;
+      // @ts-expect-error
+      field.useCollection();
     }
   }
 
   // Ref
   {
     const field = {} as Field.Ref<string>;
-    ty(field.useBind).is.undefined();
+
+    field.useCollection satisfies undefined;
+    // @ts-expect-error
+    field.useCollection();
+    // @ts-expect-error
+    field.useCollection?.();
   }
 }
 //#endregion

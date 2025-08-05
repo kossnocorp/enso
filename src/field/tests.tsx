@@ -2778,14 +2778,14 @@ describe("Field", () => {
         });
       });
 
-      describe("#useBind", () => {
+      describe("#useCollection", () => {
         beforeEach(cleanup);
 
         it("allows to bind object field changes to the component", async () => {
           function Component() {
             const count = useRenderCount();
             const field = Field.use<UserName>({ first: "Alexander" }, []);
-            const name = field.useBind();
+            const name = field.useCollection();
 
             return (
               <div>
@@ -2823,7 +2823,7 @@ describe("Field", () => {
               [],
             );
             const [index, setIndex] = useState(0);
-            field.at(index).useBind();
+            field.at(index).useCollection?.();
 
             return (
               <div>
@@ -2871,7 +2871,7 @@ describe("Field", () => {
               [],
             );
             const [index, setIndex] = useState(0);
-            const _ = field.at(index).useBind();
+            const _ = field.at(index).useCollection?.();
 
             return (
               <div>
@@ -5482,7 +5482,7 @@ describe("Field", () => {
         function Component(props: ComponentProps) {
           const count = useRenderCount();
           const field = Field.use({ names: props.names }, []);
-          const names = field.$.names.useBind();
+          const names = field.$.names.useCollection();
 
           return (
             <div>
@@ -6645,7 +6645,7 @@ function UserComponent(props: UserComponentProps) {
   const count = useRenderCount();
   const user = props.user;
   // Makes the component re-render when the name shape changes
-  const name = user.$.name.useBind();
+  const name = user.$.name.useCollection();
 
   return (
     <div>
