@@ -181,7 +181,7 @@ export class AtomInternalArray<
   }
 
   // @ts-expect-error
-  #item(index) {
+  #item(index): AtomImpl<Value[number]> {
     const item = this.#children[index];
     if (item) return item;
 
@@ -192,7 +192,7 @@ export class AtomInternalArray<
   // @ts-expect-error
   try(index) {
     if (index !== undefined && index !== null) {
-      return this.#item(index)?.try();
+      return this.#item(index)?.self.try();
     } else {
       return this.external;
     }

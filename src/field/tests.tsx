@@ -3170,6 +3170,13 @@ describe("Field", () => {
     });
 
     describe("#try", () => {
+      describe("primitive", () => {
+        it("is undefined", () => {
+          const field = new Field(42);
+          expect(field.try).toBe(undefined);
+        });
+      });
+
       describe("object", () => {
         it("returns the field if it exists", () => {
           const field = new Field<Record<string, number>>({ num: 42 });

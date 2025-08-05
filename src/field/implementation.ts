@@ -521,7 +521,10 @@ export class FieldOptionalImpl<Value> extends FieldImpl<Value> {
 
   constructor(target: Atom.BareOptionalTarget<FieldImpl<unknown>>) {
     super(FieldOptionalImpl.value(target) as any);
+
     this.#target = target;
+
+    this.#try = this.#try.bind(this);
   }
 
   override get value(): Value {
@@ -560,11 +563,19 @@ export class FieldOptionalImpl<Value> extends FieldImpl<Value> {
     return new FieldOptionalImpl(target);
   }
 
-  override try(...[key]: any[]): any {
+  #try: Atom.BareTry<AtomImpl<Value[keyof Value]>, keyof Value> = (key) => {
     // If it is a shadow field, there can't be anything to try.
     if (this.#target.type !== "direct") return;
-    const field = this.#target.field.try(key);
-    return field && FieldOptionalImpl.instance(field);
+    // @ts-expect-error
+    const field = this.#target.field.try?.(key);
+    return field && (FieldOptionalImpl.instance(field as any) as any);
+  };
+
+  override get try():
+    | Atom.BareTry<AtomImpl<Value[keyof Value]>, keyof Value>
+    | undefined
+    | null {
+    return this.#try;
   }
 
   //#endregion

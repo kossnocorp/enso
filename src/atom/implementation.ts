@@ -93,6 +93,8 @@ export class AtomImpl<Value> {
 
     this.events.add(this.path, this);
 
+    this.#try = this.#try.bind(this);
+
     // this.set = this.set.bind(this);
     // this.ref = this.ref.bind(this);
   }
@@ -376,8 +378,15 @@ export class AtomImpl<Value> {
     // );
   }
 
-  try(key: any) {
+  #try: Atom.BareTry<AtomImpl<Value[keyof Value]>, keyof Value> = (key) => {
     return this.internal.try(key);
+  };
+
+  get try():
+    | Atom.BareTry<AtomImpl<Value[keyof Value]>, keyof Value>
+    | undefined
+    | null {
+    if (this.value && typeof this.value === "object") return this.#try;
   }
 
   get path() {
