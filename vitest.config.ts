@@ -7,5 +7,6 @@ export default defineConfig({
     restoreMocks: true,
     environment: "happy-dom",
     testTimeout: 100,
+    hideSkippedTests: true,
   },
 });
