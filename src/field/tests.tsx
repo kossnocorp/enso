@@ -1467,7 +1467,7 @@ describe("Field", () => {
     describe("#useDirty", () => {
       beforeEach(cleanup);
 
-      it.skip("allows to listen to field dirty", async () => {
+      it("allows to listen to field dirty", async () => {
         function Component() {
           const count = useRenderCount();
           const field = Field.use({ name: { first: "Alexander" } }, []);
@@ -1492,12 +1492,12 @@ describe("Field", () => {
         expect(screen.getByTestId("dirty").textContent).toBe("false");
 
         await act(() => {
-          fireEvent.change(screen.getByTestId("name-first-input"), {
+          fireEvent.input(screen.getByTestId("name-first-input"), {
             target: { value: "Sa" },
           });
         });
         await act(() => {
-          fireEvent.change(screen.getByTestId("name-first-input"), {
+          fireEvent.input(screen.getByTestId("name-first-input"), {
             target: { value: "Sasha" },
           });
         });
@@ -1506,7 +1506,7 @@ describe("Field", () => {
         expect(screen.getByTestId("render-dirty").textContent).toBe("2");
 
         await act(() => {
-          fireEvent.change(screen.getByTestId("name-first-input"), {
+          fireEvent.input(screen.getByTestId("name-first-input"), {
             target: { value: "Alexander" },
           });
         });
@@ -1645,7 +1645,7 @@ describe("Field", () => {
         expect(screen.getByTestId("render-dirty").textContent).toBe("3");
       });
 
-      it.skip("updates on reset", async () => {
+      it("updates on reset", async () => {
         function Component() {
           const count = useRenderCount();
           const field = Field.use({ name: { first: "Alexander" } }, []);
@@ -1672,12 +1672,12 @@ describe("Field", () => {
         expect(screen.getByTestId("dirty").textContent).toBe("false");
 
         await act(() => {
-          fireEvent.change(screen.getByTestId("name-first-input"), {
+          fireEvent.input(screen.getByTestId("name-first-input"), {
             target: { value: "Sa" },
           });
         });
         await act(() => {
-          fireEvent.change(screen.getByTestId("name-first-input"), {
+          fireEvent.input(screen.getByTestId("name-first-input"), {
             target: { value: "Sasha" },
           });
         });
@@ -1691,7 +1691,7 @@ describe("Field", () => {
         expect(screen.getByTestId("render-dirty").textContent).toBe("3");
       });
 
-      it.skip("updates on commit", async () => {
+      it("updates on commit", async () => {
         function Component() {
           const count = useRenderCount();
           const field = Field.use({ name: { first: "Alexander" } }, []);
@@ -1718,12 +1718,12 @@ describe("Field", () => {
         expect(screen.getByTestId("dirty").textContent).toBe("false");
 
         await act(() => {
-          fireEvent.change(screen.getByTestId("name-first-input"), {
+          fireEvent.input(screen.getByTestId("name-first-input"), {
             target: { value: "Sa" },
           });
         });
         await act(() => {
-          fireEvent.change(screen.getByTestId("name-first-input"), {
+          fireEvent.input(screen.getByTestId("name-first-input"), {
             target: { value: "Sasha" },
           });
         });
@@ -4813,7 +4813,7 @@ describe("Field", () => {
         expect(callback).toHaveBeenCalledWith({ data: 42 }, { data: "hello" });
       });
 
-      it.skip("allows to decompose union field", async () => {
+      it("allows to decompose union field", async () => {
         function Component() {
           const count = useRenderCount();
           const address = Field.use<Address>(
@@ -4864,7 +4864,7 @@ describe("Field", () => {
         expect(screen.getByTestId("name-0").textContent).toBe("1Alexander");
 
         await act(() => {
-          fireEvent.change(screen.getByTestId("input-name-first"), {
+          fireEvent.input(screen.getByTestId("input-name-first"), {
             target: { value: "Sasha" },
           });
         });
@@ -5244,7 +5244,7 @@ describe("Field", () => {
         expect(props.name).toEqual(".");
       });
 
-      it.skip("synchronizes input with the state", async () => {
+      it("synchronizes input with the state", async () => {
         function Component() {
           const count = useRenderCount();
           const field = Field.use<User>({ name: { first: "Alexander" } }, []);
@@ -5277,7 +5277,7 @@ describe("Field", () => {
         ).toBe("Alexander");
 
         await act(() => {
-          fireEvent.change(screen.getByTestId("name-first-input"), {
+          fireEvent.input(screen.getByTestId("name-first-input"), {
             target: { value: "Alex" },
           });
         });
@@ -5297,7 +5297,7 @@ describe("Field", () => {
         expect(screen.getByTestId("render-input").textContent).toBe("1");
       });
 
-      it.skip("synchronizes textarea with the state", async () => {
+      it("synchronizes textarea with the state", async () => {
         function Component() {
           const count = useRenderCount();
           const field = Field.use<User>({ name: { first: "Alexander" } }, []);
@@ -5330,7 +5330,7 @@ describe("Field", () => {
         ).toBe("Alexander");
 
         await act(() => {
-          fireEvent.change(screen.getByTestId("name-first-input"), {
+          fireEvent.input(screen.getByTestId("name-first-input"), {
             target: { value: "Alex" },
           });
         });
@@ -5350,7 +5350,7 @@ describe("Field", () => {
         expect(screen.getByTestId("render-input").textContent).toBe("1");
       });
 
-      it.skip("allows to pass ref and onBlur props", async () => {
+      it("allows to pass ref and onBlur props", async () => {
         const refSpy = vi.fn();
         const onBlurSpy = vi.fn();
 
@@ -5397,7 +5397,7 @@ describe("Field", () => {
         ).toBe("Alexander");
 
         await act(() => {
-          fireEvent.change(screen.getByTestId("name-first-input"), {
+          fireEvent.input(screen.getByTestId("name-first-input"), {
             target: { value: "Alex" },
           });
         });
@@ -5450,7 +5450,7 @@ describe("Field", () => {
         );
 
         await act(() => {
-          fireEvent.change(screen.getByTestId("name-first-0-input"), {
+          fireEvent.input(screen.getByTestId("name-first-0-input"), {
             target: { value: "Sasha" },
           });
         });
@@ -5462,7 +5462,7 @@ describe("Field", () => {
         expect(screen.getByTestId("render-name-0").textContent).toBe("2");
 
         await act(() => {
-          fireEvent.change(screen.getByTestId("name-last-0-input"), {
+          fireEvent.input(screen.getByTestId("name-last-0-input"), {
             target: { value: "Koss" },
           });
         });
@@ -5474,7 +5474,7 @@ describe("Field", () => {
         expect(screen.getByTestId("render-name-0").textContent).toBe("3");
       });
 
-      it.skip("allows to control array field", async () => {
+      it("allows to control array field", async () => {
         interface ComponentProps {
           names: UserName[];
         }
@@ -5492,8 +5492,7 @@ describe("Field", () => {
                 <div data-testid={`name-${index}`} key={name.id}>
                   <UserNameComponent name={name} />
                   <button
-                    // @ts-ignore -- TODO
-                    onClick={() => name.Remove()}
+                    onClick={() => name.self.remove()}
                     data-testid={`remove-${index}`}
                   >
                     Remove
@@ -5509,12 +5508,12 @@ describe("Field", () => {
         render(<Component names={[{ first: "Alexander" }]} />);
 
         await act(() => {
-          fireEvent.change(screen.getByTestId("input-name-first"), {
+          fireEvent.input(screen.getByTestId("input-name-first"), {
             target: { value: "Sasha" },
           });
         });
         await act(() => {
-          fireEvent.change(screen.getByTestId("input-name-last"), {
+          fireEvent.input(screen.getByTestId("input-name-last"), {
             target: { value: "Koss" },
           });
         });
@@ -5569,7 +5568,7 @@ describe("Field", () => {
         ).toBe("Alexander");
 
         await act(() => {
-          fireEvent.change(screen.getByTestId("name-first-input"), {
+          fireEvent.input(screen.getByTestId("name-first-input"), {
             target: { value: "Alex" },
           });
         });
@@ -5762,7 +5761,7 @@ describe("Field", () => {
         ).toBe("Alexander");
 
         await act(() => {
-          fireEvent.change(screen.getByTestId("name-input"), {
+          fireEvent.input(screen.getByTestId("name-input"), {
             target: { value: "A." },
           });
         });

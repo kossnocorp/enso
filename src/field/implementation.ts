@@ -210,8 +210,8 @@ export class FieldImpl<Value> extends AtomImpl<Value> {
 
     return {
       name: this.name,
-      ref: (this as any).ref,
-      onBlur: (this as any).onBlur,
+      ref: this.ref,
+      onBlur: this.#onBlur,
     };
   }
 
