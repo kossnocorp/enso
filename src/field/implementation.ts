@@ -114,8 +114,8 @@ export class FieldImpl<Value> extends AtomImpl<Value> {
 
     return useAtomHook({
       enable,
-      // @ts-ignore
-      atom: this as FieldOld<any>,
+      // @ts-expect-error
+      atom: this,
       getValue,
     }) as any;
   }

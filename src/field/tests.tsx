@@ -65,6 +65,178 @@ describe("Field", () => {
         );
       }
     });
+
+    describe(".useEnsure", () => {
+      beforeEach(cleanup);
+
+      it("allows to ensure presence of a field", async () => {
+        function Component() {
+          const count = useRenderCount();
+          const [field, setField] = useState<Field<string> | undefined>();
+          const actualField = Field.use("Hello!", []);
+          const ensuredField = Field.useEnsure(field);
+          // eslint-disable-next-line react-hooks/exhaustive-deps
+          const dummyField = useMemo(() => ensuredField, []);
+          const fieldValue = ensuredField.useValue();
+          const dummyValue = dummyField.useValue();
+
+          return (
+            <div>
+              <div data-testid="render-ensure">{count}</div>
+
+              <button onClick={() => setField(actualField)}>Set actual</button>
+
+              <button onClick={() => dummyField.set("Hi!")}>
+                Update dummy
+              </button>
+
+              <div data-testid="ensured-value">{String(fieldValue)}</div>
+              <div data-testid="dummy-value">{String(dummyValue)}</div>
+
+              <div data-testid="actual-id">{actualField.id}</div>
+              <div data-testid="ensured-id">{ensuredField.id}</div>
+              <div data-testid="dummy-id">{dummyField.id}</div>
+            </div>
+          );
+        }
+
+        render(<Component />);
+
+        expect(screen.getByTestId("ensured-value").textContent).toBe(
+          "undefined",
+        );
+        expect(screen.getByTestId("dummy-value").textContent).toBe("undefined");
+
+        const actualId1 = screen.getByTestId("actual-id").textContent;
+        const ensuredId1 = screen.getByTestId("ensured-id").textContent;
+        const dummyId1 = screen.getByTestId("dummy-id").textContent;
+
+        expect(ensuredId1).toBe(dummyId1);
+        expect(actualId1).not.toBe(ensuredId1);
+
+        expect(screen.getByTestId("render-ensure").textContent).toBe("1");
+
+        await act(() => screen.getByText("Set actual").click());
+
+        expect(screen.getByTestId("ensured-value").textContent).toBe("Hello!");
+        expect(screen.getByTestId("dummy-value").textContent).toBe("undefined");
+
+        const actualId2 = screen.getByTestId("actual-id").textContent;
+        const ensuredId2 = screen.getByTestId("ensured-id").textContent;
+        const dummyId2 = screen.getByTestId("dummy-id").textContent;
+
+        expect(ensuredId2).toBe(actualId2);
+        expect(actualId2).not.toBe(dummyId2);
+        expect(dummyId2).toBe(dummyId1);
+
+        expect(screen.getByTestId("render-ensure").textContent).toBe("2");
+
+        await act(() => screen.getByText("Update dummy").click());
+
+        expect(screen.getByTestId("ensured-value").textContent).toBe("Hello!");
+        expect(screen.getByTestId("dummy-value").textContent).toBe("undefined");
+
+        const dummyId3 = screen.getByTestId("dummy-id").textContent;
+
+        expect(dummyId3).toBe(dummyId2);
+
+        expect(screen.getByTestId("render-ensure").textContent).toBe("2");
+      });
+
+      it("allows to pass falsy values", async () => {
+        function Component() {
+          const field = Field.useEnsure(
+            false as unknown as Field<string> | false,
+          );
+          const value = field.useValue();
+
+          return (
+            <div>
+              <div data-testid="value">{String(value)}</div>
+            </div>
+          );
+        }
+
+        render(<Component />);
+
+        expect(screen.getByTestId("value").textContent).toBe("undefined");
+      });
+
+      it("allows to map nested field", async () => {
+        function Component() {
+          const count = useRenderCount();
+          const [field, setField] = useState<
+            Field<{ hello: string }> | undefined
+          >();
+          const actualField = Field.use({ hello: "Hello!" }, []);
+          const ensuredField = Field.useEnsure(field, (f) => f.$.hello);
+          const dummyField = useMemo(() => ensuredField, []);
+          const fieldValue = ensuredField.useValue();
+          const dummyValue = dummyField.useValue();
+
+          return (
+            <div>
+              <div data-testid="render-ensure">{count}</div>
+
+              <button onClick={() => setField(actualField)}>Set actual</button>
+
+              <button onClick={() => dummyField.set("Hi!")}>
+                Update dummy
+              </button>
+
+              <div data-testid="ensured-value">{String(fieldValue)}</div>
+              <div data-testid="dummy-value">{String(dummyValue)}</div>
+
+              <div data-testid="actual-id">{actualField.$.hello.id}</div>
+              <div data-testid="ensured-id">{ensuredField.id}</div>
+              <div data-testid="dummy-id">{dummyField.id}</div>
+            </div>
+          );
+        }
+
+        render(<Component />);
+
+        expect(screen.getByTestId("ensured-value").textContent).toBe(
+          "undefined",
+        );
+        expect(screen.getByTestId("dummy-value").textContent).toBe("undefined");
+
+        const actualId1 = screen.getByTestId("actual-id").textContent;
+        const ensuredId1 = screen.getByTestId("ensured-id").textContent;
+        const dummyId1 = screen.getByTestId("dummy-id").textContent;
+
+        expect(ensuredId1).toBe(dummyId1);
+        expect(actualId1).not.toBe(ensuredId1);
+
+        expect(screen.getByTestId("render-ensure").textContent).toBe("1");
+
+        await act(() => screen.getByText("Set actual").click());
+
+        expect(screen.getByTestId("ensured-value").textContent).toBe("Hello!");
+        expect(screen.getByTestId("dummy-value").textContent).toBe("undefined");
+
+        const actualId2 = screen.getByTestId("actual-id").textContent;
+        const ensuredId2 = screen.getByTestId("ensured-id").textContent;
+        const dummyId2 = screen.getByTestId("dummy-id").textContent;
+
+        expect(ensuredId2).toBe(actualId2);
+        expect(actualId2).not.toBe(dummyId2);
+        expect(dummyId2).toBe(dummyId1);
+
+        expect(screen.getByTestId("render-ensure").textContent).toBe("2");
+
+        await act(() => screen.getByText("Update dummy").click());
+
+        expect(screen.getByTestId("ensured-value").textContent).toBe("Hello!");
+        expect(screen.getByTestId("dummy-value").textContent).toBe("undefined");
+
+        const dummyId3 = screen.getByTestId("dummy-id").textContent;
+
+        expect(dummyId3).toBe(dummyId2);
+
+        expect(screen.getByTestId("render-ensure").textContent).toBe("2");
+      });
+    });
   });
 
   describe("instance", () => {
@@ -4447,7 +4619,7 @@ describe("Field", () => {
     describe("#useInto", () => {
       beforeEach(cleanup);
 
-      it.skip("allows to compute field", async () => {
+      it("allows to compute field", async () => {
         function Component() {
           const count = useRenderCount();
           const field = Field.use({ message: "Hello" }, []);
@@ -4491,7 +4663,7 @@ describe("Field", () => {
         expect(screen.getByTestId("render-codes").textContent).toBe("3");
       });
 
-      it.skip("depends on the field id", async () => {
+      it("depends on the field id", async () => {
         function Component() {
           const count = useRenderCount();
           const field = Field.use<string[]>(["Hello", "Yo"], []);
@@ -4525,7 +4697,7 @@ describe("Field", () => {
         expect(screen.getByTestId("render-into").textContent).toBe("2");
       });
 
-      it.skip("passes the current value as 2nd argument", async () => {
+      it("passes the current value as 2nd argument", async () => {
         const intoSpy = vi.fn().mockReturnValue("Hey!");
         const fromSpy = vi.fn().mockReturnValue("Yo!");
 
@@ -4556,7 +4728,7 @@ describe("Field", () => {
         expect(fromSpy).toBeCalledWith("Hi!", "Hello, world!");
       });
 
-      it.skip("updates the watcher on field id change", async () => {
+      it("updates the watcher on field id change", async () => {
         function Component() {
           const count = useRenderCount();
           const field = Field.use<string[]>(["Hello", "Yo"], []);
@@ -4601,7 +4773,7 @@ describe("Field", () => {
     });
 
     describe("#decompose", () => {
-      it.skip("allows to decompose the field type", () => {
+      it("allows to decompose the field type", () => {
         const field = new Field<string | number | Record<string, number>>(
           "Hello, world!",
         );
@@ -4617,7 +4789,7 @@ describe("Field", () => {
     describe("#useDecompose", () => {
       beforeEach(cleanup);
 
-      it.skip("decomposes and updates on field change", async () => {
+      it("decomposes and updates on field change", async () => {
         type Payload = { data: string } | { data: number };
 
         const field = new Field<Payload>({ data: "hello" });
@@ -4711,7 +4883,7 @@ describe("Field", () => {
         expect(screen.getByTestId("render-decompose").textContent).toBe("2");
       });
 
-      it.skip("depends on the field id", async () => {
+      it("depends on the field id", async () => {
         function Component() {
           const count = useRenderCount();
           const field = Field.use<Array<string | UserName>>(
@@ -4746,7 +4918,7 @@ describe("Field", () => {
         expect(screen.getByTestId("render-decompose").textContent).toBe("2");
       });
 
-      it.skip("updates the watcher on field id change", async () => {
+      it("updates the watcher on field id change", async () => {
         function Component() {
           const count = useRenderCount();
           const field = Field.use<Array<string | UserName>>(
@@ -4795,7 +4967,7 @@ describe("Field", () => {
       });
     });
 
-    describe.skip("#discriminate", () => {
+    describe("#discriminate", () => {
       it("allows to discriminate by field", () => {
         const field = new Field<Cat | Dog>({ type: "cat", meow: true });
         const discriminated = field.discriminate("type");
@@ -4817,7 +4989,7 @@ describe("Field", () => {
       });
     });
 
-    describe.skip("#useDiscriminate", () => {
+    describe("#useDiscriminate", () => {
       beforeEach(cleanup);
 
       it("discriminates and updates on field change", async () => {
@@ -4868,7 +5040,7 @@ describe("Field", () => {
         expect(screen.getByTestId("type").textContent).toBe("cat: cat");
       });
 
-      it.skip("allows to discriminate union field", async () => {
+      it("allows to discriminate union field", async () => {
         interface TestState {
           hello: Hello;
         }
@@ -4955,7 +5127,7 @@ describe("Field", () => {
         expect(screen.getByTestId("render-hello").textContent).toBe("2");
       });
 
-      it.skip("depends on the field id", async () => {
+      it("depends on the field id", async () => {
         function Component() {
           const count = useRenderCount();
           const field = Field.use<Hello[]>(
@@ -4990,7 +5162,7 @@ describe("Field", () => {
         expect(screen.getByTestId("render-discriminate").textContent).toBe("2");
       });
 
-      it.skip("updates the watcher on field id change", async () => {
+      it("updates the watcher on field id change", async () => {
         function Component() {
           const count = useRenderCount();
           const field = Field.use<Hello[]>(
@@ -5052,176 +5224,6 @@ describe("Field", () => {
         lang: "dog";
         chicken: true;
       }
-    });
-
-    describe("#useEnsure", () => {
-      beforeEach(cleanup);
-
-      it.skip("allows to ensure presence of a field", async () => {
-        function Component() {
-          const count = useRenderCount();
-          const [field, setField] = useState<Field<string> | undefined>();
-          const actualField = Field.use("Hello!", []);
-          const ensuredField = Field.useEnsure(field);
-          // eslint-disable-next-line react-hooks/exhaustive-deps
-          const dummyField = useMemo(() => ensuredField, []);
-          const fieldValue = ensuredField.useValue();
-          const dummyValue = dummyField.useValue();
-
-          return (
-            <div>
-              <div data-testid="render-ensure">{count}</div>
-
-              <button onClick={() => setField(actualField)}>Set actual</button>
-
-              <button onClick={() => dummyField.set("Hi!")}>
-                Update dummy
-              </button>
-
-              <div data-testid="ensured-value">{String(fieldValue)}</div>
-              <div data-testid="dummy-value">{String(dummyValue)}</div>
-
-              <div data-testid="actual-id">{actualField.id}</div>
-              <div data-testid="ensured-id">{ensuredField.id}</div>
-              <div data-testid="dummy-id">{dummyField.id}</div>
-            </div>
-          );
-        }
-
-        render(<Component />);
-
-        expect(screen.getByTestId("ensured-value").textContent).toBe(
-          "undefined",
-        );
-        expect(screen.getByTestId("dummy-value").textContent).toBe("undefined");
-
-        const actualId1 = screen.getByTestId("actual-id").textContent;
-        const ensuredId1 = screen.getByTestId("ensured-id").textContent;
-        const dummyId1 = screen.getByTestId("dummy-id").textContent;
-
-        expect(ensuredId1).toBe(dummyId1);
-        expect(actualId1).not.toBe(ensuredId1);
-
-        expect(screen.getByTestId("render-ensure").textContent).toBe("1");
-
-        await act(() => screen.getByText("Set actual").click());
-
-        expect(screen.getByTestId("ensured-value").textContent).toBe("Hello!");
-        expect(screen.getByTestId("dummy-value").textContent).toBe("undefined");
-
-        const actualId2 = screen.getByTestId("actual-id").textContent;
-        const ensuredId2 = screen.getByTestId("ensured-id").textContent;
-        const dummyId2 = screen.getByTestId("dummy-id").textContent;
-
-        expect(ensuredId2).toBe(actualId2);
-        expect(actualId2).not.toBe(dummyId2);
-        expect(dummyId2).toBe(dummyId1);
-
-        expect(screen.getByTestId("render-ensure").textContent).toBe("2");
-
-        await act(() => screen.getByText("Update dummy").click());
-
-        expect(screen.getByTestId("ensured-value").textContent).toBe("Hello!");
-        expect(screen.getByTestId("dummy-value").textContent).toBe("undefined");
-
-        const dummyId3 = screen.getByTestId("dummy-id").textContent;
-
-        expect(dummyId3).toBe(dummyId2);
-
-        expect(screen.getByTestId("render-ensure").textContent).toBe("2");
-      });
-
-      it.skip("allows to pass falsy values", async () => {
-        function Component() {
-          const field = Field.useEnsure({} as Field<string> | false);
-          const value = field.useValue();
-
-          return (
-            <div>
-              <div data-testid="value">{String(value)}</div>
-            </div>
-          );
-        }
-
-        render(<Component />);
-
-        expect(screen.getByTestId("value").textContent).toBe("undefined");
-      });
-
-      it.skip("allows to map nested field", async () => {
-        function Component() {
-          const count = useRenderCount();
-          const [field, setField] = useState<
-            Field<{ hello: string }> | undefined
-          >();
-          const actualField = Field.use({ hello: "Hello!" }, []);
-          const ensuredField = Field.useEnsure(field, (f) => f.$.hello);
-          const dummyField = useMemo(() => ensuredField, []);
-          const fieldValue = ensuredField.useValue();
-          const dummyValue = dummyField.useValue();
-
-          return (
-            <div>
-              <div data-testid="render-ensure">{count}</div>
-
-              <button onClick={() => setField(actualField)}>Set actual</button>
-
-              <button onClick={() => dummyField.set("Hi!")}>
-                Update dummy
-              </button>
-
-              <div data-testid="ensured-value">{String(fieldValue)}</div>
-              <div data-testid="dummy-value">{String(dummyValue)}</div>
-
-              <div data-testid="actual-id">{actualField.$.hello.id}</div>
-              <div data-testid="ensured-id">{ensuredField.id}</div>
-              <div data-testid="dummy-id">{dummyField.id}</div>
-            </div>
-          );
-        }
-
-        render(<Component />);
-
-        expect(screen.getByTestId("ensured-value").textContent).toBe(
-          "undefined",
-        );
-        expect(screen.getByTestId("dummy-value").textContent).toBe("undefined");
-
-        const actualId1 = screen.getByTestId("actual-id").textContent;
-        const ensuredId1 = screen.getByTestId("ensured-id").textContent;
-        const dummyId1 = screen.getByTestId("dummy-id").textContent;
-
-        expect(ensuredId1).toBe(dummyId1);
-        expect(actualId1).not.toBe(ensuredId1);
-
-        expect(screen.getByTestId("render-ensure").textContent).toBe("1");
-
-        await act(() => screen.getByText("Set actual").click());
-
-        expect(screen.getByTestId("ensured-value").textContent).toBe("Hello!");
-        expect(screen.getByTestId("dummy-value").textContent).toBe("undefined");
-
-        const actualId2 = screen.getByTestId("actual-id").textContent;
-        const ensuredId2 = screen.getByTestId("ensured-id").textContent;
-        const dummyId2 = screen.getByTestId("dummy-id").textContent;
-
-        expect(ensuredId2).toBe(actualId2);
-        expect(actualId2).not.toBe(dummyId2);
-        expect(dummyId2).toBe(dummyId1);
-
-        expect(screen.getByTestId("render-ensure").textContent).toBe("2");
-
-        await act(() => screen.getByText("Update dummy").click());
-
-        expect(screen.getByTestId("ensured-value").textContent).toBe("Hello!");
-        expect(screen.getByTestId("dummy-value").textContent).toBe("undefined");
-
-        const dummyId3 = screen.getByTestId("dummy-id").textContent;
-
-        expect(dummyId3).toBe(dummyId2);
-
-        expect(screen.getByTestId("render-ensure").textContent).toBe("2");
-      });
     });
   });
 
@@ -5425,7 +5427,7 @@ describe("Field", () => {
     describe("#Component", () => {
       beforeEach(cleanup);
 
-      it.skip("allows to control object field", async () => {
+      it("allows to control object field", async () => {
         interface ComponentProps {
           profile: Profile;
         }
@@ -5528,7 +5530,7 @@ describe("Field", () => {
         expect(screen.getByTestId("render-names").textContent).toBe("3");
       });
 
-      it.skip("allows to control input element", async () => {
+      it("allows to control input element", async () => {
         function Component() {
           const count = useRenderCount();
           const field = Field.use<User>({ name: { first: "Alexander" } }, []);
@@ -5587,7 +5589,7 @@ describe("Field", () => {
         expect(screen.getByTestId("render-input").textContent).toBe("1");
       });
 
-      it.skip("allows to subscribe to meta information", async () => {
+      it("allows to subscribe to meta information", async () => {
         function Component() {
           const outsideCount = useRenderCount();
           const field = Field.use(
@@ -5704,7 +5706,7 @@ describe("Field", () => {
         expect(screen.getByTestId("render-meta-outside").textContent).toBe("1");
       });
 
-      it.skip("doesn't cause re-mounts on field change", async () => {
+      it("doesn't cause re-mounts on field change", async () => {
         const mountSpy = vi.fn();
         interface InputProps {
           name: string;
@@ -5816,7 +5818,7 @@ describe("Field", () => {
     describe("#useErrors", () => {
       beforeEach(cleanup);
 
-      it.skip("allows to listen to field error", async () => {
+      it("allows to listen to field error", async () => {
         function Component() {
           const count = useRenderCount();
           const field = Field.use(
@@ -5846,7 +5848,7 @@ describe("Field", () => {
                   field.$.name.clearErrors();
                 }}
               >
-                Clear error
+                Clear errors
               </button>
 
               <button onClick={() => field.$.name.$.last.set("Koss")}>
@@ -5874,7 +5876,9 @@ describe("Field", () => {
 
         await act(() => screen.getByText("Set error 2").click());
 
-        expect(screen.getByTestId("errors").textContent).toBe("Nope 2");
+        expect(screen.getByTestId("errors").textContent).toBe(
+          "Nope 1, Nope 1, Nope 2",
+        );
         expect(screen.getByTestId("render-error").textContent).toBe("4");
 
         await act(() => screen.getByText("Trigger field update").click());
@@ -5885,13 +5889,13 @@ describe("Field", () => {
 
         expect(screen.getByTestId("render-error").textContent).toBe("4");
 
-        await act(() => screen.getByText("Clear error").click());
+        await act(() => screen.getByText("Clear errors").click());
 
         expect(screen.getByTestId("errors").textContent).toBe("");
         expect(screen.getByTestId("render-error").textContent).toBe("5");
       });
 
-      it.skip("depends on the field id", async () => {
+      it("depends on the field id", async () => {
         function Component() {
           const count = useRenderCount();
           const field = Field.use(
@@ -5931,7 +5935,7 @@ describe("Field", () => {
         expect(screen.getByTestId("render-error").textContent).toBe("2");
       });
 
-      it.skip("updates the watcher on field id change", async () => {
+      it("updates the watcher on field id change", async () => {
         function Component() {
           const count = useRenderCount();
           const field = Field.use(
@@ -5972,7 +5976,7 @@ describe("Field", () => {
         expect(screen.getByTestId("render-error").textContent).toBe("2");
       });
 
-      it.skip("allows to enable/disable the error listener", async () => {
+      it("allows to enable/disable the error listener", async () => {
         function Component() {
           const count = useRenderCount();
           const field = Field.use(
@@ -6225,7 +6229,7 @@ describe("Field", () => {
               </button>
 
               <button onClick={() => field.$.name.$.first.clearErrors()}>
-                Clear error
+                Clear errors
               </button>
 
               <button onClick={() => field.$.name.$.first.set("Sasha")}>
@@ -6257,7 +6261,7 @@ describe("Field", () => {
         expect(screen.getByTestId("render-valid").textContent).toBe("2");
 
         await act(() => screen.getByText("Set error").click());
-        await act(() => screen.getByText("Clear error").click());
+        await act(() => screen.getByText("Clear errors").click());
 
         expect(screen.getByTestId("valid").textContent).toBe("true");
 
