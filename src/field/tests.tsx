@@ -1,7 +1,13 @@
-import { act, cleanup, render, screen } from "@testing-library/react";
-import React, { useRef, useState } from "react";
+import {
+  act,
+  cleanup,
+  fireEvent,
+  render,
+  screen,
+} from "@testing-library/react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { postpone } from "../../tests/utils.ts";
+import { postpone, useRenderCount } from "../../tests/utils.ts";
 import { change } from "../change/index.ts";
 import { DetachedValue, detachedValue } from "../detached/index.ts";
 import { EventsTree } from "../events/index.ts";
@@ -88,6 +94,267 @@ describe(Field, () => {
   });
 
   describe("value", () => {
+    describe("useValue", () => {
+      beforeEach(cleanup);
+
+      it.skip("allows to watch for field", async () => {
+        function Component() {
+          const count = useRenderCount();
+          const field = Field.use({ name: { first: "Alexander" } }, []);
+          const name = field.$.name.useValue();
+
+          return (
+            <div>
+              <div data-testid="render-watch">{count}</div>
+
+              <button onClick={() => field.$.name.$.first.set("Sasha")}>
+                Rename
+              </button>
+
+              <button onClick={() => field.$.name.addError("Nope")}>
+                Add error
+              </button>
+
+              <div data-testid="name">{name.first}</div>
+            </div>
+          );
+        }
+
+        render(<Component />);
+
+        expect(screen.getByTestId("name").textContent).toBe("Alexander");
+        expect(screen.getByTestId("render-watch").textContent).toBe("1");
+
+        await act(() => screen.getByText("Add error").click());
+
+        expect(screen.getByTestId("render-watch").textContent).toBe("1");
+
+        await act(() => screen.getByText("rename").click());
+
+        expect(screen.getByTestId("name").textContent).toBe("Sasha");
+        expect(screen.getByTestId("render-watch").textContent).toBe("2");
+      });
+
+      it.skip("allows to listen to value with meta information", async () => {
+        function Component() {
+          const count = useRenderCount();
+          const field = Field.use(
+            { name: { first: "Alexander", last: "" } },
+            [],
+          );
+          const [value, { dirty, errors, valid }] = field.useValue({
+            meta: true,
+          });
+
+          return (
+            <div>
+              <div data-testid="render-meta">{count}</div>
+
+              <button
+                onClick={() =>
+                  field.$.name.$.first.addError(`Nope ${Math.random()}`)
+                }
+              >
+                Set first name error
+              </button>
+
+              <button
+                onClick={() =>
+                  field.$.name.$.last.addError(`Nah ${Math.random()}`)
+                }
+              >
+                Set last name error
+              </button>
+
+              <button onClick={() => field.addError("Nope")}>
+                Set field error
+              </button>
+
+              <button
+                onClick={() => {
+                  field.$.name.$.first.clearErrors();
+                  field.$.name.$.last.clearErrors();
+                }}
+              >
+                Clear errors
+              </button>
+
+              <button
+                onClick={() =>
+                  field.$.name.set({ first: "Sasha", last: "Koss" })
+                }
+              >
+                Rename
+              </button>
+
+              <div data-testid="full-name">
+                {value.name.first} {value.name.last}
+              </div>
+
+              <div data-testid="dirty">{String(dirty)}</div>
+              <div data-testid="errors">{joinErrors(errors)}</div>
+              <div data-testid="valid">{String(valid)}</div>
+            </div>
+          );
+        }
+
+        render(<Component />);
+
+        expect(screen.getByTestId("full-name").textContent).toBe("Alexander ");
+        expect(screen.getByTestId("dirty").textContent).toBe("false");
+        expect(screen.getByTestId("valid").textContent).toBe("true");
+        expect(screen.getByTestId("errors").textContent).toBe("");
+
+        await act(() => screen.getByText("Set first name error").click());
+
+        expect(screen.getByTestId("dirty").textContent).toBe("false");
+        expect(screen.getByTestId("valid").textContent).toBe("false");
+        expect(screen.getByTestId("errors").textContent).toBe("");
+
+        await act(() => screen.getByText("Set last name error").click());
+
+        expect(screen.getByTestId("errors").textContent).toBe("");
+        expect(screen.getByTestId("render-meta").textContent).toBe("2");
+
+        await act(() => screen.getByText("Set first name error").click());
+        await act(() => screen.getByText("Set last name error").click());
+
+        expect(screen.getByTestId("render-meta").textContent).toBe("2");
+        expect(screen.getByTestId("errors").textContent).toBe("");
+
+        await act(() => screen.getByText("Rename").click());
+
+        expect(screen.getByTestId("full-name").textContent).toBe("Sasha Koss");
+        expect(screen.getByTestId("dirty").textContent).toBe("true");
+        expect(screen.getByTestId("valid").textContent).toBe("false");
+        expect(screen.getByTestId("render-meta").textContent).toBe("3");
+
+        await act(() => screen.getByText("Clear errors").click());
+
+        expect(screen.getByTestId("dirty").textContent).toBe("true");
+        expect(screen.getByTestId("valid").textContent).toBe("true");
+        expect(screen.getByTestId("errors").textContent).toBe("");
+        expect(screen.getByTestId("render-meta").textContent).toBe("4");
+
+        await act(() => screen.getByText("Set field error").click());
+
+        expect(screen.getByTestId("errors").textContent).toBe("Nope");
+        expect(screen.getByTestId("render-meta").textContent).toBe("5");
+      });
+
+      it.skip("depends on the field id", async () => {
+        function Component() {
+          const count = useRenderCount();
+          const field = Field.use(
+            [{ name: "Alexander" }, { name: "Sasha" }],
+            [],
+          );
+          const [index, setIndex] = useState(0);
+          const item = field.at(index).useValue();
+
+          return (
+            <div>
+              <div data-testid="render-watch">{count}</div>
+
+              <button onClick={() => setIndex(1)}>Set index to 1</button>
+
+              <div data-testid="name">{item?.name}</div>
+            </div>
+          );
+        }
+
+        render(<Component />);
+
+        expect(screen.getByTestId("name").textContent).toBe("Alexander");
+        expect(screen.getByTestId("render-watch").textContent).toBe("1");
+
+        await act(() => screen.getByText("Set index to 1").click());
+
+        expect(screen.getByTestId("name").textContent).toBe("Sasha");
+        expect(screen.getByTestId("render-watch").textContent).toBe("2");
+      });
+
+      it.skip("updates the watcher on field id change", async () => {
+        function Component() {
+          const count = useRenderCount();
+          const field = Field.use(
+            [{ name: "Alexander" }, { name: "Sasha" }],
+            [],
+          );
+          const [index, setIndex] = useState(0);
+          const item = field.at(index).useValue();
+
+          return (
+            <div>
+              <div data-testid="render-watch">{count}</div>
+
+              <button onClick={() => setIndex(1)}>Set index to 1</button>
+
+              <button onClick={() => field.at(0).set({ name: "Alex" })}>
+                Rename 0 to Alex
+              </button>
+
+              <button onClick={() => field.at(1).set({ name: "Sashka" })}>
+                Rename 1 to Sashka
+              </button>
+
+              <div data-testid="name">{item?.name}</div>
+            </div>
+          );
+        }
+
+        render(<Component />);
+
+        expect(screen.getByTestId("name").textContent).toBe("Alexander");
+        expect(screen.getByTestId("render-watch").textContent).toBe("1");
+
+        await act(() => screen.getByText("Set index to 1").click());
+
+        expect(screen.getByTestId("name").textContent).toBe("Sasha");
+        expect(screen.getByTestId("render-watch").textContent).toBe("2");
+
+        await act(() => screen.getByText("Rename 0 to Alex").click());
+
+        expect(screen.getByTestId("name").textContent).toBe("Sasha");
+        expect(screen.getByTestId("render-watch").textContent).toBe("2");
+
+        await act(() => screen.getByText("Rename 1 to Sashka").click());
+
+        expect(screen.getByTestId("name").textContent).toBe("Sashka");
+        expect(screen.getByTestId("render-watch").textContent).toBe("3");
+      });
+
+      it.skip("doesn't rerender when setting the same primitive", async () => {
+        function Component() {
+          const count = useRenderCount();
+          const field = Field.use({ name: "Sasha" }, []);
+          const user = field.useValue();
+
+          return (
+            <div>
+              <div data-testid="render-watch">{count}</div>
+
+              <button onClick={() => field.$.name.set("Sasha")}>
+                Assign same name
+              </button>
+
+              <div data-testid="name">{user?.name}</div>
+            </div>
+          );
+        }
+
+        render(<Component />);
+
+        expect(screen.getByTestId("name").textContent).toBe("Sasha");
+        expect(screen.getByTestId("render-watch").textContent).toBe("1");
+
+        await act(() => screen.getByText("Assign same name").click());
+
+        expect(screen.getByTestId("name").textContent).toBe("Sasha");
+        expect(screen.getByTestId("render-watch").textContent).toBe("1");
+      });
+    });
+
     describe("set", () => {
       describe("primitive", () => {
         it("sets a new field", () => {
@@ -1025,6 +1292,280 @@ describe(Field, () => {
       });
     });
 
+    describe("useDirty", () => {
+      beforeEach(cleanup);
+
+      it.skip("allows to listen to field dirty", async () => {
+        function Component() {
+          const count = useRenderCount();
+          const field = Field.use({ name: { first: "Alexander" } }, []);
+          const dirty = field.useDirty();
+
+          return (
+            <div>
+              <div data-testid="render-dirty">{count}</div>
+
+              <input
+                data-testid="name-first-input"
+                {...field.$.name.$.first.control()}
+              />
+
+              <div data-testid="dirty">{String(dirty)}</div>
+            </div>
+          );
+        }
+
+        render(<Component />);
+
+        expect(screen.getByTestId("dirty").textContent).toBe("false");
+
+        await act(() => {
+          fireEvent.change(screen.getByTestId("name-first-input"), {
+            target: { value: "Sa" },
+          });
+        });
+        await act(() => {
+          fireEvent.change(screen.getByTestId("name-first-input"), {
+            target: { value: "Sasha" },
+          });
+        });
+
+        expect(screen.getByTestId("dirty").textContent).toBe("true");
+        expect(screen.getByTestId("render-dirty").textContent).toBe("2");
+
+        await act(() => {
+          fireEvent.change(screen.getByTestId("name-first-input"), {
+            target: { value: "Alexander" },
+          });
+        });
+
+        expect(screen.getByTestId("dirty").textContent).toBe("false");
+        expect(screen.getByTestId("render-dirty").textContent).toBe("3");
+      });
+
+      it.skip("depends on the field id", async () => {
+        function Component() {
+          const count = useRenderCount();
+          const field = Field.use(
+            [{ name: "Alexander" }, { name: "Sasha" }],
+            [],
+          );
+          const [index, setIndex] = useState(0);
+          const dirty = field.at(index).useDirty();
+
+          return (
+            <div>
+              <div data-testid="render-dirty">{count}</div>
+
+              <button onClick={() => setIndex(1)}>Set index to 1</button>
+
+              <button onClick={() => field.at(1).set({ name: "Alex" })}>
+                Rename item 1
+              </button>
+
+              <div data-testid="dirty">{String(dirty)}</div>
+            </div>
+          );
+        }
+
+        render(<Component />);
+
+        expect(screen.getByTestId("dirty").textContent).toBe("false");
+        expect(screen.getByTestId("render-dirty").textContent).toBe("1");
+
+        await act(() => screen.getByText("Rename item 1").click());
+
+        expect(screen.getByTestId("render-dirty").textContent).toBe("1");
+
+        await act(() => screen.getByText("Set index to 1").click());
+
+        expect(screen.getByTestId("dirty").textContent).toBe("true");
+        expect(screen.getByTestId("render-dirty").textContent).toBe("2");
+      });
+
+      it.skip("updates the watcher on field id change", async () => {
+        function Component() {
+          const count = useRenderCount();
+          const field = Field.use(
+            [{ name: "Alexander" }, { name: "Sasha" }],
+            [],
+          );
+          const [index, setIndex] = useState(0);
+          const dirty = field.at(index).useDirty();
+
+          return (
+            <div>
+              <div data-testid="render-dirty">{count}</div>
+
+              <button onClick={() => setIndex(1)}>Set index to 1</button>
+
+              <button onClick={() => field.at(0).set({ name: "Alex" })}>
+                Rename item 0
+              </button>
+
+              <div data-testid="dirty">{String(dirty)}</div>
+            </div>
+          );
+        }
+
+        render(<Component />);
+
+        expect(screen.getByTestId("dirty").textContent).toBe("false");
+        expect(screen.getByTestId("render-dirty").textContent).toBe("1");
+
+        await act(() => screen.getByText("Set index to 1").click());
+
+        expect(screen.getByTestId("dirty").textContent).toBe("false");
+        expect(screen.getByTestId("render-dirty").textContent).toBe("2");
+
+        await act(() => screen.getByText("Rename item 0").click());
+
+        expect(screen.getByTestId("dirty").textContent).toBe("false");
+        expect(screen.getByTestId("render-dirty").textContent).toBe("2");
+      });
+
+      it.skip("allows to enable/disable the dirty listener", async () => {
+        function Component() {
+          const count = useRenderCount();
+          const field = Field.use(
+            [{ name: "Alexander" }, { name: "Sasha" }],
+            [],
+          );
+          const [index, setIndex] = useState(0);
+          const [enabled, setEnabled] = useState(false);
+          const dirty = field.at(index).useDirty(enabled);
+
+          return (
+            <div>
+              <div data-testid="render-dirty">{count}</div>
+
+              <button onClick={() => setIndex(1)}>Set index to 1</button>
+
+              <button onClick={() => field.at(1).set({ name: "Alex" })}>
+                Rename item 1
+              </button>
+
+              <button onClick={() => setEnabled(true)}>Enable dirty</button>
+
+              <div data-testid="dirty">{String(dirty)}</div>
+            </div>
+          );
+        }
+
+        render(<Component />);
+
+        expect(screen.getByTestId("dirty").textContent).toBe("undefined");
+        expect(screen.getByTestId("render-dirty").textContent).toBe("1");
+
+        await act(() => screen.getByText("Set index to 1").click());
+
+        expect(screen.getByTestId("dirty").textContent).toBe("undefined");
+        expect(screen.getByTestId("render-dirty").textContent).toBe("2");
+
+        await act(() => screen.getByText("Rename item 1").click());
+
+        expect(screen.getByTestId("dirty").textContent).toBe("undefined");
+        expect(screen.getByTestId("render-dirty").textContent).toBe("2");
+
+        await act(() => screen.getByText("Enable dirty").click());
+
+        expect(screen.getByTestId("dirty").textContent).toBe("true");
+        expect(screen.getByTestId("render-dirty").textContent).toBe("3");
+      });
+
+      it.skip("updates on reset", async () => {
+        function Component() {
+          const count = useRenderCount();
+          const field = Field.use({ name: { first: "Alexander" } }, []);
+          const dirty = field.useDirty();
+
+          return (
+            <div>
+              <div data-testid="render-dirty">{count}</div>
+
+              <input
+                data-testid="name-first-input"
+                {...field.$.name.$.first.control()}
+              />
+
+              <button onClick={() => field.reset()}>Reset</button>
+
+              <div data-testid="dirty">{String(dirty)}</div>
+            </div>
+          );
+        }
+
+        render(<Component />);
+
+        expect(screen.getByTestId("dirty").textContent).toBe("false");
+
+        await act(() => {
+          fireEvent.change(screen.getByTestId("name-first-input"), {
+            target: { value: "Sa" },
+          });
+        });
+        await act(() => {
+          fireEvent.change(screen.getByTestId("name-first-input"), {
+            target: { value: "Sasha" },
+          });
+        });
+
+        expect(screen.getByTestId("dirty").textContent).toBe("true");
+        expect(screen.getByTestId("render-dirty").textContent).toBe("2");
+
+        await act(() => screen.getByText("Reset").click());
+
+        expect(screen.getByTestId("dirty").textContent).toBe("false");
+        expect(screen.getByTestId("render-dirty").textContent).toBe("3");
+      });
+
+      it.skip("updates on commit", async () => {
+        function Component() {
+          const count = useRenderCount();
+          const field = Field.use({ name: { first: "Alexander" } }, []);
+          const dirty = field.useDirty();
+
+          return (
+            <div>
+              <div data-testid="render-dirty">{count}</div>
+
+              <input
+                data-testid="name-first-input"
+                {...field.$.name.$.first.control()}
+              />
+
+              <button onClick={() => field.commit()}>Commit</button>
+
+              <div data-testid="dirty">{String(dirty)}</div>
+            </div>
+          );
+        }
+
+        render(<Component />);
+
+        expect(screen.getByTestId("dirty").textContent).toBe("false");
+
+        await act(() => {
+          fireEvent.change(screen.getByTestId("name-first-input"), {
+            target: { value: "Sa" },
+          });
+        });
+        await act(() => {
+          fireEvent.change(screen.getByTestId("name-first-input"), {
+            target: { value: "Sasha" },
+          });
+        });
+
+        expect(screen.getByTestId("dirty").textContent).toBe("true");
+        expect(screen.getByTestId("render-dirty").textContent).toBe("2");
+
+        await act(() => screen.getByText("Commit").click());
+
+        expect(screen.getByTestId("dirty").textContent).toBe("false");
+        expect(screen.getByTestId("render-dirty").textContent).toBe("3");
+      });
+    });
+
     describe("commit", () => {
       it("commits the current field as the initial field", () => {
         const field = new Field(42);
@@ -1248,6 +1789,329 @@ describe(Field, () => {
         expect(field.value).toEqual({
           name: { first: "Alexander" },
         });
+      });
+    });
+
+    describe("useCompute", () => {
+      beforeEach(cleanup);
+
+      it.skip("allows to compute value", async () => {
+        function Component() {
+          const count = useRenderCount();
+          const field = Field.use<User>({ name: { first: "Alexander" } }, []);
+          const hasLastName = field.$.name.useCompute(
+            (name) => !!name.last,
+            [],
+          );
+
+          return (
+            <div>
+              <div data-testid="render-compute">{count}</div>
+
+              <button
+                onClick={() =>
+                  field.$.name.$.first.set(`Sasha ${Math.random()}`)
+                }
+              >
+                Rename first
+              </button>
+
+              <button onClick={() => field.$.name.addError("Nope")}>
+                Add error
+              </button>
+
+              <button onClick={() => field.$.name.$.last.set("Koss")}>
+                Set last name
+              </button>
+
+              <button onClick={() => field.$.name.$.last.set(undefined)}>
+                Clear last name
+              </button>
+
+              <div data-testid="computed">{String(hasLastName)}</div>
+            </div>
+          );
+        }
+
+        render(<Component />);
+
+        expect(screen.getByTestId("computed").textContent).toBe("false");
+        expect(screen.getByTestId("render-compute").textContent).toBe("1");
+
+        await act(() => screen.getByText("Add error").click());
+        await act(() => screen.getByText("Rename first").click());
+        await act(() => screen.getByText("Add error").click());
+        await act(() => screen.getByText("Rename first").click());
+
+        expect(screen.getByTestId("render-compute").textContent).toBe("1");
+
+        await act(() => screen.getByText("Set last name").click());
+
+        expect(screen.getByTestId("computed").textContent).toBe("true");
+        expect(screen.getByTestId("render-compute").textContent).toBe("2");
+
+        await act(() => screen.getByText("Add error").click());
+        await act(() => screen.getByText("Rename first").click());
+        await act(() => screen.getByText("Add error").click());
+        await act(() => screen.getByText("Rename first").click());
+
+        expect(screen.getByTestId("render-compute").textContent).toBe("2");
+
+        await act(() => screen.getByText("Clear last name").click());
+
+        expect(screen.getByTestId("computed").textContent).toBe("false");
+        expect(screen.getByTestId("render-compute").textContent).toBe("3");
+      });
+
+      it.skip("depends on the field id", async () => {
+        function Component() {
+          const count = useRenderCount();
+          const field = Field.use<UserName[]>(
+            [{ first: "Alexander" }, { first: "Sasha", last: "Koss" }],
+            [],
+          );
+          const [index, setIndex] = useState(0);
+          const hasLastName = field
+            .at(index)
+            .useCompute((name) => !!name?.last, []);
+
+          return (
+            <div>
+              <div data-testid="render-computed">{count}</div>
+
+              <button onClick={() => setIndex(1)}>Set index to 1</button>
+
+              <div data-testid="computed">{String(hasLastName)}</div>
+            </div>
+          );
+        }
+
+        render(<Component />);
+
+        expect(screen.getByTestId("computed").textContent).toBe("false");
+        expect(screen.getByTestId("render-computed").textContent).toBe("1");
+
+        await act(() => screen.getByText("Set index to 1").click());
+
+        expect(screen.getByTestId("computed").textContent).toBe("true");
+        expect(screen.getByTestId("render-computed").textContent).toBe("2");
+      });
+
+      it.skip("updates the watcher on field id change", async () => {
+        function Component() {
+          const count = useRenderCount();
+          const field = Field.use<UserName[]>(
+            [{ first: "Alexander" }, { first: "Sasha", last: "Koss" }],
+            [],
+          );
+          const [index, setIndex] = useState(0);
+          const hasLastName = field
+            .at(index)
+            .useCompute((name) => !!name?.last, []);
+
+          return (
+            <div>
+              <div data-testid="render-computed">{count}</div>
+
+              <button onClick={() => setIndex(1)}>Set index to 1</button>
+
+              <button
+                onClick={() =>
+                  field.at(0).set({ first: "Alexander", last: "Koss" })
+                }
+              >
+                Give item 0 last name
+              </button>
+
+              <div data-testid="computed">{String(hasLastName)}</div>
+            </div>
+          );
+        }
+
+        render(<Component />);
+
+        expect(screen.getByTestId("computed").textContent).toBe("false");
+        expect(screen.getByTestId("render-computed").textContent).toBe("1");
+
+        await act(() => screen.getByText("Set index to 1").click());
+
+        expect(screen.getByTestId("computed").textContent).toBe("true");
+        expect(screen.getByTestId("render-computed").textContent).toBe("2");
+
+        await act(() => screen.getByText("Give item 0 last name").click());
+
+        expect(screen.getByTestId("computed").textContent).toBe("true");
+      });
+
+      it.skip("doesn't rerender when setting the same primitive", async () => {
+        function Component() {
+          const count = useRenderCount();
+          const field = Field.use<UserName>({ first: "Alexander" }, []);
+          const hasLastName = field.useCompute((name) => !!name?.last, []);
+
+          return (
+            <div>
+              <div data-testid="render-computed">{count}</div>
+
+              <button onClick={() => field.set({ first: "Alex" })}>
+                Rename item 0
+              </button>
+
+              <div data-testid="computed">{String(hasLastName)}</div>
+            </div>
+          );
+        }
+
+        render(<Component />);
+
+        expect(screen.getByTestId("computed").textContent).toBe("false");
+        expect(screen.getByTestId("render-computed").textContent).toBe("1");
+
+        await act(() => screen.getByText("Rename item 0").click());
+
+        expect(screen.getByTestId("computed").textContent).toBe("false");
+        expect(screen.getByTestId("render-computed").textContent).toBe("1");
+      });
+
+      it.skip("allows to specify dependencies", async () => {
+        function Component() {
+          const count = useRenderCount();
+          const field = Field.use("Alexander", []);
+          const [lastName, setLastName] = useState("Koss");
+          const fullName = field.useCompute(
+            (name) => `${name} ${lastName}`,
+            [lastName],
+          );
+
+          return (
+            <div>
+              <div data-testid="render-compute">{count}</div>
+
+              <button onClick={() => field.set("Sasha")}>Rename first</button>
+
+              <button onClick={() => setLastName("K.")}>Rename last</button>
+
+              <div data-testid="computed">{fullName}</div>
+            </div>
+          );
+        }
+
+        render(<Component />);
+
+        expect(screen.getByTestId("computed").textContent).toBe(
+          "Alexander Koss",
+        );
+        expect(screen.getByTestId("render-compute").textContent).toBe("1");
+
+        await act(() => screen.getByText("Rename last").click());
+
+        expect(screen.getByTestId("computed").textContent).toBe("Alexander K.");
+        expect(screen.getByTestId("render-compute").textContent).toBe("3");
+
+        await act(() => screen.getByText("Rename first").click());
+
+        expect(screen.getByTestId("computed").textContent).toBe("Sasha K.");
+        expect(screen.getByTestId("render-compute").textContent).toBe("4");
+      });
+    });
+  });
+
+  describe("meta", () => {
+    describe("useMeta", () => {
+      beforeEach(cleanup);
+
+      it.skip("allows to listen to meta information", async () => {
+        function Component() {
+          const count = useRenderCount();
+          const field = Field.use(
+            { name: { first: "Alexander", last: "" } },
+            [],
+          );
+          const { dirty, errors: errors, valid } = field.useMeta();
+
+          return (
+            <div>
+              <div data-testid="render-meta">{count}</div>
+
+              <button
+                onClick={() =>
+                  field.$.name.$.first.addError(`Nope ${Math.random()}`)
+                }
+              >
+                Set first name error
+              </button>
+
+              <button
+                onClick={() =>
+                  field.$.name.$.last.addError(`Nah ${Math.random()}`)
+                }
+              >
+                Set last name error
+              </button>
+
+              <button onClick={() => field.addError("Nope")}>
+                Set field error
+              </button>
+
+              <button
+                onClick={() => {
+                  field.$.name.$.first.clearErrors();
+                  field.$.name.$.last.clearErrors();
+                }}
+              >
+                Clear errors
+              </button>
+
+              <button onClick={() => field.$.name.$.last.set("Koss")}>
+                Trigger field update
+              </button>
+
+              <div data-testid="dirty">{String(dirty)}</div>
+              <div data-testid="errors">{joinErrors(errors)}</div>
+              <div data-testid="valid">{String(valid)}</div>
+            </div>
+          );
+        }
+
+        render(<Component />);
+
+        expect(screen.getByTestId("dirty").textContent).toBe("false");
+        expect(screen.getByTestId("valid").textContent).toBe("true");
+        expect(screen.getByTestId("errors").textContent).toBe("");
+
+        await act(() => screen.getByText("Set first name error").click());
+
+        expect(screen.getByTestId("dirty").textContent).toBe("false");
+        expect(screen.getByTestId("valid").textContent).toBe("false");
+        expect(screen.getByTestId("errors").textContent).toBe("");
+
+        await act(() => screen.getByText("Set last name error").click());
+
+        expect(screen.getByTestId("errors").textContent).toBe("");
+        expect(screen.getByTestId("render-meta").textContent).toBe("2");
+
+        await act(() => screen.getByText("Set first name error").click());
+        await act(() => screen.getByText("Set last name error").click());
+
+        expect(screen.getByTestId("render-meta").textContent).toBe("2");
+
+        await act(() => screen.getByText("Trigger field update").click());
+
+        expect(screen.getByTestId("dirty").textContent).toBe("true");
+        expect(screen.getByTestId("valid").textContent).toBe("false");
+        expect(screen.getByTestId("render-meta").textContent).toBe("3");
+
+        await act(() => screen.getByText("Clear errors").click());
+
+        expect(screen.getByTestId("dirty").textContent).toBe("true");
+        expect(screen.getByTestId("valid").textContent).toBe("true");
+        expect(screen.getByTestId("errors").textContent).toBe("");
+        expect(screen.getByTestId("render-meta").textContent).toBe("4");
+
+        await act(() => screen.getByText("Set field error").click());
+
+        expect(screen.getByTestId("errors").textContent).toBe("Nope");
+        expect(screen.getByTestId("render-meta").textContent).toBe("5");
       });
     });
   });
@@ -1741,6 +2605,132 @@ describe(Field, () => {
           });
         });
       });
+
+      describe("useCollection", () => {
+        beforeEach(cleanup);
+
+        it.skip("allows to bind object field changes to the component", async () => {
+          function Component() {
+            const count = useRenderCount();
+            const field = Field.use<UserName>({ first: "Alexander" }, []);
+            const name = field.useCollection();
+
+            return (
+              <div>
+                <div data-testid="render-bind">{count}</div>
+
+                <button onClick={() => name.$.first.set("Alex")}>
+                  Rename first
+                </button>
+
+                <button onClick={() => name.$.last.set("Koss")}>
+                  Give last name
+                </button>
+              </div>
+            );
+          }
+
+          render(<Component />);
+
+          expect(screen.getByTestId("render-bind").textContent).toBe("1");
+
+          await act(() => screen.getByText("Rename first").click());
+
+          expect(screen.getByTestId("render-bind").textContent).toBe("1");
+
+          await act(() => screen.getByText("Give last name").click());
+
+          expect(screen.getByTestId("render-bind").textContent).toBe("2");
+        });
+
+        it.skip("depends on the field id", async () => {
+          function Component() {
+            const count = useRenderCount();
+            const field = Field.use<UserName[]>(
+              [{ first: "Alexander" }, { first: "Sasha" }],
+              [],
+            );
+            const [index, setIndex] = useState(0);
+            field.at(index).useCollection?.();
+
+            return (
+              <div>
+                <div data-testid="render-bind">{count}</div>
+
+                <button onClick={() => setIndex(1)}>Set index to 1</button>
+
+                <button onClick={() => field.at(1).set({ first: "Alex" })}>
+                  Rename item 1
+                </button>
+
+                <button
+                  onClick={() =>
+                    field.at(1).set({ first: "Alex", last: "Koss" })
+                  }
+                >
+                  Give item 1 last name
+                </button>
+              </div>
+            );
+          }
+
+          render(<Component />);
+
+          expect(screen.getByTestId("render-bind").textContent).toBe("1");
+
+          await act(() => screen.getByText("Set index to 1").click());
+
+          expect(screen.getByTestId("render-bind").textContent).toBe("2");
+
+          await act(() => screen.getByText("Rename item 1").click());
+
+          expect(screen.getByTestId("render-bind").textContent).toBe("2");
+
+          await act(() => screen.getByText("Give item 1 last name").click());
+
+          expect(screen.getByTestId("render-bind").textContent).toBe("3");
+        });
+
+        it.skip("updates the watcher on field id change", async () => {
+          function Component() {
+            const count = useRenderCount();
+            const field = Field.use<UserName[]>(
+              [{ first: "Alexander" }, { first: "Sasha" }],
+              [],
+            );
+            const [index, setIndex] = useState(0);
+            const _ = field.at(index).useCollection?.();
+
+            return (
+              <div>
+                <div data-testid="render-bind">{count}</div>
+
+                <button onClick={() => setIndex(1)}>Set index to 1</button>
+
+                <button
+                  onClick={() =>
+                    field.at(0).set({ first: "Alexander", last: "Koss" })
+                  }
+                >
+                  Give item 0 last name
+                </button>
+              </div>
+            );
+          }
+
+          render(<Component />);
+
+          expect(screen.getByTestId("render-bind").textContent).toBe("1");
+
+          await act(() => screen.getByText("Set index to 1").click());
+
+          expect(screen.getByTestId("render-bind").textContent).toBe("2");
+
+          await act(() => screen.getByText("Give item 0 last name").click());
+
+          expect(screen.getByTestId("render-bind").textContent).toBe("2");
+        });
+      });
     });
   });
 
@@ -2106,6 +3096,164 @@ describe(Field, () => {
         const field = new Field<string | number | undefined>(undefined);
         const ref = field.optional();
         expect(ref.value).toBeUndefined();
+      });
+
+      describe.skip("#at", () => {
+        describe("primitive", () => {
+          it("returns the undefined field as is if it's defined", () => {
+            const field = new Field<string | number | undefined>(undefined);
+            const ref = field.optional();
+            expect(ref.value).toBeUndefined();
+          });
+        });
+
+        describe("object", () => {
+          it("returns the undefined field as is if it's defined", () => {
+            const field = new Field<{ a: string } | undefined>(undefined);
+            const ref = field.optional();
+            expect(ref.value).toBeUndefined();
+          });
+
+          it("allows to access properties by key", () => {
+            const field = new Field<{ a?: string } | undefined>(undefined);
+            const ref = field.optional().at("a");
+            expect(ref.value).toBeUndefined();
+          });
+
+          it("allows accessing maybe undefined properties", () => {
+            const field = new Field<
+              { a?: { b?: { c?: number | string } } } | undefined
+            >(undefined);
+            const ref = field.optional().at("a").at("b").at("c");
+            expect(ref.value).toBeUndefined();
+          });
+
+          it("resolves proper field for deep nested properties", () => {
+            const field = new Field<
+              { a?: { b?: { c?: number | string } } } | undefined
+            >({ a: { b: { c: 123 } } });
+            const ref = field.optional().at("a").at("b").at("c");
+            expect(ref.value).toBe(123);
+          });
+        });
+
+        describe("array", () => {
+          it("returns the undefined field as is if it's defined", () => {
+            const field = new Field<string[] | undefined>(undefined);
+            const ref = field.optional();
+            expect(ref.value).toBeUndefined();
+          });
+
+          it("allows to access items by index", () => {
+            const field = new Field<string[] | undefined>(undefined);
+            const ref = field.optional().at(0);
+            expect(ref.value).toBeUndefined();
+          });
+
+          it("allows accessing maybe undefined items", () => {
+            const field = new Field<string[][][] | undefined>(undefined);
+            const ref = field.optional().at(0).at(0).at(0);
+            expect(ref.value).toBeUndefined();
+          });
+
+          it("resolves proper field for deep nested items", () => {
+            const field = new Field<string[][][] | undefined>([[["a"]]]);
+            const ref = field.optional().at(0).at(0).at(0);
+            expect(ref.value).toBe("a");
+          });
+        });
+
+        describe("instance", () => {
+          it("returns the undefined field as is if it's defined", () => {
+            const field = new Field<Set<string> | undefined>(undefined);
+            const ref = field.optional();
+            expect(ref.value).toBeUndefined();
+          });
+
+          it.todo("does not allow to access items by key", () => {
+            const field = new Field<Set<string> | undefined>(undefined);
+            // TODO:
+            // const ref = fieldRef
+            //   .maybe(new Set<string>())
+            //   // @ts-expect-error: It should not be available
+            //   .maybe("has", (val: string) => false);
+            // ref satisfies never;
+            // expect(ref instanceof MaybeFieldRef).toBe(true);
+            // expect(() => ref.at("a")).toThrowError(
+            //   "Cannot access items of a Set by key"
+            // );
+          });
+        });
+      });
+
+      describe.skip("#addError", () => {
+        it("adds errors to present fields", () => {
+          const field = new Field<string | number | undefined>("hello");
+          const ref = field.optional();
+          ref.addError("Something went wrong");
+          expect(field.errors).toEqual([{ message: "Something went wrong" }]);
+        });
+
+        it("adds errors to undefined fields", () => {
+          const field = new Field<{ hello?: string }>({});
+          const ref = field.optional().at("hello");
+          ref.addError("Something went wrong");
+          expect(field.$.hello.errors).toEqual([
+            { message: "Something went wrong" },
+          ]);
+        });
+
+        it("adds errors to shadow fields", () => {
+          const field = new Field<{ hello?: { world?: string } }>({});
+          const ref = field.optional().at("hello").at("world");
+          ref.addError("Something went wrong");
+          expect(field.valid).toBe(false);
+          const pavedField = field.$.hello.pave({}).$.world;
+          expect(pavedField.errors).toEqual([
+            { message: "Something went wrong" },
+          ]);
+        });
+
+        it("allows to clear shadow fields errors", () => {
+          const field = new Field<{ hello?: { world?: string } }>({});
+          const ref = field.optional().at("hello").at("world");
+          ref.addError("Something went wrong");
+          expect(field.valid).toBe(false);
+          const pavedField = field.$.hello.pave({}).$.world;
+          expect(pavedField.errors).toEqual([
+            { message: "Something went wrong" },
+          ]);
+          field.clearErrors();
+          expect(pavedField.errors).toEqual([]);
+        });
+
+        describe("changes", () => {
+          it("causes target field trigger", async () => {
+            const field = new Field<string | number | undefined>("hello");
+            const ref = field.optional();
+            const spy = vi.fn();
+            field.watch(spy);
+            ref.addError("Something went wrong");
+            await postpone();
+            expect(spy).toHaveBeenCalledTimes(1);
+            expect(spy).toReceiveChanges(
+              change.field.errors | change.field.invalid,
+            );
+          });
+
+          it("trigger event on the closest target", async () => {
+            const field = new Field<{ name?: { first?: string } }>({});
+            const ref = field.optional().at("name").at("first");
+            const spy = vi.fn();
+            field.$.name.watch(spy);
+            ref.addError("Something went wrong");
+            await postpone();
+            expect(spy).toHaveBeenCalledTimes(1);
+            expect(spy).toReceiveChanges(
+              change.child.errors | change.child.invalid,
+            );
+          });
+        });
       });
     });
   });
@@ -2492,6 +3640,149 @@ describe(Field, () => {
         field.unwatch();
         field.$.num?.set(43);
         expect(spy).not.toHaveBeenCalled();
+      });
+    });
+
+    describe("useWatch", () => {
+      beforeEach(cleanup);
+
+      it.skip("allows to watch for field using a function", async () => {
+        function Component() {
+          const count = useRenderCount();
+          const field = Field.use({ name: { first: "Alexander" } }, []);
+          const [name, setName] = useState(field.$.name.value);
+          field.$.name.useWatch(setName, []);
+
+          return (
+            <div>
+              <div data-testid="render-watch">{count}</div>
+
+              <button onClick={() => field.$.name.$.first.set("Sasha")}>
+                Rename
+              </button>
+
+              <button onClick={() => field.$.name.addError("Nope")}>
+                Add error
+              </button>
+
+              <div data-testid="name">{name.first}</div>
+            </div>
+          );
+        }
+
+        render(<Component />);
+
+        expect(screen.getByTestId("name").textContent).toBe("Alexander");
+        expect(screen.getByTestId("render-watch").textContent).toBe("1");
+
+        await act(() => screen.getByText("Add error").click());
+
+        expect(screen.getByTestId("render-watch").textContent).toBe("2");
+
+        await act(() => screen.getByText("rename").click());
+
+        expect(screen.getByTestId("name").textContent).toBe("Sasha");
+        expect(screen.getByTestId("render-watch").textContent).toBe("3");
+      });
+
+      it.skip("depends on the field id", async () => {
+        const spy = vi.fn();
+
+        function Component() {
+          const count = useRenderCount();
+          const field = Field.use(
+            [{ name: "Alexander" }, { name: "Sasha" }],
+            [],
+          );
+          const [index, setIndex] = useState(0);
+          field.at(index).useWatch(spy, []);
+
+          return (
+            <div>
+              <div data-testid="render-watch">{count}</div>
+
+              <button onClick={() => setIndex(1)}>Set index to 1</button>
+
+              <button onClick={() => field.at(1).set({ name: "Alex" })}>
+                Rename item 1
+              </button>
+            </div>
+          );
+        }
+
+        render(<Component />);
+
+        expect(screen.getByTestId("render-watch").textContent).toBe("1");
+
+        await act(() => screen.getByText("Set index to 1").click());
+
+        expect(spy).toHaveBeenCalledOnce();
+        {
+          const [[value, event]] = spy.mock.calls as any;
+          expect(value).toEqual({ name: "Sasha" });
+          expect(event.changes).toMatchChanges(change.field.id);
+        }
+
+        await act(() => screen.getByText("Rename item 1").click());
+
+        expect(spy).toHaveBeenCalledTimes(2);
+        {
+          const [, [value, event]] = spy.mock.calls as any;
+          expect(value).toEqual({ name: "Alex" });
+          expect(event.changes).toMatchChanges(change.child.value);
+        }
+
+        expect(screen.getByTestId("render-watch").textContent).toBe("2");
+      });
+
+      it.skip("updates the watcher on field id change", async () => {
+        const spy = vi.fn();
+
+        function Component() {
+          const count = useRenderCount();
+          const field = Field.use(
+            [{ name: "Alexander" }, { name: "Sasha" }],
+            [],
+          );
+          const [index, setIndex] = useState(0);
+          field.at(index).useWatch(spy, []);
+
+          return (
+            <div>
+              <div data-testid="render-watch">{count}</div>
+
+              <button onClick={() => setIndex(1)}>Set index to 1</button>
+
+              <button onClick={() => field.at(1).set({ name: "Alex" })}>
+                Rename item 1
+              </button>
+
+              <button onClick={() => field.at(0).set({ name: "A." })}>
+                Rename item 0
+              </button>
+            </div>
+          );
+        }
+
+        render(<Component />);
+
+        expect(screen.getByTestId("render-watch").textContent).toBe("1");
+
+        await act(() => screen.getByText("Set index to 1").click());
+
+        expect(spy).toHaveBeenCalledOnce();
+        expect(spy).toHaveBeenCalledWith(
+          { name: "Sasha" },
+          expect.objectContaining({
+            changes: change.field.id,
+          }),
+        );
+
+        await act(() => screen.getByText("Rename item 0").click());
+
+        expect(spy).toHaveBeenCalledOnce();
+
+        expect(screen.getByTestId("render-watch").textContent).toBe("2");
       });
     });
   });
@@ -3152,10 +4443,684 @@ describe(Field, () => {
         });
       });
     });
+
+    describe("useInto", () => {
+      beforeEach(cleanup);
+
+      it.skip("allows to compute field", async () => {
+        function Component() {
+          const count = useRenderCount();
+          const field = Field.use({ message: "Hello" }, []);
+          const codes = field.$.message
+            .useInto(toCodes, [])
+            .from(fromCodes, []);
+
+          return (
+            <div>
+              <div data-testid="render-compute">{count}</div>
+
+              <StringComponent string={field.$.message} />
+
+              <CodesComponent codes={codes} />
+
+              <button onClick={() => codes.set([72, 105, 33])}>Say hi</button>
+
+              <button onClick={() => field.$.message.set("Yo")}>Say yo</button>
+            </div>
+          );
+        }
+
+        render(<Component />);
+
+        expect(screen.getByTestId("string").textContent).toBe("Hello");
+        expect(screen.getByTestId("codes").textContent).toBe(
+          "72 101 108 108 111",
+        );
+
+        await act(() => screen.getByText("Say hi").click());
+
+        expect(screen.getByTestId("string").textContent).toBe("Hi!");
+        expect(screen.getByTestId("codes").textContent).toBe("72 105 33");
+
+        await act(() => screen.getByText("Say yo").click());
+
+        expect(screen.getByTestId("string").textContent).toBe("Yo");
+        expect(screen.getByTestId("codes").textContent).toBe("89 111");
+        expect(screen.getByTestId("render-compute").textContent).toBe("1");
+        expect(screen.getByTestId("render-string").textContent).toBe("3");
+        expect(screen.getByTestId("render-codes").textContent).toBe("3");
+      });
+
+      it.skip("depends on the field id", async () => {
+        function Component() {
+          const count = useRenderCount();
+          const field = Field.use<string[]>(["Hello", "Yo"], []);
+          const [index, setIndex] = useState(0);
+          const codes = field
+            .at(index)
+            .useInto(toCodes, [])
+            .from(fromCodes, []);
+
+          return (
+            <div>
+              <div data-testid="render-into">{count}</div>
+
+              <button onClick={() => setIndex(1)}>Set index to 1</button>
+
+              <CodesComponent codes={codes} />
+            </div>
+          );
+        }
+
+        render(<Component />);
+
+        expect(screen.getByTestId("codes").textContent).toBe(
+          "72 101 108 108 111",
+        );
+        expect(screen.getByTestId("render-into").textContent).toBe("1");
+
+        await act(() => screen.getByText("Set index to 1").click());
+
+        expect(screen.getByTestId("codes").textContent).toBe("89 111");
+        expect(screen.getByTestId("render-into").textContent).toBe("2");
+      });
+
+      it.skip("passes the current value as 2nd argument", async () => {
+        const intoSpy = vi.fn().mockReturnValue("Hey!");
+        const fromSpy = vi.fn().mockReturnValue("Yo!");
+
+        function Component() {
+          const field = Field.use({ message: "Hello, world!" }, []);
+          const computed = field.$.message
+            .useInto(intoSpy, [])
+            .from(fromSpy, []);
+
+          return (
+            <div>
+              <button onClick={() => computed.set("Hi!")}>Say hi</button>
+            </div>
+          );
+        }
+
+        render(<Component />);
+
+        await act(() => screen.getByText("Say hi").click());
+
+        await postpone();
+
+        // into
+        expect(intoSpy).toHaveBeenCalledOnce();
+        expect(intoSpy).toBeCalledWith("Hello, world!", undefined);
+        // from
+        expect(fromSpy).toHaveBeenCalledOnce();
+        expect(fromSpy).toBeCalledWith("Hi!", "Hello, world!");
+      });
+
+      it.skip("updates the watcher on field id change", async () => {
+        function Component() {
+          const count = useRenderCount();
+          const field = Field.use<string[]>(["Hello", "Yo"], []);
+          const [index, setIndex] = useState(0);
+          const codes = field
+            .at(index)
+            .useInto(toCodes, [])
+            .from(fromCodes, []);
+
+          return (
+            <div>
+              <div data-testid="render-into">{count}</div>
+
+              <button onClick={() => setIndex(1)}>Set index to 1</button>
+
+              <button onClick={() => field.at(0).set("Duh")}>
+                Rename item 1
+              </button>
+
+              <CodesComponent codes={codes} />
+            </div>
+          );
+        }
+
+        render(<Component />);
+
+        expect(screen.getByTestId("codes").textContent).toBe(
+          "72 101 108 108 111",
+        );
+        expect(screen.getByTestId("render-into").textContent).toBe("1");
+
+        await act(() => screen.getByText("Set index to 1").click());
+
+        expect(screen.getByTestId("codes").textContent).toBe("89 111");
+        expect(screen.getByTestId("render-into").textContent).toBe("2");
+
+        await act(() => screen.getByText("Rename item 1").click());
+
+        expect(screen.getByTestId("codes").textContent).toBe("89 111");
+        expect(screen.getByTestId("render-into").textContent).toBe("2");
+      });
+    });
+
+    describe("useDecompose", () => {
+      beforeEach(cleanup);
+
+      it.skip("allows to decompose union field", async () => {
+        function Component() {
+          const count = useRenderCount();
+          const address = Field.use<Address>(
+            { name: { first: "Alexander" } },
+            [],
+          );
+          const name = address.$.name.useDecompose(
+            (newName, prevName) => typeof newName !== typeof prevName,
+            [],
+          );
+
+          return (
+            <div>
+              <div data-testid="render-decompose">{count}</div>
+
+              {typeof name.value === "string" ? (
+                <div>
+                  <button
+                    onClick={() =>
+                      (name.field as Field<string>).set("Alexander")
+                    }
+                  >
+                    Rename
+                  </button>
+
+                  <StringComponent string={name.field as Field<string>} />
+                </div>
+              ) : (
+                <div>
+                  <input
+                    data-testid="input-name-first"
+                    {...(name.field as Field<UserName>).$.first.control()}
+                  />
+
+                  <button onClick={() => address.$.name.set("Alex")}>
+                    Set string name
+                  </button>
+
+                  <UserNameComponent name={name.field as Field<UserName>} />
+                </div>
+              )}
+            </div>
+          );
+        }
+
+        render(<Component />);
+
+        expect(screen.getByTestId("name-0").textContent).toBe("1Alexander");
+
+        await act(() => {
+          fireEvent.change(screen.getByTestId("input-name-first"), {
+            target: { value: "Sasha" },
+          });
+        });
+
+        expect(screen.getByTestId("name-0").textContent).toBe("2Sasha");
+        expect(screen.getByTestId("render-decompose").textContent).toBe("1");
+
+        await act(() => screen.getByText("Set string name").click());
+
+        expect(screen.queryByTestId("name")).toBeNull();
+        expect(screen.getByTestId("string").textContent).toBe("Alex");
+
+        await act(() => screen.getByText("Rename").click());
+
+        expect(screen.getByTestId("string").textContent).toBe("Alexander");
+        expect(screen.getByTestId("render-decompose").textContent).toBe("2");
+      });
+
+      it.skip("depends on the field id", async () => {
+        function Component() {
+          const count = useRenderCount();
+          const field = Field.use<Array<string | UserName>>(
+            ["Alexander", { first: "Sasha", last: "Koss" }],
+            [],
+          );
+          const [index, setIndex] = useState(0);
+          const name = field
+            .at(index)
+            .useDecompose((a, b) => typeof a !== typeof b, []);
+          const nameType = typeof name.value;
+
+          return (
+            <div>
+              <div data-testid="render-decompose">{count}</div>
+
+              <button onClick={() => setIndex(1)}>Set index to 1</button>
+
+              <div data-testid="decomposed">{nameType}</div>
+            </div>
+          );
+        }
+
+        render(<Component />);
+
+        expect(screen.getByTestId("decomposed").textContent).toBe("string");
+        expect(screen.getByTestId("render-decompose").textContent).toBe("1");
+
+        await act(() => screen.getByText("Set index to 1").click());
+
+        expect(screen.getByTestId("decomposed").textContent).toBe("object");
+        expect(screen.getByTestId("render-decompose").textContent).toBe("2");
+      });
+
+      it.skip("updates the watcher on field id change", async () => {
+        function Component() {
+          const count = useRenderCount();
+          const field = Field.use<Array<string | UserName>>(
+            ["Alexander", { first: "Sasha", last: "Koss" }],
+            [],
+          );
+          const [index, setIndex] = useState(0);
+          const name = field
+            .at(index)
+            .useDecompose((a, b) => typeof a !== typeof b, []);
+          const nameType = typeof name.value;
+
+          return (
+            <div>
+              <div data-testid="render-decompose">{count}</div>
+
+              <button onClick={() => setIndex(1)}>Set index to 1</button>
+
+              <button
+                onClick={() =>
+                  field.at(0).set({ first: "Alexander", last: "Koss" })
+                }
+              >
+                Make item 1 object
+              </button>
+
+              <div data-testid="decomposed">{nameType}</div>
+            </div>
+          );
+        }
+
+        render(<Component />);
+
+        expect(screen.getByTestId("decomposed").textContent).toBe("string");
+        expect(screen.getByTestId("render-decompose").textContent).toBe("1");
+
+        await act(() => screen.getByText("Set index to 1").click());
+
+        expect(screen.getByTestId("decomposed").textContent).toBe("object");
+        expect(screen.getByTestId("render-decompose").textContent).toBe("2");
+
+        await act(() => screen.getByText("Make item 1 object").click());
+
+        expect(screen.getByTestId("decomposed").textContent).toBe("object");
+        expect(screen.getByTestId("render-decompose").textContent).toBe("2");
+      });
+    });
+
+    describe("#useDiscriminate", () => {
+      beforeEach(cleanup);
+
+      it.skip("allows to discriminate union field", async () => {
+        interface TestState {
+          hello: Hello;
+        }
+
+        function Component() {
+          const count = useRenderCount();
+          const field = Field.use<TestState>(
+            {
+              hello: { lang: "human", text: "Hello" },
+            },
+            [],
+          );
+          const hello = field.$.hello.useDiscriminate("lang");
+
+          return (
+            <div>
+              <div data-testid="render-hello">{count}</div>
+
+              {hello.discriminator === "human" ? (
+                <div>
+                  <button
+                    onClick={() =>
+                      hello.field.set({
+                        lang: "human",
+                        text: "Hola",
+                      })
+                    }
+                  >
+                    Say hola
+                  </button>
+
+                  <button
+                    onClick={() =>
+                      field.$.hello.set({
+                        lang: "machine",
+                        binary: 0b1101010,
+                      })
+                    }
+                  >
+                    Switch to binary
+                  </button>
+
+                  <StringComponent string={hello.field.$.text} />
+                </div>
+              ) : (
+                hello.discriminator === "machine" && (
+                  <div>
+                    <button
+                      onClick={() =>
+                        field.$.hello.set({
+                          lang: "machine",
+                          binary: 0b1010101,
+                        })
+                      }
+                    >
+                      Say 1010101
+                    </button>
+
+                    <NumberComponent number={hello.field.$.binary} />
+                  </div>
+                )
+              )}
+            </div>
+          );
+        }
+
+        render(<Component />);
+
+        expect(screen.getByTestId("string").textContent).toBe("Hello");
+
+        await act(() => screen.getByText("Say hola").click());
+
+        expect(screen.getByTestId("string").textContent).toBe("Hola");
+        expect(screen.getByTestId("render-hello").textContent).toBe("1");
+
+        await act(() => screen.getByText("Switch to binary").click());
+
+        expect(screen.queryByTestId("string")).toBeNull();
+        expect(screen.getByTestId("number").textContent).toBe("106");
+
+        await act(() => screen.getByText("Say 1010101").click());
+
+        expect(screen.getByTestId("number").textContent).toBe("85");
+        expect(screen.getByTestId("render-hello").textContent).toBe("2");
+      });
+
+      it.skip("depends on the field id", async () => {
+        function Component() {
+          const count = useRenderCount();
+          const field = Field.use<Hello[]>(
+            [
+              { lang: "human", text: "Hello" },
+              { lang: "machine", binary: 0b1101010 },
+            ],
+            [],
+          );
+          const [index, setIndex] = useState(0);
+          const hello = field.at(index).useDiscriminate("lang");
+
+          return (
+            <div>
+              <div data-testid="render-discriminate">{count}</div>
+
+              <button onClick={() => setIndex(1)}>Set index to 1</button>
+
+              <div data-testid="discriminate">{hello.discriminator}</div>
+            </div>
+          );
+        }
+
+        render(<Component />);
+
+        expect(screen.getByTestId("discriminate").textContent).toBe("human");
+        expect(screen.getByTestId("render-discriminate").textContent).toBe("1");
+
+        await act(() => screen.getByText("Set index to 1").click());
+
+        expect(screen.getByTestId("discriminate").textContent).toBe("machine");
+        expect(screen.getByTestId("render-discriminate").textContent).toBe("2");
+      });
+
+      it.skip("updates the watcher on field id change", async () => {
+        function Component() {
+          const count = useRenderCount();
+          const field = Field.use<Hello[]>(
+            [
+              { lang: "human", text: "Hello" },
+              { lang: "machine", binary: 0b1101010 },
+            ],
+            [],
+          );
+          const [index, setIndex] = useState(0);
+          const hello = field.at(index).useDiscriminate("lang");
+
+          return (
+            <div>
+              <div data-testid="render-discriminate">{count}</div>
+
+              <button onClick={() => setIndex(1)}>Set index to 1</button>
+
+              <button
+                onClick={() => field.at(0).set({ lang: "dog", chicken: true })}
+              >
+                Make item 1 dog
+              </button>
+
+              <div data-testid="discriminate">{hello.discriminator}</div>
+            </div>
+          );
+        }
+
+        render(<Component />);
+
+        expect(screen.getByTestId("discriminate").textContent).toBe("human");
+        expect(screen.getByTestId("render-discriminate").textContent).toBe("1");
+
+        await act(() => screen.getByText("Set index to 1").click());
+
+        expect(screen.getByTestId("discriminate").textContent).toBe("machine");
+        expect(screen.getByTestId("render-discriminate").textContent).toBe("2");
+
+        await act(() => screen.getByText("Make item 1 dog").click());
+
+        expect(screen.getByTestId("discriminate").textContent).toBe("machine");
+        expect(screen.getByTestId("render-discriminate").textContent).toBe("2");
+      });
+
+      type Hello = HelloMachine | HelloHuman | HelloDog;
+
+      interface HelloMachine {
+        lang: "machine";
+        binary: number;
+      }
+
+      interface HelloHuman {
+        lang: "human";
+        text: string;
+      }
+
+      interface HelloDog {
+        lang: "dog";
+        chicken: true;
+      }
+    });
+
+    describe("useEnsure", () => {
+      beforeEach(cleanup);
+
+      it.skip("allows to ensure presence of a field", async () => {
+        function Component() {
+          const count = useRenderCount();
+          const [field, setField] = useState<Field<string> | undefined>();
+          const actualField = Field.use("Hello!", []);
+          const ensuredField = Field.useEnsure(field);
+          // eslint-disable-next-line react-hooks/exhaustive-deps
+          const dummyField = useMemo(() => ensuredField, []);
+          const fieldValue = ensuredField.useValue();
+          const dummyValue = dummyField.useValue();
+
+          return (
+            <div>
+              <div data-testid="render-ensure">{count}</div>
+
+              <button onClick={() => setField(actualField)}>Set actual</button>
+
+              <button onClick={() => dummyField.set("Hi!")}>
+                Update dummy
+              </button>
+
+              <div data-testid="ensured-value">{String(fieldValue)}</div>
+              <div data-testid="dummy-value">{String(dummyValue)}</div>
+
+              <div data-testid="actual-id">{actualField.id}</div>
+              <div data-testid="ensured-id">{ensuredField.id}</div>
+              <div data-testid="dummy-id">{dummyField.id}</div>
+            </div>
+          );
+        }
+
+        render(<Component />);
+
+        expect(screen.getByTestId("ensured-value").textContent).toBe(
+          "undefined",
+        );
+        expect(screen.getByTestId("dummy-value").textContent).toBe("undefined");
+
+        const actualId1 = screen.getByTestId("actual-id").textContent;
+        const ensuredId1 = screen.getByTestId("ensured-id").textContent;
+        const dummyId1 = screen.getByTestId("dummy-id").textContent;
+
+        expect(ensuredId1).toBe(dummyId1);
+        expect(actualId1).not.toBe(ensuredId1);
+
+        expect(screen.getByTestId("render-ensure").textContent).toBe("1");
+
+        await act(() => screen.getByText("Set actual").click());
+
+        expect(screen.getByTestId("ensured-value").textContent).toBe("Hello!");
+        expect(screen.getByTestId("dummy-value").textContent).toBe("undefined");
+
+        const actualId2 = screen.getByTestId("actual-id").textContent;
+        const ensuredId2 = screen.getByTestId("ensured-id").textContent;
+        const dummyId2 = screen.getByTestId("dummy-id").textContent;
+
+        expect(ensuredId2).toBe(actualId2);
+        expect(actualId2).not.toBe(dummyId2);
+        expect(dummyId2).toBe(dummyId1);
+
+        expect(screen.getByTestId("render-ensure").textContent).toBe("2");
+
+        await act(() => screen.getByText("Update dummy").click());
+
+        expect(screen.getByTestId("ensured-value").textContent).toBe("Hello!");
+        expect(screen.getByTestId("dummy-value").textContent).toBe("undefined");
+
+        const dummyId3 = screen.getByTestId("dummy-id").textContent;
+
+        expect(dummyId3).toBe(dummyId2);
+
+        expect(screen.getByTestId("render-ensure").textContent).toBe("2");
+      });
+
+      it.skip("allows to pass falsy values", async () => {
+        function Component() {
+          const field = Field.useEnsure({} as Field<string> | false);
+          const value = field.useValue();
+
+          return (
+            <div>
+              <div data-testid="value">{String(value)}</div>
+            </div>
+          );
+        }
+
+        render(<Component />);
+
+        expect(screen.getByTestId("value").textContent).toBe("undefined");
+      });
+
+      it.skip("allows to map nested field", async () => {
+        function Component() {
+          const count = useRenderCount();
+          const [field, setField] = useState<
+            Field<{ hello: string }> | undefined
+          >();
+          const actualField = Field.use({ hello: "Hello!" }, []);
+          const ensuredField = Field.useEnsure(field, (f) => f.$.hello);
+          const dummyField = useMemo(() => ensuredField, []);
+          const fieldValue = ensuredField.useValue();
+          const dummyValue = dummyField.useValue();
+
+          return (
+            <div>
+              <div data-testid="render-ensure">{count}</div>
+
+              <button onClick={() => setField(actualField)}>Set actual</button>
+
+              <button onClick={() => dummyField.set("Hi!")}>
+                Update dummy
+              </button>
+
+              <div data-testid="ensured-value">{String(fieldValue)}</div>
+              <div data-testid="dummy-value">{String(dummyValue)}</div>
+
+              <div data-testid="actual-id">{actualField.$.hello.id}</div>
+              <div data-testid="ensured-id">{ensuredField.id}</div>
+              <div data-testid="dummy-id">{dummyField.id}</div>
+            </div>
+          );
+        }
+
+        render(<Component />);
+
+        expect(screen.getByTestId("ensured-value").textContent).toBe(
+          "undefined",
+        );
+        expect(screen.getByTestId("dummy-value").textContent).toBe("undefined");
+
+        const actualId1 = screen.getByTestId("actual-id").textContent;
+        const ensuredId1 = screen.getByTestId("ensured-id").textContent;
+        const dummyId1 = screen.getByTestId("dummy-id").textContent;
+
+        expect(ensuredId1).toBe(dummyId1);
+        expect(actualId1).not.toBe(ensuredId1);
+
+        expect(screen.getByTestId("render-ensure").textContent).toBe("1");
+
+        await act(() => screen.getByText("Set actual").click());
+
+        expect(screen.getByTestId("ensured-value").textContent).toBe("Hello!");
+        expect(screen.getByTestId("dummy-value").textContent).toBe("undefined");
+
+        const actualId2 = screen.getByTestId("actual-id").textContent;
+        const ensuredId2 = screen.getByTestId("ensured-id").textContent;
+        const dummyId2 = screen.getByTestId("dummy-id").textContent;
+
+        expect(ensuredId2).toBe(actualId2);
+        expect(actualId2).not.toBe(dummyId2);
+        expect(dummyId2).toBe(dummyId1);
+
+        expect(screen.getByTestId("render-ensure").textContent).toBe("2");
+
+        await act(() => screen.getByText("Update dummy").click());
+
+        expect(screen.getByTestId("ensured-value").textContent).toBe("Hello!");
+        expect(screen.getByTestId("dummy-value").textContent).toBe("undefined");
+
+        const dummyId3 = screen.getByTestId("dummy-id").textContent;
+
+        expect(dummyId3).toBe(dummyId2);
+
+        expect(screen.getByTestId("render-ensure").textContent).toBe("2");
+      });
+    });
   });
 
-  describe("input", () => {
+  describe("interop", () => {
     describe("input", () => {
+      beforeEach(cleanup);
+
       it("generates props for a field", () => {
         const field = new Field({ name: { first: "Alexander" } });
         const props = field.$.name.$.first.control();
@@ -3169,162 +5134,553 @@ describe(Field, () => {
         expect(props.name).toEqual(".");
       });
 
-      describe.skip("#at", () => {
-        describe("primitive", () => {
-          it("returns the undefined field as is if it's defined", () => {
-            const field = new Field<string | number | undefined>(undefined);
-            const ref = field.optional();
-            expect(ref.value).toBeUndefined();
+      it.skip("synchronizes input with the state", async () => {
+        function Component() {
+          const count = useRenderCount();
+          const field = Field.use<User>({ name: { first: "Alexander" } }, []);
+
+          return (
+            <div>
+              <div data-testid="render-input">{count}</div>
+
+              <input
+                data-testid="name-first-input"
+                {...field.$.name.$.first.control()}
+              />
+
+              <button onClick={() => field.$.name.$.first.set("Sasha")}>
+                Rename
+              </button>
+
+              <UserNameComponent name={field.$.name} />
+            </div>
+          );
+        }
+
+        render(<Component />);
+
+        expect(screen.getByTestId("name-first-0").textContent).toBe(
+          "Alexander",
+        );
+        expect(
+          (screen.getByTestId("name-first-input") as HTMLInputElement).value,
+        ).toBe("Alexander");
+
+        await act(() => {
+          fireEvent.change(screen.getByTestId("name-first-input"), {
+            target: { value: "Alex" },
           });
         });
 
-        describe("object", () => {
-          it("returns the undefined field as is if it's defined", () => {
-            const field = new Field<{ a: string } | undefined>(undefined);
-            const ref = field.optional();
-            expect(ref.value).toBeUndefined();
-          });
+        expect(screen.getByTestId("name-first-0").textContent).toBe("Alex");
+        expect(
+          (screen.getByTestId("name-first-input") as HTMLInputElement).value,
+        ).toBe("Alex");
 
-          it("allows to access properties by key", () => {
-            const field = new Field<{ a?: string } | undefined>(undefined);
-            const ref = field.optional().at("a");
-            expect(ref.value).toBeUndefined();
-          });
+        await act(() => screen.getByText("Rename").click());
 
-          it("allows accessing maybe undefined properties", () => {
-            const field = new Field<
-              { a?: { b?: { c?: number | string } } } | undefined
-            >(undefined);
-            const ref = field.optional().at("a").at("b").at("c");
-            expect(ref.value).toBeUndefined();
-          });
+        expect(screen.getByTestId("name-first-0").textContent).toBe("Sasha");
+        expect(
+          (screen.getByTestId("name-first-input") as HTMLInputElement).value,
+        ).toBe("Sasha");
 
-          it("resolves proper field for deep nested properties", () => {
-            const field = new Field<
-              { a?: { b?: { c?: number | string } } } | undefined
-            >({ a: { b: { c: 123 } } });
-            const ref = field.optional().at("a").at("b").at("c");
-            expect(ref.value).toBe(123);
-          });
-        });
-
-        describe("array", () => {
-          it("returns the undefined field as is if it's defined", () => {
-            const field = new Field<string[] | undefined>(undefined);
-            const ref = field.optional();
-            expect(ref.value).toBeUndefined();
-          });
-
-          it("allows to access items by index", () => {
-            const field = new Field<string[] | undefined>(undefined);
-            const ref = field.optional().at(0);
-            expect(ref.value).toBeUndefined();
-          });
-
-          it("allows accessing maybe undefined items", () => {
-            const field = new Field<string[][][] | undefined>(undefined);
-            const ref = field.optional().at(0).at(0).at(0);
-            expect(ref.value).toBeUndefined();
-          });
-
-          it("resolves proper field for deep nested items", () => {
-            const field = new Field<string[][][] | undefined>([[["a"]]]);
-            const ref = field.optional().at(0).at(0).at(0);
-            expect(ref.value).toBe("a");
-          });
-        });
-
-        describe("instance", () => {
-          it("returns the undefined field as is if it's defined", () => {
-            const field = new Field<Set<string> | undefined>(undefined);
-            const ref = field.optional();
-            expect(ref.value).toBeUndefined();
-          });
-
-          it.todo("does not allow to access items by key", () => {
-            const field = new Field<Set<string> | undefined>(undefined);
-            // TODO:
-            // const ref = fieldRef
-            //   .maybe(new Set<string>())
-            //   // @ts-expect-error: It should not be available
-            //   .maybe("has", (val: string) => false);
-            // ref satisfies never;
-            // expect(ref instanceof MaybeFieldRef).toBe(true);
-            // expect(() => ref.at("a")).toThrowError(
-            //   "Cannot access items of a Set by key"
-            // );
-          });
-        });
+        expect(screen.getByTestId("render-input").textContent).toBe("1");
       });
 
-      describe.skip("#addError", () => {
-        it("adds errors to present fields", () => {
-          const field = new Field<string | number | undefined>("hello");
-          const ref = field.optional();
-          ref.addError("Something went wrong");
-          expect(field.errors).toEqual([{ message: "Something went wrong" }]);
-        });
+      it.skip("synchronizes textarea with the state", async () => {
+        function Component() {
+          const count = useRenderCount();
+          const field = Field.use<User>({ name: { first: "Alexander" } }, []);
 
-        it("adds errors to undefined fields", () => {
-          const field = new Field<{ hello?: string }>({});
-          const ref = field.optional().at("hello");
-          ref.addError("Something went wrong");
-          expect(field.$.hello.errors).toEqual([
-            { message: "Something went wrong" },
-          ]);
-        });
+          return (
+            <div>
+              <div data-testid="render-input">{count}</div>
 
-        it("adds errors to shadow fields", () => {
-          const field = new Field<{ hello?: { world?: string } }>({});
-          const ref = field.optional().at("hello").at("world");
-          ref.addError("Something went wrong");
-          expect(field.valid).toBe(false);
-          const pavedField = field.$.hello.pave({}).$.world;
-          expect(pavedField.errors).toEqual([
-            { message: "Something went wrong" },
-          ]);
-        });
+              <textarea
+                data-testid="name-first-input"
+                {...field.$.name.$.first.control()}
+              />
 
-        it("allows to clear shadow fields errors", () => {
-          const field = new Field<{ hello?: { world?: string } }>({});
-          const ref = field.optional().at("hello").at("world");
-          ref.addError("Something went wrong");
-          expect(field.valid).toBe(false);
-          const pavedField = field.$.hello.pave({}).$.world;
-          expect(pavedField.errors).toEqual([
-            { message: "Something went wrong" },
-          ]);
-          field.clearErrors();
-          expect(pavedField.errors).toEqual([]);
-        });
+              <button onClick={() => field.$.name.$.first.set("Sasha")}>
+                Rename
+              </button>
 
-        describe("changes", () => {
-          it("causes target field trigger", async () => {
-            const field = new Field<string | number | undefined>("hello");
-            const ref = field.optional();
-            const spy = vi.fn();
-            field.watch(spy);
-            ref.addError("Something went wrong");
-            await postpone();
-            expect(spy).toHaveBeenCalledTimes(1);
-            expect(spy).toReceiveChanges(
-              change.field.errors | change.field.invalid,
-            );
-          });
+              <UserNameComponent name={field.$.name} />
+            </div>
+          );
+        }
 
-          it("trigger event on the closest target", async () => {
-            const field = new Field<{ name?: { first?: string } }>({});
-            const ref = field.optional().at("name").at("first");
-            const spy = vi.fn();
-            field.$.name.watch(spy);
-            ref.addError("Something went wrong");
-            await postpone();
-            expect(spy).toHaveBeenCalledTimes(1);
-            expect(spy).toReceiveChanges(
-              change.child.errors | change.child.invalid,
-            );
+        render(<Component />);
+
+        expect(screen.getByTestId("name-first-0").textContent).toBe(
+          "Alexander",
+        );
+        expect(
+          (screen.getByTestId("name-first-input") as HTMLTextAreaElement).value,
+        ).toBe("Alexander");
+
+        await act(() => {
+          fireEvent.change(screen.getByTestId("name-first-input"), {
+            target: { value: "Alex" },
           });
         });
+
+        expect(screen.getByTestId("name-first-0").textContent).toBe("Alex");
+        expect(
+          (screen.getByTestId("name-first-input") as HTMLTextAreaElement).value,
+        ).toBe("Alex");
+
+        await act(() => screen.getByText("Rename").click());
+
+        expect(screen.getByTestId("name-first-0").textContent).toBe("Sasha");
+        expect(
+          (screen.getByTestId("name-first-input") as HTMLTextAreaElement).value,
+        ).toBe("Sasha");
+
+        expect(screen.getByTestId("render-input").textContent).toBe("1");
+      });
+
+      it.skip("allows to pass ref and onBlur props", async () => {
+        const refSpy = vi.fn();
+        const onBlurSpy = vi.fn();
+
+        function Component() {
+          const count = useRenderCount();
+          const field = Field.use<User>({ name: { first: "Alexander" } }, []);
+
+          return (
+            <div>
+              <div data-testid="render-input">{count}</div>
+
+              <input
+                data-testid="name-first-input"
+                {...field.$.name.$.first.control({
+                  ref: refSpy,
+                  onBlur: onBlurSpy,
+                })}
+              />
+
+              <button onClick={() => field.$.name.$.first.set("Sasha")}>
+                Rename
+              </button>
+
+              <UserNameComponent name={field.$.name} />
+            </div>
+          );
+        }
+
+        render(<Component />);
+
+        expect(refSpy).toHaveBeenCalledWith(
+          expect.objectContaining({
+            name: "name.first",
+          }),
+        );
+
+        expect(onBlurSpy).not.toHaveBeenCalled();
+
+        expect(screen.getByTestId("name-first-0").textContent).toBe(
+          "Alexander",
+        );
+        expect(
+          (screen.getByTestId("name-first-input") as HTMLInputElement).value,
+        ).toBe("Alexander");
+
+        await act(() => {
+          fireEvent.change(screen.getByTestId("name-first-input"), {
+            target: { value: "Alex" },
+          });
+        });
+
+        expect(screen.getByTestId("name-first-0").textContent).toBe("Alex");
+        expect(
+          (screen.getByTestId("name-first-input") as HTMLInputElement).value,
+        ).toBe("Alex");
+
+        await act(() => screen.getByText("Rename").click());
+
+        expect(screen.getByTestId("name-first-0").textContent).toBe("Sasha");
+        expect(
+          (screen.getByTestId("name-first-input") as HTMLInputElement).value,
+        ).toBe("Sasha");
+
+        expect(screen.getByTestId("render-input").textContent).toBe("1");
+
+        fireEvent.blur(screen.getByTestId("name-first-input"));
+
+        expect(onBlurSpy).toBeCalledWith(
+          expect.objectContaining({ type: "blur" }),
+        );
+      });
+    });
+
+    describe("Component", () => {
+      beforeEach(cleanup);
+
+      it.skip("allows to control object field", async () => {
+        interface ComponentProps {
+          profile: Profile;
+        }
+
+        function Component(props: ComponentProps) {
+          const count = useRenderCount();
+          const profile = Field.use<Profile>(props.profile, []);
+
+          return (
+            <div>
+              <div data-testid="render-profile">{count}</div>
+
+              <UserComponent user={profile.$.user} />
+            </div>
+          );
+        }
+
+        render(
+          <Component profile={{ user: { name: { first: "Alexander" } } }} />,
+        );
+
+        await act(() => {
+          fireEvent.change(screen.getByTestId("name-first-0-input"), {
+            target: { value: "Sasha" },
+          });
+        });
+
+        expect(screen.getByTestId("name-first-0").textContent).toBe("Sasha");
+        expect(screen.getByTestId("name-last-0").textContent).toBe("");
+        expect(screen.getByTestId("render-profile").textContent).toBe("1");
+        expect(screen.getByTestId("render-user").textContent).toBe("1");
+        expect(screen.getByTestId("render-name-0").textContent).toBe("2");
+
+        await act(() => {
+          fireEvent.change(screen.getByTestId("name-last-0-input"), {
+            target: { value: "Koss" },
+          });
+        });
+
+        expect(screen.getByTestId("name-first-0").textContent).toBe("Sasha");
+        expect(screen.getByTestId("name-last-0").textContent).toBe("Koss");
+        expect(screen.getByTestId("render-profile").textContent).toBe("1");
+        expect(screen.getByTestId("render-user").textContent).toBe("2");
+        expect(screen.getByTestId("render-name-0").textContent).toBe("3");
+      });
+
+      it.skip("allows to control array field", async () => {
+        interface ComponentProps {
+          names: UserName[];
+        }
+
+        function Component(props: ComponentProps) {
+          const count = useRenderCount();
+          const field = Field.use({ names: props.names }, []);
+          const names = field.$.names.useCollection();
+
+          return (
+            <div>
+              <div data-testid="render-names">{count}</div>
+
+              {names.map((name, index) => (
+                <div data-testid={`name-${index}`} key={name.id}>
+                  <UserNameComponent name={name} />
+                  <button
+                    // @ts-ignore -- TODO
+                    onClick={() => name.Remove()}
+                    data-testid={`remove-${index}`}
+                  >
+                    Remove
+                  </button>
+                </div>
+              ))}
+
+              <UserNameFormComponent onSubmit={(name) => names.push(name)} />
+            </div>
+          );
+        }
+
+        render(<Component names={[{ first: "Alexander" }]} />);
+
+        await act(() => {
+          fireEvent.change(screen.getByTestId("input-name-first"), {
+            target: { value: "Sasha" },
+          });
+        });
+        await act(() => {
+          fireEvent.change(screen.getByTestId("input-name-last"), {
+            target: { value: "Koss" },
+          });
+        });
+        await act(() => screen.getByText("Submit name").click());
+
+        expect(screen.getByTestId("name-1").textContent).toBe(
+          "1SashaKossRemove",
+        );
+
+        await act(() => screen.getByTestId("remove-1").click());
+
+        expect(screen.queryByTestId("name-1")).toBeNull();
+        expect(screen.getByTestId("render-names").textContent).toBe("3");
+      });
+
+      it.skip("allows to control input element", async () => {
+        function Component() {
+          const count = useRenderCount();
+          const field = Field.use<User>({ name: { first: "Alexander" } }, []);
+
+          return (
+            <div>
+              <div data-testid="render-input">{count}</div>
+
+              <Field.Component
+                field={field.$.name.$.first}
+                render={(control) => (
+                  <input
+                    data-testid="name-first-input"
+                    {...control}
+                    onChange={(event) => control.onChange(event.target.value)}
+                  />
+                )}
+              />
+
+              <button onClick={() => field.$.name.$.first.set("Sasha")}>
+                Rename
+              </button>
+
+              <UserNameComponent name={field.$.name} />
+            </div>
+          );
+        }
+
+        render(<Component />);
+
+        expect(screen.getByTestId("name-first-0").textContent).toBe(
+          "Alexander",
+        );
+        expect(
+          (screen.getByTestId("name-first-input") as HTMLInputElement).value,
+        ).toBe("Alexander");
+
+        await act(() => {
+          fireEvent.change(screen.getByTestId("name-first-input"), {
+            target: { value: "Alex" },
+          });
+        });
+
+        expect(screen.getByTestId("name-first-0").textContent).toBe("Alex");
+        expect(
+          (screen.getByTestId("name-first-input") as HTMLInputElement).value,
+        ).toBe("Alex");
+
+        await act(() => screen.getByText("Rename").click());
+
+        expect(screen.getByTestId("name-first-0").textContent).toBe("Sasha");
+        expect(
+          (screen.getByTestId("name-first-input") as HTMLInputElement).value,
+        ).toBe("Sasha");
+
+        expect(screen.getByTestId("render-input").textContent).toBe("1");
+      });
+
+      it.skip("allows to subscribe to meta information", async () => {
+        function Component() {
+          const outsideCount = useRenderCount();
+          const field = Field.use(
+            { name: { first: "Alexander", last: "" } },
+            [],
+          );
+
+          return (
+            <div>
+              <div data-testid="render-meta-outside">{outsideCount}</div>
+
+              <Field.Component
+                field={field}
+                meta
+                render={({ value }, { valid, errors, dirty }) => {
+                  const count = useRenderCount();
+                  return (
+                    <>
+                      <div data-testid="render-meta">{count}</div>
+
+                      <button
+                        onClick={() =>
+                          field.$.name.$.first.addError(`Nope ${Math.random()}`)
+                        }
+                      >
+                        Set first name error
+                      </button>
+
+                      <button
+                        onClick={() =>
+                          field.$.name.$.last.addError(`Nah ${Math.random()}`)
+                        }
+                      >
+                        Set last name error
+                      </button>
+
+                      <button onClick={() => field.addError("Nope")}>
+                        Set field error
+                      </button>
+
+                      <button
+                        onClick={() => {
+                          field.$.name.$.first.clearErrors();
+                          field.$.name.$.last.clearErrors();
+                        }}
+                      >
+                        Clear errors
+                      </button>
+
+                      <button
+                        onClick={() =>
+                          field.$.name.set({ first: "Sasha", last: "Koss" })
+                        }
+                      >
+                        Rename
+                      </button>
+
+                      <div data-testid="full-name">
+                        {value.name.first} {value.name.last}
+                      </div>
+
+                      <div data-testid="dirty">{String(dirty)}</div>
+                      <div data-testid="errors">{joinErrors(errors)}</div>
+                      <div data-testid="valid">{String(valid)}</div>
+                    </>
+                  );
+                }}
+              />
+            </div>
+          );
+        }
+
+        render(<Component />);
+
+        expect(screen.getByTestId("full-name").textContent).toBe("Alexander ");
+        expect(screen.getByTestId("dirty").textContent).toBe("false");
+        expect(screen.getByTestId("valid").textContent).toBe("true");
+        expect(screen.getByTestId("errors").textContent).toBe("");
+
+        await act(() => screen.getByText("Set first name error").click());
+
+        expect(screen.getByTestId("dirty").textContent).toBe("false");
+        expect(screen.getByTestId("valid").textContent).toBe("false");
+        expect(screen.getByTestId("errors").textContent).toBe("");
+
+        await act(() => screen.getByText("Set last name error").click());
+
+        expect(screen.getByTestId("errors").textContent).toBe("");
+        expect(screen.getByTestId("render-meta").textContent).toBe("2");
+
+        await act(() => screen.getByText("Set first name error").click());
+        await act(() => screen.getByText("Set last name error").click());
+
+        expect(screen.getByTestId("render-meta").textContent).toBe("2");
+
+        await act(() => screen.getByText("Rename").click());
+
+        expect(screen.getByTestId("full-name").textContent).toBe("Sasha Koss");
+        expect(screen.getByTestId("dirty").textContent).toBe("true");
+        expect(screen.getByTestId("valid").textContent).toBe("false");
+        expect(screen.getByTestId("render-meta").textContent).toBe("3");
+
+        await act(() => screen.getByText("Clear errors").click());
+
+        expect(screen.getByTestId("dirty").textContent).toBe("true");
+        expect(screen.getByTestId("valid").textContent).toBe("true");
+        expect(screen.getByTestId("errors").textContent).toBe("");
+        expect(screen.getByTestId("render-meta").textContent).toBe("4");
+
+        await act(() => screen.getByText("Set field error").click());
+
+        expect(screen.getByTestId("errors").textContent).toBe("Nope");
+        expect(screen.getByTestId("render-meta").textContent).toBe("5");
+        expect(screen.getByTestId("render-meta-outside").textContent).toBe("1");
+      });
+
+      it.skip("doesn't cause re-mounts on field change", async () => {
+        const mountSpy = vi.fn();
+        interface InputProps {
+          name: string;
+          value: string;
+          onChange: (value: string) => void;
+          onBlur: React.FocusEventHandler<Element>;
+          "data-testid"?: string;
+        }
+
+        function Input(props: InputProps) {
+          useEffect(mountSpy, []);
+          return (
+            <input
+              {...props}
+              onChange={(event) => props.onChange(event.target.value)}
+            />
+          );
+        }
+
+        function Component() {
+          const count = useRenderCount();
+          const namesField = Field.use<string[]>(["Alexander", "Sasha"], []);
+          const [index, setIndex] = useState(0);
+          const decomposedField = namesField.at(index).decompose();
+          if (!decomposedField.value) return null;
+          const { field } = decomposedField;
+
+          return (
+            <div>
+              <div data-testid="render-input">{count}</div>
+
+              <Field.Component
+                field={field}
+                render={(control) => (
+                  <Input {...control} data-testid="name-input" />
+                )}
+              />
+
+              <button onClick={() => field.set("Alex")}>Rename</button>
+
+              <button onClick={() => setIndex(1)}>Switch</button>
+
+              <StringComponent string={field} />
+            </div>
+          );
+        }
+
+        render(<Component />);
+
+        expect(screen.getByTestId("string").textContent).toBe("Alexander");
+        expect(
+          (screen.getByTestId("name-input") as HTMLInputElement).value,
+        ).toBe("Alexander");
+
+        await act(() => {
+          fireEvent.change(screen.getByTestId("name-input"), {
+            target: { value: "A." },
+          });
+        });
+
+        expect(screen.getByTestId("string").textContent).toBe("A.");
+        expect(
+          (screen.getByTestId("name-input") as HTMLInputElement).value,
+        ).toBe("A.");
+
+        await act(() => screen.getByText("Rename").click());
+
+        expect(screen.getByTestId("string").textContent).toBe("Alex");
+        expect(
+          (screen.getByTestId("name-input") as HTMLInputElement).value,
+        ).toBe("Alex");
+
+        expect(screen.getByTestId("render-input").textContent).toBe("1");
+
+        expect(mountSpy).toHaveBeenCalledOnce();
+
+        await act(() => screen.getByText("Switch").click());
+
+        expect(screen.getByTestId("string").textContent).toBe("Sasha");
+        expect(
+          (screen.getByTestId("name-input") as HTMLInputElement).value,
+        ).toBe("Sasha");
+
+        expect(mountSpy).toHaveBeenCalledOnce();
       });
     });
   });
@@ -3346,6 +5702,215 @@ describe(Field, () => {
         field.$.name.addError("Something went wrong");
         field.$.name.$.first.addError("Something went wrong again");
         expect(field.errors).toEqual([]);
+      });
+    });
+
+    describe("useErrors", () => {
+      beforeEach(cleanup);
+
+      it.skip("allows to listen to field error", async () => {
+        function Component() {
+          const count = useRenderCount();
+          const field = Field.use(
+            { name: { first: "Alexander", last: "" } },
+            [],
+          );
+          const errors = field.$.name.useErrors();
+
+          return (
+            <div>
+              <div data-testid="render-error">{count}</div>
+
+              <button onClick={() => field.$.name.addError("Nope 1")}>
+                Set error 1
+              </button>
+
+              <button onClick={() => field.$.name.addError("Nope 2")}>
+                Set error 2
+              </button>
+
+              <button onClick={() => field.$.name.$.first.addError("Nah")}>
+                Set first name error
+              </button>
+
+              <button
+                onClick={() => {
+                  field.$.name.clearErrors();
+                }}
+              >
+                Clear error
+              </button>
+
+              <button onClick={() => field.$.name.$.last.set("Koss")}>
+                Trigger field update
+              </button>
+
+              <div data-testid="errors">{joinErrors(errors)}</div>
+            </div>
+          );
+        }
+
+        render(<Component />);
+
+        expect(screen.getByTestId("errors").textContent).toBe("");
+        expect(screen.getByTestId("render-error").textContent).toBe("1");
+
+        await act(() => screen.getByText("Set error 1").click());
+
+        expect(screen.getByTestId("errors").textContent).toBe("Nope 1");
+        expect(screen.getByTestId("render-error").textContent).toBe("2");
+
+        await act(() => screen.getByText("Set error 1").click());
+
+        expect(screen.getByTestId("render-error").textContent).toBe("3");
+
+        await act(() => screen.getByText("Set error 2").click());
+
+        expect(screen.getByTestId("errors").textContent).toBe("Nope 2");
+        expect(screen.getByTestId("render-error").textContent).toBe("4");
+
+        await act(() => screen.getByText("Trigger field update").click());
+
+        expect(screen.getByTestId("render-error").textContent).toBe("4");
+
+        await act(() => screen.getByText("Set first name error").click());
+
+        expect(screen.getByTestId("render-error").textContent).toBe("4");
+
+        await act(() => screen.getByText("Clear error").click());
+
+        expect(screen.getByTestId("errors").textContent).toBe("");
+        expect(screen.getByTestId("render-error").textContent).toBe("5");
+      });
+
+      it.skip("depends on the field id", async () => {
+        function Component() {
+          const count = useRenderCount();
+          const field = Field.use(
+            [{ name: "Alexander" }, { name: "Sasha" }],
+            [],
+          );
+          const [index, setIndex] = useState(0);
+          const errors = field.at(index).useErrors();
+
+          return (
+            <div>
+              <div data-testid="render-error">{count}</div>
+
+              <button onClick={() => setIndex(1)}>Set index to 1</button>
+
+              <button onClick={() => field.at(1).addError("Nope")}>
+                Set item 1 error
+              </button>
+
+              <div data-testid="errors">{joinErrors(errors)}</div>
+            </div>
+          );
+        }
+
+        render(<Component />);
+
+        expect(screen.getByTestId("errors").textContent).toBe("");
+        expect(screen.getByTestId("render-error").textContent).toBe("1");
+
+        await act(() => screen.getByText("Set item 1 error").click());
+
+        expect(screen.getByTestId("render-error").textContent).toBe("1");
+
+        await act(() => screen.getByText("Set index to 1").click());
+
+        expect(screen.getByTestId("errors").textContent).toBe("Nope");
+        expect(screen.getByTestId("render-error").textContent).toBe("2");
+      });
+
+      it.skip("updates the watcher on field id change", async () => {
+        function Component() {
+          const count = useRenderCount();
+          const field = Field.use(
+            [{ name: "Alexander" }, { name: "Sasha" }],
+            [],
+          );
+          const [index, setIndex] = useState(0);
+          const errors = field.at(index).useErrors();
+
+          return (
+            <div>
+              <div data-testid="render-error">{count}</div>
+
+              <button onClick={() => setIndex(1)}>Set index to 1</button>
+
+              <button onClick={() => field.at(0).addError("Nope")}>
+                Set item 0 error
+              </button>
+
+              <div data-testid="errors">{joinErrors(errors)}</div>
+            </div>
+          );
+        }
+
+        render(<Component />);
+
+        expect(screen.getByTestId("errors").textContent).toBe("");
+        expect(screen.getByTestId("render-error").textContent).toBe("1");
+
+        await act(() => screen.getByText("Set index to 1").click());
+
+        expect(screen.getByTestId("errors").textContent).toBe("");
+        expect(screen.getByTestId("render-error").textContent).toBe("2");
+
+        await act(() => screen.getByText("Set item 0 error").click());
+
+        expect(screen.getByTestId("errors").textContent).toBe("");
+        expect(screen.getByTestId("render-error").textContent).toBe("2");
+      });
+
+      it.skip("allows to enable/disable the error listener", async () => {
+        function Component() {
+          const count = useRenderCount();
+          const field = Field.use(
+            [{ name: "Alexander" }, { name: "Sasha" }],
+            [],
+          );
+          const [index, setIndex] = useState(0);
+          const [enabled, setEnabled] = useState(false);
+          const errors = field.at(index).useErrors(enabled);
+
+          return (
+            <div>
+              <div data-testid="render-error">{count}</div>
+
+              <button onClick={() => setIndex(1)}>Set index to 1</button>
+
+              <button onClick={() => field.at(1).addError("Nope")}>
+                Set item 1 error
+              </button>
+
+              <button onClick={() => setEnabled(true)}>Enable error</button>
+
+              <div data-testid="errors">{joinErrors(errors)}</div>
+            </div>
+          );
+        }
+
+        render(<Component />);
+
+        expect(screen.getByTestId("errors").textContent).toBe("");
+        expect(screen.getByTestId("render-error").textContent).toBe("1");
+
+        await act(() => screen.getByText("Set index to 1").click());
+
+        expect(screen.getByTestId("errors").textContent).toBe("");
+        expect(screen.getByTestId("render-error").textContent).toBe("2");
+
+        await act(() => screen.getByText("Set item 1 error").click());
+
+        expect(screen.getByTestId("errors").textContent).toBe("");
+        expect(screen.getByTestId("render-error").textContent).toBe("2");
+
+        await act(() => screen.getByText("Enable error").click());
+
+        expect(screen.getByTestId("errors").textContent).toBe("Nope");
+        expect(screen.getByTestId("render-error").textContent).toBe("3");
       });
     });
 
@@ -3530,6 +6095,207 @@ describe(Field, () => {
       });
     });
 
+    describe("useValid", () => {
+      beforeEach(cleanup);
+
+      it("allows to listen to field valid", async () => {
+        function Component() {
+          const count = useRenderCount();
+          const field = Field.use({ name: { first: "Alexander" } }, []);
+          const valid = field.useValid();
+
+          return (
+            <div>
+              <div data-testid="render-valid">{count}</div>
+
+              <button
+                onClick={() =>
+                  field.$.name.$.first.addError(`Nope ${Math.random()}`)
+                }
+              >
+                Set error
+              </button>
+
+              <button onClick={() => field.$.name.$.first.clearErrors()}>
+                Clear error
+              </button>
+
+              <button onClick={() => field.$.name.$.first.set("Sasha")}>
+                Trigger field update
+              </button>
+
+              <div data-testid="valid">{String(valid)}</div>
+            </div>
+          );
+        }
+
+        render(<Component />);
+
+        expect(screen.getByTestId("valid").textContent).toBe("true");
+
+        await act(() => screen.getByText("Set error").click());
+
+        expect(screen.getByTestId("valid").textContent).toBe("false");
+
+        expect(screen.getByTestId("render-valid").textContent).toBe("2");
+
+        await act(() => screen.getByText("Set error").click());
+        await act(() => screen.getByText("Set error").click());
+
+        expect(screen.getByTestId("render-valid").textContent).toBe("2");
+
+        await act(() => screen.getByText("Trigger field update").click());
+
+        expect(screen.getByTestId("render-valid").textContent).toBe("2");
+
+        await act(() => screen.getByText("Set error").click());
+        await act(() => screen.getByText("Clear error").click());
+
+        expect(screen.getByTestId("valid").textContent).toBe("true");
+
+        expect(screen.getByTestId("render-valid").textContent).toBe("3");
+      });
+
+      it("depends on the field id", async () => {
+        function Component() {
+          const count = useRenderCount();
+          const field = Field.use(
+            [{ name: "Alexander" }, { name: "Sasha" }],
+            [],
+          );
+          const [index, setIndex] = useState(0);
+          const valid = field.at(index).useValid();
+
+          return (
+            <div>
+              <div data-testid="render-valid">{count}</div>
+
+              <button onClick={() => setIndex(1)}>Set index to 1</button>
+
+              <button onClick={() => field.at(1).addError("Nope")}>
+                Set item 1 error
+              </button>
+
+              <div data-testid="valid">{String(valid)}</div>
+            </div>
+          );
+        }
+
+        render(<Component />);
+
+        expect(screen.getByTestId("valid").textContent).toBe("true");
+
+        expect(screen.getByTestId("render-valid").textContent).toBe("1");
+
+        await act(() => screen.getByText("Set item 1 error").click());
+
+        expect(screen.getByTestId("render-valid").textContent).toBe("1");
+
+        await act(() => screen.getByText("Set index to 1").click());
+
+        expect(screen.getByTestId("valid").textContent).toBe("false");
+
+        expect(screen.getByTestId("render-valid").textContent).toBe("2");
+      });
+
+      it("updates the watcher on field id change", async () => {
+        function Component() {
+          const count = useRenderCount();
+          const field = Field.use(
+            [{ name: "Alexander" }, { name: "Sasha" }],
+            [],
+          );
+          const [index, setIndex] = useState(0);
+          const valid = field.at(index).useValid();
+
+          return (
+            <div>
+              <div data-testid="render-valid">{count}</div>
+
+              <button onClick={() => setIndex(1)}>Set index to 1</button>
+
+              <button onClick={() => field.at(0).addError("Nope")}>
+                Set item 0 error
+              </button>
+
+              <div data-testid="valid">{String(valid)}</div>
+            </div>
+          );
+        }
+
+        const screen = render(<Component />);
+
+        await expect(screen.getByTestId("valid").textContent).toBe("true");
+
+        await expect(screen.getByTestId("render-valid").textContent).toBe("1");
+
+        await screen.getByText("Set index to 1").click();
+
+        await expect(screen.getByTestId("valid").textContent).toBe("true");
+
+        await expect(screen.getByTestId("render-valid").textContent).toBe("2");
+
+        await screen.getByText("Set item 0 error").click();
+
+        await expect(screen.getByTestId("valid").textContent).toBe("true");
+
+        await expect(screen.getByTestId("render-valid").textContent).toBe("2");
+      });
+
+      it("allows to enable/disable the valid listener", async () => {
+        function Component() {
+          const count = useRenderCount();
+          const field = Field.use(
+            [{ name: "Alexander" }, { name: "Sasha" }],
+            [],
+          );
+          const [index, setIndex] = useState(0);
+          const [enabled, setEnabled] = useState(false);
+          const valid = field.at(index).useValid(enabled);
+
+          return (
+            <div>
+              <div data-testid="render-valid">{count}</div>
+
+              <button onClick={() => setIndex(1)}>Set index to 1</button>
+
+              <button onClick={() => field.at(1).addError("Nope")}>
+                Set item 1 error
+              </button>
+
+              <button onClick={() => setEnabled(true)}>Enable valid</button>
+
+              <div data-testid="valid">{String(valid)}</div>
+            </div>
+          );
+        }
+
+        const screen = render(<Component />);
+
+        await expect(screen.getByTestId("valid").textContent).toBe("undefined");
+
+        await expect(screen.getByTestId("render-valid").textContent).toBe("1");
+
+        await screen.getByText("Set index to 1").click();
+
+        await expect(screen.getByTestId("valid").textContent).toBe("undefined");
+
+        await expect(screen.getByTestId("render-valid").textContent).toBe("2");
+
+        await screen.getByText("Set item 1 error").click();
+
+        await expect(screen.getByTestId("valid").textContent).toBe("undefined");
+
+        await expect(screen.getByTestId("render-valid").textContent).toBe("2");
+
+        await screen.getByText("Enable valid").click();
+
+        await expect(screen.getByTestId("valid").textContent).toBe("false");
+
+        await expect(screen.getByTestId("render-valid").textContent).toBe("3");
+      });
+    });
+
     describe("#validate", () => {
       describe("primitive", () => {
         it("allows to validate the state", () => {
@@ -3689,6 +6455,8 @@ describe(Field, () => {
 
 //#region Helpers
 
+//#region Unit
+
 interface Name {
   first: string;
   last?: string | undefined;
@@ -3703,8 +6471,8 @@ function fromFullName(fullName: string) {
   return { first, last };
 }
 
-function toCodes(message: string) {
-  return Array.from(message).map((c) => c.charCodeAt(0));
+function toCodes(message: string | undefined) {
+  return Array.from(message || "").map((c) => c.charCodeAt(0));
 }
 
 function fromCodes(codes: number[]) {
@@ -3721,5 +6489,194 @@ function validateName(ref: Field.Ref<Name>) {
   validateRequired(ref.$.first);
   validateRequired(ref.$.last);
 }
+
+//#endregion
+
+//#region React
+
+interface Address {
+  name: UserName | string;
+}
+
+interface Profile {
+  user: User;
+  settings?: Settings;
+}
+
+interface Settings {
+  theme?: "light" | "dark";
+}
+
+interface User {
+  name: UserName;
+}
+
+interface UserName {
+  first: string;
+  last?: string;
+}
+
+interface UserComponentProps {
+  user: Field<User>;
+}
+
+function UserComponent(props: UserComponentProps) {
+  const count = useRenderCount();
+  const user = props.user;
+  // Makes the component re-render when the name shape changes
+  const name = user.$.name.useCollection();
+
+  return (
+    <div>
+      <div data-testid="render-user">{count}</div>
+
+      <div data-testid="has-last">{user.$.name.value ? "true" : "false"}</div>
+
+      <UserNameComponent name={name} />
+    </div>
+  );
+}
+
+interface UserNameComponentProps {
+  name: Field<UserName>;
+  index?: number;
+}
+
+function UserNameComponent(props: UserNameComponentProps) {
+  const count = useRenderCount();
+  const { index = 0, name } = props;
+
+  const { first, last } = name.useValue();
+
+  return (
+    <div data-testid={`name-${index}`}>
+      <div data-testid={`render-name-${index}`}>{count}</div>
+
+      <div data-testid={`name-first-${index}`}>{first}</div>
+      <div data-testid={`name-last-${index}`}>{last}</div>
+
+      <Field.Component
+        field={name.$.first}
+        render={(control) => (
+          <input
+            data-testid={`name-first-${index}-input`}
+            {...control}
+            onChange={(event) => control.onChange(event.target.value)}
+          />
+        )}
+      />
+
+      <Field.Component
+        field={name.$.last}
+        render={(control) => (
+          <input
+            data-testid={`name-last-${index}-input`}
+            {...control}
+            value={control.value || ""}
+            onChange={(event) => control.onChange(event.target.value)}
+          />
+        )}
+      />
+    </div>
+  );
+}
+
+interface UserNameFormComponentProps {
+  onSubmit?: (name: UserName) => void;
+}
+
+function UserNameFormComponent(props: UserNameFormComponentProps) {
+  const count = useRenderCount();
+  const field = Field.use<UserName>({ first: "", last: "" }, []);
+
+  return (
+    <div>
+      <div data-testid="render-name-form">{count}</div>
+
+      <form
+        onSubmit={(event) => {
+          event.preventDefault();
+          props.onSubmit?.(field.value);
+        }}
+      >
+        <Field.Component
+          field={field.$.first}
+          render={(control) => (
+            <input
+              data-testid="input-name-first"
+              {...control}
+              onChange={(event) => control.onChange(event.target.value)}
+            />
+          )}
+        />
+
+        <Field.Component
+          field={field.$.last}
+          render={(control) => (
+            <input
+              data-testid="input-name-last"
+              {...control}
+              onChange={(event) => control.onChange(event.target.value)}
+            />
+          )}
+        />
+
+        <button type="submit">Submit name</button>
+      </form>
+    </div>
+  );
+}
+
+interface StringComponentProps {
+  string: Field<string>;
+}
+
+function StringComponent(props: StringComponentProps) {
+  const count = useRenderCount();
+  const string = props.string.useValue();
+  return (
+    <div>
+      <div data-testid="render-string">{count}</div>
+      <div data-testid="string">{string}</div>
+    </div>
+  );
+}
+
+interface NumberComponentProps {
+  number: Field<number>;
+}
+
+function NumberComponent(props: NumberComponentProps) {
+  const count = useRenderCount();
+  const number = props.number.useValue();
+  return (
+    <div>
+      <div data-testid="render-number">{count}</div>
+      <div data-testid="number">{number}</div>
+    </div>
+  );
+}
+
+interface CodesComponentProps {
+  codes: Field<number[]>;
+}
+
+function CodesComponent(props: CodesComponentProps) {
+  const count = useRenderCount();
+  const codes = props.codes.useValue();
+  return (
+    <div>
+      <div data-testid="render-codes">{count}</div>
+      <div data-testid="codes">{codes.join(" ")}</div>
+    </div>
+  );
+}
+
+function joinErrors(errors: Field.Error[] | undefined) {
+  if (!errors) return "";
+  return errors.map((error) => error.message).join(", ");
+}
+
+//#endregion
 
 //#endregion

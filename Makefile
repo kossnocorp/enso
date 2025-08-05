@@ -5,18 +5,6 @@ test:
 test-watch:
 	@pnpm exec vitest
 
-test-node:
-	@pnpm exec vitest run --project node
-
-test-node-watch:
-	@pnpm exec vitest --project node
-
-test-browser:
-	@pnpm exec vitest run --project browser
-
-test-browser-watch:
-	@pnpm exec vitest --project browser
-
 types:
 	@pnpm exec tsc --noEmit
 
