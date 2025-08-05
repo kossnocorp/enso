@@ -1,3 +1,5 @@
+"use client";
+
 import React, { createElement, useEffect, useId } from "react";
 import type { Form } from "./definition.ts";
 import { nanoid } from "nanoid";
