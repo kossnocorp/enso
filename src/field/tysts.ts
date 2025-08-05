@@ -6007,86 +6007,58 @@ const brandedPrim = new Field({} as Branded<string>);
   {
     // Basic
     {
-      const field = new Field("hello") as Field<string | undefined | null>;
-
+      const field = {} as Field<string | undefined | null>;
       const result = field.useDefined("string");
-      result satisfies Field<string>;
-      // @ts-expect-error
-      result.any;
+      ty(result).is(ty<Field<string>>());
     }
 
     // Defined
     {
-      const field = new Field("hello") as Field<string>;
-
+      const field = {} as Field<string>;
       const result = field.useDefined("string");
-      result satisfies Field<string>;
-      // @ts-expect-error
-      result.any;
+      ty(result).is(ty<Field<string>>());
     }
 
     // Mixed
     {
       const field = new Field("hello") as Field<string | number>;
-
       const result = field.useDefined?.("string");
-      result satisfies Field<string> | undefined;
-      // @ts-expect-error
-      field.useDefined("string");
+      ty(result).is(ty<Field<string> | undefined>());
+      ty(field.useDefined).is(ty.assignableFrom<undefined>());
     }
 
     // Number
     {
       const field = new Field(0) as Field<number | undefined>;
-
-      // @ts-expect-error
-      field.useDefined?.("string");
+      ty(field.useDefined).is(ty<never>());
     }
 
     // Base
     {
       const field = new Field("hello") as Field.Base<string>;
-
       const result = field.useDefined("string");
-      result satisfies Field.Base<string>;
-      // @ts-expect-error
-      result satisfies Field<string>;
-      // @ts-expect-error
-      result.any;
+      ty(result).is(ty<Field.Base<string>>());
     }
 
     // Immutable
     {
-      const field = new Field("hello") as Field.Base<string>;
-
+      const field = new Field("hello") as Field.Immutable<string>;
       const result = field.useDefined("string");
-      result satisfies Field.Base<string>;
-      // @ts-expect-error
-      result satisfies Field<string>;
-      // @ts-expect-error
-      result.any;
+      ty(result).is(ty<Field.Immutable<string>>());
     }
   }
 
   // Shared
   {
     const field = ({} as Field<string>).shared<[string, string | undefined]>();
-
     const result = field.useDefined("string");
-    result satisfies Field<string>;
-    // @ts-expect-error
-    result.any;
+    ty(result).is(ty<Field<string>>());
   }
 
   // Ref
   {
     const field = {} as Field.Ref<string>;
-
-    field.useDefined satisfies undefined;
-    // @ts-expect-error
-    field.useDefined("string");
-    // @ts-expect-error
-    field.useDefined?.("string");
+    ty(field.useDefined).is.undefined();
   }
 }
 //#endregion
