@@ -654,6 +654,10 @@ export class AtomImpl<Value> {
     }
   }
 
+  shared() {
+    return this;
+  }
+
   //#endregion
 
   //#region External
