@@ -2343,6 +2343,39 @@ export namespace Atom {
 
   //#endregion
 
+  //#region Ref
+
+  /**
+   * Optional reference target.
+   */
+  export type OptionalTarget<Value> =
+    | OptionalTargetDirect<Value>
+    | OptionalTargetProjection;
+
+  export interface OptionalTargetDirect<Value>
+    extends BareOptionalTargetDirect<Field<Value>> {}
+
+  export interface OptionalTargetProjection
+    extends BareOptionalTargetProjection<Field<unknown>> {}
+
+  export type BareOptionalTarget<Type> =
+    | BareOptionalTargetDirect<Type>
+    | BareOptionalTargetProjection<Type>;
+
+  export interface BareOptionalTargetDirect<Type> {
+    type: "direct";
+    field: Type;
+  }
+
+  export interface BareOptionalTargetProjection<Type> {
+    type: "shadow";
+    closest: Type;
+    /** Path relative to the closest field. */
+    path: Atom.Path;
+  }
+
+  //#endregion
+
   //#region Events
 
   export type Unwatch = () => void;

@@ -236,7 +236,7 @@ describe("EventsTree", () => {
         expect(valueBSpy).not.toHaveBeenCalled();
       });
 
-      it.skip("supports array field paths", async () => {
+      it("supports array field paths", async () => {
         const field = new Field({ items: [1, 2] });
         const rootSpy = vi.fn();
         field.watch(rootSpy);

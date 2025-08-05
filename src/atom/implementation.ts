@@ -404,8 +404,8 @@ export class AtomImpl<Value> {
 
   //#region Ref
 
-  optional(): AtomImpl<Value> {
-    return this;
+  optional(): any {
+    return (this.constructor as any).optional(this) as any;
   }
 
   //#endregion
