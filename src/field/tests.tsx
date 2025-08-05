@@ -5489,6 +5489,14 @@ describe("Field", () => {
         expect(screen.getByTestId("renders").textContent).toBe("2");
       });
     });
+
+    describe("#shared", () => {
+      it("returns the same field", () => {
+        const field = new Field<string>("Hello!");
+        const shared = field.shared<[string, string | undefined]>();
+        expect(shared).toBe(field);
+      });
+    });
   });
 
   describe("interop", () => {
