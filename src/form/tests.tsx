@@ -1,8 +1,17 @@
+import {
+  act,
+  cleanup,
+  fireEvent,
+  render,
+  screen,
+} from "@testing-library/react";
 import { nanoid } from "nanoid";
-import { describe, expect, it, vi } from "vitest";
-import { Form } from "./index.js";
-import { Field } from "../field/index.js";
+import React from "react";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+import { useRenderCount } from "../../tests/utils.ts";
 import { FieldImpl } from "../field/implementation.ts";
+import { Field } from "../field/index.js";
+import { Form } from "./index.js";
 
 describe("Form", () => {
   it("creates a form instance", () => {
@@ -183,5 +192,563 @@ describe("Form", () => {
       expect(await form.validate()).toBe(true);
       expect(form.field.errors).toHaveLength(0);
     });
+
+    it.skip("validates form on submit", async () => {
+      const spy = vi.fn();
+
+      function Component() {
+        const count = useRenderCount();
+        const form = Form.use<Hello>({ hello: "world" }, [], {
+          validate: validateHello,
+        });
+
+        return (
+          <div>
+            <div data-testid="render-validate">{count}</div>
+
+            <button onClick={() => form.$.hello.set("Sasha")}>Set hello</button>
+
+            <Form.Component form={form} onSubmit={spy}>
+              <Field.Component
+                field={form.$.hello}
+                errors
+                render={(control, { errors }) => {
+                  return (
+                    <div>
+                      <input
+                        {...control}
+                        onChange={(e) => {
+                          control.onChange(e.target.value);
+                        }}
+                        data-testid="hello-input"
+                      />
+
+                      <div data-testid="errors">{joinErrors(errors)}</div>
+                    </div>
+                  );
+                }}
+              />
+
+              <button type="submit">Submit</button>
+            </Form.Component>
+          </div>
+        );
+      }
+
+      render(<Component />);
+
+      expect(screen.getByTestId("errors").textContent).toBe("");
+
+      fireEvent.change(screen.getByTestId("hello-input"), {
+        target: { value: "" },
+      });
+
+      expect(screen.getByTestId("render-validate").textContent).toBe("1");
+
+      await act(() => screen.getByText("Submit").click());
+
+      expect(spy).not.toBeCalled();
+
+      expect(screen.getByTestId("errors").textContent).toBe(
+        "Hello is required",
+      );
+
+      expect(screen.getByTestId("render-validate").textContent).toBe("2");
+
+      await act(() => screen.getByText("Set hello").click());
+
+      expect(screen.getByTestId("render-validate").textContent).toBe("2");
+
+      await act(() => screen.getByText("Submit").click());
+
+      expect(screen.getByTestId("errors").textContent).toBe("");
+
+      expect(spy).toBeCalledWith(
+        { hello: "Sasha" },
+        expect.objectContaining({ target: expect.any(Object) }),
+      );
+
+      expect(screen.getByTestId("render-validate").textContent).toBe("4");
+    });
+
+    it.skip("revalidates form on fields blur", async () => {
+      const spy = vi.fn();
+
+      function Component() {
+        const count = useRenderCount();
+        const form = Form.use({ hello: "world" }, [], {
+          validate: validateHello,
+        });
+
+        return (
+          <div>
+            <div data-testid="render-validate">{count}</div>
+
+            <Form.Component form={form} onSubmit={spy}>
+              <Field.Component
+                field={form.$.hello}
+                errors
+                render={(control, { errors }) => (
+                  <div>
+                    <input
+                      {...control}
+                      onChange={(e) => control.onChange(e.target.value)}
+                      data-testid="hello-input"
+                    />
+
+                    <div data-testid="errors">{joinErrors(errors)}</div>
+                  </div>
+                )}
+              />
+
+              <button type="submit">Submit</button>
+            </Form.Component>
+          </div>
+        );
+      }
+
+      render(<Component />);
+
+      expect(screen.getByTestId("errors").textContent).toBe("");
+
+      fireEvent.change(screen.getByTestId("hello-input"), {
+        target: { value: "" },
+      });
+      (screen.getByTestId("hello-input") as HTMLInputElement).blur();
+
+      await act(() => screen.getByText("Submit").click());
+
+      expect(spy).not.toBeCalled();
+
+      expect(screen.getByTestId("errors").textContent).toBe(
+        "Hello is required",
+      );
+
+      fireEvent.change(screen.getByTestId("hello-input"), {
+        target: { value: "Sasha" },
+      });
+      (screen.getByTestId("hello-input") as HTMLInputElement).blur();
+
+      expect(screen.getByTestId("errors").textContent).toBe("");
+    });
+  });
+
+  describe("intertop", () => {
+    describe("control", () => {
+      beforeEach(cleanup);
+
+      it.skip("allows to handle submit", async () => {
+        const spy = vi.fn();
+        let resolveSubmit: ((value: unknown) => void) | undefined;
+        const submitPromise = new Promise((resolve) => {
+          resolveSubmit = resolve;
+        });
+
+        function Component() {
+          const count = useRenderCount();
+          const form = Form.use({ hello: "world" }, []);
+
+          return (
+            <div>
+              <div data-testid="render-submit">{count}</div>
+
+              <button onClick={() => form.$.hello.set("Sasha")}>
+                Update field
+              </button>
+
+              <form
+                {...form.control({
+                  onSubmit: (values, event) => {
+                    spy(values, event);
+                    return submitPromise;
+                  },
+                })}
+              >
+                <div data-testid="submitting">{String(form.submitting)}</div>
+
+                <button type="submit">Submit</button>
+              </form>
+            </div>
+          );
+        }
+
+        render(<Component />);
+
+        expect(screen.getByTestId("submitting").textContent).toBe("false");
+
+        await act(() => screen.getByText("Update field").click());
+
+        expect(screen.getByTestId("render-submit").textContent).toBe("1");
+
+        expect(spy).not.toBeCalled();
+
+        await act(() => screen.getByText("Submit").click());
+
+        expect(spy).toBeCalledWith(
+          { hello: "Sasha" },
+          expect.objectContaining({ target: expect.any(Object) }),
+        );
+
+        expect(screen.getByTestId("submitting").textContent).toBe("true");
+
+        expect(screen.getByTestId("render-submit").textContent).toBe("2");
+
+        resolveSubmit?.(void 0);
+
+        expect(screen.getByTestId("submitting").textContent).toBe("false");
+
+        expect(screen.getByTestId("render-submit").textContent).toBe("3");
+      });
+
+      it.skip("commits form after submit", async () => {
+        let resolveSubmit: ((value: unknown) => void) | undefined;
+        const submitPromise = new Promise((resolve) => {
+          resolveSubmit = resolve;
+        });
+
+        function Component() {
+          const count = useRenderCount();
+          const form = Form.use({ hello: "world" }, []);
+          const dirty = form.useDirty();
+
+          return (
+            <div>
+              <div data-testid="render-submit">{count}</div>
+
+              <button onClick={() => form.$.hello.set("Sasha")}>
+                Update field
+              </button>
+
+              <form
+                {...form.control({
+                  onSubmit: () => submitPromise,
+                })}
+              >
+                <div data-testid="submitting">{String(form.submitting)}</div>
+
+                <div data-testid="dirty">{String(dirty)}</div>
+
+                <button type="submit">Submit</button>
+              </form>
+            </div>
+          );
+        }
+
+        render(<Component />);
+
+        expect(screen.getByTestId("submitting").textContent).toBe("false");
+
+        expect(screen.getByTestId("dirty").textContent).toBe("false");
+
+        expect(screen.getByTestId("render-submit").textContent).toBe("1");
+
+        await act(() => screen.getByText("Update field").click());
+
+        expect(screen.getByTestId("render-submit").textContent).toBe("2");
+
+        await act(() => screen.getByText("Submit").click());
+
+        expect(screen.getByTestId("dirty").textContent).toBe("true");
+
+        expect(screen.getByTestId("submitting").textContent).toBe("true");
+
+        expect(screen.getByTestId("render-submit").textContent).toBe("3");
+
+        resolveSubmit?.(void 0);
+
+        expect(screen.getByTestId("dirty").textContent).toBe("false");
+
+        expect(screen.getByTestId("submitting").textContent).toBe("false");
+
+        expect(screen.getByTestId("render-submit").textContent).toBe("4");
+      });
+
+      it.skip("it allows to cancel commit", async () => {
+        let resolveSubmit: ((value: unknown) => void) | undefined;
+        const submitPromise = new Promise((resolve) => {
+          resolveSubmit = resolve;
+        });
+
+        function Component() {
+          const count = useRenderCount();
+          const form = Form.use({ hello: "world" }, []);
+          const dirty = form.useDirty();
+
+          return (
+            <div>
+              <div data-testid="render-submit">{count}</div>
+
+              <button onClick={() => form.$.hello.set("Sasha")}>
+                Update field
+              </button>
+
+              <form
+                {...form.control({
+                  onSubmit: () => submitPromise,
+                })}
+              >
+                <div data-testid="submitting">{String(form.submitting)}</div>
+
+                <div data-testid="dirty">{String(dirty)}</div>
+
+                <button type="submit">Submit</button>
+              </form>
+            </div>
+          );
+        }
+
+        render(<Component />);
+
+        expect(screen.getByTestId("submitting").textContent).toBe("false");
+
+        expect(screen.getByTestId("dirty").textContent).toBe("false");
+
+        expect(screen.getByTestId("render-submit").textContent).toBe("1");
+
+        await act(() => screen.getByText("Update field").click());
+
+        expect(screen.getByTestId("render-submit").textContent).toBe("2");
+
+        await act(() => screen.getByText("Submit").click());
+
+        expect(screen.getByTestId("dirty").textContent).toBe("true");
+
+        expect(screen.getByTestId("submitting").textContent).toBe("true");
+
+        expect(screen.getByTestId("render-submit").textContent).toBe("3");
+
+        resolveSubmit?.(false);
+
+        expect(screen.getByTestId("dirty").textContent).toBe("true");
+
+        expect(screen.getByTestId("submitting").textContent).toBe("false");
+
+        expect(screen.getByTestId("render-submit").textContent).toBe("4");
+      });
+
+      it("allows to specify that it is a server form", async () => {
+        const spy = vi.fn();
+
+        function Component() {
+          const count = useRenderCount();
+          const form = Form.use({ hello: "world" }, []);
+
+          return (
+            <div>
+              <div data-testid="render-submit">{count}</div>
+
+              <form
+                {...form.control({
+                  onSubmit: spy,
+                  server: true,
+                })}
+              >
+                <button type="submit">Submit</button>
+              </form>
+            </div>
+          );
+        }
+
+        render(<Component />);
+
+        await act(() => screen.getByText("Submit").click());
+
+        expect(spy).toBeCalledWith({ hello: "world" });
+      });
+
+      it("handles reset", async () => {
+        function Component() {
+          const count = useRenderCount();
+          const form = Form.use({ hello: "world" }, []);
+          const hello = form.$.hello.useValue();
+
+          return (
+            <div>
+              <div data-testid="render-reset">{count}</div>
+
+              <div data-testid="hello">Hello, {hello}!</div>
+
+              <button onClick={() => form.$.hello.set("Sasha")}>
+                Update field
+              </button>
+
+              <form {...form.control()}>
+                <button type="reset">Reset</button>
+              </form>
+            </div>
+          );
+        }
+
+        render(<Component />);
+
+        expect(screen.getByTestId("hello").textContent).toBe("Hello, world!");
+
+        await act(() => screen.getByText("Update field").click());
+
+        expect(screen.getByTestId("hello").textContent).toBe("Hello, Sasha!");
+
+        expect(screen.getByTestId("render-reset").textContent).toBe("2");
+
+        await act(() => screen.getByText("Reset").click());
+
+        expect(screen.getByTestId("hello").textContent).toBe("Hello, world!");
+
+        expect(screen.getByTestId("render-reset").textContent).toBe("3");
+      });
+
+      it("allows to handle onReset", async () => {
+        const spy = vi.fn();
+
+        function Component() {
+          const count = useRenderCount();
+          const form = Form.use({ hello: "world" }, []);
+          const hello = form.$.hello.useValue();
+
+          return (
+            <div>
+              <div data-testid="render-reset">{count}</div>
+
+              <div data-testid="hello">Hello, {hello}!</div>
+
+              <button onClick={() => form.$.hello.set("Sasha")}>
+                Update field
+              </button>
+
+              <form {...form.control({ onReset: spy })}>
+                <button type="reset">Reset</button>
+              </form>
+            </div>
+          );
+        }
+
+        render(<Component />);
+
+        expect(screen.getByTestId("hello").textContent).toBe("Hello, world!");
+
+        await act(() => screen.getByText("Update field").click());
+
+        expect(screen.getByTestId("hello").textContent).toBe("Hello, Sasha!");
+
+        expect(screen.getByTestId("render-reset").textContent).toBe("2");
+
+        expect(spy).not.toBeCalled();
+
+        await act(() => screen.getByText("Reset").click());
+
+        expect(spy).toBeCalledWith(
+          expect.objectContaining({ target: expect.any(Object) }),
+        );
+
+        expect(screen.getByTestId("render-reset").textContent).toBe("2");
+      });
+    });
+
+    describe("Control", () => {
+      beforeEach(cleanup);
+
+      it.skip("allows to use Form component", async () => {
+        const spy = vi.fn();
+        let resolveSubmit: ((value: unknown) => void) | undefined;
+        const submitPromise = new Promise((resolve) => {
+          resolveSubmit = resolve;
+        });
+
+        function Component() {
+          const count = useRenderCount();
+          const form = Form.use({ hello: "world" }, []);
+
+          return (
+            <div>
+              <div data-testid="render-submit">{count}</div>
+
+              <button onClick={() => form.$.hello.set("Sasha")}>
+                Update field
+              </button>
+
+              <Form.Component
+                form={form}
+                onSubmit={(values) => {
+                  spy(values);
+                  return submitPromise;
+                }}
+              >
+                <div data-testid="submitting">{String(form.submitting)}</div>
+
+                <input {...form.$.hello.control()} data-testid="hello-input" />
+
+                <button type="submit">Submit</button>
+              </Form.Component>
+            </div>
+          );
+        }
+
+        render(<Component />);
+
+        expect(screen.getByTestId("submitting").textContent).toBe("false");
+
+        fireEvent.change(screen.getByTestId("hello-input"), {
+          target: { value: "Sasha" },
+        });
+
+        expect(screen.getByTestId("render-submit").textContent).toBe("1");
+
+        expect(spy).not.toBeCalled();
+
+        await act(() => screen.getByText("Submit").click());
+
+        expect(spy).toBeCalledWith({
+          hello: "Sasha",
+        });
+
+        expect(screen.getByTestId("submitting").textContent).toBe("true");
+
+        expect(screen.getByTestId("render-submit").textContent).toBe("2");
+
+        resolveSubmit?.(void 0);
+
+        expect(screen.getByTestId("submitting").textContent).toBe("false");
+
+        expect(screen.getByTestId("render-submit").textContent).toBe("3");
+      });
+
+      it("assigns form id", async () => {
+        let formId: string | undefined;
+
+        function Component() {
+          const form = Form.use({ hello: "world" }, []);
+          formId = form.id;
+          return (
+            <Form.Component
+              form={form}
+              data-testid="form"
+              onSubmit={() => {}}
+            />
+          );
+        }
+
+        render(<Component />);
+
+        expect(formId).toBeTypeOf("string");
+
+        expect(screen.getByTestId("form").id).toBe(formId);
+      });
+    });
   });
 });
+
+//#region Helpers
+
+interface Hello {
+  hello: string;
+}
+
+function validateHello(ref: Field.Ref<Hello>) {
+  if (!ref.$.hello.value.trim()) ref.$.hello.addError("Hello is required");
+}
+
+function joinErrors(errors: Field.Error[] | undefined) {
+  if (!errors) return "";
+  return errors.map((error) => error.message).join(", ");
+}
+
+//#endregion
