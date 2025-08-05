@@ -1964,6 +1964,16 @@ describe("Field", () => {
       });
     });
 
+    describe("#compute", () => {
+      it("allows to compute value", () => {
+        const field = new Field<UserName>({ first: "Sasha" });
+        expect(field.compute(toFullName)).toBe("Sasha");
+
+        field.$.last.set("Koss");
+        expect(field.compute(toFullName)).toBe("Sasha Koss");
+      });
+    });
+
     describe("#useCompute", () => {
       beforeEach(cleanup);
 
@@ -6815,8 +6825,8 @@ interface Dog {
   bark: boolean;
 }
 
-function toFullName(name: Required<Name>) {
-  return `${name.first} ${name.last}`;
+function toFullName(name: Name) {
+  return [name.first, name.last].filter((v) => !!v).join(" ");
 }
 
 function fromFullName(fullName: string) {
