@@ -6,14 +6,14 @@ import {
   screen,
 } from "@testing-library/react";
 import React, { useEffect, useMemo, useRef, useState } from "react";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { assert, beforeEach, describe, expect, it, vi } from "vitest";
 import { postpone, useRenderCount } from "../../tests/utils.ts";
 import { change } from "../change/index.ts";
 import { DetachedValue, detachedValue } from "../detached/index.ts";
 import { EventsTree } from "../events/index.ts";
 import { Field } from "./index.js";
 
-describe(Field, () => {
+describe("Field", () => {
   describe("static", () => {
     describe(Field.use, () => {
       beforeEach(cleanup);
@@ -4600,8 +4600,46 @@ describe(Field, () => {
       });
     });
 
+    describe("decompose", () => {
+      it.skip("allows to decompose the field type", () => {
+        const field = new Field<string | number | Record<string, number>>(
+          "Hello, world!",
+        );
+        const decomposed = field.decompose();
+        if (typeof decomposed.value === "string") {
+          expect(decomposed.field.value).toBe("Hello, world!");
+          return;
+        }
+        assert(false, "Should not reach here");
+      });
+    });
+
     describe("useDecompose", () => {
       beforeEach(cleanup);
+
+      it.skip("decomposes and updates on field change", async () => {
+        type Payload = { data: string } | { data: number };
+
+        const field = new Field<Payload>({ data: "hello" });
+        const callback = vi.fn(
+          (newValue, prevValue) =>
+            typeof newValue.data !== typeof prevValue.data,
+        );
+
+        function Component() {
+          const decomposed = field.useDecompose(callback, [field]);
+          return <div data-testid="data">{String(decomposed.value.data)}</div>;
+        }
+
+        render(<Component />);
+        expect(screen.getByTestId("data").textContent).toBe("hello");
+        expect(callback).not.toHaveBeenCalled();
+
+        await act(() => field.set({ data: 42 }));
+
+        expect(screen.getByTestId("data").textContent).toBe("42");
+        expect(callback).toHaveBeenCalledWith({ data: 42 }, { data: "hello" });
+      });
 
       it.skip("allows to decompose union field", async () => {
         function Component() {
@@ -4757,8 +4795,78 @@ describe(Field, () => {
       });
     });
 
-    describe("#useDiscriminate", () => {
+    describe.skip("#discriminate", () => {
+      it("allows to discriminate by field", () => {
+        const field = new Field<Cat | Dog>({ type: "cat", meow: true });
+        const discriminated = field.discriminate("type");
+        if (discriminated.discriminator === "cat") {
+          expect(discriminated.field.value.meow).toBe(true);
+          return;
+        }
+        assert(false, "Should not reach here");
+      });
+
+      it("handles undefineds", () => {
+        const field = new Field<Cat | Dog | undefined>(undefined);
+        const discriminated = field.discriminate("type");
+        if (!discriminated.discriminator) {
+          expect(discriminated.field.value).toBe(undefined);
+          return;
+        }
+        assert(false, "Should not reach here");
+      });
+    });
+
+    describe.skip("#useDiscriminate", () => {
       beforeEach(cleanup);
+
+      it("discriminates and updates on field change", async () => {
+        const field = new Field<Cat | Dog>({ type: "cat", meow: true });
+
+        function TestComponent() {
+          const discriminated = field.useDiscriminate("type");
+          return (
+            <div data-testid="type">
+              {discriminated.discriminator}:{" "}
+              {discriminated.discriminator === "cat"
+                ? String(discriminated.field.value.meow)
+                : discriminated.discriminator === "dog"
+                  ? String(discriminated.field.value.bark)
+                  : ""}
+            </div>
+          );
+        }
+
+        render(<TestComponent />);
+        expect(screen.getByTestId("type").textContent).toBe("cat: true");
+
+        await act(() => field.set({ type: "dog", bark: false }));
+
+        expect(screen.getByTestId("type").textContent).toBe("dog: false");
+      });
+
+      it("handles undefineds", async () => {
+        const field = new Field<Cat | Dog | undefined>(undefined);
+
+        function TestComponent() {
+          const discriminated = field.useDiscriminate("type");
+          return (
+            <div data-testid="type">
+              {String(discriminated.discriminator)}:{" "}
+              {String(discriminated.field.value?.type)}
+            </div>
+          );
+        }
+
+        render(<TestComponent />);
+        expect(screen.getByTestId("type").textContent).toBe(
+          "undefined: undefined",
+        );
+
+        await act(() => field.set({ type: "cat", meow: true }));
+
+        expect(screen.getByTestId("type").textContent).toBe("cat: cat");
+      });
 
       it.skip("allows to discriminate union field", async () => {
         interface TestState {
@@ -6460,6 +6568,16 @@ describe(Field, () => {
 interface Name {
   first: string;
   last?: string | undefined;
+}
+
+interface Cat {
+  type: "cat";
+  meow: boolean;
+}
+
+interface Dog {
+  type: "dog";
+  bark: boolean;
 }
 
 function toFullName(name: Required<Name>) {
