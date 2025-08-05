@@ -2904,6 +2904,8 @@ export namespace Atom {
     }
   }
 
+  export type DefinedType = "string";
+
   //#endregion
 
   //#endregion
