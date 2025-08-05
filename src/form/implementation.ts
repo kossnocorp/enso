@@ -20,10 +20,14 @@ export { FormImpl as Form };
 export class FormImpl<Value> {
   static use<Value>(
     value: Value,
+    deps: React.DependencyList,
     options?: Form.Options<Value>,
   ): FormImpl<Value> {
     const id = useId();
-    const form = useMemo(() => new FormImpl(value, { ...options, id }), [id]);
+    const form = useMemo(
+      () => new FormImpl(value, { ...options, id }),
+      [id, ...deps],
+    );
     useEffect(() => () => form.deconstruct(), [form]);
     const rerender = useRerender();
 

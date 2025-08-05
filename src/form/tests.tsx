@@ -172,6 +172,8 @@ describe("Form", () => {
   });
 
   describe("validation", () => {
+    beforeEach(cleanup);
+
     it("delegates validate", async () => {
       const validateSpy = vi
         .spyOn(FieldImpl.prototype, "validate")
@@ -193,7 +195,7 @@ describe("Form", () => {
       expect(form.field.errors).toHaveLength(0);
     });
 
-    it.skip("validates form on submit", async () => {
+    it("validates form on submit", async () => {
       const spy = vi.fn();
 
       function Component() {
@@ -239,13 +241,15 @@ describe("Form", () => {
 
       expect(screen.getByTestId("errors").textContent).toBe("");
 
-      fireEvent.change(screen.getByTestId("hello-input"), {
-        target: { value: "" },
-      });
+      await act(async () =>
+        fireEvent.input(screen.getByTestId("hello-input"), {
+          target: { value: "" },
+        }),
+      );
 
       expect(screen.getByTestId("render-validate").textContent).toBe("1");
 
-      await act(() => screen.getByText("Submit").click());
+      await act(async () => screen.getByText("Submit").click());
 
       expect(spy).not.toBeCalled();
 
@@ -255,11 +259,11 @@ describe("Form", () => {
 
       expect(screen.getByTestId("render-validate").textContent).toBe("2");
 
-      await act(() => screen.getByText("Set hello").click());
+      await act(async () => screen.getByText("Set hello").click());
 
       expect(screen.getByTestId("render-validate").textContent).toBe("2");
 
-      await act(() => screen.getByText("Submit").click());
+      await act(async () => screen.getByText("Submit").click());
 
       expect(screen.getByTestId("errors").textContent).toBe("");
 
@@ -268,10 +272,10 @@ describe("Form", () => {
         expect.objectContaining({ target: expect.any(Object) }),
       );
 
-      expect(screen.getByTestId("render-validate").textContent).toBe("4");
+      expect(screen.getByTestId("render-validate").textContent).toBe("3");
     });
 
-    it.skip("revalidates form on fields blur", async () => {
+    it("revalidates form on fields blur", async () => {
       const spy = vi.fn();
 
       function Component() {
@@ -311,12 +315,17 @@ describe("Form", () => {
 
       expect(screen.getByTestId("errors").textContent).toBe("");
 
-      fireEvent.change(screen.getByTestId("hello-input"), {
-        target: { value: "" },
-      });
-      (screen.getByTestId("hello-input") as HTMLInputElement).blur();
+      await act(async () =>
+        fireEvent.change(screen.getByTestId("hello-input"), {
+          target: { value: "" },
+        }),
+      );
 
-      await act(() => screen.getByText("Submit").click());
+      await act(async () =>
+        fireEvent.blur(screen.getByTestId("hello-input"), {}),
+      );
+
+      await act(async () => screen.getByText("Submit").click());
 
       expect(spy).not.toBeCalled();
 
@@ -324,10 +333,15 @@ describe("Form", () => {
         "Hello is required",
       );
 
-      fireEvent.change(screen.getByTestId("hello-input"), {
-        target: { value: "Sasha" },
-      });
-      (screen.getByTestId("hello-input") as HTMLInputElement).blur();
+      await act(async () =>
+        fireEvent.change(screen.getByTestId("hello-input"), {
+          target: { value: "Sasha" },
+        }),
+      );
+
+      await act(async () =>
+        fireEvent.blur(screen.getByTestId("hello-input"), {}),
+      );
 
       expect(screen.getByTestId("errors").textContent).toBe("");
     });
@@ -337,7 +351,7 @@ describe("Form", () => {
     describe("#control", () => {
       beforeEach(cleanup);
 
-      it.skip("allows to handle submit", async () => {
+      it("allows to handle submit", async () => {
         const spy = vi.fn();
         let resolveSubmit: ((value: unknown) => void) | undefined;
         const submitPromise = new Promise((resolve) => {
@@ -376,13 +390,13 @@ describe("Form", () => {
 
         expect(screen.getByTestId("submitting").textContent).toBe("false");
 
-        await act(() => screen.getByText("Update field").click());
+        await act(async () => screen.getByText("Update field").click());
 
         expect(screen.getByTestId("render-submit").textContent).toBe("1");
 
         expect(spy).not.toBeCalled();
 
-        await act(() => screen.getByText("Submit").click());
+        await act(async () => screen.getByText("Submit").click());
 
         expect(spy).toBeCalledWith(
           { hello: "Sasha" },
@@ -393,14 +407,14 @@ describe("Form", () => {
 
         expect(screen.getByTestId("render-submit").textContent).toBe("2");
 
-        resolveSubmit?.(void 0);
+        await act(async () => resolveSubmit?.(void 0));
 
         expect(screen.getByTestId("submitting").textContent).toBe("false");
 
         expect(screen.getByTestId("render-submit").textContent).toBe("3");
       });
 
-      it.skip("commits form after submit", async () => {
+      it("commits form after submit", async () => {
         let resolveSubmit: ((value: unknown) => void) | undefined;
         const submitPromise = new Promise((resolve) => {
           resolveSubmit = resolve;
@@ -442,11 +456,11 @@ describe("Form", () => {
 
         expect(screen.getByTestId("render-submit").textContent).toBe("1");
 
-        await act(() => screen.getByText("Update field").click());
+        await act(async () => screen.getByText("Update field").click());
 
         expect(screen.getByTestId("render-submit").textContent).toBe("2");
 
-        await act(() => screen.getByText("Submit").click());
+        await act(async () => screen.getByText("Submit").click());
 
         expect(screen.getByTestId("dirty").textContent).toBe("true");
 
@@ -454,7 +468,7 @@ describe("Form", () => {
 
         expect(screen.getByTestId("render-submit").textContent).toBe("3");
 
-        resolveSubmit?.(void 0);
+        await act(async () => resolveSubmit?.(void 0));
 
         expect(screen.getByTestId("dirty").textContent).toBe("false");
 
@@ -463,7 +477,7 @@ describe("Form", () => {
         expect(screen.getByTestId("render-submit").textContent).toBe("4");
       });
 
-      it.skip("it allows to cancel commit", async () => {
+      it("it allows to cancel commit", async () => {
         let resolveSubmit: ((value: unknown) => void) | undefined;
         const submitPromise = new Promise((resolve) => {
           resolveSubmit = resolve;
@@ -505,11 +519,11 @@ describe("Form", () => {
 
         expect(screen.getByTestId("render-submit").textContent).toBe("1");
 
-        await act(() => screen.getByText("Update field").click());
+        await act(async () => screen.getByText("Update field").click());
 
         expect(screen.getByTestId("render-submit").textContent).toBe("2");
 
-        await act(() => screen.getByText("Submit").click());
+        await act(async () => screen.getByText("Submit").click());
 
         expect(screen.getByTestId("dirty").textContent).toBe("true");
 
@@ -517,7 +531,7 @@ describe("Form", () => {
 
         expect(screen.getByTestId("render-submit").textContent).toBe("3");
 
-        resolveSubmit?.(false);
+        await act(async () => resolveSubmit?.(false));
 
         expect(screen.getByTestId("dirty").textContent).toBe("true");
 
@@ -551,7 +565,7 @@ describe("Form", () => {
 
         render(<Component />);
 
-        await act(() => screen.getByText("Submit").click());
+        await act(async () => screen.getByText("Submit").click());
 
         expect(spy).toBeCalledWith({ hello: "world" });
       });
@@ -583,13 +597,13 @@ describe("Form", () => {
 
         expect(screen.getByTestId("hello").textContent).toBe("Hello, world!");
 
-        await act(() => screen.getByText("Update field").click());
+        await act(async () => screen.getByText("Update field").click());
 
         expect(screen.getByTestId("hello").textContent).toBe("Hello, Sasha!");
 
         expect(screen.getByTestId("render-reset").textContent).toBe("2");
 
-        await act(() => screen.getByText("Reset").click());
+        await act(async () => screen.getByText("Reset").click());
 
         expect(screen.getByTestId("hello").textContent).toBe("Hello, world!");
 
@@ -625,7 +639,7 @@ describe("Form", () => {
 
         expect(screen.getByTestId("hello").textContent).toBe("Hello, world!");
 
-        await act(() => screen.getByText("Update field").click());
+        await act(async () => screen.getByText("Update field").click());
 
         expect(screen.getByTestId("hello").textContent).toBe("Hello, Sasha!");
 
@@ -633,7 +647,7 @@ describe("Form", () => {
 
         expect(spy).not.toBeCalled();
 
-        await act(() => screen.getByText("Reset").click());
+        await act(async () => screen.getByText("Reset").click());
 
         expect(spy).toBeCalledWith(
           expect.objectContaining({ target: expect.any(Object) }),
@@ -646,7 +660,7 @@ describe("Form", () => {
     describe("#Component", () => {
       beforeEach(cleanup);
 
-      it.skip("allows to use Form component", async () => {
+      it("allows to use Form component", async () => {
         const spy = vi.fn();
         let resolveSubmit: ((value: unknown) => void) | undefined;
         const submitPromise = new Promise((resolve) => {
@@ -686,15 +700,17 @@ describe("Form", () => {
 
         expect(screen.getByTestId("submitting").textContent).toBe("false");
 
-        fireEvent.change(screen.getByTestId("hello-input"), {
-          target: { value: "Sasha" },
+        await act(async () => {
+          fireEvent.input(screen.getByTestId("hello-input"), {
+            target: { value: "Sasha" },
+          });
         });
 
         expect(screen.getByTestId("render-submit").textContent).toBe("1");
 
         expect(spy).not.toBeCalled();
 
-        await act(() => screen.getByText("Submit").click());
+        await act(async () => screen.getByText("Submit").click());
 
         expect(spy).toBeCalledWith({
           hello: "Sasha",
@@ -704,7 +720,7 @@ describe("Form", () => {
 
         expect(screen.getByTestId("render-submit").textContent).toBe("2");
 
-        resolveSubmit?.(void 0);
+        await act(async () => resolveSubmit?.(void 0));
 
         expect(screen.getByTestId("submitting").textContent).toBe("false");
 
