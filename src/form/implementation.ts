@@ -52,7 +52,7 @@ export class FormImpl<Value> {
       [form, rerender],
     );
 
-    form.#field.useBind();
+    form.#field.useCollection();
 
     return form;
   }

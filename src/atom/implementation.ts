@@ -321,7 +321,7 @@ export class AtomImpl<Value> {
     return this.internal.insert(index, item);
   }
 
-  useBind(): AtomImpl<Value> {
+  useCollection(): AtomImpl<Value> {
     const rerender = useRerender();
 
     useEffect(
