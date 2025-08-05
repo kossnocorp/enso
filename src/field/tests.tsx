@@ -2914,6 +2914,70 @@ describe("Field", () => {
         });
       });
     });
+
+    describe("#self", () => {
+      describe(".try", () => {
+        describe("primitive", () => {
+          it("returns the field if it's defined", () => {
+            const field = new Field<string | number | undefined>(42);
+            const tried = field.self.try();
+            tried satisfies Field<string | number> | undefined;
+            expect(tried).toBe(field);
+            expect(tried).toBeInstanceOf(Field);
+            expect(tried?.value).toBe(42);
+          });
+
+          it("returns undefined if field doesn't exist", () => {
+            const field = new Field<string | number | undefined>(
+              detachedValue as any,
+            );
+            expect(field.self.try()).toBe(undefined);
+          });
+
+          it("returns undefined/null if field is undefined/null", () => {
+            const undefinedState = new Field<string | undefined>(undefined);
+            expect(undefinedState.self.try()).toBe(undefined);
+            const nullState = new Field<string | null>(null);
+            nullState.self.try() satisfies Field<string> | null;
+            expect(nullState.self.try()).toBe(null);
+          });
+        });
+
+        describe("instance", () => {
+          it("returns the field if it's defined", () => {
+            const map = new Map();
+            map.set("num", 42);
+            const field = new Field<
+              Map<string, string> | Set<string> | undefined
+            >(map);
+            const tried = field.self.try();
+            tried satisfies
+              | Field<Map<string, string> | Set<string>>
+              | undefined;
+            expect(tried).toBe(field);
+            expect(tried).toBeInstanceOf(Field);
+            // @ts-expect-error: This is fine!
+            expect(Object.fromEntries(tried?.value)).toEqual({ num: 42 });
+          });
+
+          it("returns undefined if field doesn't exist", () => {
+            const field = new Field<string | number | undefined>(
+              detachedValue as any,
+            );
+            expect(field.self.try()).toBe(undefined);
+          });
+
+          it("returns undefined/null if field is undefined/null", () => {
+            const undefinedState = new Field<string | undefined>(undefined);
+            expect(undefinedState.self.try()).toBe(undefined);
+            const nullState = new Field<string | null>(null);
+            const tried = nullState.self.try();
+            tried satisfies Field<string> | null;
+            expect(tried).toBe(null);
+          });
+        });
+      });
+    });
   });
 
   describe("tree", () => {
@@ -3090,32 +3154,6 @@ describe("Field", () => {
     });
 
     describe("#try", () => {
-      describe("primitive", () => {
-        it("returns the field if it's defined", () => {
-          const field = new Field<string | number | undefined>(42);
-          const tried = field.self.try();
-          tried satisfies Field<string | number> | undefined;
-          expect(tried).toBe(field);
-          expect(tried).toBeInstanceOf(Field);
-          expect(tried?.value).toBe(42);
-        });
-
-        it("returns undefined if field doesn't exist", () => {
-          const field = new Field<string | number | undefined>(
-            detachedValue as any,
-          );
-          expect(field.self.try()).toBe(undefined);
-        });
-
-        it("returns undefined/null if field is undefined/null", () => {
-          const undefinedState = new Field<string | undefined>(undefined);
-          expect(undefinedState.self.try()).toBe(undefined);
-          const nullState = new Field<string | null>(null);
-          nullState.self.try() satisfies Field<string> | null;
-          expect(nullState.self.try()).toBe(null);
-        });
-      });
-
       describe("object", () => {
         it("returns the field if it exists", () => {
           const field = new Field<Record<string, number>>({ num: 42 });
@@ -3167,38 +3205,6 @@ describe("Field", () => {
           field.try(0) satisfies Field<number> | undefined | null;
           expect(field.try(1)).toBe(undefined);
           expect(field.try(2)).toBe(null);
-        });
-      });
-
-      describe("instance", () => {
-        it("returns the field if it's defined", () => {
-          const map = new Map();
-          map.set("num", 42);
-          const field = new Field<
-            Map<string, string> | Set<string> | undefined
-          >(map);
-          const tried = field.self.try();
-          tried satisfies Field<Map<string, string> | Set<string>> | undefined;
-          expect(tried).toBe(field);
-          expect(tried).toBeInstanceOf(Field);
-          // @ts-expect-error: This is fine!
-          expect(Object.fromEntries(tried?.value)).toEqual({ num: 42 });
-        });
-
-        it("returns undefined if field doesn't exist", () => {
-          const field = new Field<string | number | undefined>(
-            detachedValue as any,
-          );
-          expect(field.self.try()).toBe(undefined);
-        });
-
-        it("returns undefined/null if field is undefined/null", () => {
-          const undefinedState = new Field<string | undefined>(undefined);
-          expect(undefinedState.self.try()).toBe(undefined);
-          const nullState = new Field<string | null>(null);
-          const tried = nullState.self.try();
-          tried satisfies Field<string> | null;
-          expect(tried).toBe(null);
         });
       });
     });
