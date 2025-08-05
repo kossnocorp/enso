@@ -97,7 +97,7 @@ describe("Field", () => {
     describe("#useValue", () => {
       beforeEach(cleanup);
 
-      it.skip("allows to watch for field", async () => {
+      it("allows to watch for field", async () => {
         function Component() {
           const count = useRenderCount();
           const field = Field.use({ name: { first: "Alexander" } }, []);
@@ -129,13 +129,13 @@ describe("Field", () => {
 
         expect(screen.getByTestId("render-watch").textContent).toBe("1");
 
-        await act(() => screen.getByText("rename").click());
+        await act(() => screen.getByText("Rename").click());
 
         expect(screen.getByTestId("name").textContent).toBe("Sasha");
         expect(screen.getByTestId("render-watch").textContent).toBe("2");
       });
 
-      it.skip("allows to listen to value with meta information", async () => {
+      it("allows to listen to value with meta information", async () => {
         function Component() {
           const count = useRenderCount();
           const field = Field.use(
@@ -242,7 +242,7 @@ describe("Field", () => {
         expect(screen.getByTestId("render-meta").textContent).toBe("5");
       });
 
-      it.skip("depends on the field id", async () => {
+      it("depends on the field id", async () => {
         function Component() {
           const count = useRenderCount();
           const field = Field.use(
@@ -274,7 +274,7 @@ describe("Field", () => {
         expect(screen.getByTestId("render-watch").textContent).toBe("2");
       });
 
-      it.skip("updates the watcher on field id change", async () => {
+      it("updates the watcher on field id change", async () => {
         function Component() {
           const count = useRenderCount();
           const field = Field.use(
@@ -324,7 +324,7 @@ describe("Field", () => {
         expect(screen.getByTestId("render-watch").textContent).toBe("3");
       });
 
-      it.skip("doesn't rerender when setting the same primitive", async () => {
+      it("doesn't rerender when setting the same primitive", async () => {
         function Component() {
           const count = useRenderCount();
           const field = Field.use({ name: "Sasha" }, []);
@@ -1343,7 +1343,7 @@ describe("Field", () => {
         expect(screen.getByTestId("render-dirty").textContent).toBe("3");
       });
 
-      it.skip("depends on the field id", async () => {
+      it("depends on the field id", async () => {
         function Component() {
           const count = useRenderCount();
           const field = Field.use(
@@ -1383,7 +1383,7 @@ describe("Field", () => {
         expect(screen.getByTestId("render-dirty").textContent).toBe("2");
       });
 
-      it.skip("updates the watcher on field id change", async () => {
+      it("updates the watcher on field id change", async () => {
         function Component() {
           const count = useRenderCount();
           const field = Field.use(
@@ -1424,7 +1424,7 @@ describe("Field", () => {
         expect(screen.getByTestId("render-dirty").textContent).toBe("2");
       });
 
-      it.skip("allows to enable/disable the dirty listener", async () => {
+      it("allows to enable/disable the dirty listener", async () => {
         function Component() {
           const count = useRenderCount();
           const field = Field.use(
@@ -1795,7 +1795,7 @@ describe("Field", () => {
     describe("#useCompute", () => {
       beforeEach(cleanup);
 
-      it.skip("allows to compute value", async () => {
+      it("allows to compute value", async () => {
         function Component() {
           const count = useRenderCount();
           const field = Field.use<User>({ name: { first: "Alexander" } }, []);
@@ -1863,7 +1863,7 @@ describe("Field", () => {
         expect(screen.getByTestId("render-compute").textContent).toBe("3");
       });
 
-      it.skip("depends on the field id", async () => {
+      it("depends on the field id", async () => {
         function Component() {
           const count = useRenderCount();
           const field = Field.use<UserName[]>(
@@ -1897,7 +1897,7 @@ describe("Field", () => {
         expect(screen.getByTestId("render-computed").textContent).toBe("2");
       });
 
-      it.skip("updates the watcher on field id change", async () => {
+      it("updates the watcher on field id change", async () => {
         function Component() {
           const count = useRenderCount();
           const field = Field.use<UserName[]>(
@@ -1943,7 +1943,7 @@ describe("Field", () => {
         expect(screen.getByTestId("computed").textContent).toBe("true");
       });
 
-      it.skip("doesn't rerender when setting the same primitive", async () => {
+      it("doesn't rerender when setting the same primitive", async () => {
         function Component() {
           const count = useRenderCount();
           const field = Field.use<UserName>({ first: "Alexander" }, []);
@@ -1973,7 +1973,7 @@ describe("Field", () => {
         expect(screen.getByTestId("render-computed").textContent).toBe("1");
       });
 
-      it.skip("allows to specify dependencies", async () => {
+      it("allows to specify dependencies", async () => {
         function Component() {
           const count = useRenderCount();
           const field = Field.use("Alexander", []);
@@ -2020,7 +2020,7 @@ describe("Field", () => {
     describe("#useMeta", () => {
       beforeEach(cleanup);
 
-      it.skip("allows to listen to meta information", async () => {
+      it("allows to listen to meta information", async () => {
         function Component() {
           const count = useRenderCount();
           const field = Field.use(
@@ -2609,7 +2609,7 @@ describe("Field", () => {
       describe("#useCollection", () => {
         beforeEach(cleanup);
 
-        it.skip("allows to bind object field changes to the component", async () => {
+        it("allows to bind object field changes to the component", async () => {
           function Component() {
             const count = useRenderCount();
             const field = Field.use<UserName>({ first: "Alexander" }, []);
@@ -2643,7 +2643,7 @@ describe("Field", () => {
           expect(screen.getByTestId("render-bind").textContent).toBe("2");
         });
 
-        it.skip("depends on the field id", async () => {
+        it("depends on the field id", async () => {
           function Component() {
             const count = useRenderCount();
             const field = Field.use<UserName[]>(
@@ -2691,7 +2691,7 @@ describe("Field", () => {
           expect(screen.getByTestId("render-bind").textContent).toBe("3");
         });
 
-        it.skip("updates the watcher on field id change", async () => {
+        it("updates the watcher on field id change", async () => {
           function Component() {
             const count = useRenderCount();
             const field = Field.use<UserName[]>(
@@ -3646,7 +3646,7 @@ describe("Field", () => {
     describe("#useWatch", () => {
       beforeEach(cleanup);
 
-      it.skip("allows to watch for field using a function", async () => {
+      it("allows to watch for field using a function", async () => {
         function Component() {
           const count = useRenderCount();
           const field = Field.use({ name: { first: "Alexander" } }, []);
@@ -3679,13 +3679,13 @@ describe("Field", () => {
 
         expect(screen.getByTestId("render-watch").textContent).toBe("2");
 
-        await act(() => screen.getByText("rename").click());
+        await act(() => screen.getByText("Rename").click());
 
         expect(screen.getByTestId("name").textContent).toBe("Sasha");
         expect(screen.getByTestId("render-watch").textContent).toBe("3");
       });
 
-      it.skip("depends on the field id", async () => {
+      it("depends on the field id", async () => {
         const spy = vi.fn();
 
         function Component() {
@@ -3735,7 +3735,7 @@ describe("Field", () => {
         expect(screen.getByTestId("render-watch").textContent).toBe("2");
       });
 
-      it.skip("updates the watcher on field id change", async () => {
+      it("updates the watcher on field id change", async () => {
         const spy = vi.fn();
 
         function Component() {

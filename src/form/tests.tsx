@@ -526,7 +526,7 @@ describe("Form", () => {
         expect(screen.getByTestId("render-submit").textContent).toBe("4");
       });
 
-      it.skip("allows to specify that it is a server form", async () => {
+      it("allows to specify that it is a server form", async () => {
         const spy = vi.fn();
 
         function Component() {
