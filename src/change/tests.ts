@@ -8,8 +8,8 @@ import {
 } from "./index.ts";
 import { postpone } from "../../tests/utils.ts";
 
-describe(ChangesEvent, () => {
-  describe(ChangesEvent.batch, () => {
+describe("ChangesEvent", () => {
+  describe("#batch", () => {
     it("batches events", async () => {
       const targetA = new EventTarget();
       const spyA = vi.fn();
@@ -182,7 +182,7 @@ describe(ChangesEvent, () => {
     });
   });
 
-  describe(ChangesEvent.context, () => {
+  describe("#context", () => {
     it("allows to specify context for the events", async () => {
       const targetA = new EventTarget();
       const spyA = vi.fn();
@@ -272,7 +272,7 @@ describe(ChangesEvent, () => {
   });
 });
 
-describe(shiftChildChanges, () => {
+describe("shiftChildChanges", () => {
   it("shifts changes in the subtree direction", () => {
     const once = shiftChildChanges(
       change.field.attach |
@@ -301,7 +301,7 @@ describe(shiftChildChanges, () => {
   });
 });
 
-describe(structuralChanges, () => {
+describe("structuralChanges", () => {
   it("isolates structural changes", () => {
     expect(
       structuralChanges(
@@ -318,7 +318,7 @@ describe(structuralChanges, () => {
   });
 });
 
-describe(metaChanges, () => {
+describe("metaChanges", () => {
   it("isolates meta changes", () => {
     expect(
       metaChanges(

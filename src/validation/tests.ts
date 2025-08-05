@@ -1,8 +1,8 @@
 import { describe, expect, it } from "vitest";
 import { ValidationTree } from "./index.ts";
 
-describe(ValidationTree, () => {
-  describe(ValidationTree.prototype.at, () => {
+describe("ValidationTree", () => {
+  describe("#at", () => {
     it("returns empty array for non-existent path", () => {
       const tree = new ValidationTree();
       expect(tree.at(["non", "existent"])).toEqual([]);
@@ -21,7 +21,7 @@ describe(ValidationTree, () => {
     });
   });
 
-  describe(ValidationTree.prototype.nested, () => {
+  describe("#nested", () => {
     it("returns empty array for non-existent path", () => {
       const tree = new ValidationTree();
       expect(tree.nested(["non", "existent"])).toEqual([]);
@@ -57,7 +57,7 @@ describe(ValidationTree, () => {
     });
   });
 
-  describe(ValidationTree.prototype.add, () => {
+  describe("#add", () => {
     it("inserts error at given path", () => {
       const tree = new ValidationTree();
       const error = { message: "Error message" };
@@ -82,7 +82,7 @@ describe(ValidationTree, () => {
     });
   });
 
-  describe(ValidationTree.prototype.clear, () => {
+  describe("#clear", () => {
     it("clears errors at the given path", () => {
       const tree = new ValidationTree();
       tree.add(["a", "b", "c"], { message: "Error 1" });

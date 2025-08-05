@@ -334,7 +334,7 @@ describe("Form", () => {
   });
 
   describe("intertop", () => {
-    describe("control", () => {
+    describe("#control", () => {
       beforeEach(cleanup);
 
       it.skip("allows to handle submit", async () => {
@@ -643,7 +643,7 @@ describe("Form", () => {
       });
     });
 
-    describe("Control", () => {
+    describe("#Component", () => {
       beforeEach(cleanup);
 
       it.skip("allows to use Form component", async () => {

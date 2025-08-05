@@ -4,8 +4,8 @@ import { change } from "../change/index.ts";
 import { Field } from "../field/index.js";
 import { EventsTree } from "./index.ts";
 
-describe(EventsTree, () => {
-  describe(EventsTree.prototype.at, () => {
+describe("EventsTree", () => {
+  describe("#at", () => {
     it("returns empty array for non-existent path", () => {
       const tree = new EventsTree<"field">();
       expect(tree.at(["non", "existent"])).toEqual([]);
@@ -24,7 +24,7 @@ describe(EventsTree, () => {
     });
   });
 
-  describe(EventsTree.prototype.traverse, () => {
+  describe("#traverse", () => {
     it("traverses the tree in backward order", () => {
       let count = 0;
       const tree = new EventsTree<"field">();
@@ -97,7 +97,7 @@ describe(EventsTree, () => {
     });
   });
 
-  describe(EventsTree.prototype.add, () => {
+  describe("#add", () => {
     it("inserts error at given path", () => {
       const tree = new EventsTree<"field">();
       const field = new Field(123);
@@ -106,7 +106,7 @@ describe(EventsTree, () => {
     });
   });
 
-  describe(EventsTree.prototype.delete, () => {
+  describe("#delete", () => {
     it("returns false for non-existent path", () => {
       const tree = new EventsTree<"field">();
       const field = new Field(1);
@@ -135,7 +135,7 @@ describe(EventsTree, () => {
     });
   });
 
-  describe(EventsTree.prototype.move, () => {
+  describe("#move", () => {
     it("returns false for non-existent path", () => {
       const tree = new EventsTree<"field">();
       const field = new Field(1);
@@ -168,7 +168,7 @@ describe(EventsTree, () => {
     });
   });
 
-  describe(EventsTree.prototype.trigger, () => {
+  describe("#trigger", () => {
     it("triggers an event on the field", async () => {
       const tree = new EventsTree<"field">();
       const field = new Field("Hello, world!");

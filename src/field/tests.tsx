@@ -15,7 +15,7 @@ import { Field } from "./index.js";
 
 describe("Field", () => {
   describe("static", () => {
-    describe(Field.use, () => {
+    describe(".use", () => {
       beforeEach(cleanup);
 
       it("creates Field instance", async () => {
@@ -77,7 +77,7 @@ describe("Field", () => {
   });
 
   describe("attributes", () => {
-    describe("id", () => {
+    describe("#id", () => {
       it("assigns a unique id to each field", () => {
         const field1 = new Field(42);
         const field2 = new Field(42);
@@ -94,7 +94,7 @@ describe("Field", () => {
   });
 
   describe("value", () => {
-    describe("useValue", () => {
+    describe("#useValue", () => {
       beforeEach(cleanup);
 
       it.skip("allows to watch for field", async () => {
@@ -355,7 +355,7 @@ describe("Field", () => {
       });
     });
 
-    describe("set", () => {
+    describe("#set", () => {
       describe("primitive", () => {
         it("sets a new field", () => {
           const field = new Field(42);
@@ -1114,7 +1114,7 @@ describe("Field", () => {
       });
     });
 
-    describe("initial", () => {
+    describe("#initial", () => {
       it("returns the initial field", () => {
         const field = new Field(42);
         field.set(43);
@@ -1128,7 +1128,7 @@ describe("Field", () => {
       });
     });
 
-    describe("dirty", () => {
+    describe("#dirty", () => {
       describe("primitive", () => {
         it("returns true if the field has changed", () => {
           const field = new Field(42);
@@ -1292,7 +1292,7 @@ describe("Field", () => {
       });
     });
 
-    describe("useDirty", () => {
+    describe("#useDirty", () => {
       beforeEach(cleanup);
 
       it.skip("allows to listen to field dirty", async () => {
@@ -1566,7 +1566,7 @@ describe("Field", () => {
       });
     });
 
-    describe("commit", () => {
+    describe("#commit", () => {
       it("commits the current field as the initial field", () => {
         const field = new Field(42);
         field.set(43);
@@ -1728,7 +1728,7 @@ describe("Field", () => {
       });
     });
 
-    describe("reset", () => {
+    describe("#reset", () => {
       it("resets the current field to initial state", () => {
         const field = new Field(42);
         field.set(43);
@@ -1767,7 +1767,7 @@ describe("Field", () => {
       });
     });
 
-    describe("pave", () => {
+    describe("#pave", () => {
       it("returns field set to the given value if it's null or undefined", () => {
         const field = new Field<string | undefined>(undefined);
         const pavedField = field.pave("Hello");
@@ -1792,7 +1792,7 @@ describe("Field", () => {
       });
     });
 
-    describe("useCompute", () => {
+    describe("#useCompute", () => {
       beforeEach(cleanup);
 
       it.skip("allows to compute value", async () => {
@@ -2017,7 +2017,7 @@ describe("Field", () => {
   });
 
   describe("meta", () => {
-    describe("useMeta", () => {
+    describe("#useMeta", () => {
       beforeEach(cleanup);
 
       it.skip("allows to listen to meta information", async () => {
@@ -2606,7 +2606,7 @@ describe("Field", () => {
         });
       });
 
-      describe("useCollection", () => {
+      describe("#useCollection", () => {
         beforeEach(cleanup);
 
         it.skip("allows to bind object field changes to the component", async () => {
@@ -2735,7 +2735,7 @@ describe("Field", () => {
   });
 
   describe("tree", () => {
-    describe("parent", () => {
+    describe("#parent", () => {
       it("returns the parent field", () => {
         const field = new Field({ name: { first: "Sasha" } });
         expect(field.$.name.$.first.parent).toBe(field.$.name);
@@ -2753,7 +2753,7 @@ describe("Field", () => {
       });
     });
 
-    describe("key", () => {
+    describe("#key", () => {
       it("returns the field key", () => {
         const field = new Field({ name: { first: "Sasha" } });
         expect(field.$.name.$.first.key).toBe("first");
@@ -2771,7 +2771,7 @@ describe("Field", () => {
       });
     });
 
-    describe("root", () => {
+    describe("#root", () => {
       it("returns the root field", () => {
         const field = new Field({ user: { name: ["Sasha"] } });
         expect(field.$.user.$.name.at(0).root).toBe(field);
@@ -2779,7 +2779,7 @@ describe("Field", () => {
       });
     });
 
-    describe("path", () => {
+    describe("#path", () => {
       it("returns the path to the field", () => {
         const field = new Field({ address: { name: { first: "Sasha" } } });
         expect(field.$.address.$.name.$.first.path).toEqual([
@@ -2801,7 +2801,7 @@ describe("Field", () => {
       });
     });
 
-    describe("name", () => {
+    describe("#name", () => {
       it("returns the field name", () => {
         const field = new Field({ address: { name: { first: "Sasha" } } });
         expect(field.$.address.$.name.$.first.name).toEqual(
@@ -2821,7 +2821,7 @@ describe("Field", () => {
       });
     });
 
-    describe("$/at", () => {
+    describe("#$/#at", () => {
       it("returns undefined for primitive", () => {
         const field = new Field(42);
         expect(field.$).toBe(undefined);
@@ -2907,7 +2907,7 @@ describe("Field", () => {
       });
     });
 
-    describe("try", () => {
+    describe("#try", () => {
       describe("primitive", () => {
         it("returns the field if it's defined", () => {
           const field = new Field<string | number | undefined>(42);
@@ -3021,7 +3021,7 @@ describe("Field", () => {
       });
     });
 
-    describe(Field.prototype.lookup, () => {
+    describe("#lookup", () => {
       describe("primitive", () => {
         it("returns itself for empty path", () => {
           const field = new Field(42);
@@ -3259,7 +3259,7 @@ describe("Field", () => {
   });
 
   describe("events", () => {
-    describe("events", () => {
+    describe("#events", () => {
       it("is a events tree instance", () => {
         const field = new Field(42);
         expect(field.events).toBeInstanceOf(EventsTree);
@@ -3272,7 +3272,7 @@ describe("Field", () => {
       });
     });
 
-    describe("trigger", () => {
+    describe("#trigger", () => {
       it("triggers the watchers", async () => {
         const field = new Field(42);
         const spy = vi.fn();
@@ -3346,7 +3346,7 @@ describe("Field", () => {
       describe.todo("subtree");
     });
 
-    describe("withhold", () => {
+    describe("#withhold", () => {
       it("allows to withhold the events until it's unleashed", async () => {
         const field = new Field({ num: 42 });
         const spy = vi.fn();
@@ -3420,7 +3420,7 @@ describe("Field", () => {
       });
     });
 
-    describe("watch", () => {
+    describe("#watch", () => {
       describe("primitive", () => {
         it("allows to subscribe for field changes", async () => {
           const field = new Field(42);
@@ -3621,7 +3621,7 @@ describe("Field", () => {
       });
     });
 
-    describe("unwatch", () => {
+    describe("#unwatch", () => {
       it("unsubscribes all watchers", () => {
         const field = new Field(42);
         const spy = vi.fn();
@@ -3643,7 +3643,7 @@ describe("Field", () => {
       });
     });
 
-    describe("useWatch", () => {
+    describe("#useWatch", () => {
       beforeEach(cleanup);
 
       it.skip("allows to watch for field using a function", async () => {
@@ -3788,7 +3788,7 @@ describe("Field", () => {
   });
 
   describe("transform", () => {
-    describe("into", () => {
+    describe("#into", () => {
       it("allows to create a proxy field", () => {
         const field = new Field({ message: "Hello, world!" });
         const proxy = field.$.message.into(toCodes).from(fromCodes);
@@ -4444,7 +4444,7 @@ describe("Field", () => {
       });
     });
 
-    describe("useInto", () => {
+    describe("#useInto", () => {
       beforeEach(cleanup);
 
       it.skip("allows to compute field", async () => {
@@ -4600,7 +4600,7 @@ describe("Field", () => {
       });
     });
 
-    describe("decompose", () => {
+    describe("#decompose", () => {
       it.skip("allows to decompose the field type", () => {
         const field = new Field<string | number | Record<string, number>>(
           "Hello, world!",
@@ -4614,7 +4614,7 @@ describe("Field", () => {
       });
     });
 
-    describe("useDecompose", () => {
+    describe("#useDecompose", () => {
       beforeEach(cleanup);
 
       it.skip("decomposes and updates on field change", async () => {
@@ -5054,7 +5054,7 @@ describe("Field", () => {
       }
     });
 
-    describe("useEnsure", () => {
+    describe("#useEnsure", () => {
       beforeEach(cleanup);
 
       it.skip("allows to ensure presence of a field", async () => {
@@ -5226,7 +5226,7 @@ describe("Field", () => {
   });
 
   describe("interop", () => {
-    describe("input", () => {
+    describe("#input", () => {
       beforeEach(cleanup);
 
       it("generates props for a field", () => {
@@ -5422,7 +5422,7 @@ describe("Field", () => {
       });
     });
 
-    describe("Component", () => {
+    describe("#Component", () => {
       beforeEach(cleanup);
 
       it.skip("allows to control object field", async () => {
@@ -5794,7 +5794,7 @@ describe("Field", () => {
   });
 
   describe("validation", () => {
-    describe("errors", () => {
+    describe("#errors", () => {
       it("returns direct errors of the field", () => {
         const field = new Field(42);
         field.addError("Something went wrong");
@@ -5813,7 +5813,7 @@ describe("Field", () => {
       });
     });
 
-    describe("useErrors", () => {
+    describe("#useErrors", () => {
       beforeEach(cleanup);
 
       it.skip("allows to listen to field error", async () => {
@@ -6022,7 +6022,7 @@ describe("Field", () => {
       });
     });
 
-    describe(Field.prototype.addError, () => {
+    describe("#addError", () => {
       it("adds error to field", () => {
         const field = new Field(42);
         field.addError({ type: "internal", message: "Something went wrong" });
@@ -6101,7 +6101,7 @@ describe("Field", () => {
       });
     });
 
-    describe(Field.prototype.clearErrors, () => {
+    describe("#clearErrors", () => {
       it("clears the errors", () => {
         const field = new Field(42);
         field.addError("Something went wrong");
@@ -6176,7 +6176,7 @@ describe("Field", () => {
       });
     });
 
-    describe("valid", () => {
+    describe("#valid", () => {
       it("is false if any of the children is invalid", () => {
         const field = new Field({
           name: { first: "" },
@@ -6203,7 +6203,7 @@ describe("Field", () => {
       });
     });
 
-    describe("useValid", () => {
+    describe("#useValid", () => {
       beforeEach(cleanup);
 
       it("allows to listen to field valid", async () => {
