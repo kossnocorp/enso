@@ -572,6 +572,69 @@ export class AtomImpl<Value> {
     return useMemo(() => ({ from }), [from]);
   }
 
+  decompose(): any {
+    return {
+      value: this.value,
+      field: this,
+    } as any;
+  }
+
+  useDecompose(callback: any, deps: React.DependencyList): any {
+    const getValue = useCallback(
+      () => this.decompose(),
+      [
+        // eslint-disable-next-line react-hooks/exhaustive-deps -- It can't handle this
+        this,
+      ],
+    );
+
+    const shouldRender = useCallback(
+      (prev: any, next: any) => !!prev && callback(next.value, prev.value),
+      // eslint-disable-next-line react-hooks/exhaustive-deps -- It can't handle this
+      deps,
+    );
+
+    return useAtomHook({
+      atom: this as any,
+      getValue,
+      shouldRender,
+    }) as any;
+  }
+
+  discriminate<Discriminator extends keyof Utils.NonNullish<Value>>(
+    discriminator: Discriminator,
+  ): any {
+    return {
+      // @ts-expect-error
+      discriminator: this.$?.[discriminator]?.value,
+      field: this,
+    } as any;
+  }
+
+  useDiscriminate<Discriminator extends keyof Utils.NonNullish<Value>>(
+    discriminator: Discriminator,
+  ): any {
+    const getValue = useCallback(
+      () => this.discriminate(discriminator),
+      [
+        // eslint-disable-next-line react-hooks/exhaustive-deps -- It can't handle this
+        this,
+        discriminator,
+      ],
+    );
+
+    const shouldRender = useCallback(
+      (prev: any, next: any) => prev?.discriminator !== next.discriminator,
+      [],
+    );
+
+    return useAtomHook({
+      atom: this as any,
+      getValue,
+      shouldRender,
+    }) as any;
+  }
+
   //#endregion
 
   //#region External
