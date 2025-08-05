@@ -48,7 +48,7 @@ export class FormImpl<Value> {
       [form, rerender],
     );
 
-    form.#field.useCollection();
+    form.#field.useBind();
 
     return form;
   }
