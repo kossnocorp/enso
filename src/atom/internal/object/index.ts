@@ -162,7 +162,7 @@ export class AtomInternalObject<
   // @ts-expect-error
   try(key) {
     if (key !== undefined && key !== null) {
-      return this.#children.get(key)?.try();
+      return this.#children.get(key)?.self.try();
     } else {
       return this.external;
     }

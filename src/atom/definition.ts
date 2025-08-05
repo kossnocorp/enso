@@ -2364,6 +2364,8 @@ export namespace Atom {
             >
     : never;
 
+  export type BareTry<Type, Key> = (key: Key) => Type | undefined;
+
   //#endregion
 
   //#region Lookup
