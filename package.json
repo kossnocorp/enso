@@ -74,7 +74,7 @@
   },
   "homepage": "https://github.com/kossnocorp/enso#readme",
   "dependencies": {
-    "nanoid": "^5.0.9",
+    "nanoid": "^5.1.5",
     "tdollar": "workspace:^"
   },
   "devDependencies": {
