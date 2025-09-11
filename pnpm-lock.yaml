@@ -94,7 +94,7 @@ importers:
         specifier: ^19.1.1
         version: 19.1.1(react@19.1.1)
       tdollar:
-        specifier: workspace:^
+        specifier: workspace:*
         version: link:submodules/tdollar
       tsx:
         specifier: ^4.20.5
@@ -106,7 +106,7 @@ importers:
         specifier: ^8.33.1
         version: 8.33.1(eslint@9.28.0)(typescript@5.9.2)
       tysts:
-        specifier: workspace:^
+        specifier: workspace:*
         version: link:submodules/tysts
       vitest:
         specifier: ^3.2.2
