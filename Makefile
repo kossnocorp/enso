@@ -22,6 +22,7 @@ build: prepare-build
 	@env BABEL_ENV=esm pnpm exec babel src --config-file ./babel.config.json --source-root src --out-dir lib --extensions .js,.ts --out-file-extension .js --quiet
 	@env BABEL_ENV=cjs pnpm exec babel src --config-file ./babel.config.json --source-root src --out-dir lib --extensions .js,.ts --out-file-extension .cjs --quiet
 	@node copy.mjs
+	@sed -i '/workspace:/d' lib/package.json
 	@make build-cts
 
 build-cts:
