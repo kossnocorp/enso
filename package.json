@@ -1,6 +1,6 @@
 {
   "name": "enso",
-  "version": "2.0.3",
+  "version": "2.0.4",
   "description": "Atoms-like form state management library",
   "type": "module",
   "main": "index.cjs",
@@ -54,6 +54,7 @@
   },
   "homepage": "https://github.com/kossnocorp/enso#readme",
   "dependencies": {
+    "react": "^19",
     "nanoid": "^5.1.5"
   },
   "devDependencies": {
@@ -82,7 +83,6 @@
     "minimatch": "^10.0.1",
     "picocolors": "^1.0.0",
     "prettier": "^3.5.3",
-    "react": "^19.1.1",
     "react-dom": "^19.1.1",
     "tdollar": "workspace:*",
     "tsx": "^4.20.5",
