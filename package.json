@@ -1,6 +1,6 @@
 {
   "name": "enso",
-  "version": "2.0.1",
+  "version": "2.0.2",
   "description": "Atoms-like form state management library",
   "type": "module",
   "main": "index.cjs",
@@ -23,34 +23,14 @@
           "default": "./index.js"
         }
       },
-      "./form": {
+      "./dev": {
         "require": {
-          "types": "./form/index.d.cts",
-          "default": "./form/index.cjs"
+          "types": "./dev.d.cts",
+          "default": "./dev.cjs"
         },
         "import": {
-          "types": "./form/index.d.ts",
-          "default": "./form/index.js"
-        }
-      },
-      "./field": {
-        "require": {
-          "types": "./field/index.d.cts",
-          "default": "./field/index.cjs"
-        },
-        "import": {
-          "types": "./field/index.d.ts",
-          "default": "./field/index.js"
-        }
-      },
-      "./change": {
-        "require": {
-          "types": "./change/index.d.cts",
-          "default": "./change/index.cjs"
-        },
-        "import": {
-          "types": "./change/index.d.ts",
-          "default": "./change/index.js"
+          "types": "./dev.d.ts",
+          "default": "./dev.js"
         }
       }
     }
