@@ -18,6 +18,7 @@
     "skipLibCheck": true,
     "allowJs": true,
     "jsx": "react",
+    "tsBuildInfoFile": ".ts/.tsbuildinfo",
     // Project References setup
     "composite": true,
     "incremental": true,

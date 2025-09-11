@@ -6,5 +6,7 @@ node_modules
 __screenshots__
 .envrc
 .direnv
+# TypeScript
+.ts/
 # macOS
 .DS_Store
