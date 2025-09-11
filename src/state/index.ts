@@ -1,5 +1,5 @@
 import { DependencyList } from "react";
-import { Atom } from "../atom/definition.ts";
+import { Atom } from "../atom/index.js";
 import type { EnsoUtils as Utils } from "../utils.ts";
 
 const hintSymbol = Symbol();
