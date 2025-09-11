@@ -263,15 +263,6 @@ export const fieldChange = {
   //#endregion
 };
 
-if (process.env.NODE_ENV !== "production") {
-  // Test the changes bits overflow.
-  const bits = BigInt(Object.keys(fieldChange).length);
-  if (bits > changesBits)
-    throw new Error(
-      `Field changes bits overflow. Maximum changes bits is ${changesBits} but got ${bits}.`,
-    );
-}
-
 /**
  * Field change map. It maps the human-readable field change names to
  * the corresponding bit mask.

@@ -105,6 +105,7 @@
     "react": "^19.1.1",
     "react-dom": "^19.1.1",
     "tdollar": "workspace:^",
+    "tsx": "^4.20.5",
     "typescript": "5.9.2",
     "typescript-eslint": "^8.33.1",
     "tysts": "workspace:^",
