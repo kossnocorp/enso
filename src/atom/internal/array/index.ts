@@ -59,7 +59,7 @@ export class AtomInternalArray<
           undefinedState ||
           this.create(value, {
             key: String(index),
-            field: this.external,
+            [(this.external.constructor as any).prop]: this.external,
           });
         changes |= change.child.attach;
         return newChild;
@@ -81,10 +81,10 @@ export class AtomInternalArray<
 
     for (const index in initial) {
       const value = initial[index];
-      const field = this.#children[index];
+      const atom = this.#children[index];
 
       // @ts-expect-error
-      if (!field || field.initial !== value || field.dirty) return true;
+      if (!atom || atom.initial !== value || atom.dirty) return true;
     }
 
     return false;
@@ -132,32 +132,32 @@ export class AtomInternalArray<
     item: ItemValue,
   ): AtomImpl<ItemValue> {
     const length = this.#children.length;
-    const field = this.create(item, {
+    const atom = this.create(item, {
       key: String(length),
-      field: this.external,
+      [(this.external.constructor as any).prop]: this.external,
     });
-    this.#children[length] = field;
+    this.#children[length] = atom;
 
-    this.external.trigger(change.field.shape | change.child.attach, true);
-    return field;
+    this.external.trigger(change.atom.shape | change.child.attach, true);
+    return atom;
   }
 
   insert<ItemValue extends Value[keyof Value]>(
     index: number,
     item: ItemValue,
   ): AtomImpl<ItemValue> {
-    const field = this.create(item, {
+    const atom = this.create(item, {
       key: String(index),
-      field: this.external,
+      [(this.external.constructor as any).prop]: this.external,
     });
-    this.#children.splice(index, 0, field);
+    this.#children.splice(index, 0, atom);
 
     this.#children.slice(index).forEach((item, index) => {
       item[externalSymbol].move(String(index));
     });
 
-    this.external.trigger(change.field.shape | change.child.attach, true);
-    return field;
+    this.external.trigger(change.atom.shape | change.child.attach, true);
+    return atom;
   }
 
   //#endregion
@@ -214,10 +214,9 @@ export class AtomInternalArray<
     let changes = 0n;
 
     // Handle when child goes from undefined to defined
-    if (childChanges & change.field.attach) {
+    if (childChanges & change.atom.attach) {
       const item = this.#undefined.claim(key);
-      if (!item)
-        throw new Error("Failed to find the child field when updating");
+      if (!item) throw new Error("Failed to find the child atom when updating");
 
       const idx = Number(key);
       const existingItem = this.#children[idx];
@@ -239,10 +238,9 @@ export class AtomInternalArray<
     }
 
     // Handle when child goes from defined to undefined
-    if (childChanges & change.field.detach) {
+    if (childChanges & change.atom.detach) {
       const item = this.#children[Number(key)];
-      if (!item)
-        throw new Error("Failed to find the child field when updating");
+      if (!item) throw new Error("Failed to find the child atom when updating");
 
       // Remove the child from the array
       const idx = Number(key);
@@ -267,11 +265,11 @@ export class AtomInternalArray<
   }
 
   override withhold() {
-    this.#children.forEach((field) => field.withhold());
+    this.#children.forEach((atom) => atom.withhold());
   }
 
   override unleash() {
-    this.#children.forEach((field) => field.unleash());
+    this.#children.forEach((atom) => atom.unleash());
   }
 
   //#endregion

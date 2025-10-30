@@ -24,7 +24,7 @@ export class ChangesEvent extends Event {
    * @param target - Event target to dispatch the changes to.
    * @param changes - Changes to dispatch.
    */
-  static batch(target: EventTarget, changes: FieldChange) {
+  static batch(target: EventTarget, changes: AtomChange) {
     const currentContext = {};
     for (const ctx of this.#context) {
       Object.assign(currentContext, ctx);
@@ -43,16 +43,16 @@ export class ChangesEvent extends Event {
     // Cancel out opposite changes
 
     // valid/invalid
-    if (changes & fieldChange.valid && batchedChanges & fieldChange.invalid)
-      newChanges &= ~fieldChange.invalid;
-    if (changes & fieldChange.invalid && batchedChanges & fieldChange.valid)
-      newChanges &= ~fieldChange.valid;
+    if (changes & atomChange.valid && batchedChanges & atomChange.invalid)
+      newChanges &= ~atomChange.invalid;
+    if (changes & atomChange.invalid && batchedChanges & atomChange.valid)
+      newChanges &= ~atomChange.valid;
 
     // attach/detach
-    if (changes & fieldChange.attach && batchedChanges & fieldChange.detach)
-      newChanges &= ~fieldChange.detach;
-    if (changes & fieldChange.detach && batchedChanges & fieldChange.attach)
-      newChanges &= ~fieldChange.attach;
+    if (changes & atomChange.attach && batchedChanges & atomChange.detach)
+      newChanges &= ~atomChange.detach;
+    if (changes & atomChange.detach && batchedChanges & atomChange.attach)
+      newChanges &= ~atomChange.attach;
 
     const newContext = Object.assign({}, batchedContext, currentContext);
     this.#batch.set(target, [newChanges, newContext]);
@@ -105,7 +105,7 @@ export class ChangesEvent extends Event {
   }
 
   /** Changes bitmask. */
-  changes: FieldChange;
+  changes: AtomChange;
 
   /** Context record. */
   context: ChangesEvent.Context = {};
@@ -115,7 +115,7 @@ export class ChangesEvent extends Event {
    *
    * @param changes - Changes that happened.
    */
-  constructor(changes: FieldChange, context?: ChangesEvent.Context) {
+  constructor(changes: AtomChange, context?: ChangesEvent.Context) {
     super("change");
 
     // TODO: Join context building with the batched context so it's computed
@@ -134,7 +134,7 @@ export class ChangesEvent extends Event {
 }
 
 export namespace ChangesEvent {
-  export type Batch = Map<EventTarget, [FieldChange, Context]>;
+  export type Batch = Map<EventTarget, [AtomChange, Context]>;
 
   export type Context = Record<string | number | symbol, any>;
 }
@@ -146,11 +146,11 @@ export namespace ChangesEvent {
 //#region Bitmask
 
 /**
- * Field change type. It aliases the `bigint` type to represent the changes
+ * Atom change type. It aliases the `bigint` type to represent the changes
  * type.
  */
 // TODO: Consider making it opaque.
-export type FieldChange = bigint;
+export type AtomChange = bigint;
 
 /**
  * Structural changes bits. It defines the allocate size for the structural
@@ -178,20 +178,20 @@ export const changesBits = structuralChangesBits + metaChangesBits;
 export const coreChangesBits = changesBits * 3n;
 
 /**
- * Field changes mask. It allows to isolate the field changes bits.
+ * Atom changes mask. It allows to isolate the atom changes bits.
  */
-export const fieldChangesMask = 2n ** changesBits - 1n;
+export const atomChangesMask = 2n ** changesBits - 1n;
 
 /**
- * Structural field changes mask. It allows to isolate the structural field
+ * Structural atom changes mask. It allows to isolate the structural atom
  * changes bits.
  */
-export const structuralFieldChangesMask = 2n ** structuralChangesBits - 1n;
+export const structuralAtomChangesMask = 2n ** structuralChangesBits - 1n;
 
 /**
- * Meta field changes mask. It allows to isolate the meta field changes bits.
+ * Meta atom changes mask. It allows to isolate the meta atom changes bits.
  */
-export const metaFieldChangesMask =
+export const metaAtomChangesMask =
   (2n ** metaChangesBits - 1n) << structuralChangesBits;
 
 /**
@@ -202,25 +202,25 @@ export const metaFieldChangesMask =
 let bitIdx = 0n;
 
 /**
- * Field changes map.
+ * Atom changes map.
  *
- * It represents the changes for the field itself.
+ * It represents the changes for the atom itself.
  */
-export const fieldChange = {
+export const atomChange = {
   //#region Structural changes
 
-  // Changes that affect the inner value of the field.
+  // Changes that affect the inner value of the atom.
 
-  /** Field type changed. It indicates that field type(array/object/number/etc.)
+  /** Atom type changed. It indicates that atom type(array/object/number/etc.)
    * is now different. */
   type: takeBit(),
-  /** Field value changed. It applies only to primitive field type as
-   * object/array fields value is a reference. */
+  /** Atom value changed. It applies only to primitive atom type as
+   * object/array atoms value is a reference. */
   value: takeBit(),
-  /** Field attached (inserted) to object/array. Before it gets created
-   * the field might be in the detached state. */
+  /** Atom attached (inserted) to object/array. Before it gets created
+   * the atom might be in the detached state. */
   attach: takeBit(),
-  /** Field detached from object/array. Rather than removing, the field will
+  /** Atom detached from object/array. Rather than removing, the atom will
    * be in detached state and won't receive any updates until it gets attached
    * again. */
   detach: takeBit(),
@@ -237,39 +237,39 @@ export const fieldChange = {
 
   //#region Meta changes
 
-  // Changes that affect the meta state of the field.
+  // Changes that affect the meta state of the atom.
 
-  /** Field id changed. It happens when the field watched by a hook is replaced
-   * with a new field. */
+  /** Atom id changed. It happens when the atom watched by a hook is replaced
+   * with a new atom. */
   id: takeBit(),
-  /** Field key changed. It indicates that the field got moved. It doesn't
-   * apply to the field getting detached and attached. */
+  /** Atom key changed. It indicates that the atom got moved. It doesn't
+   * apply to the atom getting detached and attached. */
   key: takeBit(),
-  /** Current field value committed as initial. */
+  /** Current atom value committed as initial. */
   // TODO: Utilize this flag
   commit: takeBit(),
-  /** Field value reset to initial. */
+  /** Atom value reset to initial. */
   // TODO: Utilize this flag
   reset: takeBit(),
-  /** Field become invalid. */
+  /** Atom become invalid. */
   invalid: takeBit(),
-  /** Field become valid. */
+  /** Atom become valid. */
   valid: takeBit(),
   /** Errors change. A new error was inserted or removed. */
   errors: takeBit(),
-  /** Field lost focus. */
+  /** Atom lost focus. */
   blur: takeBit(),
 
   //#endregion
 };
 
 /**
- * Field change map. It maps the human-readable field change names to
+ * Atom change map. It maps the human-readable atom change names to
  * the corresponding bit mask.
  */
 // NOTE: Without using this type to define `childChange` and `subtreeChange`,
 // the LSP actions such as "rename" will not work.
-export type FieldChangeMap = typeof fieldChange;
+export type AtomChangeMap = typeof atomChange;
 
 /**
  * Child changes shift.
@@ -280,30 +280,30 @@ export const childChangesShift = changesBits;
  * Child changes bits mask. It allows to isolate the child changes bits.
  */
 export const childChangesMask =
-  (2n ** (changesBits + childChangesShift) - 1n) & ~fieldChangesMask;
+  (2n ** (changesBits + childChangesShift) - 1n) & ~atomChangesMask;
 
 /**
  * Structural child changes mask. It allows to isolate the structural child
  * changes bits.
  */
 export const structuralChildChangesMask =
-  structuralFieldChangesMask << childChangesShift;
+  structuralAtomChangesMask << childChangesShift;
 
 /**
  * Meta child changes mask. It allows to isolate the meta child changes bits.
  */
-export const metaChildChangesMask = metaFieldChangesMask << childChangesShift;
+export const metaChildChangesMask = metaAtomChangesMask << childChangesShift;
 
 /**
  * Child changes map.
  *
- * It represents the changes for the immediate children of the field.
+ * It represents the changes for the immediate children of the atom.
  */
-export const childChange: FieldChangeMap = {
-  ...fieldChange,
+export const childChange: AtomChangeMap = {
+  ...atomChange,
 };
 
-// Shift child field changes to its dedicated category bits range.
+// Shift child atom changes to its dedicated category bits range.
 shiftCategoryBits(childChange, childChangesShift);
 
 /**
@@ -316,32 +316,32 @@ export const subtreeChangesShift = changesBits * 2n;
  */
 export const subtreeChangesMask =
   (2n ** (changesBits + subtreeChangesShift) - 1n) &
-  ~(fieldChangesMask | childChangesMask);
+  ~(atomChangesMask | childChangesMask);
 
 /**
  * Structural subtree changes mask. It allows to isolate the structural subtree
  * changes bits.
  */
 export const structuralSubtreeChangesMask =
-  structuralFieldChangesMask << subtreeChangesShift;
+  structuralAtomChangesMask << subtreeChangesShift;
 
 /**
  * Meta subtree changes mask. It allows to isolate the meta subtree changes
  * bits.
  */
 export const metaSubtreeChangesMask =
-  metaFieldChangesMask << subtreeChangesShift;
+  metaAtomChangesMask << subtreeChangesShift;
 
 /**
  * Subtree changes map.
  *
- * It represents the changes for the deeply nested children of the field.
+ * It represents the changes for the deeply nested children of the atom.
  */
-export const subtreeChange: FieldChangeMap = {
-  ...fieldChange,
+export const subtreeChange: AtomChangeMap = {
+  ...atomChange,
 };
 
-// Shift child field changes to its dedicated category bits range.
+// Shift child atom changes to its dedicated category bits range.
 shiftCategoryBits(subtreeChange, subtreeChangesShift);
 
 /**
@@ -349,7 +349,7 @@ shiftCategoryBits(subtreeChange, subtreeChangesShift);
  * all levels.
  */
 export const structuralChangesMask =
-  structuralFieldChangesMask |
+  structuralAtomChangesMask |
   structuralChildChangesMask |
   structuralSubtreeChangesMask;
 
@@ -357,10 +357,10 @@ export const structuralChangesMask =
  * Meta changes mask. It allows to isolate the meta changes bits on all levels.
  */
 export const metaChangesMask =
-  metaFieldChangesMask | metaChildChangesMask | metaSubtreeChangesMask;
+  metaAtomChangesMask | metaChildChangesMask | metaSubtreeChangesMask;
 
 /**
- * Field changes map. Each bit indicates a certain type of change in the field.
+ * Atom changes map. Each bit indicates a certain type of change in the atom.
  *
  * The changes are represented as a bit mask, which allows to combine multiple
  * change types into a single value. BigInt is used to represent the changes
@@ -369,26 +369,26 @@ export const metaChangesMask =
  *
  * All changes are divided into three main categories:
  *
- * - **Field changes** that affect the field itself.
- * - **Child changes** that affect the immediate children of the field.
- * - **Subtree changes** that affect the deeply nested children of the field.
+ * - **Atom changes** that affect the atom itself.
+ * - **Child changes** that affect the immediate children of the atom.
+ * - **Subtree changes** that affect the deeply nested children of the atom.
  *
  * We allocate first 48 bits (16*3) for the category changes.
  *
  * Each category bit further divided into subcategories (8 bits each):
  *
- * - **Structural changes** that affect the inner value of the field.
- * - **Meta changes** that affect the meta state of the field.
+ * - **Structural changes** that affect the inner value of the atom.
+ * - **Meta changes** that affect the meta state of the atom.
  *
  * Here is the visual representation of the changes map:
  *
- *   Subtree         Child           Field
+ *   Subtree         Child           Atom
  *   v               v               v
  * 0b000000000000000000000000000000000000000000000000n
  *   ^       ^       ^       ^       ^       ^
  *   Meta    Struct. Meta    Struct. Meta    Struct.
  *
- * The structural field changes range is exclusive meaning that only one of
+ * The structural atom changes range is exclusive meaning that only one of
  * the flags can be set at a time. This allows to simplify the logic and
  * make it easier to understand. Initially that was not the case and
  * `detach` and `attach` flags were always set with `type` change, but this
@@ -396,16 +396,16 @@ export const metaChangesMask =
  * made it harder to understand and test the logic, so it was decided to make
  * the structural changes exclusive.
  *
- * The meta field changes as well as any child and subtree changes are not
+ * The meta atom changes as well as any child and subtree changes are not
  * exclusive and can be combined, as there might be multiple children having
  * conflicting changes i.e. `detach` and `attach` at the same time.
  */
 export const change = {
-  /** Field changes that affect the field itself. */
-  field: fieldChange,
-  /** Child changes that affect the immediate children of the field. */
+  /** Atom changes that affect the atom itself. */
+  atom: atomChange,
+  /** Child changes that affect the immediate children of the atom. */
   child: childChange,
-  /** Subtree changes that affect the deeply nested children of the field. */
+  /** Subtree changes that affect the deeply nested children of the atom. */
   subtree: subtreeChange,
 };
 
@@ -414,24 +414,24 @@ export const change = {
 //#region Manipulations
 
 /**
- * Shifts field changes to child changes. The subtree changes get merged with
+ * Shifts atom changes to child changes. The subtree changes get merged with
  * existing subtree changes.
  *
  * @param changes - Changes to shift.
  */
-export function shiftChildChanges(changes: FieldChange): FieldChange {
+export function shiftChildChanges(changes: AtomChange): AtomChange {
   const subtreeChanges = isolateSubtreeChanges(changes);
   return ((changes & ~subtreeChanges) << childChangesShift) | subtreeChanges;
 }
 
 /**
- * Isolates the field changes from the changes map.
+ * Isolates the atom changes from the changes map.
  *
- * @param changes - Changes to isolate the field changes from.
- * @returns Isolated field changes.
+ * @param changes - Changes to isolate the atom changes from.
+ * @returns Isolated atom changes.
  */
-export function isolateFieldChanges(changes: FieldChange): FieldChange {
-  return changes & fieldChangesMask;
+export function isolateAtomChanges(changes: AtomChange): AtomChange {
+  return changes & atomChangesMask;
 }
 
 /**
@@ -440,17 +440,17 @@ export function isolateFieldChanges(changes: FieldChange): FieldChange {
  * @param changes - Changes to isolate the child changes from.
  * @returns Isolated child changes.
  */
-export function isolateChildChanges(changes: FieldChange): FieldChange {
+export function isolateChildChanges(changes: AtomChange): AtomChange {
   return changes & childChangesMask;
 }
 
 /**
- * Isolates the field changes from the changes map.
+ * Isolates the atom changes from the changes map.
  *
  * @param changes - Changes to isolate the subtree changes from.
  * @returns Isolated subtree changes.
  */
-export function isolateSubtreeChanges(changes: FieldChange): FieldChange {
+export function isolateSubtreeChanges(changes: AtomChange): AtomChange {
   return changes & subtreeChangesMask;
 }
 
@@ -459,17 +459,17 @@ export function isolateSubtreeChanges(changes: FieldChange): FieldChange {
 //#region Checks
 
 /**
- * Checks if child changes affect field shape and returns shape change if so.
+ * Checks if child changes affect atom shape and returns shape change if so.
  *
  * @param changes - Changes to check.
- * @returns Shape change if child changes affect field shape or `0n` otherwise.
+ * @returns Shape change if child changes affect atom shape or `0n` otherwise.
  */
-export function shapeChanges(changes: FieldChange): FieldChange {
+export function shapeChanges(changes: AtomChange): AtomChange {
   return (
     maskedChanges(
       changes,
       change.child.attach | change.child.detach | change.child.key,
-    ) && fieldChange.shape
+    ) && atomChange.shape
   );
 }
 
@@ -479,7 +479,7 @@ export function shapeChanges(changes: FieldChange): FieldChange {
  * @param changes - Changes to check.
  * @returns Isolates structural changes if found or `0n` otherwise.
  */
-export function structuralChanges(changes: FieldChange): FieldChange {
+export function structuralChanges(changes: AtomChange): AtomChange {
   return changes & structuralChangesMask;
 }
 
@@ -489,7 +489,7 @@ export function structuralChanges(changes: FieldChange): FieldChange {
  * @param changes - Changes to check
  * @returns Isolated meta changes if found or `0n` otherwise.
  */
-export function metaChanges(changes: FieldChange): FieldChange {
+export function metaChanges(changes: AtomChange): AtomChange {
   return changes & metaChangesMask;
 }
 
@@ -501,9 +501,9 @@ export function metaChanges(changes: FieldChange): FieldChange {
  * @returns Detected changes if found or `0n` otherwise.
  */
 export function maskedChanges(
-  changes: FieldChange,
-  mask: FieldChange,
-): FieldChange {
+  changes: AtomChange,
+  mask: AtomChange,
+): AtomChange {
   return changes & mask;
 }
 
@@ -521,9 +521,9 @@ export function maskedChanges(
  *
  * @private
  */
-function shiftCategoryBits(changes: typeof fieldChange, shift: bigint) {
-  for (const key in fieldChange) {
-    changes[key as keyof typeof fieldChange] <<= shift;
+function shiftCategoryBits(changes: typeof atomChange, shift: bigint) {
+  for (const key in atomChange) {
+    changes[key as keyof typeof atomChange] <<= shift;
   }
 }
 
@@ -532,7 +532,7 @@ function shiftCategoryBits(changes: typeof fieldChange, shift: bigint) {
  *
  * @returns The next bit in the sequence.
  */
-function takeBit(): FieldChange {
+function takeBit(): AtomChange {
   return 2n ** bitIdx++;
 }
 

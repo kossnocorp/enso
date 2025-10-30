@@ -3,7 +3,7 @@ import { Atom } from "../atom/definition.ts";
 import { change, type ChangesEvent } from "../change/index.ts";
 import type { DetachedValue } from "../detached/index.ts";
 import { EventsTree } from "../events/index.ts";
-import { State } from "../state/index.ts";
+import { State } from "../state/definition.ts";
 import { Field } from "./definition.ts";
 
 const unionValue = new Field<Hello | Blah>({ hello: "world", world: true });
@@ -4814,7 +4814,7 @@ const brandedPrim = new Field({} as Branded<string>);
   // Basic
   {
     const field = new Field("hello");
-    field.trigger(change.field.blur);
+    field.trigger(change.atom.blur);
   }
 
   // Ref

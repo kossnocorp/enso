@@ -1,10 +1,10 @@
 import "vitest";
-import type { FieldChange } from "../src/change/index.ts";
+import type { AtomChange } from "../src/change/index.ts";
 
 export interface CustomMatchers<R = unknown> {
-  toMatchChanges: (expected: FieldChange) => R;
+  toMatchChanges: (expected: AtomChange) => R;
 
-  toReceiveChanges: (expected: FieldChange) => R;
+  toReceiveChanges: (expected: AtomChange) => R;
 }
 
 declare module "vitest" {

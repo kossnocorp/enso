@@ -23,9 +23,11 @@ export { FieldImpl as Field, FieldProxyImpl as FieldProxy };
 export class FieldImpl<Value> extends AtomImpl<Value> {
   //#region Static
 
+  static override prop = "field";
+
   static override create<Value>(
     value: Value,
-    parent?: Atom.Parent.Bare.Ref<any, any>,
+    parent?: Atom.Parent.Bare.Ref<"field", any, any>,
   ) {
     return new FieldImpl(value, parent);
   }
@@ -35,7 +37,7 @@ export class FieldImpl<Value> extends AtomImpl<Value> {
   }
 
   static optional(field: FieldImpl<unknown>) {
-    return new FieldOptionalImpl({ type: "direct", field: field as any });
+    return new FieldOptionalImpl({ type: "direct", field });
   }
 
   static Component<Value>(props: Field.Component.Props<Value>) {
@@ -51,7 +53,7 @@ export class FieldImpl<Value> extends AtomImpl<Value> {
       name: field.name,
       value,
       onChange: field.set,
-      onBlur: () => field.trigger(change.field.blur, true),
+      onBlur: () => field.trigger(change.atom.blur, true),
     };
 
     return props.render(control as any, meta);
@@ -62,8 +64,8 @@ export class FieldImpl<Value> extends AtomImpl<Value> {
   }
 
   static errorChangesFor(wasValid: boolean) {
-    let changes = change.field.errors;
-    if (wasValid) changes |= change.field.invalid;
+    let changes = change.atom.errors;
+    if (wasValid) changes |= change.atom.invalid;
     return changes;
   }
 
@@ -71,8 +73,8 @@ export class FieldImpl<Value> extends AtomImpl<Value> {
 
   //#region Instance
 
-  constructor(value: Value, parent?: Atom.Parent.Bare.Ref<any, any>) {
-    super(value, parent);
+  constructor(value: Value, parent?: Atom.Parent.Bare.Ref<"field", any, any>) {
+    super(value, parent as any);
 
     this.#initial = value;
 
@@ -95,7 +97,7 @@ export class FieldImpl<Value> extends AtomImpl<Value> {
     this.#onBlur = <Element extends HTMLElement>(
       event: React.FocusEvent<Element>,
     ) => {
-      this.trigger(change.field.blur, true);
+      this.trigger(change.atom.blur, true);
       this.#customOnBlur?.(event);
     };
 
@@ -180,7 +182,7 @@ export class FieldImpl<Value> extends AtomImpl<Value> {
     }
     this.clearCache();
 
-    if (notify && wasDirty) this.trigger(change.field.commit, true);
+    if (notify && wasDirty) this.trigger(change.atom.commit, true);
   }
 
   // TODO: Add tests
@@ -331,7 +333,7 @@ export class FieldImpl<Value> extends AtomImpl<Value> {
       AtomImpl.name(this.path),
     );
 
-    const clearChanges = change.field.errors | change.field.valid;
+    const clearChanges = change.atom.errors | change.atom.valid;
 
     Object.values(errorsByPaths).forEach((group) => {
       const path = group?.[0]?.[0];
@@ -517,9 +519,9 @@ export class FieldOptionalImpl<Value> extends FieldImpl<Value> {
 
   //#endregion
 
-  #target: Atom.BareOptionalTarget<FieldImpl<unknown>>;
+  #target: Atom.BareOptionalTarget<"field", FieldImpl<unknown>>;
 
-  constructor(target: Atom.BareOptionalTarget<FieldImpl<unknown>>) {
+  constructor(target: Atom.BareOptionalTarget<"field", FieldImpl<unknown>>) {
     super(FieldOptionalImpl.value(target) as any);
 
     this.#target = target;
@@ -533,7 +535,7 @@ export class FieldOptionalImpl<Value> extends FieldImpl<Value> {
 
   //#region Value
 
-  static value(target: Atom.BareOptionalTarget<FieldImpl<unknown>>) {
+  static value(target: Atom.BareOptionalTarget<"field", FieldImpl<unknown>>) {
     if (target.type !== "direct") return undefined;
     return target.field.value;
   }
@@ -543,7 +545,7 @@ export class FieldOptionalImpl<Value> extends FieldImpl<Value> {
   //#region Tree
 
   override at<Key extends keyof Utils.NonNullish<Value>>(key: Key): any {
-    let target: Atom.BareOptionalTarget<FieldImpl<unknown>>;
+    let target: Atom.BareOptionalTarget<"field", FieldImpl<unknown>>;
     if (this.#target.type === "direct") {
       const field = (this.#target.field.at as any)(key as any);
       target = field

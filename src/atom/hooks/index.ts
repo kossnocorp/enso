@@ -34,7 +34,7 @@ export function useAtomHook<
     enable: boolean;
   }>({ id: atom.id, value: initial, enable });
 
-  // When the field changes, we update the value
+  // When the atom changes, we update the value
   useEffect(() => {
     if (valueRef.current.id === atom.id && valueRef.current.enable === enable)
       return;

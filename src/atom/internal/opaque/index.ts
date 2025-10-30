@@ -24,17 +24,17 @@ export class AtomInternalOpaque<Value> extends AtomInternal<Value> {
   set(value: Value) {
     let changes = 0n;
     if (this.#value === detachedValue && value !== detachedValue)
-      changes |= change.field.attach;
+      changes |= change.atom.attach;
     else if (this.#value !== detachedValue && value === detachedValue)
-      changes |= change.field.detach;
+      changes |= change.atom.detach;
     else if (
       typeof this.#value !== typeof value ||
       (this.#value &&
         typeof this.#value === "object" &&
         Object.getPrototypeOf(this.#value) !== Object.getPrototypeOf(value))
     )
-      changes |= change.field.type;
-    else if (this.#value !== value) changes |= change.field.value;
+      changes |= change.atom.type;
+    else if (this.#value !== value) changes |= change.atom.value;
 
     if (this.#value !== value) this.#value = value;
 

@@ -175,13 +175,13 @@ describe("EventsTree", () => {
       const spy = vi.fn();
       field.watch(spy);
       tree.add(["a", "b"], field);
-      tree.trigger(["a"], change.field.valid);
-      tree.trigger(["a", "c"], change.field.shape);
-      tree.trigger(["a", "b"], change.field.value);
-      tree.trigger(["a", "b"], change.field.blur);
+      tree.trigger(["a"], change.atom.valid);
+      tree.trigger(["a", "c"], change.atom.shape);
+      tree.trigger(["a", "b"], change.atom.value);
+      tree.trigger(["a", "b"], change.atom.blur);
       await postpone();
       expect(spy).toHaveBeenCalledOnce();
-      expect(spy).toReceiveChanges(change.field.blur | change.field.value);
+      expect(spy).toReceiveChanges(change.atom.blur | change.atom.value);
     });
 
     it("bubbles events up the tree", async () => {
@@ -198,18 +198,18 @@ describe("EventsTree", () => {
       tree.add([], field1);
       tree.add(["a"], field2);
       tree.add(["a", "b"], field3);
-      tree.trigger([], change.field.commit);
-      tree.trigger(["a"], change.field.valid);
-      tree.trigger(["a", "b"], change.field.value);
+      tree.trigger([], change.atom.commit);
+      tree.trigger(["a"], change.atom.valid);
+      tree.trigger(["a", "b"], change.atom.value);
       await postpone();
       expect(spy1).toHaveBeenCalledOnce();
       expect(spy1).toReceiveChanges(
-        change.field.commit | change.child.valid | change.subtree.value,
+        change.atom.commit | change.child.valid | change.subtree.value,
       );
       expect(spy2).toHaveBeenCalledOnce();
-      expect(spy2).toReceiveChanges(change.field.valid | change.child.value);
+      expect(spy2).toReceiveChanges(change.atom.valid | change.child.value);
       expect(spy3).toHaveBeenCalledOnce();
-      expect(spy3).toReceiveChanges(change.field.value);
+      expect(spy3).toReceiveChanges(change.atom.value);
     });
 
     describe(Field, () => {
@@ -223,7 +223,7 @@ describe("EventsTree", () => {
         field.$.stuff.$.a.watch(valueASpy);
         const valueBSpy = vi.fn();
         field.$.stuff.$.b.watch(valueBSpy);
-        field.events.trigger(field.$.stuff.$.a.path, change.field.valid);
+        field.events.trigger(field.$.stuff.$.a.path, change.atom.valid);
         await postpone();
         expect(rootSpy).toHaveBeenCalledOnce();
         expect(rootSpy).toReceiveChanges(change.subtree.valid);
@@ -232,7 +232,7 @@ describe("EventsTree", () => {
         expect(stuffSpy).toReceiveChanges(change.child.valid);
         expect(valueASpy).toHaveBeenCalledOnce();
         expect(valueASpy).toHaveBeenCalledBefore(stuffSpy);
-        expect(valueASpy).toReceiveChanges(change.field.valid);
+        expect(valueASpy).toReceiveChanges(change.atom.valid);
         expect(valueBSpy).not.toHaveBeenCalled();
       });
 
@@ -246,7 +246,7 @@ describe("EventsTree", () => {
         field.$.items.at(0).watch(value1Spy);
         const value2Spy = vi.fn();
         field.$.items.at(1).watch(value2Spy);
-        field.events.trigger(field.$.items.at(0).path, change.field.valid);
+        field.events.trigger(field.$.items.at(0).path, change.atom.valid);
         await postpone();
         expect(rootSpy).toHaveBeenCalledOnce();
         expect(rootSpy).toReceiveChanges(change.subtree.valid);
@@ -255,7 +255,7 @@ describe("EventsTree", () => {
         expect(itemsSpy).toReceiveChanges(change.child.valid);
         expect(value1Spy).toHaveBeenCalledOnce();
         expect(value1Spy).toHaveBeenCalledBefore(itemsSpy);
-        expect(value1Spy).toReceiveChanges(change.field.valid);
+        expect(value1Spy).toReceiveChanges(change.atom.valid);
         expect(value2Spy).not.toHaveBeenCalled();
       });
     });

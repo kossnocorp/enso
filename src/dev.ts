@@ -1,7 +1,7 @@
-import { change, coreChangesBits, FieldChange } from "./change/index.ts";
+import { AtomChange, change, coreChangesBits } from "./change/index.ts";
 
 export function devLogChangeMaps() {
-  ["field" as const, "child" as const, "subtree" as const].forEach((type) => {
+  ["atom" as const, "child" as const, "subtree" as const].forEach((type) => {
     console.log(`### ${type} ###`);
     Object.entries(change[type]).forEach(([key, value]) => {
       console.log(`${key.padStart(10, " ")}: ${devStringifyChanges(value)}`);
@@ -9,12 +9,12 @@ export function devLogChangeMaps() {
   });
 }
 
-export function devStringifyChanges(changes: FieldChange): string {
+export function devStringifyChanges(changes: AtomChange): string {
   return `0b${changes.toString(2).padStart(Number(coreChangesBits), "0")}`;
 }
 
 export function devHumanizeChanges(
-  changes: FieldChange,
+  changes: AtomChange,
   extraChange?: Record<string, bigint>,
 ): string {
   if (changes === 0n) return "none";

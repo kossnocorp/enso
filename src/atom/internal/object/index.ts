@@ -47,7 +47,11 @@ export class AtomInternalObject<
         if (undefinedState) undefinedState[externalSymbol].create(value);
 
         const newChild =
-          undefinedState || this.create(value, { key, field: this.external });
+          undefinedState ||
+          this.create(value, {
+            key,
+            [(this.external.constructor as any).prop]: this.external,
+          });
         this.#children.set(key, newChild);
         changes |= change.child.attach;
       }
@@ -74,9 +78,9 @@ export class AtomInternalObject<
     if (entries.length !== this.#children.size) return true;
 
     for (const [key, value] of entries) {
-      const field = this.#children.get(key);
+      const atom = this.#children.get(key);
 
-      if (!field || field.initial !== value || field.dirty) return true;
+      if (!atom || atom.initial !== value || atom.dirty) return true;
     }
 
     return false;
@@ -95,14 +99,14 @@ export class AtomInternalObject<
   }
 
   forEach(callback: AtomInternalCollection.Callback<Value>): void {
-    this.#children.forEach((field, key) => callback(field, key));
+    this.#children.forEach((atom, key) => callback(atom, key));
   }
 
   map<Result>(
     callback: AtomInternalCollection.Callback<Value, Result>,
   ): Result[] {
     const result: Result[] = [];
-    this.#children.forEach((field, key) => result.push(callback(field, key)));
+    this.#children.forEach((atom, key) => result.push(callback(atom, key)));
     return result;
   }
 
@@ -135,26 +139,26 @@ export class AtomInternalObject<
   #$ = new Proxy(
     {},
     {
-      get: (_, key) => this.#$field(key),
+      get: (_, key) => this.#$atom(key),
     },
   );
 
   // @ts-expect-error
   at(key) {
-    return this.#$field(String(key));
+    return this.#$atom(String(key));
   }
 
   // @ts-expect-error
   lookup(path) {
     if (path.length === 0) return this.external;
     const [key, ...restPath] = path;
-    return this.#$field(String(key))?.lookup(restPath);
+    return this.#$atom(String(key))?.lookup(restPath);
   }
 
   // @ts-expect-error
-  #$field(key) {
-    const field = this.#children.get(key);
-    if (field) return field;
+  #$atom(key) {
+    const atom = this.#children.get(key);
+    if (atom) return atom;
 
     return this.#undefined.ensure(key);
   }
@@ -177,19 +181,19 @@ export class AtomInternalObject<
     let changes = 0n;
 
     // Handle when child goes from undefined to defined
-    if (childChanges & change.field.attach) {
+    if (childChanges & change.atom.attach) {
       const child = this.#undefined.claim(key);
       if (!child)
-        throw new Error("Failed to find the child field when updating");
+        throw new Error("Failed to find the child atom when updating");
 
       this.#children.set(key, child);
       changes |= change.child.attach;
     }
 
-    if (childChanges & change.field.detach) {
+    if (childChanges & change.atom.detach) {
       const child = this.#children.get(key);
       if (!child)
-        throw new Error("Failed to find the child field when updating");
+        throw new Error("Failed to find the child atom when updating");
 
       this.#children.delete(key);
       child.unwatch();
@@ -207,11 +211,11 @@ export class AtomInternalObject<
   }
 
   override withhold() {
-    this.#children.forEach((field) => field.withhold());
+    this.#children.forEach((atom) => atom.withhold());
   }
 
   override unleash() {
-    this.#children.forEach((field) => field.unleash());
+    this.#children.forEach((atom) => atom.unleash());
   }
 
   //#endregion

@@ -1,5 +1,5 @@
 import type { Atom } from "../atom/definition.ts";
-import { FieldChange, shiftChildChanges } from "../change/index.ts";
+import { AtomChange, shiftChildChanges } from "../change/index.ts";
 
 export class EventsTree<Kind extends Atom.Flavor.Kind> {
   #tree: EventsTree.Node<Kind> = EventsTree.node();
@@ -70,7 +70,7 @@ export class EventsTree<Kind extends Atom.Flavor.Kind> {
     return { atoms: new Set(), children: {} };
   }
 
-  trigger(path: Atom.Path, changes: FieldChange) {
+  trigger(path: Atom.Path, changes: AtomChange) {
     let curChanges = changes;
     this.traverse(path, (_, atoms) => {
       atoms.forEach((atom) => {

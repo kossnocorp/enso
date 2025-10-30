@@ -1,4 +1,4 @@
-import { FieldChange } from "../../../change/index.ts";
+import { AtomChange } from "../../../change/index.ts";
 import { DetachedValue } from "../../../detached/index.ts";
 import type { AtomImpl } from "../../implementation.ts";
 
@@ -31,7 +31,7 @@ export abstract class AtomInternal<Value> {
 
   //#region Value
 
-  abstract set(value: Value | DetachedValue): FieldChange;
+  abstract set(value: Value | DetachedValue): AtomChange;
 
   abstract get value(): Value;
 
@@ -60,7 +60,7 @@ export abstract class AtomInternal<Value> {
 
   // TODO: It is not needed in the base class, but it makes it easier to use.
   // I should probably use `in` operator instead.
-  childUpdate(changes: FieldChange, _key: keyof Value): FieldChange {
+  childUpdate(changes: AtomChange, _key: keyof Value): AtomChange {
     return changes;
   }
 
@@ -72,8 +72,8 @@ export abstract class AtomInternal<Value> {
   discriminate(discriminator) {
     return {
       // @ts-expect-error
-      discriminator: this.external.$?.[discriminator]?.value,
-      field: this.external,
+      discriminator: this.#external.$?.[discriminator]?.value,
+      [(this.#external.constructor as any).prop]: this.external,
     };
   }
 

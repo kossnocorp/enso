@@ -1,14 +1,14 @@
 "use client";
 
-import React, { createElement, useEffect, useId } from "react";
-import type { Form } from "./definition.ts";
 import { nanoid } from "nanoid";
+import React, { createElement, useEffect, useId } from "react";
+import type { Atom } from "../atom/definition.ts";
 import { change, maskedChanges } from "../change/index.ts";
-import { useMemo } from "../hooks/index.ts";
-import { useRerender } from "../hooks/rerender.ts";
 import type { Field } from "../field/definition.ts";
 import { FieldImpl } from "../field/implementation.ts";
-import type { Atom } from "../atom/definition.ts";
+import { useMemo } from "../hooks/index.ts";
+import { useRerender } from "../hooks/rerender.ts";
+import type { Form } from "./definition.ts";
 
 export const formChange: Form.Change = {
   formSubmitting: BigInt(2 ** 48),
@@ -92,7 +92,7 @@ export class FormImpl<Value> {
         this.#valid ||
         !maskedChanges(
           event.changes,
-          change.field.blur | change.child.blur | change.subtree.blur,
+          change.atom.blur | change.child.blur | change.subtree.blur,
         )
       )
         return;

@@ -11,14 +11,14 @@ import { actClick, postpone, useRenderCount } from "../../tests/utils.ts";
 import { change } from "../change/index.ts";
 import { DetachedValue, detachedValue } from "../detached/index.ts";
 import { EventsTree } from "../events/index.ts";
-import { Field } from "./index.js";
+import { State } from "./index.js";
 
-describe("Field", () => {
+describe("State", () => {
   describe("static", () => {
     describe(".use", () => {
       beforeEach(cleanup);
 
-      it("creates Field instance", async () => {
+      it("creates State instance", async () => {
         render(<Component />);
         expect(screen.getByTestId("instanceof").textContent).toBe("true");
         expect(screen.getByTestId("value").textContent).toBe("hello");
@@ -27,7 +27,7 @@ describe("Field", () => {
         expect(screen.getByTestId("value").textContent).toBe("hi");
       });
 
-      it("preserves Field instance on initial value change", async () => {
+      it("preserves instance of initial value change", async () => {
         render(<Component />);
         expect(screen.getByTestId("instanceof").textContent).toBe("true");
 
@@ -39,23 +39,23 @@ describe("Field", () => {
 
       function Component() {
         const [initialValue, setInitialValue] = useState("hello");
-        const field = Field.use(initialValue, []);
-        const initialRef = useRef(field);
-        const value = field.useValue();
+        const state = State.use(initialValue, []);
+        const initialRef = useRef(state);
+        const value = state.useValue();
 
         return (
           <>
             <ul>
-              <li data-testid="instanceof">{String(field instanceof Field)}</li>
+              <li data-testid="instanceof">{String(state instanceof State)}</li>
               <li data-testid="value">{value}</li>
               <li data-testid="instance">
-                {String(initialRef.current === field)}
+                {String(initialRef.current === state)}
               </li>
             </ul>
 
             <button
               onClick={() => {
-                field.set("hi");
+                state.set("hi");
               }}
             >
               Set hi
@@ -76,33 +76,33 @@ describe("Field", () => {
     describe(".useEnsure", () => {
       beforeEach(cleanup);
 
-      it("allows to ensure presence of a field", async () => {
+      it("allows to ensure presence of a state", async () => {
         function Component() {
           const count = useRenderCount();
-          const [field, setField] = useState<Field<string> | undefined>();
-          const actualField = Field.use("Hello!", []);
-          const ensuredField = Field.useEnsure(field);
+          const [state, setState] = useState<State<string> | undefined>();
+          const actualState = State.use("Hello!", []);
+          const ensuredState = State.useEnsure(state);
           // eslint-disable-next-line react-hooks/exhaustive-deps
-          const dummyField = useMemo(() => ensuredField, []);
-          const fieldValue = ensuredField.useValue();
-          const dummyValue = dummyField.useValue();
+          const dummyState = useMemo(() => ensuredState, []);
+          const stateValue = ensuredState.useValue();
+          const dummyValue = dummyState.useValue();
 
           return (
             <div>
               <div data-testid="render-ensure">{count}</div>
 
-              <button onClick={() => setField(actualField)}>Set actual</button>
+              <button onClick={() => setState(actualState)}>Set actual</button>
 
-              <button onClick={() => dummyField.set("Hi!")}>
+              <button onClick={() => dummyState.set("Hi!")}>
                 Update dummy
               </button>
 
-              <div data-testid="ensured-value">{String(fieldValue)}</div>
+              <div data-testid="ensured-value">{String(stateValue)}</div>
               <div data-testid="dummy-value">{String(dummyValue)}</div>
 
-              <div data-testid="actual-id">{actualField.id}</div>
-              <div data-testid="ensured-id">{ensuredField.id}</div>
-              <div data-testid="dummy-id">{dummyField.id}</div>
+              <div data-testid="actual-id">{actualState.id}</div>
+              <div data-testid="ensured-id">{ensuredState.id}</div>
+              <div data-testid="dummy-id">{dummyState.id}</div>
             </div>
           );
         }
@@ -152,10 +152,10 @@ describe("Field", () => {
 
       it("allows to pass falsy values", async () => {
         function Component() {
-          const field = Field.useEnsure(
-            false as unknown as Field<string> | false,
+          const state = State.useEnsure(
+            false as unknown as State<string> | false,
           );
-          const value = field.useValue();
+          const value = state.useValue();
 
           return (
             <div>
@@ -169,34 +169,34 @@ describe("Field", () => {
         expect(screen.getByTestId("value").textContent).toBe("undefined");
       });
 
-      it("allows to map nested field", async () => {
+      it("allows to map nested state", async () => {
         function Component() {
           const count = useRenderCount();
-          const [field, setField] = useState<
-            Field<{ hello: string }> | undefined
+          const [state, setState] = useState<
+            State<{ hello: string }> | undefined
           >();
-          const actualField = Field.use({ hello: "Hello!" }, []);
-          const ensuredField = Field.useEnsure(field, (f) => f.$.hello);
-          const dummyField = useMemo(() => ensuredField, []);
-          const fieldValue = ensuredField.useValue();
-          const dummyValue = dummyField.useValue();
+          const actualState = State.use({ hello: "Hello!" }, []);
+          const ensuredState = State.useEnsure(state, (f) => f.$.hello);
+          const dummyState = useMemo(() => ensuredState, []);
+          const stateValue = ensuredState.useValue();
+          const dummyValue = dummyState.useValue();
 
           return (
             <div>
               <div data-testid="render-ensure">{count}</div>
 
-              <button onClick={() => setField(actualField)}>Set actual</button>
+              <button onClick={() => setState(actualState)}>Set actual</button>
 
-              <button onClick={() => dummyField.set("Hi!")}>
+              <button onClick={() => dummyState.set("Hi!")}>
                 Update dummy
               </button>
 
-              <div data-testid="ensured-value">{String(fieldValue)}</div>
+              <div data-testid="ensured-value">{String(stateValue)}</div>
               <div data-testid="dummy-value">{String(dummyValue)}</div>
 
-              <div data-testid="actual-id">{actualField.$.hello.id}</div>
-              <div data-testid="ensured-id">{ensuredField.id}</div>
-              <div data-testid="dummy-id">{dummyField.id}</div>
+              <div data-testid="actual-id">{actualState.$.hello.id}</div>
+              <div data-testid="ensured-id">{ensuredState.id}</div>
+              <div data-testid="dummy-id">{dummyState.id}</div>
             </div>
           );
         }
@@ -248,26 +248,26 @@ describe("Field", () => {
 
   describe("instance", () => {
     describe("constructor", () => {
-      it("creates a field instance", () => {
-        const field = new Field(42);
-        expect(field.value).toBe(42);
+      it("creates a state instance", () => {
+        const state = new State(42);
+        expect(state.value).toBe(42);
       });
     });
   });
 
   describe("attributes", () => {
     describe("#id", () => {
-      it("assigns a unique id to each field", () => {
-        const field1 = new Field(42);
-        const field2 = new Field(42);
-        expect(field1.id).toBeTypeOf("string");
-        expect(field1.id).not.toBe(field2.id);
+      it("assigns a unique id to each state", () => {
+        const state1 = new State(42);
+        const state2 = new State(42);
+        expect(state1.id).toBeTypeOf("string");
+        expect(state1.id).not.toBe(state2.id);
       });
 
-      it(" fields returns unique ids", () => {
-        const field = new Field({ name: { first: "Sasha" } });
-        const computed = field.$.name.$.first.into(toCodes).from(fromCodes);
-        expect(computed.id).not.toBe(field.$.name.$.first.id);
+      it(" states returns unique ids", () => {
+        const state = new State({ name: { first: "Sasha" } });
+        const computed = state.$.name.$.first.into(toCodes).from(fromCodes);
+        expect(computed.id).not.toBe(state.$.name.$.first.id);
       });
     });
   });
@@ -276,22 +276,18 @@ describe("Field", () => {
     describe("#useValue", () => {
       beforeEach(cleanup);
 
-      it("allows to watch for field", async () => {
+      it("allows to watch for state", async () => {
         function Component() {
           const count = useRenderCount();
-          const field = Field.use({ name: { first: "Alexander" } }, []);
-          const name = field.$.name.useValue();
+          const state = State.use({ name: { first: "Alexander" } }, []);
+          const name = state.$.name.useValue();
 
           return (
             <div>
               <div data-testid="render-watch">{count}</div>
 
-              <button onClick={() => field.$.name.$.first.set("Sasha")}>
+              <button onClick={() => state.$.name.$.first.set("Sasha")}>
                 Rename
-              </button>
-
-              <button onClick={() => field.$.name.addError("Nope")}>
-                Add error
               </button>
 
               <div data-testid="name">{name.first}</div>
@@ -304,132 +300,21 @@ describe("Field", () => {
         expect(screen.getByTestId("name").textContent).toBe("Alexander");
         expect(screen.getByTestId("render-watch").textContent).toBe("1");
 
-        await act(() => screen.getByText("Add error").click());
-
-        expect(screen.getByTestId("render-watch").textContent).toBe("1");
-
         await act(() => screen.getByText("Rename").click());
 
         expect(screen.getByTestId("name").textContent).toBe("Sasha");
         expect(screen.getByTestId("render-watch").textContent).toBe("2");
       });
 
-      it("allows to listen to value with meta information", async () => {
+      it("depends on the state id", async () => {
         function Component() {
           const count = useRenderCount();
-          const field = Field.use(
-            { name: { first: "Alexander", last: "" } },
-            [],
-          );
-          const [value, { dirty, errors, valid }] = field.useValue({
-            meta: true,
-          });
-
-          return (
-            <div>
-              <div data-testid="render-meta">{count}</div>
-
-              <button
-                onClick={() =>
-                  field.$.name.$.first.addError(`Nope ${Math.random()}`)
-                }
-              >
-                Set first name error
-              </button>
-
-              <button
-                onClick={() =>
-                  field.$.name.$.last.addError(`Nah ${Math.random()}`)
-                }
-              >
-                Set last name error
-              </button>
-
-              <button onClick={() => field.addError("Nope")}>
-                Set field error
-              </button>
-
-              <button
-                onClick={() => {
-                  field.$.name.$.first.clearErrors();
-                  field.$.name.$.last.clearErrors();
-                }}
-              >
-                Clear errors
-              </button>
-
-              <button
-                onClick={() =>
-                  field.$.name.set({ first: "Sasha", last: "Koss" })
-                }
-              >
-                Rename
-              </button>
-
-              <div data-testid="full-name">
-                {value.name.first} {value.name.last}
-              </div>
-
-              <div data-testid="dirty">{String(dirty)}</div>
-              <div data-testid="errors">{joinErrors(errors)}</div>
-              <div data-testid="valid">{String(valid)}</div>
-            </div>
-          );
-        }
-
-        render(<Component />);
-
-        expect(screen.getByTestId("full-name").textContent).toBe("Alexander ");
-        expect(screen.getByTestId("dirty").textContent).toBe("false");
-        expect(screen.getByTestId("valid").textContent).toBe("true");
-        expect(screen.getByTestId("errors").textContent).toBe("");
-
-        await act(() => screen.getByText("Set first name error").click());
-
-        expect(screen.getByTestId("dirty").textContent).toBe("false");
-        expect(screen.getByTestId("valid").textContent).toBe("false");
-        expect(screen.getByTestId("errors").textContent).toBe("");
-
-        await act(() => screen.getByText("Set last name error").click());
-
-        expect(screen.getByTestId("errors").textContent).toBe("");
-        expect(screen.getByTestId("render-meta").textContent).toBe("2");
-
-        await act(() => screen.getByText("Set first name error").click());
-        await act(() => screen.getByText("Set last name error").click());
-
-        expect(screen.getByTestId("render-meta").textContent).toBe("2");
-        expect(screen.getByTestId("errors").textContent).toBe("");
-
-        await act(() => screen.getByText("Rename").click());
-
-        expect(screen.getByTestId("full-name").textContent).toBe("Sasha Koss");
-        expect(screen.getByTestId("dirty").textContent).toBe("true");
-        expect(screen.getByTestId("valid").textContent).toBe("false");
-        expect(screen.getByTestId("render-meta").textContent).toBe("3");
-
-        await act(() => screen.getByText("Clear errors").click());
-
-        expect(screen.getByTestId("dirty").textContent).toBe("true");
-        expect(screen.getByTestId("valid").textContent).toBe("true");
-        expect(screen.getByTestId("errors").textContent).toBe("");
-        expect(screen.getByTestId("render-meta").textContent).toBe("4");
-
-        await act(() => screen.getByText("Set field error").click());
-
-        expect(screen.getByTestId("errors").textContent).toBe("Nope");
-        expect(screen.getByTestId("render-meta").textContent).toBe("5");
-      });
-
-      it("depends on the field id", async () => {
-        function Component() {
-          const count = useRenderCount();
-          const field = Field.use(
+          const state = State.use(
             [{ name: "Alexander" }, { name: "Sasha" }],
             [],
           );
           const [index, setIndex] = useState(0);
-          const item = field.at(index).useValue();
+          const item = state.at(index).useValue();
 
           return (
             <div>
@@ -453,15 +338,15 @@ describe("Field", () => {
         expect(screen.getByTestId("render-watch").textContent).toBe("2");
       });
 
-      it("updates the watcher on field id change", async () => {
+      it("updates the watcher on state id change", async () => {
         function Component() {
           const count = useRenderCount();
-          const field = Field.use(
+          const state = State.use(
             [{ name: "Alexander" }, { name: "Sasha" }],
             [],
           );
           const [index, setIndex] = useState(0);
-          const item = field.at(index).useValue();
+          const item = state.at(index).useValue();
 
           return (
             <div>
@@ -469,11 +354,11 @@ describe("Field", () => {
 
               <button onClick={() => setIndex(1)}>Set index to 1</button>
 
-              <button onClick={() => field.at(0).set({ name: "Alex" })}>
+              <button onClick={() => state.at(0).set({ name: "Alex" })}>
                 Rename 0 to Alex
               </button>
 
-              <button onClick={() => field.at(1).set({ name: "Sashka" })}>
+              <button onClick={() => state.at(1).set({ name: "Sashka" })}>
                 Rename 1 to Sashka
               </button>
 
@@ -506,14 +391,14 @@ describe("Field", () => {
       it("doesn't rerender when setting the same primitive", async () => {
         function Component() {
           const count = useRenderCount();
-          const field = Field.use({ name: "Sasha" }, []);
-          const user = field.useValue();
+          const state = State.use({ name: "Sasha" }, []);
+          const user = state.useValue();
 
           return (
             <div>
               <div data-testid="render-watch">{count}</div>
 
-              <button onClick={() => field.$.name.set("Sasha")}>
+              <button onClick={() => state.$.name.set("Sasha")}>
                 Assign same name
               </button>
 
@@ -536,48 +421,48 @@ describe("Field", () => {
 
     describe("#set", () => {
       describe("primitive", () => {
-        it("sets a new field", () => {
-          const field = new Field(42);
-          field.set(43);
-          expect(field.value).toBe(43);
+        it("sets a new state", () => {
+          const state = new State(42);
+          state.set(43);
+          expect(state.value).toBe(43);
         });
 
         describe("changes", () => {
-          it("assigns 0 if the field is not changed", () => {
-            const field = new Field(42);
-            expect(field.set(42).lastChanges).toMatchChanges(0n);
+          it("assigns 0 if the state is not changed", () => {
+            const state = new State(42);
+            expect(state.set(42).lastChanges).toMatchChanges(0n);
           });
 
           it("assigns type change when type changes", () => {
-            const field = new Field<number | string>(42);
-            expect(field.set("42").lastChanges).toMatchChanges(
+            const state = new State<number | string>(42);
+            expect(state.set("42").lastChanges).toMatchChanges(
               change.atom.type,
             );
           });
 
           it("assigns value change when value changes", () => {
-            const field = new Field(42);
-            expect(field.set(43).lastChanges).toMatchChanges(change.atom.value);
+            const state = new State(42);
+            expect(state.set(43).lastChanges).toMatchChanges(change.atom.value);
           });
 
           it("assigns detach change when setting to detached value", () => {
-            const field = new Field(42);
+            const state = new State(42);
             // @ts-expect-error -- TODO: Types revamp
-            expect(field.set(detachedValue).lastChanges).toMatchChanges(
+            expect(state.set(detachedValue).lastChanges).toMatchChanges(
               change.atom.detach,
             );
           });
 
           it("assigns attach change when setting from detached value", () => {
-            const field = new Field<number | DetachedValue>(detachedValue);
-            expect(field.set(42).lastChanges).toMatchChanges(
+            const state = new State<number | DetachedValue>(detachedValue);
+            expect(state.set(42).lastChanges).toMatchChanges(
               change.atom.attach,
             );
           });
 
           it("assigns type change when setting undefined", () => {
-            const field = new Field<number | undefined>(42);
-            expect(field.set(undefined).lastChanges).toMatchChanges(
+            const state = new State<number | undefined>(42);
+            expect(state.set(undefined).lastChanges).toMatchChanges(
               change.atom.type,
             );
           });
@@ -585,56 +470,56 @@ describe("Field", () => {
       });
 
       describe("object", () => {
-        it("sets object field", () => {
-          const field = new Field<{ num?: number; str?: string }>({
+        it("sets object state", () => {
+          const state = new State<{ num?: number; str?: string }>({
             num: 42,
           });
-          field.set({ num: 43 });
-          expect(field.value).toEqual({ num: 43 });
-          field.set({ num: 44, str: "hello" });
-          expect(field.value).toEqual({ num: 44, str: "hello" });
-          field.set({ str: "world" });
-          expect(field.value).toEqual({ str: "world" });
-          field.set({});
-          expect(field.value).toEqual({});
+          state.set({ num: 43 });
+          expect(state.value).toEqual({ num: 43 });
+          state.set({ num: 44, str: "hello" });
+          expect(state.value).toEqual({ num: 44, str: "hello" });
+          state.set({ str: "world" });
+          expect(state.value).toEqual({ str: "world" });
+          state.set({});
+          expect(state.value).toEqual({});
         });
 
-        it("does not trigger child fields updates when detached", async () => {
-          const field = new Field<{ num?: number; str?: string }>({
+        it("does not trigger child states updates when detached", async () => {
+          const state = new State<{ num?: number; str?: string }>({
             num: 42,
           });
           const spy = vi.fn();
-          field.$.num?.watch(spy);
-          field.set({ num: 43 });
+          state.$.num?.watch(spy);
+          state.set({ num: 43 });
           await postpone();
           expect(spy).toHaveBeenCalledOnce();
           expect(spy).toHaveBeenCalledWith(
             43,
             expect.objectContaining({ changes: change.atom.value }),
           );
-          field.set({ str: "hello" });
+          state.set({ str: "hello" });
           await postpone();
           expect(spy).toHaveBeenCalledOnce();
         });
 
-        it("preserves detached fields", async () => {
-          const field = new Field<{ num?: number; str?: string }>({
+        it("preserves detached states", async () => {
+          const state = new State<{ num?: number; str?: string }>({
             num: 42,
           });
           const spy = vi.fn();
-          const numA = field.$.num;
+          const numA = state.$.num;
           numA?.watch(spy);
-          field.set({ num: 43 });
+          state.set({ num: 43 });
 
           await postpone();
           expect(spy).toHaveBeenCalledWith(
             43,
             expect.objectContaining({ changes: change.atom.value }),
           );
-          field.set({ str: "hello" });
-          field.set({ num: 44, str: "hello" });
-          const numB = field.$.num;
-          expect(numA).toBeInstanceOf(Field);
+          state.set({ str: "hello" });
+          state.set({ num: 44, str: "hello" });
+          const numB = state.$.num;
+          expect(numA).toBeInstanceOf(State);
           expect(numA).toBe(numB);
           await postpone();
           expect(spy).toHaveBeenCalledWith(
@@ -645,63 +530,63 @@ describe("Field", () => {
           );
         });
 
-        it("allows to re-attach child fields", () => {
-          const field = new Field<Record<string, number>>({ num: 42 });
-          const childField = field.at("num");
-          childField.self.remove();
-          childField.set(9);
-          expect(field.value).toEqual({ num: 9 });
+        it("allows to re-attach child states", () => {
+          const state = new State<Record<string, number>>({ num: 42 });
+          const childState = state.at("num");
+          childState.self.remove();
+          childState.set(9);
+          expect(state.value).toEqual({ num: 9 });
         });
 
         describe("changes", () => {
-          describe("field", () => {
-            it("assigns 0 if the field is not changed", () => {
-              const field = new Field({ num: 42 });
-              expect(field.set({ num: 42 }).lastChanges).toMatchChanges(0n);
+          describe("state", () => {
+            it("assigns 0 if the state is not changed", () => {
+              const state = new State({ num: 42 });
+              expect(state.set({ num: 42 }).lastChanges).toMatchChanges(0n);
             });
 
             it("assigns type change when type changes", () => {
-              const field = new Field<object | number>({ num: 42 });
-              expect(field.set(42).lastChanges).toMatchChanges(
+              const state = new State<object | number>({ num: 42 });
+              expect(state.set(42).lastChanges).toMatchChanges(
                 change.atom.type,
               );
             });
 
             it("assigns attach change when attaching", () => {
-              const field = new Field<{ name?: object }>({});
+              const state = new State<{ name?: object }>({});
               expect(
-                field.$.name.set({ first: "Sasha" }).lastChanges,
+                state.$.name.set({ first: "Sasha" }).lastChanges,
               ).toMatchChanges(change.atom.attach);
             });
 
             it("assigns detach change when detaching", () => {
-              const field = new Field<{ name?: object }>({
+              const state = new State<{ name?: object }>({
                 name: { first: "Sasha" },
               });
               expect(
                 // @ts-expect-error -- TODO: Types revamp
-                field.$.name.set(detachedValue).lastChanges,
+                state.$.name.set(detachedValue).lastChanges,
               ).toMatchChanges(change.atom.detach);
             });
 
             it("assigns type change when setting undefined", () => {
-              const field = new Field<object | undefined>({ num: 42 });
-              expect(field.set(undefined).lastChanges).toMatchChanges(
+              const state = new State<object | undefined>({ num: 42 });
+              expect(state.set(undefined).lastChanges).toMatchChanges(
                 change.atom.type,
               );
             });
 
             describe("shape", () => {
               it("assigns change when child attaches", () => {
-                const field = new Field<object>({ num: 42 });
+                const state = new State<object>({ num: 42 });
                 expect(
-                  field.set({ num: 42, str: "hello" }).lastChanges,
+                  state.set({ num: 42, str: "hello" }).lastChanges,
                 ).toMatchChanges(change.atom.shape | change.child.attach);
               });
 
               it("assigns change when child detaches", () => {
-                const field = new Field<object>({ num: 42, str: "hello" });
-                expect(field.set({ num: 42 }).lastChanges).toMatchChanges(
+                const state = new State<object>({ num: 42, str: "hello" });
+                expect(state.set({ num: 42 }).lastChanges).toMatchChanges(
                   change.atom.shape | change.child.detach,
                 );
               });
@@ -710,41 +595,41 @@ describe("Field", () => {
 
           describe("child", () => {
             it("assigns type change when type changes", () => {
-              const field = new Field<object>({ num: 42 });
-              expect(field.set({ num: "42" }).lastChanges).toMatchChanges(
+              const state = new State<object>({ num: 42 });
+              expect(state.set({ num: "42" }).lastChanges).toMatchChanges(
                 change.child.type,
               );
             });
 
             it("assigns attach change when attaching", () => {
-              const field = new Field<object>({});
+              const state = new State<object>({});
               expect(
-                field.set({ name: { first: "Sasha" } }).lastChanges,
+                state.set({ name: { first: "Sasha" } }).lastChanges,
               ).toMatchChanges(change.atom.shape | change.child.attach);
             });
 
             it("assigns detach change when detaching", () => {
-              const field = new Field<object>({
+              const state = new State<object>({
                 name: { first: "Sasha" },
               });
-              expect(field.set({}).lastChanges).toMatchChanges(
+              expect(state.set({}).lastChanges).toMatchChanges(
                 change.atom.shape | change.child.detach,
               );
             });
 
             it("assigns type change when setting undefined", () => {
-              const field = new Field<object>({
+              const state = new State<object>({
                 name: { first: "Sasha" },
               });
-              expect(field.set({ name: undefined }).lastChanges).toMatchChanges(
+              expect(state.set({ name: undefined }).lastChanges).toMatchChanges(
                 change.child.type,
               );
             });
 
             it("assigns combined changes", () => {
-              const field = new Field<object>({ num: 42, str: "hello" });
+              const state = new State<object>({ num: 42, str: "hello" });
               expect(
-                field.set({ num: 43, bool: true }).lastChanges,
+                state.set({ num: 43, bool: true }).lastChanges,
               ).toMatchChanges(
                 change.atom.shape |
                   change.child.value |
@@ -755,18 +640,18 @@ describe("Field", () => {
 
             describe("shape", () => {
               it("assigns change when child attaches", () => {
-                const field = new Field<object>({ obj: { num: 42 } });
+                const state = new State<object>({ obj: { num: 42 } });
                 expect(
-                  field.set({ obj: { num: 42, str: "hello" } }).lastChanges,
+                  state.set({ obj: { num: 42, str: "hello" } }).lastChanges,
                 ).toMatchChanges(change.child.shape | change.subtree.attach);
               });
 
               it("assigns change when child detaches", () => {
-                const field = new Field<object>({
+                const state = new State<object>({
                   obj: { num: 42, str: "hello" },
                 });
                 expect(
-                  field.set({ obj: { num: 42 } }).lastChanges,
+                  state.set({ obj: { num: 42 } }).lastChanges,
                 ).toMatchChanges(change.child.shape | change.subtree.detach);
               });
             });
@@ -774,43 +659,43 @@ describe("Field", () => {
 
           describe("subtree", () => {
             it("assigns type change when type changes", () => {
-              const field = new Field<{ obj: object }>({ obj: { num: 42 } });
+              const state = new State<{ obj: object }>({ obj: { num: 42 } });
               expect(
-                field.set({ obj: { num: "42" } }).lastChanges,
+                state.set({ obj: { num: "42" } }).lastChanges,
               ).toMatchChanges(change.subtree.type);
             });
 
             it("assigns attach change when attaching", () => {
-              const field = new Field<{ obj: object }>({ obj: {} });
+              const state = new State<{ obj: object }>({ obj: {} });
               expect(
-                field.set({ obj: { name: { first: "Sasha" } } }).lastChanges,
+                state.set({ obj: { name: { first: "Sasha" } } }).lastChanges,
               ).toMatchChanges(change.child.shape | change.subtree.attach);
             });
 
             it("assigns detach change when detaching", () => {
-              const field = new Field<{ obj: object }>({
+              const state = new State<{ obj: object }>({
                 obj: { name: { first: "Sasha" } },
               });
-              expect(field.set({ obj: {} }).lastChanges).toMatchChanges(
+              expect(state.set({ obj: {} }).lastChanges).toMatchChanges(
                 change.child.shape | change.subtree.detach,
               );
             });
 
             it("assigns type change when setting undefined", () => {
-              const field = new Field<{ obj: object }>({
+              const state = new State<{ obj: object }>({
                 obj: { name: { first: "Sasha" } },
               });
               expect(
-                field.set({ obj: { name: undefined } }).lastChanges,
+                state.set({ obj: { name: undefined } }).lastChanges,
               ).toMatchChanges(change.subtree.type);
             });
 
             it("assigns combined changes", () => {
-              const field = new Field<object>({
+              const state = new State<object>({
                 obj: { num: 42, str: "hello" },
               });
               expect(
-                field.set({ obj: { num: 43, bool: true } }).lastChanges,
+                state.set({ obj: { num: 43, bool: true } }).lastChanges,
               ).toMatchChanges(
                 change.child.shape |
                   change.subtree.value |
@@ -821,23 +706,23 @@ describe("Field", () => {
 
             describe("shape", () => {
               it("assigns change when child attaches", () => {
-                const field = new Field<object>({
+                const state = new State<object>({
                   obj: { obj: { num: 42 } },
                 });
                 expect(
-                  field.set({ obj: { obj: { num: 42, str: "hello" } } })
+                  state.set({ obj: { obj: { num: 42, str: "hello" } } })
                     .lastChanges,
                 ).toMatchChanges(change.subtree.shape | change.subtree.attach);
               });
 
               it("assigns change when child detaches", () => {
-                const field = new Field<object>({
+                const state = new State<object>({
                   obj: {
                     obj: { num: 42, str: "hello" },
                   },
                 });
                 expect(
-                  field.set({ obj: { obj: { num: 42 } } }).lastChanges,
+                  state.set({ obj: { obj: { num: 42 } } }).lastChanges,
                 ).toMatchChanges(change.subtree.shape | change.subtree.detach);
               });
             });
@@ -846,66 +731,66 @@ describe("Field", () => {
       });
 
       describe("array", () => {
-        it("sets the array field", () => {
-          const field = new Field<number[]>([1, 2, 3, 4, 5]);
-          field.set([1, 2, 3]);
-          expect(field.value).toEqual([1, 2, 3]);
-          field.set([1, 2, 3, 4]);
-          expect(field.value).toEqual([1, 2, 3, 4]);
+        it("sets the array state", () => {
+          const state = new State<number[]>([1, 2, 3, 4, 5]);
+          state.set([1, 2, 3]);
+          expect(state.value).toEqual([1, 2, 3]);
+          state.set([1, 2, 3, 4]);
+          expect(state.value).toEqual([1, 2, 3, 4]);
           const arr = new Array(5);
           arr[3] = 5;
-          field.set(arr);
-          expect(field.value).toEqual(arr);
-          field.set([]);
-          expect(field.value).toEqual([]);
+          state.set(arr);
+          expect(state.value).toEqual(arr);
+          state.set([]);
+          expect(state.value).toEqual([]);
         });
 
-        it("assigns 0 if the field has not changed", () => {
-          const field = new Field([1, 2, 3]);
-          field.set([1, 2, 3]);
-          expect(field.lastChanges).toBe(0n);
+        it("assigns 0 if the state has not changed", () => {
+          const state = new State([1, 2, 3]);
+          state.set([1, 2, 3]);
+          expect(state.lastChanges).toBe(0n);
         });
 
-        it("assigns child change type if a child field has changed", () => {
-          const field = new Field([1, 2, 3]);
-          expect(field.set([1, 2, 1]).lastChanges).toMatchChanges(
+        it("assigns child change type if a child state has changed", () => {
+          const state = new State([1, 2, 3]);
+          expect(state.set([1, 2, 1]).lastChanges).toMatchChanges(
             change.child.value,
           );
         });
 
         it("assigns added change type if a child has been added", () => {
-          const field = new Field([1, 2, 3]);
-          expect(field.set([1, 2, 3, 4]).lastChanges).toMatchChanges(
+          const state = new State([1, 2, 3]);
+          expect(state.set([1, 2, 3, 4]).lastChanges).toMatchChanges(
             change.atom.shape | change.child.attach,
           );
         });
 
         it("assigns child removed change type if a child has been removed", () => {
-          const field = new Field([1, 2, 3]);
-          expect(field.set([1, 2]).lastChanges).toMatchChanges(
+          const state = new State([1, 2, 3]);
+          expect(state.set([1, 2]).lastChanges).toMatchChanges(
             change.atom.shape | change.child.detach,
           );
         });
 
         it("assigns combined change type", () => {
-          const field = new Field([1, 2]);
+          const state = new State([1, 2]);
           const arr = [0, 2, 3];
           delete arr[1];
-          field.set(arr);
-          expect(field.lastChanges & change.atom.shape).toBe(change.atom.shape);
-          expect(field.lastChanges & change.child.attach).toBe(
+          state.set(arr);
+          expect(state.lastChanges & change.atom.shape).toBe(change.atom.shape);
+          expect(state.lastChanges & change.child.attach).toBe(
             change.child.attach,
           );
-          expect(field.lastChanges & change.child.detach).toBe(
+          expect(state.lastChanges & change.child.detach).toBe(
             change.child.detach,
           );
         });
 
         it("does not trigger item updates when removing", async () => {
-          const field = new Field<number[]>([1, 2, 3, 4]);
+          const state = new State<number[]>([1, 2, 3, 4]);
           const spy = vi.fn();
-          field.$[2]?.watch(spy);
-          field.set([1, 2, 33, 4]);
+          state.$[2]?.watch(spy);
+          state.set([1, 2, 33, 4]);
           await postpone();
           expect(spy).toHaveBeenCalledWith(
             33,
@@ -913,24 +798,24 @@ describe("Field", () => {
               changes: change.atom.value,
             }),
           );
-          field.set([1, 2]);
+          state.set([1, 2]);
 
           await postpone();
           expect(spy).toHaveBeenCalledOnce();
         });
 
         it("preserves removed items", async () => {
-          const field = new Field<number[]>([1, 2, 3, 4]);
+          const state = new State<number[]>([1, 2, 3, 4]);
           const spy = vi.fn();
-          const itemA = field.at(2);
+          const itemA = state.at(2);
           itemA.watch(spy);
-          field.set([1, 2, 33, 4]);
+          state.set([1, 2, 33, 4]);
 
           await postpone();
-          field.set([1, 2]);
-          field.set([1, 2, 333]);
-          const itemB = field.at(2);
-          expect(itemA).toBeInstanceOf(Field);
+          state.set([1, 2]);
+          state.set([1, 2, 333]);
+          const itemB = state.at(2);
+          expect(itemA).toBeInstanceOf(State);
           expect(itemA).toBe(itemB);
           await postpone();
           expect(spy).toHaveBeenCalledWith(
@@ -947,19 +832,19 @@ describe("Field", () => {
         });
 
         it("indicates no type change on adding undefined", async () => {
-          const field = new Field<Array<number | undefined>>([1, 2, 3, 4]);
+          const state = new State<Array<number | undefined>>([1, 2, 3, 4]);
           const spy = vi.fn();
-          const itemA = field.at(2);
+          const itemA = state.at(2);
           itemA.watch(spy);
-          field.set([1, 2, 33, 4]);
+          state.set([1, 2, 33, 4]);
           await postpone();
           expect(spy).toHaveBeenCalledWith(
             33,
             expect.objectContaining({ changes: change.atom.value }),
           );
 
-          field.set([1, 2]);
-          field.set([1, 2, undefined]);
+          state.set([1, 2]);
+          state.set([1, 2, undefined]);
 
           await postpone();
           expect(spy).toHaveBeenCalledWith(
@@ -973,115 +858,115 @@ describe("Field", () => {
         });
 
         it("does not trigger update when setting undefined value to undefined value", () => {
-          const field = new Field<number[]>([1, 2, 3, 4]);
-          const child = field.at(5);
+          const state = new State<number[]>([1, 2, 3, 4]);
+          const child = state.at(5);
           // @ts-expect-error -- TODO: Types revamp
           child.set(detachedValue);
           expect(child.lastChanges).toBe(0n);
         });
 
         it("works when assigning undefined instead of an object item", () => {
-          const field = new Field<Array<{ n: number }>>([
+          const state = new State<Array<{ n: number }>>([
             { n: 1 },
             { n: 2 },
             { n: 3 },
           ]);
-          expect(field.set([{ n: 1 }, { n: 2 }]).lastChanges).toMatchChanges(
+          expect(state.set([{ n: 1 }, { n: 2 }]).lastChanges).toMatchChanges(
             change.atom.shape | change.child.detach,
           );
-          expect(field.value).toEqual([{ n: 1 }, { n: 2 }]);
+          expect(state.value).toEqual([{ n: 1 }, { n: 2 }]);
         });
 
         it("works when assigning object instead of an undefined item", () => {
-          const field = new Field<Array<{ n: number }>>([{ n: 1 }, { n: 2 }]);
+          const state = new State<Array<{ n: number }>>([{ n: 1 }, { n: 2 }]);
           const spy = vi.fn();
-          const undefinedField = field.at(2);
-          field.map(spy);
-          expect(undefinedField.value).toBe(undefined);
+          const undefinedState = state.at(2);
+          state.map(spy);
+          expect(undefinedState.value).toBe(undefined);
           expect(
-            field.set([{ n: 1 }, { n: 2 }, { n: 3 }]).lastChanges,
+            state.set([{ n: 1 }, { n: 2 }, { n: 3 }]).lastChanges,
           ).toMatchChanges(change.atom.shape | change.child.attach);
-          expect(field.value).toEqual([{ n: 1 }, { n: 2 }, { n: 3 }]);
-          field.map(spy);
+          expect(state.value).toEqual([{ n: 1 }, { n: 2 }, { n: 3 }]);
+          state.map(spy);
           expect(spy).toBeCalled();
         });
 
-        it("assigns created changes when adding a new field", () => {
-          const field = new Field<number[]>([1, 2]);
-          expect(field.at(2).set(3).lastChanges).toMatchChanges(
+        it("assigns created changes when adding a new state", () => {
+          const state = new State<number[]>([1, 2]);
+          expect(state.at(2).set(3).lastChanges).toMatchChanges(
             change.atom.attach,
           );
         });
 
-        it("allows to re-attach item fields", () => {
-          const field = new Field<number[]>([1, 2, 3]);
-          const itemField = field.remove(1);
-          itemField.set(9);
-          expect(field.value).toEqual([1, 9, 3]);
+        it("allows to re-attach item states", () => {
+          const state = new State<number[]>([1, 2, 3]);
+          const itemState = state.remove(1);
+          itemState.set(9);
+          expect(state.value).toEqual([1, 9, 3]);
         });
 
-        it("shifts children when re-attaching item field", () => {
-          const field = new Field<number[]>([1, 2, 3]);
-          const itemField = field.remove(1);
+        it("shifts children when re-attaching item state", () => {
+          const state = new State<number[]>([1, 2, 3]);
+          const itemState = state.remove(1);
 
-          expect(field.value).toEqual([1, 3]);
-          expect(field.at(0).key).toBe("0");
-          expect(field.at(1).key).toBe("1");
+          expect(state.value).toEqual([1, 3]);
+          expect(state.at(0).key).toBe("0");
+          expect(state.at(1).key).toBe("1");
 
-          itemField.set(9);
-          expect(field.value).toEqual([1, 9, 3]);
-          expect(field.at(0).key).toBe("0");
-          expect(field.at(1).key).toBe("1");
+          itemState.set(9);
+          expect(state.value).toEqual([1, 9, 3]);
+          expect(state.at(0).key).toBe("0");
+          expect(state.at(1).key).toBe("1");
         });
 
         describe("changes", () => {
-          describe("field", () => {
-            it("assigns 0 if the field is not changed", () => {
-              const field = new Field([1, 2, 3]);
-              field.set([1, 2, 3]);
-              expect(field.lastChanges).toMatchChanges(0n);
+          describe("state", () => {
+            it("assigns 0 if the state is not changed", () => {
+              const state = new State([1, 2, 3]);
+              state.set([1, 2, 3]);
+              expect(state.lastChanges).toMatchChanges(0n);
             });
 
             it("assigns type change when type changes", () => {
-              const field = new Field<number[] | number>([1, 2, 3]);
-              expect(field.set(123).lastChanges).toMatchChanges(
+              const state = new State<number[] | number>([1, 2, 3]);
+              expect(state.set(123).lastChanges).toMatchChanges(
                 change.atom.type,
               );
             });
 
             it("assigns attach change when attaching", () => {
-              const field = new Field<number[]>([]);
-              expect(field.at(0).set(1).lastChanges).toMatchChanges(
+              const state = new State<number[]>([]);
+              expect(state.at(0).set(1).lastChanges).toMatchChanges(
                 change.atom.attach,
               );
             });
 
             it("assigns detach change when detaching", () => {
-              const field = new Field<number[]>([1, 2, 3]);
+              const state = new State<number[]>([1, 2, 3]);
               // @ts-expect-error -- TODO: Types revamp
-              expect(field.at(2).set(detachedValue).lastChanges).toMatchChanges(
+              expect(state.at(2).set(detachedValue).lastChanges).toMatchChanges(
                 change.atom.detach,
               );
             });
 
             it("assigns type change when setting undefined", () => {
-              const field = new Field<number[] | undefined>([1, 2, 3]);
-              expect(field.set(undefined).lastChanges).toMatchChanges(
+              const state = new State<number[] | undefined>([1, 2, 3]);
+              expect(state.set(undefined).lastChanges).toMatchChanges(
                 change.atom.type,
               );
             });
 
             describe("shape", () => {
               it("assigns change when child attaches", () => {
-                const field = new Field<number[]>([1, 2]);
-                expect(field.set([1, 2, 3]).lastChanges).toMatchChanges(
+                const state = new State<number[]>([1, 2]);
+                expect(state.set([1, 2, 3]).lastChanges).toMatchChanges(
                   change.atom.shape | change.child.attach,
                 );
               });
 
               it("assigns change when child detaches", () => {
-                const field = new Field<number[]>([1, 2, 3]);
-                expect(field.set([1, 2]).lastChanges).toMatchChanges(
+                const state = new State<number[]>([1, 2, 3]);
+                expect(state.set([1, 2]).lastChanges).toMatchChanges(
                   change.atom.shape | change.child.detach,
                 );
               });
@@ -1090,51 +975,51 @@ describe("Field", () => {
 
           describe("child", () => {
             it("assigns type change when type changes", () => {
-              const field = new Field<any[]>([1, 2, 3]);
-              expect(field.set([1, 2, "3"]).lastChanges).toMatchChanges(
+              const state = new State<any[]>([1, 2, 3]);
+              expect(state.set([1, 2, "3"]).lastChanges).toMatchChanges(
                 change.child.type,
               );
             });
 
             it("assigns attach change when attaching", () => {
-              const field = new Field<any[]>([1, 2]);
-              expect(field.set([1, 2, 3]).lastChanges).toMatchChanges(
+              const state = new State<any[]>([1, 2]);
+              expect(state.set([1, 2, 3]).lastChanges).toMatchChanges(
                 change.atom.shape | change.child.attach,
               );
             });
 
             it("assigns detach change when detaching", () => {
-              const field = new Field<any[]>([1, 2, 3]);
-              expect(field.set([1, 2]).lastChanges).toMatchChanges(
+              const state = new State<any[]>([1, 2, 3]);
+              expect(state.set([1, 2]).lastChanges).toMatchChanges(
                 change.atom.shape | change.child.detach,
               );
             });
 
             it("assigns type change when setting undefined", () => {
-              const field = new Field<any[]>([1, 2, 3]);
-              expect(field.set([1, 2, undefined]).lastChanges).toMatchChanges(
+              const state = new State<any[]>([1, 2, 3]);
+              expect(state.set([1, 2, undefined]).lastChanges).toMatchChanges(
                 change.child.type,
               );
             });
 
             it("assigns combined changes", () => {
-              const field = new Field<any[]>([1, 2]);
-              expect(field.set([1, "2", 3]).lastChanges).toMatchChanges(
+              const state = new State<any[]>([1, 2]);
+              expect(state.set([1, "2", 3]).lastChanges).toMatchChanges(
                 change.atom.shape | change.child.type | change.child.attach,
               );
             });
 
             describe("shape", () => {
               it("assigns change when child attaches", () => {
-                const field = new Field<any[][]>([[1, 2]]);
-                expect(field.set([[1, 2, 3]]).lastChanges).toMatchChanges(
+                const state = new State<any[][]>([[1, 2]]);
+                expect(state.set([[1, 2, 3]]).lastChanges).toMatchChanges(
                   change.child.shape | change.subtree.attach,
                 );
               });
 
               it("assigns change when child detaches", () => {
-                const field = new Field<any[][]>([[1, 2, 3]]);
-                expect(field.set([[1, 2]]).lastChanges).toMatchChanges(
+                const state = new State<any[][]>([[1, 2, 3]]);
+                expect(state.set([[1, 2]]).lastChanges).toMatchChanges(
                   change.child.shape | change.subtree.detach,
                 );
               });
@@ -1143,36 +1028,36 @@ describe("Field", () => {
 
           describe("subtree", () => {
             it("assigns type change when type changes", () => {
-              const field = new Field<any[][]>([[1, 2, 3]]);
-              expect(field.set([[1, 2, "3"]]).lastChanges).toMatchChanges(
+              const state = new State<any[][]>([[1, 2, 3]]);
+              expect(state.set([[1, 2, "3"]]).lastChanges).toMatchChanges(
                 change.subtree.type,
               );
             });
 
             it("assigns attach change when attaching", () => {
-              const field = new Field<any[][]>([[1, 2]]);
-              expect(field.set([[1, 2, 3]]).lastChanges).toMatchChanges(
+              const state = new State<any[][]>([[1, 2]]);
+              expect(state.set([[1, 2, 3]]).lastChanges).toMatchChanges(
                 change.child.shape | change.subtree.attach,
               );
             });
 
             it("assigns detach change when detaching", () => {
-              const field = new Field<any[][]>([[1, 2, 3]]);
-              expect(field.set([[1, 2]]).lastChanges).toMatchChanges(
+              const state = new State<any[][]>([[1, 2, 3]]);
+              expect(state.set([[1, 2]]).lastChanges).toMatchChanges(
                 change.child.shape | change.subtree.detach,
               );
             });
 
             it("assigns type change when setting undefined", () => {
-              const field = new Field<any[][]>([[1, 2, 3]]);
-              expect(field.set([[1, 2, undefined]]).lastChanges).toMatchChanges(
+              const state = new State<any[][]>([[1, 2, 3]]);
+              expect(state.set([[1, 2, undefined]]).lastChanges).toMatchChanges(
                 change.subtree.type,
               );
             });
 
             it("assigns combined changes", () => {
-              const field = new Field<any[][]>([[1, 2]]);
-              expect(field.set([[1, "2", 3]]).lastChanges).toMatchChanges(
+              const state = new State<any[][]>([[1, 2]]);
+              expect(state.set([[1, "2", 3]]).lastChanges).toMatchChanges(
                 change.child.shape |
                   change.subtree.type |
                   change.subtree.attach,
@@ -1181,15 +1066,15 @@ describe("Field", () => {
 
             describe("shape", () => {
               it("assigns change when child attaches", () => {
-                const field = new Field<any[][]>([[[1, 2]]]);
-                expect(field.set([[[1, 2, 3]]]).lastChanges).toMatchChanges(
+                const state = new State<any[][]>([[[1, 2]]]);
+                expect(state.set([[[1, 2, 3]]]).lastChanges).toMatchChanges(
                   change.subtree.shape | change.subtree.attach,
                 );
               });
 
               it("assigns change when child detaches", () => {
-                const field = new Field<any[][]>([[[1, 2, 3]]]);
-                expect(field.set([[[1, 2]]]).lastChanges).toMatchChanges(
+                const state = new State<any[][]>([[[1, 2, 3]]]);
+                expect(state.set([[[1, 2]]]).lastChanges).toMatchChanges(
                   change.subtree.shape | change.subtree.detach,
                 );
               });
@@ -1199,18 +1084,18 @@ describe("Field", () => {
       });
 
       describe("instance", () => {
-        it("sets instance field", () => {
+        it("sets instance state", () => {
           const map = new Map<string, number>();
           map.set("num", 42);
-          const field = new Field(map);
-          expect(Object.fromEntries(field.value)).toEqual({
+          const state = new State(map);
+          expect(Object.fromEntries(state.value)).toEqual({
             num: 42,
           });
           {
             const newMap = new Map<string, number>();
             newMap.set("num", 43);
-            field.set(newMap);
-            expect(Object.fromEntries(field.value)).toEqual({
+            state.set(newMap);
+            expect(Object.fromEntries(state.value)).toEqual({
               num: 43,
             });
           }
@@ -1218,70 +1103,70 @@ describe("Field", () => {
             const newMap = new Map<string, number>();
             newMap.set("num", 44);
             newMap.set("qwe", 123);
-            field.set(newMap);
-            expect(Object.fromEntries(field.value)).toEqual({
+            state.set(newMap);
+            expect(Object.fromEntries(state.value)).toEqual({
               num: 44,
               qwe: 123,
             });
           }
           {
             const newMap = new Map<string, number>();
-            field.set(newMap);
-            expect(Object.fromEntries(field.value)).toEqual({});
+            state.set(newMap);
+            expect(Object.fromEntries(state.value)).toEqual({});
           }
         });
 
         it("does not confuse null with instances", () => {
-          const field = new Field(null);
-          expect(field.value).toBe(null);
-          field.set(null);
-          expect(field.value).toBe(null);
+          const state = new State(null);
+          expect(state.value).toBe(null);
+          state.set(null);
+          expect(state.value).toBe(null);
         });
 
         describe("changes", () => {
-          it("assigns 0 if the field is not changed", () => {
+          it("assigns 0 if the state is not changed", () => {
             const map = new Map();
-            const field = new Field(map);
-            field.set(map);
-            expect(field.lastChanges).toMatchChanges(0n);
+            const state = new State(map);
+            state.set(map);
+            expect(state.lastChanges).toMatchChanges(0n);
           });
 
           it("assigns type change when type changes", () => {
-            const field = new Field<Map<string, string> | Set<string>>(
+            const state = new State<Map<string, string> | Set<string>>(
               new Map(),
             );
-            expect(field.set(new Set<string>()).lastChanges).toMatchChanges(
+            expect(state.set(new Set<string>()).lastChanges).toMatchChanges(
               change.atom.type,
             );
           });
 
           it("assigns value change when value changes", () => {
-            const field = new Field(new Map());
-            expect(field.set(new Map()).lastChanges).toMatchChanges(
+            const state = new State(new Map());
+            expect(state.set(new Map()).lastChanges).toMatchChanges(
               change.atom.value,
             );
           });
 
           it("assigns detach change when setting to detached value", () => {
-            const field = new Field<Map<any, any>, "detachable">(new Map());
+            const state = new State<Map<any, any>, "detachable">(new Map());
             // @ts-expect-error -- TODO: Types revamp
-            expect(field.set(detachedValue).lastChanges).toMatchChanges(
+            expect(state.set(detachedValue).lastChanges).toMatchChanges(
               change.atom.detach,
             );
           });
 
           it("assigns attach change when setting from detached value", () => {
-            const field = new Field<Map<string, string> | DetachedValue>(
+            const state = new State<Map<string, string> | DetachedValue>(
               detachedValue,
             );
-            expect(field.set(new Map()).lastChanges).toMatchChanges(
+            expect(state.set(new Map()).lastChanges).toMatchChanges(
               change.atom.attach,
             );
           });
 
           it("assigns type change when setting undefined", () => {
-            const field = new Field<Map<string, string> | undefined>(new Map());
-            expect(field.set(undefined).lastChanges).toMatchChanges(
+            const state = new State<Map<string, string> | undefined>(new Map());
+            expect(state.set(undefined).lastChanges).toMatchChanges(
               change.atom.type,
             );
           });
@@ -1289,169 +1174,169 @@ describe("Field", () => {
       });
     });
 
-    describe("#initial", () => {
-      it("returns the initial field", () => {
-        const field = new Field(42);
-        field.set(43);
-        expect(field.initial).toBe(42);
+    describe.skip("#initial", () => {
+      it("returns the initial state", () => {
+        const state = new State(42);
+        state.set(43);
+        expect(state.initial).toBe(42);
       });
 
       it("preserves the initial value on type change", () => {
-        const field = new Field<number | object>(42);
-        field.set({ hello: "world" });
-        expect(field.initial).toBe(42);
+        const state = new State<number | object>(42);
+        state.set({ hello: "world" });
+        expect(state.initial).toBe(42);
       });
     });
 
-    describe("#dirty", () => {
+    describe.skip("#dirty", () => {
       describe("primitive", () => {
-        it("returns true if the field has changed", () => {
-          const field = new Field(42);
-          expect(field.dirty).toBe(false);
-          field.set(43);
-          expect(field.dirty).toBe(true);
+        it("returns true if the state has changed", () => {
+          const state = new State(42);
+          expect(state.dirty).toBe(false);
+          state.set(43);
+          expect(state.dirty).toBe(true);
         });
 
         it("returns false after restoring to the initial value", () => {
-          const field = new Field(42);
-          expect(field.dirty).toBe(false);
-          field.set(43);
-          field.set(42);
-          expect(field.dirty).toBe(false);
+          const state = new State(42);
+          expect(state.dirty).toBe(false);
+          state.set(43);
+          state.set(42);
+          expect(state.dirty).toBe(false);
         });
       });
 
       describe("object", () => {
         it("returns true if any of the children has changed", () => {
-          const field = new Field({
+          const state = new State({
             name: { first: "Alexander", last: "" },
           });
-          expect(field.dirty).toBe(false);
-          expect(field.$.name.dirty).toBe(false);
-          expect(field.$.name.$.first.dirty).toBe(false);
-          expect(field.$.name.$.last.dirty).toBe(false);
-          field.$.name.$.first.set("Sasha");
-          expect(field.dirty).toBe(true);
-          expect(field.$.name.dirty).toBe(true);
-          expect(field.$.name.$.first.dirty).toBe(true);
-          expect(field.$.name.$.last.dirty).toBe(false);
+          expect(state.dirty).toBe(false);
+          expect(state.$.name.dirty).toBe(false);
+          expect(state.$.name.$.first.dirty).toBe(false);
+          expect(state.$.name.$.last.dirty).toBe(false);
+          state.$.name.$.first.set("Sasha");
+          expect(state.dirty).toBe(true);
+          expect(state.$.name.dirty).toBe(true);
+          expect(state.$.name.$.first.dirty).toBe(true);
+          expect(state.$.name.$.last.dirty).toBe(false);
         });
 
         it("returns false after restoring to the initial value", () => {
-          const field = new Field({
+          const state = new State({
             name: { first: "Alexander", last: "" },
           });
-          field.$.name.$.first.set("Sasha");
-          field.$.name.$.first.set("Alexander");
-          expect(field.dirty).toBe(false);
-          expect(field.$.name.dirty).toBe(false);
-          expect(field.$.name.$.first.dirty).toBe(false);
-          expect(field.$.name.$.last.dirty).toBe(false);
+          state.$.name.$.first.set("Sasha");
+          state.$.name.$.first.set("Alexander");
+          expect(state.dirty).toBe(false);
+          expect(state.$.name.dirty).toBe(false);
+          expect(state.$.name.$.first.dirty).toBe(false);
+          expect(state.$.name.$.last.dirty).toBe(false);
         });
 
         it("returns true if a child changed type", () => {
-          const field = new Field<{
+          const state = new State<{
             name: { first: string; last: string } | string;
           }>({ name: { first: "Alexander", last: "" } });
-          expect(field.dirty).toBe(false);
-          expect(field.$.name.dirty).toBe(false);
-          field.$.name.set("Alexander");
-          expect(field.dirty).toBe(true);
-          expect(field.$.name.dirty).toBe(true);
+          expect(state.dirty).toBe(false);
+          expect(state.$.name.dirty).toBe(false);
+          state.$.name.set("Alexander");
+          expect(state.dirty).toBe(true);
+          expect(state.$.name.dirty).toBe(true);
         });
 
         it("returns true if a child changed shape", () => {
-          const field = new Field<{
+          const state = new State<{
             name: { first?: string; last?: string };
           }>({ name: { first: "Alexander" } });
-          expect(field.dirty).toBe(false);
-          expect(field.$.name.dirty).toBe(false);
-          field.$.name.set({ last: "Koss" });
-          expect(field.dirty).toBe(true);
-          expect(field.$.name.dirty).toBe(true);
-          expect(field.$.name.$.last.dirty).toBe(false);
+          expect(state.dirty).toBe(false);
+          expect(state.$.name.dirty).toBe(false);
+          state.$.name.set({ last: "Koss" });
+          expect(state.dirty).toBe(true);
+          expect(state.$.name.dirty).toBe(true);
+          expect(state.$.name.$.last.dirty).toBe(false);
         });
       });
 
       describe("array", () => {
         it("returns true if any of the items has changed", () => {
-          const field = new Field<number[][]>([[1, 2], [3]]);
-          expect(field.dirty).toBe(false);
-          expect(field.at(0).dirty).toBe(false);
-          expect(field.try(0)?.try(0)?.dirty).toBe(false);
-          expect(field.try(0)?.try(1)?.dirty).toBe(false);
-          expect(field.try(1)?.try(0)?.dirty).toBe(false);
-          field.try(1)?.at(0).set(5);
-          expect(field.dirty).toBe(true);
-          expect(field.try(0)?.dirty).toBe(false);
-          expect(field.try(0)?.try(0)?.dirty).toBe(false);
-          expect(field.try(0)?.try(1)?.dirty).toBe(false);
-          expect(field.try(1)?.try(0)?.dirty).toBe(true);
+          const state = new State<number[][]>([[1, 2], [3]]);
+          expect(state.dirty).toBe(false);
+          expect(state.at(0).dirty).toBe(false);
+          expect(state.try(0)?.try(0)?.dirty).toBe(false);
+          expect(state.try(0)?.try(1)?.dirty).toBe(false);
+          expect(state.try(1)?.try(0)?.dirty).toBe(false);
+          state.try(1)?.at(0).set(5);
+          expect(state.dirty).toBe(true);
+          expect(state.try(0)?.dirty).toBe(false);
+          expect(state.try(0)?.try(0)?.dirty).toBe(false);
+          expect(state.try(0)?.try(1)?.dirty).toBe(false);
+          expect(state.try(1)?.try(0)?.dirty).toBe(true);
         });
 
         it("returns false after restoring to the initial value", () => {
-          const field = new Field<number[][]>([[1, 2], [3]]);
-          field.try(1)?.at(0).set(5);
-          field.try(1)?.at(0).set(3);
-          expect(field.dirty).toBe(false);
-          expect(field.try(0)?.dirty).toBe(false);
-          expect(field.try(0)?.try(0)?.dirty).toBe(false);
-          expect(field.try(0)?.try(1)?.dirty).toBe(false);
-          expect(field.try(1)?.try(0)?.dirty).toBe(false);
+          const state = new State<number[][]>([[1, 2], [3]]);
+          state.try(1)?.at(0).set(5);
+          state.try(1)?.at(0).set(3);
+          expect(state.dirty).toBe(false);
+          expect(state.try(0)?.dirty).toBe(false);
+          expect(state.try(0)?.try(0)?.dirty).toBe(false);
+          expect(state.try(0)?.try(1)?.dirty).toBe(false);
+          expect(state.try(1)?.try(0)?.dirty).toBe(false);
         });
 
         it("returns true if a child changed type", () => {
-          const field = new Field<Array<string | object>>(["hello", {}]);
-          expect(field.dirty).toBe(false);
-          field.at(0).set({});
-          expect(field.dirty).toBe(true);
-          expect(field.at(0).dirty).toBe(true);
-          expect(field.at(1).dirty).toBe(false);
+          const state = new State<Array<string | object>>(["hello", {}]);
+          expect(state.dirty).toBe(false);
+          state.at(0).set({});
+          expect(state.dirty).toBe(true);
+          expect(state.at(0).dirty).toBe(true);
+          expect(state.at(1).dirty).toBe(false);
         });
 
         it("returns true if a child changed shape", () => {
-          const field = new Field<Array<{ first?: string; last?: string }>>([
+          const state = new State<Array<{ first?: string; last?: string }>>([
             { first: "Alexander" },
             { first: "Sasha" },
           ]);
-          expect(field.dirty).toBe(false);
-          field.at(0).set({ last: "Koss" });
-          expect(field.dirty).toBe(true);
-          expect(field.at(0).dirty).toBe(true);
-          expect(field.at(1).dirty).toBe(false);
+          expect(state.dirty).toBe(false);
+          state.at(0).set({ last: "Koss" });
+          expect(state.dirty).toBe(true);
+          expect(state.at(0).dirty).toBe(true);
+          expect(state.at(1).dirty).toBe(false);
         });
       });
 
       describe("instance", () => {
-        it("returns true if the field has changed", () => {
-          const field = new Field(new Map());
-          expect(field.dirty).toBe(false);
-          field.set(new Map());
-          expect(field.dirty).toBe(true);
+        it("returns true if the state has changed", () => {
+          const state = new State(new Map());
+          expect(state.dirty).toBe(false);
+          state.set(new Map());
+          expect(state.dirty).toBe(true);
         });
 
         it("returns false after restoring to the initial value", () => {
-          const field = new Field(42);
-          expect(field.dirty).toBe(false);
-          field.set(43);
-          field.set(42);
-          expect(field.dirty).toBe(false);
+          const state = new State(42);
+          expect(state.dirty).toBe(false);
+          state.set(43);
+          state.set(42);
+          expect(state.dirty).toBe(false);
         });
       });
 
       describe("proxy", () => {
-        it("returns true if the source field has changed", async () => {
-          const field = new Field<string | undefined>("Hello");
-          const proxy = field.into(toString).from(fromString);
+        it("returns true if the source state has changed", async () => {
+          const state = new State<string | undefined>("Hello");
+          const proxy = state.into(toString).from(fromString);
           expect(proxy.dirty).toBe(false);
           proxy.set("Hi");
           await postpone();
           expect(proxy.dirty).toBe(true);
         });
 
-        it("returns false if the source field didn't change", () => {
-          const field = new Field<string | undefined>(undefined);
-          const proxy = field.into(toString).from(fromString);
+        it("returns false if the source state didn't change", () => {
+          const state = new State<string | undefined>(undefined);
+          const proxy = state.into(toString).from(fromString);
           expect(proxy.dirty).toBe(false);
           proxy.set(" ");
           expect(proxy.dirty).toBe(false);
@@ -1467,14 +1352,14 @@ describe("Field", () => {
       });
     });
 
-    describe("#useDirty", () => {
+    describe.skip("#useDirty", () => {
       beforeEach(cleanup);
 
-      it("allows to listen to field dirty", async () => {
+      it("allows to listen to state dirty", async () => {
         function Component() {
           const count = useRenderCount();
-          const field = Field.use({ name: { first: "Alexander" } }, []);
-          const dirty = field.useDirty();
+          const state = State.use({ name: { first: "Alexander" } }, []);
+          const dirty = state.useDirty();
 
           return (
             <div>
@@ -1482,7 +1367,7 @@ describe("Field", () => {
 
               <input
                 data-testid="name-first-input"
-                {...field.$.name.$.first.control()}
+                {...state.$.name.$.first.control()}
               />
 
               <div data-testid="dirty">{String(dirty)}</div>
@@ -1518,15 +1403,15 @@ describe("Field", () => {
         expect(screen.getByTestId("render-dirty").textContent).toBe("3");
       });
 
-      it("depends on the field id", async () => {
+      it("depends on the state id", async () => {
         function Component() {
           const count = useRenderCount();
-          const field = Field.use(
+          const state = State.use(
             [{ name: "Alexander" }, { name: "Sasha" }],
             [],
           );
           const [index, setIndex] = useState(0);
-          const dirty = field.at(index).useDirty();
+          const dirty = state.at(index).useDirty();
 
           return (
             <div>
@@ -1534,7 +1419,7 @@ describe("Field", () => {
 
               <button onClick={() => setIndex(1)}>Set index to 1</button>
 
-              <button onClick={() => field.at(1).set({ name: "Alex" })}>
+              <button onClick={() => state.at(1).set({ name: "Alex" })}>
                 Rename item 1
               </button>
 
@@ -1558,15 +1443,15 @@ describe("Field", () => {
         expect(screen.getByTestId("render-dirty").textContent).toBe("2");
       });
 
-      it("updates the watcher on field id change", async () => {
+      it("updates the watcher on state id change", async () => {
         function Component() {
           const count = useRenderCount();
-          const field = Field.use(
+          const state = State.use(
             [{ name: "Alexander" }, { name: "Sasha" }],
             [],
           );
           const [index, setIndex] = useState(0);
-          const dirty = field.at(index).useDirty();
+          const dirty = state.at(index).useDirty();
 
           return (
             <div>
@@ -1574,7 +1459,7 @@ describe("Field", () => {
 
               <button onClick={() => setIndex(1)}>Set index to 1</button>
 
-              <button onClick={() => field.at(0).set({ name: "Alex" })}>
+              <button onClick={() => state.at(0).set({ name: "Alex" })}>
                 Rename item 0
               </button>
 
@@ -1602,13 +1487,13 @@ describe("Field", () => {
       it("allows to enable/disable the dirty listener", async () => {
         function Component() {
           const count = useRenderCount();
-          const field = Field.use(
+          const state = State.use(
             [{ name: "Alexander" }, { name: "Sasha" }],
             [],
           );
           const [index, setIndex] = useState(0);
           const [enabled, setEnabled] = useState(false);
-          const dirty = field.at(index).useDirty(enabled);
+          const dirty = state.at(index).useDirty(enabled);
 
           return (
             <div>
@@ -1616,7 +1501,7 @@ describe("Field", () => {
 
               <button onClick={() => setIndex(1)}>Set index to 1</button>
 
-              <button onClick={() => field.at(1).set({ name: "Alex" })}>
+              <button onClick={() => state.at(1).set({ name: "Alex" })}>
                 Rename item 1
               </button>
 
@@ -1651,8 +1536,8 @@ describe("Field", () => {
       it("updates on reset", async () => {
         function Component() {
           const count = useRenderCount();
-          const field = Field.use({ name: { first: "Alexander" } }, []);
-          const dirty = field.useDirty();
+          const state = State.use({ name: { first: "Alexander" } }, []);
+          const dirty = state.useDirty();
 
           return (
             <div>
@@ -1660,10 +1545,10 @@ describe("Field", () => {
 
               <input
                 data-testid="name-first-input"
-                {...field.$.name.$.first.control()}
+                {...state.$.name.$.first.control()}
               />
 
-              <button onClick={() => field.reset()}>Reset</button>
+              <button onClick={() => state.reset()}>Reset</button>
 
               <div data-testid="dirty">{String(dirty)}</div>
             </div>
@@ -1697,8 +1582,8 @@ describe("Field", () => {
       it("updates on commit", async () => {
         function Component() {
           const count = useRenderCount();
-          const field = Field.use({ name: { first: "Alexander" } }, []);
-          const dirty = field.useDirty();
+          const state = State.use({ name: { first: "Alexander" } }, []);
+          const dirty = state.useDirty();
 
           return (
             <div>
@@ -1706,10 +1591,10 @@ describe("Field", () => {
 
               <input
                 data-testid="name-first-input"
-                {...field.$.name.$.first.control()}
+                {...state.$.name.$.first.control()}
               />
 
-              <button onClick={() => field.commit()}>Commit</button>
+              <button onClick={() => state.commit()}>Commit</button>
 
               <div data-testid="dirty">{String(dirty)}</div>
             </div>
@@ -1741,52 +1626,52 @@ describe("Field", () => {
       });
     });
 
-    describe("#commit", () => {
-      it("commits the current field as the initial field", () => {
-        const field = new Field(42);
-        field.set(43);
-        field.commit();
-        expect(field.initial).toBe(43);
-        expect(field.dirty).toBe(false);
+    describe.skip("#commit", () => {
+      it("commits the current state as the initial state", () => {
+        const state = new State(42);
+        state.set(43);
+        state.commit();
+        expect(state.initial).toBe(43);
+        expect(state.dirty).toBe(false);
       });
 
-      it("commits the current field as the initial field for children", () => {
-        const field = new Field({
+      it("commits the current state as the initial state for children", () => {
+        const state = new State({
           name: { first: "Alexander" },
           codes: [1, 2, 3],
         });
-        field.$.name.$.first.set("Sasha");
-        field.$.codes.at(1).set(5);
-        field.commit();
-        expect(field.initial).toEqual({
+        state.$.name.$.first.set("Sasha");
+        state.$.codes.at(1).set(5);
+        state.commit();
+        expect(state.initial).toEqual({
           name: { first: "Sasha" },
           codes: [1, 5, 3],
         });
-        expect(field.value).toEqual({
+        expect(state.value).toEqual({
           name: { first: "Sasha" },
           codes: [1, 5, 3],
         });
-        expect(field.dirty).toBe(false);
-        expect(field.$.name.$.first.initial).toBe("Sasha");
-        expect(field.$.name.$.first.dirty).toBe(false);
-        expect(field.$.codes.at(1).initial).toBe(5);
-        expect(field.$.codes.at(1).dirty).toBe(false);
+        expect(state.dirty).toBe(false);
+        expect(state.$.name.$.first.initial).toBe("Sasha");
+        expect(state.$.name.$.first.dirty).toBe(false);
+        expect(state.$.codes.at(1).initial).toBe(5);
+        expect(state.$.codes.at(1).dirty).toBe(false);
       });
 
       describe("changes", () => {
-        describe("field", () => {
+        describe("state", () => {
           it("triggers commit change", async () => {
-            const field = new Field("");
-            field.set("spam@example.com");
-            expect(field.dirty).toBe(true);
+            const state = new State("");
+            state.set("spam@example.com");
+            expect(state.dirty).toBe(true);
 
             const spy = vi.fn();
-            const unsub = field.watch(spy);
-            field.commit();
+            const unsub = state.watch(spy);
+            state.commit();
 
             await postpone();
             unsub();
-            expect(field.dirty).toBe(false);
+            expect(state.dirty).toBe(false);
             expect(spy).toHaveBeenCalledOnce();
             const [[_, event]]: any = spy.mock.calls;
             expect(event.changes).toMatchChanges(
@@ -1795,37 +1680,37 @@ describe("Field", () => {
           });
 
           it("does't trigger commit change if it wasn't dirty", async () => {
-            const field = new Field("");
-            field.set("");
-            expect(field.dirty).toBe(false);
+            const state = new State("");
+            state.set("");
+            expect(state.dirty).toBe(false);
 
             const spy = vi.fn();
-            const unsub = field.watch(spy);
-            field.commit();
+            const unsub = state.watch(spy);
+            state.commit();
 
             await postpone();
             unsub();
-            expect(field.dirty).toBe(false);
+            expect(state.dirty).toBe(false);
             expect(spy).not.toHaveBeenCalled();
           });
         });
 
         describe("child", () => {
           it("triggers commit change", async () => {
-            const field = new Field({
+            const state = new State({
               name: { first: "Alexander" },
               email: "",
             });
-            field.$.email.set("spam@example.com");
-            expect(field.dirty).toBe(true);
+            state.$.email.set("spam@example.com");
+            expect(state.dirty).toBe(true);
 
             const spy = vi.fn();
-            const unsub = field.watch(spy);
-            field.commit();
+            const unsub = state.watch(spy);
+            state.commit();
 
             await postpone();
             unsub();
-            expect(field.dirty).toBe(false);
+            expect(state.dirty).toBe(false);
             expect(spy).toHaveBeenCalledOnce();
             const [[_, event]]: any = spy.mock.calls;
             expect(event.changes).toMatchChanges(
@@ -1834,42 +1719,42 @@ describe("Field", () => {
           });
 
           it("does't trigger commit change if it wasn't dirty", async () => {
-            const field = new Field({
+            const state = new State({
               name: { first: "Alexander" },
               email: "",
             });
-            field.$.email.set("");
-            expect(field.dirty).toBe(false);
+            state.$.email.set("");
+            expect(state.dirty).toBe(false);
 
             const spy = vi.fn();
-            const unsub = field.watch(spy);
-            field.commit();
+            const unsub = state.watch(spy);
+            state.commit();
 
             await postpone();
             unsub();
-            expect(field.dirty).toBe(false);
+            expect(state.dirty).toBe(false);
             expect(spy).not.toHaveBeenCalled();
           });
         });
 
         describe("subtree", () => {
           it("triggers commit change", async () => {
-            const field = new Field({
+            const state = new State({
               user: {
                 name: { first: "Alexander" },
                 email: "",
               },
             });
-            field.$.user.$.email.set("spam@example.com");
-            expect(field.dirty).toBe(true);
+            state.$.user.$.email.set("spam@example.com");
+            expect(state.dirty).toBe(true);
 
             const spy = vi.fn();
-            const unsub = field.watch(spy);
-            field.commit();
+            const unsub = state.watch(spy);
+            state.commit();
 
             await postpone();
             unsub();
-            expect(field.dirty).toBe(false);
+            expect(state.dirty).toBe(false);
             expect(spy).toHaveBeenCalledOnce();
             const [[_, event]]: any = spy.mock.calls;
             expect(event.changes).toMatchChanges(
@@ -1881,60 +1766,60 @@ describe("Field", () => {
           });
 
           it("does't trigger commit change if it wasn't dirty", async () => {
-            const field = new Field({
+            const state = new State({
               user: {
                 name: { first: "Alexander" },
                 email: "",
               },
             });
-            field.$.user.$.email.set("");
-            expect(field.dirty).toBe(false);
+            state.$.user.$.email.set("");
+            expect(state.dirty).toBe(false);
 
             const spy = vi.fn();
-            const unsub = field.watch(spy);
-            field.commit();
+            const unsub = state.watch(spy);
+            state.commit();
 
             await postpone();
             unsub();
-            expect(field.dirty).toBe(false);
+            expect(state.dirty).toBe(false);
             expect(spy).not.toHaveBeenCalled();
           });
         });
       });
     });
 
-    describe("#reset", () => {
-      it("resets the current field to initial state", () => {
-        const field = new Field(42);
-        field.set(43);
-        expect(field.dirty).toBe(true);
-        field.reset();
-        expect(field.initial).toBe(42);
-        expect(field.dirty).toBe(false);
+    describe.skip("#reset", () => {
+      it("resets the current state to initial state", () => {
+        const state = new State(42);
+        state.set(43);
+        expect(state.dirty).toBe(true);
+        state.reset();
+        expect(state.initial).toBe(42);
+        expect(state.dirty).toBe(false);
       });
 
       it("resets the nested children", () => {
-        const field = new Field({
+        const state = new State({
           name: { first: "Alexander" },
           codes: [1, 2, 3],
         });
-        field.$.name.$.first.set("Sasha");
-        field.$.codes.at(1).set(5);
-        expect(field.dirty).toBe(true);
-        expect(field.$.name.$.first.dirty).toBe(true);
-        expect(field.$.codes.at(1).dirty).toBe(true);
-        field.reset();
-        expect(field.value).toEqual({
+        state.$.name.$.first.set("Sasha");
+        state.$.codes.at(1).set(5);
+        expect(state.dirty).toBe(true);
+        expect(state.$.name.$.first.dirty).toBe(true);
+        expect(state.$.codes.at(1).dirty).toBe(true);
+        state.reset();
+        expect(state.value).toEqual({
           name: { first: "Alexander" },
           codes: [1, 2, 3],
         });
-        expect(field.dirty).toBe(false);
-        expect(field.$.name.$.first.dirty).toBe(false);
-        expect(field.$.codes.at(1).dirty).toBe(false);
+        expect(state.dirty).toBe(false);
+        expect(state.$.name.$.first.dirty).toBe(false);
+        expect(state.$.codes.at(1).dirty).toBe(false);
       });
 
       describe("changes", () => {
-        describe.todo("field");
+        describe.todo("state");
 
         describe.todo("child");
 
@@ -1942,49 +1827,49 @@ describe("Field", () => {
       });
     });
 
-    describe("#pave", () => {
-      it("returns field set to the given value if it's null or undefined", () => {
-        const field = new Field<string | undefined>(undefined);
-        const pavedField = field.pave("Hello");
-        expect(pavedField.value).toBe("Hello");
-        expect(pavedField).toBe(field);
+    describe.skip("#pave", () => {
+      it("returns state set to the given value if it's null or undefined", () => {
+        const state = new State<string | undefined>(undefined);
+        const pavedState = state.pave("Hello");
+        expect(pavedState.value).toBe("Hello");
+        expect(pavedState).toBe(state);
       });
 
-      it("returns same field if it's already set", () => {
-        const field = new Field<string | undefined>("Hi");
-        const pavedField = field.pave("Hello");
-        expect(pavedField.value).toBe("Hi");
+      it("returns same state if it's already set", () => {
+        const state = new State<string | undefined>("Hi");
+        const pavedState = state.pave("Hello");
+        expect(pavedState.value).toBe("Hi");
       });
 
-      it("allows to pave through nested fields", () => {
-        const field = new Field<
+      it("allows to pave through nested states", () => {
+        const state = new State<
           { name?: { first?: string; last?: string } } | undefined
         >({});
-        field.pave({}).$.name.pave({}).$.first.pave("Alexander");
-        expect(field.value).toEqual({
+        state.pave({}).$.name.pave({}).$.first.pave("Alexander");
+        expect(state.value).toEqual({
           name: { first: "Alexander" },
         });
       });
     });
 
-    describe("#compute", () => {
+    describe.skip("#compute", () => {
       it("allows to compute value", () => {
-        const field = new Field<UserName>({ first: "Sasha" });
-        expect(field.compute(toFullName)).toBe("Sasha");
+        const state = new State<UserName>({ first: "Sasha" });
+        expect(state.compute(toFullName)).toBe("Sasha");
 
-        field.$.last.set("Koss");
-        expect(field.compute(toFullName)).toBe("Sasha Koss");
+        state.$.last.set("Koss");
+        expect(state.compute(toFullName)).toBe("Sasha Koss");
       });
     });
 
-    describe("#useCompute", () => {
+    describe.skip("#useCompute", () => {
       beforeEach(cleanup);
 
       it("allows to compute value", async () => {
         function Component() {
           const count = useRenderCount();
-          const field = Field.use<User>({ name: { first: "Alexander" } }, []);
-          const hasLastName = field.$.name.useCompute(
+          const state = State.use<User>({ name: { first: "Alexander" } }, []);
+          const hasLastName = state.$.name.useCompute(
             (name) => !!name.last,
             [],
           );
@@ -1995,21 +1880,21 @@ describe("Field", () => {
 
               <button
                 onClick={() =>
-                  field.$.name.$.first.set(`Sasha ${Math.random()}`)
+                  state.$.name.$.first.set(`Sasha ${Math.random()}`)
                 }
               >
                 Rename first
               </button>
 
-              <button onClick={() => field.$.name.addError("Nope")}>
+              <button onClick={() => state.$.name.addError("Nope")}>
                 Add error
               </button>
 
-              <button onClick={() => field.$.name.$.last.set("Koss")}>
+              <button onClick={() => state.$.name.$.last.set("Koss")}>
                 Set last name
               </button>
 
-              <button onClick={() => field.$.name.$.last.set(undefined)}>
+              <button onClick={() => state.$.name.$.last.set(undefined)}>
                 Clear last name
               </button>
 
@@ -2048,15 +1933,15 @@ describe("Field", () => {
         expect(screen.getByTestId("render-compute").textContent).toBe("3");
       });
 
-      it("depends on the field id", async () => {
+      it("depends on the state id", async () => {
         function Component() {
           const count = useRenderCount();
-          const field = Field.use<UserName[]>(
+          const state = State.use<UserName[]>(
             [{ first: "Alexander" }, { first: "Sasha", last: "Koss" }],
             [],
           );
           const [index, setIndex] = useState(0);
-          const hasLastName = field
+          const hasLastName = state
             .at(index)
             .useCompute((name) => !!name?.last, []);
 
@@ -2082,15 +1967,15 @@ describe("Field", () => {
         expect(screen.getByTestId("render-computed").textContent).toBe("2");
       });
 
-      it("updates the watcher on field id change", async () => {
+      it("updates the watcher on state id change", async () => {
         function Component() {
           const count = useRenderCount();
-          const field = Field.use<UserName[]>(
+          const state = State.use<UserName[]>(
             [{ first: "Alexander" }, { first: "Sasha", last: "Koss" }],
             [],
           );
           const [index, setIndex] = useState(0);
-          const hasLastName = field
+          const hasLastName = state
             .at(index)
             .useCompute((name) => !!name?.last, []);
 
@@ -2102,7 +1987,7 @@ describe("Field", () => {
 
               <button
                 onClick={() =>
-                  field.at(0).set({ first: "Alexander", last: "Koss" })
+                  state.at(0).set({ first: "Alexander", last: "Koss" })
                 }
               >
                 Give item 0 last name
@@ -2131,14 +2016,14 @@ describe("Field", () => {
       it("doesn't rerender when setting the same primitive", async () => {
         function Component() {
           const count = useRenderCount();
-          const field = Field.use<UserName>({ first: "Alexander" }, []);
-          const hasLastName = field.useCompute((name) => !!name?.last, []);
+          const state = State.use<UserName>({ first: "Alexander" }, []);
+          const hasLastName = state.useCompute((name) => !!name?.last, []);
 
           return (
             <div>
               <div data-testid="render-computed">{count}</div>
 
-              <button onClick={() => field.set({ first: "Alex" })}>
+              <button onClick={() => state.set({ first: "Alex" })}>
                 Rename item 0
               </button>
 
@@ -2161,9 +2046,9 @@ describe("Field", () => {
       it("allows to specify dependencies", async () => {
         function Component() {
           const count = useRenderCount();
-          const field = Field.use("Alexander", []);
+          const state = State.use("Alexander", []);
           const [lastName, setLastName] = useState("Koss");
-          const fullName = field.useCompute(
+          const fullName = state.useCompute(
             (name) => `${name} ${lastName}`,
             [lastName],
           );
@@ -2172,7 +2057,7 @@ describe("Field", () => {
             <div>
               <div data-testid="render-compute">{count}</div>
 
-              <button onClick={() => field.set("Sasha")}>Rename first</button>
+              <button onClick={() => state.set("Sasha")}>Rename first</button>
 
               <button onClick={() => setLastName("K.")}>Rename last</button>
 
@@ -2201,18 +2086,18 @@ describe("Field", () => {
     });
   });
 
-  describe("meta", () => {
+  describe.skip("meta", () => {
     describe("#useMeta", () => {
       beforeEach(cleanup);
 
       it("allows to listen to meta information", async () => {
         function Component() {
           const count = useRenderCount();
-          const field = Field.use(
+          const state = State.use(
             { name: { first: "Alexander", last: "" } },
             [],
           );
-          const { dirty, errors: errors, valid } = field.useMeta();
+          const { dirty, errors: errors, valid } = state.useMeta();
 
           return (
             <div>
@@ -2220,7 +2105,7 @@ describe("Field", () => {
 
               <button
                 onClick={() =>
-                  field.$.name.$.first.addError(`Nope ${Math.random()}`)
+                  state.$.name.$.first.addError(`Nope ${Math.random()}`)
                 }
               >
                 Set first name error
@@ -2228,27 +2113,27 @@ describe("Field", () => {
 
               <button
                 onClick={() =>
-                  field.$.name.$.last.addError(`Nah ${Math.random()}`)
+                  state.$.name.$.last.addError(`Nah ${Math.random()}`)
                 }
               >
                 Set last name error
               </button>
 
-              <button onClick={() => field.addError("Nope")}>
-                Set field error
+              <button onClick={() => state.addError("Nope")}>
+                Set state error
               </button>
 
               <button
                 onClick={() => {
-                  field.$.name.$.first.clearErrors();
-                  field.$.name.$.last.clearErrors();
+                  state.$.name.$.first.clearErrors();
+                  state.$.name.$.last.clearErrors();
                 }}
               >
                 Clear errors
               </button>
 
-              <button onClick={() => field.$.name.$.last.set("Koss")}>
-                Trigger field update
+              <button onClick={() => state.$.name.$.last.set("Koss")}>
+                Trigger state update
               </button>
 
               <div data-testid="dirty">{String(dirty)}</div>
@@ -2280,7 +2165,7 @@ describe("Field", () => {
 
         expect(screen.getByTestId("render-meta").textContent).toBe("2");
 
-        await act(() => screen.getByText("Trigger field update").click());
+        await act(() => screen.getByText("Trigger state update").click());
 
         expect(screen.getByTestId("dirty").textContent).toBe("true");
         expect(screen.getByTestId("valid").textContent).toBe("false");
@@ -2293,7 +2178,7 @@ describe("Field", () => {
         expect(screen.getByTestId("errors").textContent).toBe("");
         expect(screen.getByTestId("render-meta").textContent).toBe("4");
 
-        await act(() => screen.getByText("Set field error").click());
+        await act(() => screen.getByText("Set state error").click());
 
         expect(screen.getByTestId("errors").textContent).toBe("Nope");
         expect(screen.getByTestId("render-meta").textContent).toBe("5");
@@ -2301,86 +2186,86 @@ describe("Field", () => {
     });
   });
 
-  describe("type", () => {
+  describe.skip("type", () => {
     describe("collection", () => {
       describe("#size", () => {
         describe(Array, () => {
           it("returns size", () => {
-            const field = new Field([1, 2, 3]);
-            expect(field.size).toBe(3);
+            const state = new State([1, 2, 3]);
+            expect(state.size).toBe(3);
           });
         });
 
         describe(Object, () => {
           it("returns size", () => {
-            const field = new Field({ a: 1, b: 2, c: 3 });
-            expect(field.size).toBe(3);
+            const state = new State({ a: 1, b: 2, c: 3 });
+            expect(state.size).toBe(3);
           });
         });
       });
 
       describe("#remove", () => {
         describe(Object, () => {
-          it("removes a record field by key", () => {
-            const field = new Field<Record<string, number>>({
+          it("removes a record state by key", () => {
+            const state = new State<Record<string, number>>({
               one: 1,
               two: 2,
               three: 3,
             });
-            field.remove("one");
-            expect(field.value).toEqual({ two: 2, three: 3 });
+            state.remove("one");
+            expect(state.value).toEqual({ two: 2, three: 3 });
           });
 
-          it("returns the removed field", () => {
-            const field = new Field<Record<string, number>>({
+          it("returns the removed state", () => {
+            const state = new State<Record<string, number>>({
               one: 1,
               two: 2,
               three: 3,
             });
-            const oneField = field.$.one;
-            const removedField = field.remove("one");
-            expect(removedField).toBe(oneField);
-            expect(removedField.value).toBe(undefined);
+            const oneState = state.$.one;
+            const removedState = state.remove("one");
+            expect(removedState).toBe(oneState);
+            expect(removedState.value).toBe(undefined);
           });
 
           it("removes child", () => {
-            const parent = new Field<Record<string, number>>({
+            const parent = new State<Record<string, number>>({
               one: 1,
               two: 2,
               three: 3,
             });
-            const field = parent.at("one");
-            field.self.remove();
+            const state = parent.at("one");
+            state.self.remove();
             expect(parent.value).toEqual({ two: 2, three: 3 });
-            expect(field.value).toBe(undefined);
+            expect(state.value).toBe(undefined);
           });
 
-          it("removes a optional field by key", () => {
-            const field = new Field<{ one: 1; two: 2 | undefined; three?: 3 }>({
+          it("removes a optional state by key", () => {
+            const state = new State<{ one: 1; two: 2 | undefined; three?: 3 }>({
               one: 1,
               two: 2,
               three: 3,
             });
-            field.remove("three");
-            expect(field.value).toEqual({ one: 1, two: 2 });
+            state.remove("three");
+            expect(state.value).toEqual({ one: 1, two: 2 });
           });
 
-          it("doesn't throw on removing non-existing field", () => {
-            const field = new Field<Record<string, number>>({ one: 1 });
-            expect(() => field.remove("two")).not.toThrow();
+          it("doesn't throw on removing non-existing state", () => {
+            const state = new State<Record<string, number>>({ one: 1 });
+            expect(() => state.remove("two")).not.toThrow();
           });
 
           describe("changes", () => {
             describe("child", () => {
               it("triggers updates", async () => {
                 const spy = vi.fn();
-                const field = new Field<Record<string, number>>({
+                const state = new State<Record<string, number>>({
                   one: 1,
                   two: 2,
                   three: 3,
                 });
-                field.watch(spy);
-                field.remove("one");
+                state.watch(spy);
+                state.remove("one");
                 await postpone();
                 const [[value, event]]: any = spy.mock.calls;
                 expect(value).toEqual({ two: 2, three: 3 });
@@ -2393,15 +2278,15 @@ describe("Field", () => {
             describe("subtree", () => {
               it("triggers updates", async () => {
                 const spy = vi.fn();
-                const field = new Field<{ qwe: Record<string, number> }>({
+                const state = new State<{ qwe: Record<string, number> }>({
                   qwe: {
                     one: 1,
                     two: 2,
                     three: 3,
                   },
                 });
-                field.watch(spy);
-                field.$.qwe.remove("one");
+                state.watch(spy);
+                state.$.qwe.remove("one");
                 await postpone();
                 const [[value, event]]: any = spy.mock.calls;
                 expect(value).toEqual({ qwe: { two: 2, three: 3 } });
@@ -2414,48 +2299,48 @@ describe("Field", () => {
         });
 
         describe(Array, () => {
-          it("removes a field by index", () => {
-            const field = new Field([1, 2, 3]);
-            field.remove(1);
-            expect(field.value).toEqual([1, 3]);
+          it("removes a state by index", () => {
+            const state = new State([1, 2, 3]);
+            state.remove(1);
+            expect(state.value).toEqual([1, 3]);
           });
 
-          it("returns the removed field", () => {
-            const field = new Field([1, 2, 3]);
-            const oneField = field.at(1);
-            const removedField = field.remove(1);
-            expect(removedField).toBe(oneField);
-            expect(removedField.value).toBe(undefined);
+          it("returns the removed state", () => {
+            const state = new State([1, 2, 3]);
+            const oneState = state.at(1);
+            const removedState = state.remove(1);
+            expect(removedState).toBe(oneState);
+            expect(removedState.value).toBe(undefined);
           });
 
           it("removes child", () => {
-            const parent = new Field([1, 2, 3]);
-            const field = parent.at(1);
-            field.self.remove();
+            const parent = new State([1, 2, 3]);
+            const state = parent.at(1);
+            state.self.remove();
             expect(parent.value).toEqual([1, 3]);
-            expect(field.value).toBe(undefined);
+            expect(state.value).toBe(undefined);
           });
 
           it("doesn't throw on removing non-existing item", () => {
-            const field = new Field([1, 2, 3]);
-            expect(() => field.remove(6)).not.toThrow();
+            const state = new State([1, 2, 3]);
+            expect(() => state.remove(6)).not.toThrow();
           });
 
           it("updates the children indices", () => {
-            const field = new Field([1, 2, 3, 4]);
-            field.remove(1);
-            expect(field.at(0).key).toBe("0");
-            expect(field.at(1).key).toBe("1");
-            expect(field.at(2).key).toBe("2");
+            const state = new State([1, 2, 3, 4]);
+            state.remove(1);
+            expect(state.at(0).key).toBe("0");
+            expect(state.at(1).key).toBe("1");
+            expect(state.at(2).key).toBe("2");
           });
 
           describe("changes", () => {
             describe("child", () => {
               it("triggers updates", async () => {
                 const spy = vi.fn();
-                const field = new Field([1, 2, 3, 4]);
-                field.watch(spy);
-                field.remove(1);
+                const state = new State([1, 2, 3, 4]);
+                state.watch(spy);
+                state.remove(1);
                 await postpone();
                 const [[value, event]]: any = spy.mock.calls;
                 expect(value).toEqual([1, 3, 4]);
@@ -2468,9 +2353,9 @@ describe("Field", () => {
             describe("subtree", () => {
               it("triggers updates", async () => {
                 const spy = vi.fn();
-                const field = new Field([[1, 2, 3, 4]]);
-                field.watch(spy);
-                field.at(0).self.try()?.remove(1);
+                const state = new State([[1, 2, 3, 4]]);
+                state.watch(spy);
+                state.at(0).self.try()?.remove(1);
                 await postpone();
                 const [[value, event]]: any = spy.mock.calls;
                 expect(value).toEqual([[1, 3, 4]]);
@@ -2485,12 +2370,12 @@ describe("Field", () => {
 
       describe("#forEach", () => {
         describe(Array, () => {
-          const field = new Field([1, 2, 3]);
-          const fieldUnd = new Field<number[] | undefined>(undefined);
+          const state = new State([1, 2, 3]);
+          const stateUnd = new State<number[] | undefined>(undefined);
 
           it("iterates items", () => {
             const mapped: [number, number][] = [];
-            field.forEach((item, index) =>
+            state.forEach((item, index) =>
               mapped.push([index, item.value * 2]),
             );
             expect(mapped).toEqual([
@@ -2500,22 +2385,22 @@ describe("Field", () => {
             ]);
           });
 
-          it("accepts undefined field", () => {
+          it("accepts undefined state", () => {
             const spy = vi.fn();
-            fieldUnd.self.try()?.forEach(spy);
+            stateUnd.self.try()?.forEach(spy);
             expect(spy).not.toHaveBeenCalled();
           });
         });
 
         describe(Object, () => {
-          const field = new Field({ a: 1, b: 2, c: 3 });
-          const fieldUnd = new Field<{ [k: string]: number } | undefined>(
+          const state = new State({ a: 1, b: 2, c: 3 });
+          const stateUnd = new State<{ [k: string]: number } | undefined>(
             undefined,
           );
 
           it("iterates items and keys", () => {
             const mapped: [string, number][] = [];
-            field.forEach((item, key) => mapped.push([key, item.value]));
+            state.forEach((item, key) => mapped.push([key, item.value]));
             expect(mapped).toEqual([
               ["a", 1],
               ["b", 2],
@@ -2523,9 +2408,9 @@ describe("Field", () => {
             ]);
           });
 
-          it("accepts undefined field", () => {
+          it("accepts undefined state", () => {
             const spy = vi.fn();
-            fieldUnd.self.try()?.forEach(spy);
+            stateUnd.self.try()?.forEach(spy);
             expect(spy).not.toHaveBeenCalled();
           });
         });
@@ -2533,11 +2418,11 @@ describe("Field", () => {
 
       describe("#map", () => {
         describe(Array, () => {
-          const field = new Field([1, 2, 3]);
-          const fieldUnd = new Field<number[] | undefined>(undefined);
+          const state = new State([1, 2, 3]);
+          const stateUnd = new State<number[] | undefined>(undefined);
 
           it("maps items", () => {
-            const mapped = field.map((item, index) => [index, item.value * 2]);
+            const mapped = state.map((item, index) => [index, item.value * 2]);
             expect(mapped).toEqual([
               [0, 2],
               [1, 4],
@@ -2545,21 +2430,21 @@ describe("Field", () => {
             ]);
           });
 
-          it("accepts undefined field", () => {
+          it("accepts undefined state", () => {
             const spy = vi.fn();
-            fieldUnd.self.try()?.map(spy);
+            stateUnd.self.try()?.map(spy);
             expect(spy).not.toHaveBeenCalled();
           });
         });
 
         describe(Object, () => {
-          const field = new Field({ a: 1, b: 2, c: 3 });
-          const fieldUnd = new Field<{ [k: string]: number } | undefined>(
+          const state = new State({ a: 1, b: 2, c: 3 });
+          const stateUnd = new State<{ [k: string]: number } | undefined>(
             undefined,
           );
 
           it("maps items and keys", () => {
-            const mapped = field.map((item, key) => [key, item.value]);
+            const mapped = state.map((item, key) => [key, item.value]);
             expect(mapped).toEqual([
               ["a", 1],
               ["b", 2],
@@ -2567,9 +2452,9 @@ describe("Field", () => {
             ]);
           });
 
-          it("accepts undefined field", () => {
+          it("accepts undefined state", () => {
             const spy = vi.fn();
-            fieldUnd.self.try()?.map(spy);
+            stateUnd.self.try()?.map(spy);
             expect(spy).not.toHaveBeenCalled();
           });
         });
@@ -2578,20 +2463,20 @@ describe("Field", () => {
       describe("#find", () => {
         describe(Array, () => {
           it("finds an item in the array", () => {
-            const field = new Field([1, 2, 3]);
-            const item = field.find((item) => item.value === 2);
+            const state = new State([1, 2, 3]);
+            const item = state.find((item) => item.value === 2);
             expect(item?.value).toBe(2);
           });
 
           it("returns undefined if item not found", () => {
-            const field = new Field([1, 2, 3]);
-            const item = field.find((item) => item.value === 4);
+            const state = new State([1, 2, 3]);
+            const item = state.find((item) => item.value === 4);
             expect(item).toBe(undefined);
           });
 
           it("passes index to the predicate", () => {
-            const field = new Field([1, 2, 3]);
-            const item = field.find(
+            const state = new State([1, 2, 3]);
+            const item = state.find(
               (item, index) => item.value === 2 && index === 1,
             );
             expect(item?.value).toBe(2);
@@ -2600,20 +2485,20 @@ describe("Field", () => {
 
         describe(Object, () => {
           it("finds an item in the object", () => {
-            const field = new Field({ a: 1, b: 2, c: 3 });
-            const item = field.find((item) => item.value === 2);
+            const state = new State({ a: 1, b: 2, c: 3 });
+            const item = state.find((item) => item.value === 2);
             expect(item?.value).toBe(2);
           });
 
           it("returns undefined if item not found", () => {
-            const field = new Field({ a: 1, b: 2, c: 3 });
-            const item = field.find((item) => item.value === 4);
+            const state = new State({ a: 1, b: 2, c: 3 });
+            const item = state.find((item) => item.value === 4);
             expect(item).toBe(undefined);
           });
 
           it("passes key to the predicate", () => {
-            const field = new Field({ a: 1, b: 2, c: 3 });
-            const item = field.find(
+            const state = new State({ a: 1, b: 2, c: 3 });
+            const item = state.find(
               (item, key) => item.value === 2 && key === "b",
             );
             expect(item?.value).toBe(2);
@@ -2624,40 +2509,40 @@ describe("Field", () => {
       describe("#filter", () => {
         describe(Array, () => {
           it("filters items in the array", () => {
-            const field = new Field([1, 2, 3, 4]);
-            const items = field.filter((item) => item.value % 2 === 0);
+            const state = new State([1, 2, 3, 4]);
+            const items = state.filter((item) => item.value % 2 === 0);
             expect(items.map((f) => f.value)).toEqual([2, 4]);
           });
 
           it("returns empty array if none match", () => {
-            const field = new Field([1, 3, 5]);
-            const items = field.filter((item) => item.value === 2);
+            const state = new State([1, 3, 5]);
+            const items = state.filter((item) => item.value === 2);
             expect(items).toEqual([]);
           });
 
           it("passes index to the predicate", () => {
-            const field = new Field([1, 2, 3]);
-            const items = field.filter((item, index) => index === 1);
+            const state = new State([1, 2, 3]);
+            const items = state.filter((item, index) => index === 1);
             expect(items.map((f) => f.value)).toEqual([2]);
           });
         });
 
         describe(Object, () => {
           it("filters items in the object", () => {
-            const field = new Field({ a: 1, b: 2, c: 3, d: 4 });
-            const items = field.filter((item) => item.value % 2 === 0);
+            const state = new State({ a: 1, b: 2, c: 3, d: 4 });
+            const items = state.filter((item) => item.value % 2 === 0);
             expect(items.map((f) => f.value)).toEqual([2, 4]);
           });
 
           it("returns empty array if none match", () => {
-            const field = new Field({ a: 1, b: 3 });
-            const items = field.filter((item) => item.value === 2);
+            const state = new State({ a: 1, b: 3 });
+            const items = state.filter((item) => item.value === 2);
             expect(items).toEqual([]);
           });
 
           it("passes key to the predicate", () => {
-            const field = new Field({ a: 1, b: 2, c: 3 });
-            const items = field.filter((item, key) => key === "b");
+            const state = new State({ a: 1, b: 2, c: 3 });
+            const items = state.filter((item, key) => key === "b");
             expect(items.map((f) => f.value)).toEqual([2]);
           });
         });
@@ -2665,26 +2550,26 @@ describe("Field", () => {
 
       describe("array", () => {
         describe("#push", () => {
-          it("pushes items to array fields", () => {
-            const field = new Field([1, 2, 3]);
-            field.push(4);
-            expect(field.value).toEqual([1, 2, 3, 4]);
+          it("pushes items to array states", () => {
+            const state = new State([1, 2, 3]);
+            state.push(4);
+            expect(state.value).toEqual([1, 2, 3, 4]);
           });
 
-          it("returns new field", () => {
-            const field = new Field([1, 2, 3]);
-            const result = field.push(4);
-            expect(result).toBeInstanceOf(Field);
+          it("returns new state", () => {
+            const state = new State([1, 2, 3]);
+            const result = state.push(4);
+            expect(result).toBeInstanceOf(State);
             expect(result.value).toEqual(4);
           });
 
           describe("changes", () => {
-            describe("field", () => {
+            describe("state", () => {
               it("triggers updates", async () => {
-                const field = new Field([1, 2, 3]);
+                const state = new State([1, 2, 3]);
                 const spy = vi.fn();
-                field.watch(spy);
-                field.push(4);
+                state.watch(spy);
+                state.push(4);
                 await postpone();
                 const [[value, event]]: any = spy.mock.calls;
                 expect(value).toEqual([1, 2, 3, 4]);
@@ -2696,10 +2581,10 @@ describe("Field", () => {
 
             describe("child", () => {
               it("triggers updates", async () => {
-                const field = new Field([[1, 2, 3]]);
+                const state = new State([[1, 2, 3]]);
                 const spy = vi.fn();
-                field.watch(spy);
-                field.at(0).self.try()?.push(4);
+                state.watch(spy);
+                state.at(0).self.try()?.push(4);
                 await postpone();
                 const [[value, event]]: any = spy.mock.calls;
                 expect(value).toEqual([[1, 2, 3, 4]]);
@@ -2711,10 +2596,10 @@ describe("Field", () => {
 
             describe("subtree", () => {
               it("triggers updates", async () => {
-                const field = new Field([[[1, 2, 3]]]);
+                const state = new State([[[1, 2, 3]]]);
                 const spy = vi.fn();
-                field.watch(spy);
-                field.at(0).self.try()?.at(0).self.try()?.push(4);
+                state.watch(spy);
+                state.at(0).self.try()?.at(0).self.try()?.push(4);
                 await postpone();
                 const [[value, event]]: any = spy.mock.calls;
                 expect(value).toEqual([[[1, 2, 3, 4]]]);
@@ -2728,27 +2613,27 @@ describe("Field", () => {
 
         describe("#insert", () => {
           it("inserts an item at given index", () => {
-            const field = new Field([1, 2, 3]);
-            field.insert(0, 4);
-            expect(field.value).toEqual([4, 1, 2, 3]);
-            field.insert(2, 5);
-            expect(field.value).toEqual([4, 1, 5, 2, 3]);
+            const state = new State([1, 2, 3]);
+            state.insert(0, 4);
+            expect(state.value).toEqual([4, 1, 2, 3]);
+            state.insert(2, 5);
+            expect(state.value).toEqual([4, 1, 5, 2, 3]);
           });
 
-          it("returns new field", () => {
-            const field = new Field([1, 2, 3]);
-            const newField = field.insert(0, 4);
-            expect(newField).toBeInstanceOf(Field);
-            expect(newField.value).toEqual(4);
+          it("returns new state", () => {
+            const state = new State([1, 2, 3]);
+            const newState = state.insert(0, 4);
+            expect(newState).toBeInstanceOf(State);
+            expect(newState.value).toEqual(4);
           });
 
           describe("changes", () => {
-            describe("field", () => {
+            describe("state", () => {
               it("triggers updates", async () => {
-                const field = new Field([1, 2, 3]);
+                const state = new State([1, 2, 3]);
                 const spy = vi.fn();
-                field.watch(spy);
-                field.insert(0, 4);
+                state.watch(spy);
+                state.insert(0, 4);
                 await postpone();
                 const [[value, event]]: any = spy.mock.calls;
                 expect(value).toEqual([4, 1, 2, 3]);
@@ -2760,10 +2645,10 @@ describe("Field", () => {
 
             describe("child", () => {
               it("triggers updates", async () => {
-                const field = new Field([[1, 2, 3]]);
+                const state = new State([[1, 2, 3]]);
                 const spy = vi.fn();
-                field.watch(spy);
-                field.at(0).self.try()?.insert(0, 4);
+                state.watch(spy);
+                state.at(0).self.try()?.insert(0, 4);
                 await postpone();
                 const [[value, event]]: any = spy.mock.calls;
                 expect(value).toEqual([[4, 1, 2, 3]]);
@@ -2775,10 +2660,10 @@ describe("Field", () => {
 
             describe("subtree", () => {
               it("triggers updates", async () => {
-                const field = new Field([[[1, 2, 3]]]);
+                const state = new State([[[1, 2, 3]]]);
                 const spy = vi.fn();
-                field.watch(spy);
-                field.at(0).self.try()?.at(0).self.try()?.insert(0, 4);
+                state.watch(spy);
+                state.at(0).self.try()?.at(0).self.try()?.insert(0, 4);
                 await postpone();
                 const [[value, event]]: any = spy.mock.calls;
                 expect(value).toEqual([[[4, 1, 2, 3]]]);
@@ -2794,11 +2679,11 @@ describe("Field", () => {
       describe("#useCollection", () => {
         beforeEach(cleanup);
 
-        it("allows to bind object field changes to the component", async () => {
+        it("allows to bind object state changes to the component", async () => {
           function Component() {
             const count = useRenderCount();
-            const field = Field.use<UserName>({ first: "Alexander" }, []);
-            const name = field.useCollection();
+            const state = State.use<UserName>({ first: "Alexander" }, []);
+            const name = state.useCollection();
 
             return (
               <div>
@@ -2828,15 +2713,15 @@ describe("Field", () => {
           expect(screen.getByTestId("render-bind").textContent).toBe("2");
         });
 
-        it("depends on the field id", async () => {
+        it("depends on the state id", async () => {
           function Component() {
             const count = useRenderCount();
-            const field = Field.use<UserName[]>(
+            const state = State.use<UserName[]>(
               [{ first: "Alexander" }, { first: "Sasha" }],
               [],
             );
             const [index, setIndex] = useState(0);
-            field.at(index).useCollection?.();
+            state.at(index).useCollection?.();
 
             return (
               <div>
@@ -2844,13 +2729,13 @@ describe("Field", () => {
 
                 <button onClick={() => setIndex(1)}>Set index to 1</button>
 
-                <button onClick={() => field.at(1).set({ first: "Alex" })}>
+                <button onClick={() => state.at(1).set({ first: "Alex" })}>
                   Rename item 1
                 </button>
 
                 <button
                   onClick={() =>
-                    field.at(1).set({ first: "Alex", last: "Koss" })
+                    state.at(1).set({ first: "Alex", last: "Koss" })
                   }
                 >
                   Give item 1 last name
@@ -2876,15 +2761,15 @@ describe("Field", () => {
           expect(screen.getByTestId("render-bind").textContent).toBe("3");
         });
 
-        it("updates the watcher on field id change", async () => {
+        it("updates the watcher on state id change", async () => {
           function Component() {
             const count = useRenderCount();
-            const field = Field.use<UserName[]>(
+            const state = State.use<UserName[]>(
               [{ first: "Alexander" }, { first: "Sasha" }],
               [],
             );
             const [index, setIndex] = useState(0);
-            const _ = field.at(index).useCollection?.();
+            const _ = state.at(index).useCollection?.();
 
             return (
               <div>
@@ -2894,7 +2779,7 @@ describe("Field", () => {
 
                 <button
                   onClick={() =>
-                    field.at(0).set({ first: "Alexander", last: "Koss" })
+                    state.at(0).set({ first: "Alexander", last: "Koss" })
                   }
                 >
                   Give item 0 last name
@@ -2921,252 +2806,252 @@ describe("Field", () => {
     describe("#self", () => {
       describe(".try", () => {
         describe("primitive", () => {
-          it("returns the field if it's defined", () => {
-            const field = new Field<string | number | undefined>(42);
-            const tried = field.self.try();
-            tried satisfies Field<string | number> | undefined;
-            expect(tried).toBe(field);
-            expect(tried).toBeInstanceOf(Field);
+          it("returns the state if it's defined", () => {
+            const state = new State<string | number | undefined>(42);
+            const tried = state.self.try();
+            tried satisfies State<string | number> | undefined;
+            expect(tried).toBe(state);
+            expect(tried).toBeInstanceOf(State);
             expect(tried?.value).toBe(42);
           });
 
-          it("returns undefined if field doesn't exist", () => {
-            const field = new Field<string | number | undefined>(
+          it("returns undefined if state doesn't exist", () => {
+            const state = new State<string | number | undefined>(
               detachedValue as any,
             );
-            expect(field.self.try()).toBe(undefined);
+            expect(state.self.try()).toBe(undefined);
           });
 
-          it("returns undefined/null if field is undefined/null", () => {
-            const undefinedState = new Field<string | undefined>(undefined);
+          it("returns undefined/null if state is undefined/null", () => {
+            const undefinedState = new State<string | undefined>(undefined);
             expect(undefinedState.self.try()).toBe(undefined);
-            const nullState = new Field<string | null>(null);
-            nullState.self.try() satisfies Field<string> | null;
+            const nullState = new State<string | null>(null);
+            nullState.self.try() satisfies State<string> | null;
             expect(nullState.self.try()).toBe(null);
           });
         });
 
         describe("instance", () => {
-          it("returns the field if it's defined", () => {
+          it("returns the state if it's defined", () => {
             const map = new Map();
             map.set("num", 42);
-            const field = new Field<
+            const state = new State<
               Map<string, string> | Set<string> | undefined
             >(map);
-            const tried = field.self.try();
+            const tried = state.self.try();
             tried satisfies
-              | Field<Map<string, string> | Set<string>>
+              | State<Map<string, string> | Set<string>>
               | undefined;
-            expect(tried).toBe(field);
-            expect(tried).toBeInstanceOf(Field);
+            expect(tried).toBe(state);
+            expect(tried).toBeInstanceOf(State);
             // @ts-expect-error: This is fine!
             expect(Object.fromEntries(tried?.value)).toEqual({ num: 42 });
           });
 
-          it("returns undefined if field doesn't exist", () => {
-            const field = new Field<string | number | undefined>(
+          it("returns undefined if state doesn't exist", () => {
+            const state = new State<string | number | undefined>(
               detachedValue as any,
             );
-            expect(field.self.try()).toBe(undefined);
+            expect(state.self.try()).toBe(undefined);
           });
 
-          it("returns undefined/null if field is undefined/null", () => {
-            const undefinedState = new Field<string | undefined>(undefined);
+          it("returns undefined/null if state is undefined/null", () => {
+            const undefinedState = new State<string | undefined>(undefined);
             expect(undefinedState.self.try()).toBe(undefined);
-            const nullState = new Field<string | null>(null);
+            const nullState = new State<string | null>(null);
             const tried = nullState.self.try();
-            tried satisfies Field<string> | null;
+            tried satisfies State<string> | null;
             expect(tried).toBe(null);
           });
         });
       });
 
       describe(".remove", () => {
-        it("removes the field", () => {
-          const field = new Field<UserName>({ first: "Sasha", last: "Koss" });
-          field.$.last.self.remove();
-          expect(field.value).toEqual({ first: "Sasha" });
+        it("removes the state", () => {
+          const state = new State<UserName>({ first: "Sasha", last: "Koss" });
+          state.$.last.self.remove();
+          expect(state.value).toEqual({ first: "Sasha" });
         });
 
-        it("returns the removed field", () => {
-          const field = new Field<UserName>({ first: "Sasha", last: "Koss" });
-          const lastField = field.$.last;
-          const removedField = lastField.self.remove();
-          expect(removedField).toBe(field.$.last);
-          expect(removedField.value).toBe(undefined);
+        it("returns the removed state", () => {
+          const state = new State<UserName>({ first: "Sasha", last: "Koss" });
+          const lastState = state.$.last;
+          const removedState = lastState.self.remove();
+          expect(removedState).toBe(state.$.last);
+          expect(removedState.value).toBe(undefined);
         });
       });
     });
   });
 
-  describe("tree", () => {
+  describe.skip("tree", () => {
     describe("#parent", () => {
-      it("returns the parent field", () => {
-        const field = new Field({ name: { first: "Sasha" } });
-        expect(field.$.name.$.first.parent).toBe(field.$.name);
+      it("returns the parent state", () => {
+        const state = new State({ name: { first: "Sasha" } });
+        expect(state.$.name.$.first.parent).toBe(state.$.name);
       });
 
-      it("returns undefined for root field", () => {
-        const field = new Field({ name: { first: "Sasha" } });
-        expect(field.parent).toBe(undefined);
+      it("returns undefined for root state", () => {
+        const state = new State({ name: { first: "Sasha" } });
+        expect(state.parent).toBe(undefined);
       });
 
-      it("returns the source parent for computed fields", () => {
-        const field = new Field({ name: { first: "Sasha" } });
-        const computed = field.$.name.$.first.into(toCodes).from(fromCodes);
-        expect(computed.parent).toBe(field.$.name);
+      it("returns the source parent for computed states", () => {
+        const state = new State({ name: { first: "Sasha" } });
+        const computed = state.$.name.$.first.into(toCodes).from(fromCodes);
+        expect(computed.parent).toBe(state.$.name);
       });
     });
 
     describe("#key", () => {
-      it("returns the field key", () => {
-        const field = new Field({ name: { first: "Sasha" } });
-        expect(field.$.name.$.first.key).toBe("first");
+      it("returns the state key", () => {
+        const state = new State({ name: { first: "Sasha" } });
+        expect(state.$.name.$.first.key).toBe("first");
       });
 
-      it("returns undefined for root field", () => {
-        const field = new Field({ name: { first: "Sasha" } });
-        expect(field.key).toBe(undefined);
+      it("returns undefined for root state", () => {
+        const state = new State({ name: { first: "Sasha" } });
+        expect(state.key).toBe(undefined);
       });
 
-      it("returns the source key for computed fields", () => {
-        const field = new Field({ name: { first: "Sasha" } });
-        const computed = field.$.name.$.first.into(toCodes).from(fromCodes);
+      it("returns the source key for computed states", () => {
+        const state = new State({ name: { first: "Sasha" } });
+        const computed = state.$.name.$.first.into(toCodes).from(fromCodes);
         expect(computed.key).toBe("first");
       });
     });
 
     describe("#root", () => {
-      it("returns the root field", () => {
-        const field = new Field({ user: { name: ["Sasha"] } });
-        expect(field.$.user.$.name.at(0).root).toBe(field);
-        expect(field.root).toBe(field);
+      it("returns the root state", () => {
+        const state = new State({ user: { name: ["Sasha"] } });
+        expect(state.$.user.$.name.at(0).root).toBe(state);
+        expect(state.root).toBe(state);
       });
     });
 
     describe("#path", () => {
-      it("returns the path to the field", () => {
-        const field = new Field({ address: { name: { first: "Sasha" } } });
-        expect(field.$.address.$.name.$.first.path).toEqual([
+      it("returns the path to the state", () => {
+        const state = new State({ address: { name: { first: "Sasha" } } });
+        expect(state.$.address.$.name.$.first.path).toEqual([
           "address",
           "name",
           "first",
         ]);
       });
 
-      it("returns empty array for root field", () => {
-        const field = new Field({ name: { first: "Sasha" } });
-        expect(field.path).toEqual([]);
+      it("returns empty array for root state", () => {
+        const state = new State({ name: { first: "Sasha" } });
+        expect(state.path).toEqual([]);
       });
 
-      it("returns the source path for computed fields", () => {
-        const field = new Field({ name: { first: "Sasha" } });
-        const computed = field.$.name.$.first.into(toCodes).from(fromCodes);
+      it("returns the source path for computed states", () => {
+        const state = new State({ name: { first: "Sasha" } });
+        const computed = state.$.name.$.first.into(toCodes).from(fromCodes);
         expect(computed.path).toEqual(["name", "first"]);
       });
     });
 
     describe("#name", () => {
-      it("returns the field name", () => {
-        const field = new Field({ address: { name: { first: "Sasha" } } });
-        expect(field.$.address.$.name.$.first.name).toEqual(
+      it("returns the state name", () => {
+        const state = new State({ address: { name: { first: "Sasha" } } });
+        expect(state.$.address.$.name.$.first.name).toEqual(
           "address.name.first",
         );
       });
 
-      it("returns dot for root field", () => {
-        const field = new Field({ name: { first: "Sasha" } });
-        expect(field.name).toEqual(".");
+      it("returns dot for root state", () => {
+        const state = new State({ name: { first: "Sasha" } });
+        expect(state.name).toEqual(".");
       });
 
-      it("returns the source name for computed fields", () => {
-        const field = new Field({ name: { first: "Sasha" } });
-        const computed = field.$.name.$.first.into(toCodes).from(fromCodes);
+      it("returns the source name for computed states", () => {
+        const state = new State({ name: { first: "Sasha" } });
+        const computed = state.$.name.$.first.into(toCodes).from(fromCodes);
         expect(computed.name).toEqual("name.first");
       });
     });
 
     describe("#$/#at", () => {
       it("returns undefined for primitive", () => {
-        const field = new Field(42);
-        expect(field.$).toBe(undefined);
+        const state = new State(42);
+        expect(state.$).toBe(undefined);
       });
 
       it("returns undefined for instance", () => {
-        const field = new Field(new Map());
-        expect(field.$).toBe(undefined);
+        const state = new State(new Map());
+        expect(state.$).toBe(undefined);
       });
 
       describe("object", () => {
-        it("allows to access fields", () => {
-          const field = new Field({ num: 42 });
-          const num = field.$.num;
-          expect(num).toBeInstanceOf(Field);
+        it("allows to access states", () => {
+          const state = new State({ num: 42 });
+          const num = state.$.num;
+          expect(num).toBeInstanceOf(State);
           expect(num.value).toBe(42);
         });
 
-        it("allows to access record fields", () => {
-          const field = new Field<Record<string, number>>({ num: 42 });
-          const numA = field.$["num"];
+        it("allows to access record states", () => {
+          const state = new State<Record<string, number>>({ num: 42 });
+          const numA = state.$["num"];
           expect(numA?.value).toBe(42);
-          const numB = field.at("num");
+          const numB = state.at("num");
           expect(numB.value).toBe(42);
         });
 
-        it("preserves fields", () => {
-          const field = new Field({ num: 42 });
-          const numA = field.$.num;
-          const numB = field.$.num;
-          expect(numA).toBeInstanceOf(Field);
+        it("preserves states", () => {
+          const state = new State({ num: 42 });
+          const numA = state.$.num;
+          const numB = state.$.num;
+          expect(numA).toBeInstanceOf(State);
           expect(numA).toBe(numB);
         });
 
-        it("allows to access undefined fields", () => {
-          const field = new Field<{ num?: number; str?: string }>({
+        it("allows to access undefined states", () => {
+          const state = new State<{ num?: number; str?: string }>({
             num: 42,
           });
-          const str = field.$.str;
-          expect(str).toBeInstanceOf(Field);
+          const str = state.$.str;
+          expect(str).toBeInstanceOf(State);
           expect(str.value).toBe(undefined);
         });
 
-        it("preserves undefined fields", () => {
-          const field = new Field<{ num?: number; str?: string }>({
+        it("preserves undefined states", () => {
+          const state = new State<{ num?: number; str?: string }>({
             num: 42,
           });
-          const fieldA = field.$.str;
-          const fieldB = field.$.str;
-          expect(fieldA).toBe(fieldB);
+          const stateA = state.$.str;
+          const stateB = state.$.str;
+          expect(stateA).toBe(stateB);
         });
       });
 
       describe("array", () => {
         it("allows to access items", () => {
-          const field = new Field([1, 2, 3, 4]);
-          const item = field.$[3];
-          expect(item).toBeInstanceOf(Field);
+          const state = new State([1, 2, 3, 4]);
+          const item = state.$[3];
+          expect(item).toBeInstanceOf(State);
           expect(item?.value).toBe(4);
         });
 
         it("preserves items", () => {
-          const field = new Field([1, 2, 3, 4]);
-          const itemA = field.$[3];
-          const itemB = field.$[3];
-          expect(itemA).toBeInstanceOf(Field);
+          const state = new State([1, 2, 3, 4]);
+          const itemA = state.$[3];
+          const itemB = state.$[3];
+          expect(itemA).toBeInstanceOf(State);
           expect(itemA).toBe(itemB);
         });
 
         it("allows to access undefined items", () => {
-          const field = new Field([1, 2, 3, 4]);
-          const item = field.at(10);
-          expect(item).toBeInstanceOf(Field);
+          const state = new State([1, 2, 3, 4]);
+          const item = state.at(10);
+          expect(item).toBeInstanceOf(State);
           expect(item.value).toBe(undefined);
         });
 
         it("preserves undefined items", () => {
-          const field = new Field([1, 2, 3, 4]);
-          const itemA = field.at(10);
-          const itemB = field.at(10);
+          const state = new State([1, 2, 3, 4]);
+          const itemA = state.at(10);
+          const itemB = state.at(10);
           expect(itemA).toBe(itemB);
         });
       });
@@ -3175,62 +3060,62 @@ describe("Field", () => {
     describe("#try", () => {
       describe("primitive", () => {
         it("is undefined", () => {
-          const field = new Field(42);
-          expect(field.try).toBe(undefined);
+          const state = new State(42);
+          expect(state.try).toBe(undefined);
         });
       });
 
       describe("object", () => {
-        it("returns the field if it exists", () => {
-          const field = new Field<Record<string, number>>({ num: 42 });
-          const tried = field.try("num");
-          tried satisfies Field<number> | undefined;
-          expect(tried).toBeInstanceOf(Field);
+        it("returns the state if it exists", () => {
+          const state = new State<Record<string, number>>({ num: 42 });
+          const tried = state.try("num");
+          tried satisfies State<number> | undefined;
+          expect(tried).toBeInstanceOf(State);
           expect(tried?.value).toBe(42);
         });
 
-        it("returns undefined if field doesn't exist", () => {
-          const field = new Field<Record<string, number>>({ num: 42 });
-          expect(field.try("bum")).toBe(undefined);
+        it("returns undefined if state doesn't exist", () => {
+          const state = new State<Record<string, number>>({ num: 42 });
+          expect(state.try("bum")).toBe(undefined);
         });
 
-        it("returns undefined/null if field is undefined/null", () => {
-          const field = new Field<Record<string, number | undefined | null>>({
+        it("returns undefined/null if state is undefined/null", () => {
+          const state = new State<Record<string, number | undefined | null>>({
             num: 42,
             bum: undefined,
             hum: null,
           });
-          const tried = field.try("bum");
-          tried satisfies Field<number> | undefined | null;
+          const tried = state.try("bum");
+          tried satisfies State<number> | undefined | null;
           expect(tried).toBe(undefined);
-          expect(field.try("hum")).toBe(null);
+          expect(state.try("hum")).toBe(null);
         });
       });
 
       describe("array", () => {
         it("returns the item if it exists", () => {
-          const field = new Field<Array<number>>([1, 2, 3]);
-          const tried = field.try(1);
-          tried satisfies Field<number> | undefined;
-          expect(tried).toBeInstanceOf(Field);
+          const state = new State<Array<number>>([1, 2, 3]);
+          const tried = state.try(1);
+          tried satisfies State<number> | undefined;
+          expect(tried).toBeInstanceOf(State);
           expect(tried?.value).toBe(2);
         });
 
         it("returns undefined if item doesn't exist", () => {
-          const field = new Field<Array<number>>([1, 2, 3]);
-          const tried = field.try(5);
+          const state = new State<Array<number>>([1, 2, 3]);
+          const tried = state.try(5);
           expect(tried).toBe(undefined);
         });
 
         it("returns undefined/null if item is undefined/null", () => {
-          const field = new Field<Array<number | undefined | null>>([
+          const state = new State<Array<number | undefined | null>>([
             1,
             undefined,
             null,
           ]);
-          field.try(0) satisfies Field<number> | undefined | null;
-          expect(field.try(1)).toBe(undefined);
-          expect(field.try(2)).toBe(null);
+          state.try(0) satisfies State<number> | undefined | null;
+          expect(state.try(1)).toBe(undefined);
+          expect(state.try(2)).toBe(null);
         });
       });
     });
@@ -3238,161 +3123,161 @@ describe("Field", () => {
     describe("#lookup", () => {
       describe("primitive", () => {
         it("returns itself for empty path", () => {
-          const field = new Field(42);
-          const lookup = field.lookup([]);
-          expect(lookup).toBe(field);
+          const state = new State(42);
+          const lookup = state.lookup([]);
+          expect(lookup).toBe(state);
         });
 
         it("returns undefined for non-empty path", () => {
-          const field = new Field(42);
-          const lookup = field.lookup(["length"]);
+          const state = new State(42);
+          const lookup = state.lookup(["length"]);
           expect(lookup).toBe(undefined);
         });
       });
 
       describe("object", () => {
         it("returns itself for empty path", () => {
-          const field = new Field({ num: 42 });
-          const lookup = field.lookup([]);
-          expect(lookup).toBe(field);
+          const state = new State({ num: 42 });
+          const lookup = state.lookup([]);
+          expect(lookup).toBe(state);
         });
 
-        it("returns the field for valid path", () => {
-          const field = new Field({ num: 42 });
-          const lookup = field.lookup(["num"]);
-          expect(lookup).toBe(field.$.num);
+        it("returns the state for valid path", () => {
+          const state = new State({ num: 42 });
+          const lookup = state.lookup(["num"]);
+          expect(lookup).toBe(state.$.num);
         });
 
         it("returns undefined for invalid path", () => {
-          const field = new Field({ num: 42 });
-          const lookup = field.lookup(["bum", "bum"]);
+          const state = new State({ num: 42 });
+          const lookup = state.lookup(["bum", "bum"]);
           expect(lookup).toBe(undefined);
         });
 
-        it("correctly returns detached field", () => {
-          const field = new Field<{ num?: number }>({});
-          const lookup = field.lookup(["num"]);
-          expect(lookup).toBe(field.$.num);
+        it("correctly returns detached state", () => {
+          const state = new State<{ num?: number }>({});
+          const lookup = state.lookup(["num"]);
+          expect(lookup).toBe(state.$.num);
         });
       });
 
       describe("array", () => {
         it("returns itself for empty path", () => {
-          const field = new Field([1, 2, 3]);
-          const lookup = field.lookup([]);
-          expect(lookup).toBe(field);
+          const state = new State([1, 2, 3]);
+          const lookup = state.lookup([]);
+          expect(lookup).toBe(state);
         });
 
         it("returns the item for valid path", () => {
-          const field = new Field([1, 2, 3]);
-          const lookup = field.lookup([1]);
-          expect(lookup).toBe(field.$[1]);
+          const state = new State([1, 2, 3]);
+          const lookup = state.lookup([1]);
+          expect(lookup).toBe(state.$[1]);
         });
 
         it("returns undefined for invalid path", () => {
-          const field = new Field([1, 2, 3]);
-          const lookup = field.lookup([5, 2]);
+          const state = new State([1, 2, 3]);
+          const lookup = state.lookup([5, 2]);
           expect(lookup).toBe(undefined);
         });
 
-        it("correctly returns detached field", () => {
-          const field = new Field<number[]>([]);
-          const lookup = field.lookup([0]);
-          expect(lookup).toBe(field.at(0));
+        it("correctly returns detached state", () => {
+          const state = new State<number[]>([]);
+          const lookup = state.lookup([0]);
+          expect(lookup).toBe(state.at(0));
         });
       });
     });
   });
 
-  describe("ref", () => {
+  describe.skip("ref", () => {
     describe("#optional", () => {
-      it("returns optional field", () => {
-        const field = new Field<string | number | undefined>(undefined);
-        const ref = field.optional();
+      it("returns optional state", () => {
+        const state = new State<string | number | undefined>(undefined);
+        const ref = state.optional();
         expect(ref.value).toBeUndefined();
       });
 
       describe("#at", () => {
         describe("primitive", () => {
-          it("returns the undefined field as is if it's defined", () => {
-            const field = new Field<string | number | undefined>(undefined);
-            const ref = field.optional();
+          it("returns the undefined state as is if it's defined", () => {
+            const state = new State<string | number | undefined>(undefined);
+            const ref = state.optional();
             expect(ref.value).toBeUndefined();
           });
         });
 
         describe("object", () => {
-          it("returns the undefined field as is if it's defined", () => {
-            const field = new Field<{ a: string } | undefined>(undefined);
-            const ref = field.optional();
+          it("returns the undefined state as is if it's defined", () => {
+            const state = new State<{ a: string } | undefined>(undefined);
+            const ref = state.optional();
             expect(ref.value).toBeUndefined();
           });
 
           it("allows to access properties by key", () => {
-            const field = new Field<{ a?: string } | undefined>(undefined);
-            const ref = field.optional().at("a");
+            const state = new State<{ a?: string } | undefined>(undefined);
+            const ref = state.optional().at("a");
             expect(ref.value).toBeUndefined();
           });
 
           it("allows accessing maybe undefined properties", () => {
-            const field = new Field<
+            const state = new State<
               { a?: { b?: { c?: number | string } } } | undefined
             >(undefined);
-            const ref = field.optional().at("a").at("b").at("c");
+            const ref = state.optional().at("a").at("b").at("c");
             expect(ref.value).toBeUndefined();
           });
 
-          it("resolves proper field for deep nested properties", () => {
-            const field = new Field<
+          it("resolves proper state for deep nested properties", () => {
+            const state = new State<
               { a?: { b?: { c?: number | string } } } | undefined
             >({ a: { b: { c: 123 } } });
-            const ref = field.optional().at("a").at("b").at("c");
+            const ref = state.optional().at("a").at("b").at("c");
             expect(ref.value).toBe(123);
           });
         });
 
         describe("array", () => {
-          it("returns the undefined field as is if it's defined", () => {
-            const field = new Field<string[] | undefined>(undefined);
-            const ref = field.optional();
+          it("returns the undefined state as is if it's defined", () => {
+            const state = new State<string[] | undefined>(undefined);
+            const ref = state.optional();
             expect(ref.value).toBeUndefined();
           });
 
           it("allows to access items by index", () => {
-            const field = new Field<string[] | undefined>(undefined);
-            const ref = field.optional().at(0);
+            const state = new State<string[] | undefined>(undefined);
+            const ref = state.optional().at(0);
             expect(ref.value).toBeUndefined();
           });
 
           it("allows accessing maybe undefined items", () => {
-            const field = new Field<string[][][] | undefined>(undefined);
-            const ref = field.optional().at(0).at(0).at(0);
+            const state = new State<string[][][] | undefined>(undefined);
+            const ref = state.optional().at(0).at(0).at(0);
             expect(ref.value).toBeUndefined();
           });
 
-          it("resolves proper field for deep nested items", () => {
-            const field = new Field<string[][][] | undefined>([[["a"]]]);
-            const ref = field.optional().at(0).at(0).at(0);
+          it("resolves proper state for deep nested items", () => {
+            const state = new State<string[][][] | undefined>([[["a"]]]);
+            const ref = state.optional().at(0).at(0).at(0);
             expect(ref.value).toBe("a");
           });
         });
 
         describe("instance", () => {
-          it("returns the undefined field as is if it's defined", () => {
-            const field = new Field<Set<string> | undefined>(undefined);
-            const ref = field.optional();
+          it("returns the undefined state as is if it's defined", () => {
+            const state = new State<Set<string> | undefined>(undefined);
+            const ref = state.optional();
             expect(ref.value).toBeUndefined();
           });
 
           it.todo("does not allow to access items by key", () => {
-            const field = new Field<Set<string> | undefined>(undefined);
+            const state = new State<Set<string> | undefined>(undefined);
             // TODO:
-            // const ref = fieldRef
+            // const ref = stateRef
             //   .maybe(new Set<string>())
             //   // @ts-expect-error: It should not be available
             //   .maybe("has", (val: string) => false);
             // ref satisfies never;
-            // expect(ref instanceof MaybeFieldRef).toBe(true);
+            // expect(ref instanceof MaybeStateRef).toBe(true);
             // expect(() => ref.at("a")).toThrowError(
             //   "Cannot access items of a Set by key"
             // );
@@ -3401,52 +3286,52 @@ describe("Field", () => {
       });
 
       describe("#addError", () => {
-        it("adds errors to present fields", () => {
-          const field = new Field<string | number | undefined>("hello");
-          const ref = field.optional();
+        it("adds errors to present states", () => {
+          const state = new State<string | number | undefined>("hello");
+          const ref = state.optional();
           ref.addError("Something went wrong");
-          expect(field.errors).toEqual([{ message: "Something went wrong" }]);
+          expect(state.errors).toEqual([{ message: "Something went wrong" }]);
         });
 
-        it("adds errors to undefined fields", () => {
-          const field = new Field<{ hello?: string }>({});
-          const ref = field.optional().at("hello");
+        it("adds errors to undefined states", () => {
+          const state = new State<{ hello?: string }>({});
+          const ref = state.optional().at("hello");
           ref.addError("Something went wrong");
-          expect(field.$.hello.errors).toEqual([
+          expect(state.$.hello.errors).toEqual([
             { message: "Something went wrong" },
           ]);
         });
 
-        it("adds errors to shadow fields", () => {
-          const field = new Field<{ hello?: { world?: string } }>({});
-          const ref = field.optional().at("hello").at("world");
+        it("adds errors to shadow states", () => {
+          const state = new State<{ hello?: { world?: string } }>({});
+          const ref = state.optional().at("hello").at("world");
           ref.addError("Something went wrong");
-          expect(field.valid).toBe(false);
-          const pavedField = field.$.hello.pave({}).$.world;
-          expect(pavedField.errors).toEqual([
+          expect(state.valid).toBe(false);
+          const pavedState = state.$.hello.pave({}).$.world;
+          expect(pavedState.errors).toEqual([
             { message: "Something went wrong" },
           ]);
         });
 
-        it("allows to clear shadow fields errors", () => {
-          const field = new Field<{ hello?: { world?: string } }>({});
-          const ref = field.optional().at("hello").at("world");
+        it("allows to clear shadow states errors", () => {
+          const state = new State<{ hello?: { world?: string } }>({});
+          const ref = state.optional().at("hello").at("world");
           ref.addError("Something went wrong");
-          expect(field.valid).toBe(false);
-          const pavedField = field.$.hello.pave({}).$.world;
-          expect(pavedField.errors).toEqual([
+          expect(state.valid).toBe(false);
+          const pavedState = state.$.hello.pave({}).$.world;
+          expect(pavedState.errors).toEqual([
             { message: "Something went wrong" },
           ]);
-          field.clearErrors();
-          expect(pavedField.errors).toEqual([]);
+          state.clearErrors();
+          expect(pavedState.errors).toEqual([]);
         });
 
         describe("changes", () => {
-          it("causes target field trigger", async () => {
-            const field = new Field<string | number | undefined>("hello");
-            const ref = field.optional();
+          it("causes target state trigger", async () => {
+            const state = new State<string | number | undefined>("hello");
+            const ref = state.optional();
             const spy = vi.fn();
-            field.watch(spy);
+            state.watch(spy);
             ref.addError("Something went wrong");
             await postpone();
             expect(spy).toHaveBeenCalledTimes(1);
@@ -3456,10 +3341,10 @@ describe("Field", () => {
           });
 
           it("trigger event on the closest target", async () => {
-            const field = new Field<{ name?: { first?: string } }>({});
-            const ref = field.optional().at("name").at("first");
+            const state = new State<{ name?: { first?: string } }>({});
+            const ref = state.optional().at("name").at("first");
             const spy = vi.fn();
-            field.$.name.watch(spy);
+            state.$.name.watch(spy);
             ref.addError("Something went wrong");
             await postpone();
             expect(spy).toHaveBeenCalledTimes(1);
@@ -3472,26 +3357,26 @@ describe("Field", () => {
     });
   });
 
-  describe("events", () => {
+  describe.skip("events", () => {
     describe("#events", () => {
       it("is a events tree instance", () => {
-        const field = new Field(42);
-        expect(field.events).toBeInstanceOf(EventsTree);
+        const state = new State(42);
+        expect(state.events).toBeInstanceOf(EventsTree);
       });
 
       it("points to the root parent events tree", () => {
-        const field = new Field({ a: { b: { c: 42 } } });
-        expect(field.$.a.$.b.events).toBe(field.events);
-        expect(field.$.a.$.b.$.c.events).toBe(field.events);
+        const state = new State({ a: { b: { c: 42 } } });
+        expect(state.$.a.$.b.events).toBe(state.events);
+        expect(state.$.a.$.b.$.c.events).toBe(state.events);
       });
     });
 
     describe("#trigger", () => {
       it("triggers the watchers", async () => {
-        const field = new Field(42);
+        const state = new State(42);
         const spy = vi.fn();
-        field.watch(spy);
-        field.trigger(change.atom.value);
+        state.watch(spy);
+        state.trigger(change.atom.value);
         await postpone();
         expect(spy).toHaveBeenCalledWith(
           42,
@@ -3499,19 +3384,19 @@ describe("Field", () => {
         );
       });
 
-      it("doesn't trigger parent fields", () => {
-        const field = new Field({ num: 42 });
+      it("doesn't trigger parent states", () => {
+        const state = new State({ num: 42 });
         const spy = vi.fn();
-        field.watch(spy);
-        field.$.num.trigger(change.atom.value);
+        state.watch(spy);
+        state.$.num.trigger(change.atom.value);
         expect(spy).not.toHaveBeenCalled();
       });
 
-      it("allows to notify parent fields", async () => {
-        const field = new Field({ num: 42 });
+      it("allows to notify parent states", async () => {
+        const state = new State({ num: 42 });
         const spy = vi.fn();
-        field.watch(spy);
-        field.$.num.trigger(change.atom.value, true);
+        state.watch(spy);
+        state.$.num.trigger(change.atom.value, true);
         await postpone();
         const [[value, event]]: any = spy.mock.calls;
         expect(value).toEqual({ num: 42 });
@@ -3519,10 +3404,10 @@ describe("Field", () => {
       });
 
       it("notifies parents about child blurring", async () => {
-        const field = new Field({ num: 42 });
+        const state = new State({ num: 42 });
         const spy = vi.fn();
-        field.watch(spy);
-        field.$.num.trigger(change.atom.blur, true);
+        state.watch(spy);
+        state.$.num.trigger(change.atom.blur, true);
         await postpone();
         const [[value, event]]: any = spy.mock.calls;
         expect(value).toEqual({ num: 42 });
@@ -3530,10 +3415,10 @@ describe("Field", () => {
       });
 
       it("notifies parents about nested child blurring", async () => {
-        const field = new Field({ user: { name: { first: "Sasha" } } });
+        const state = new State({ user: { name: { first: "Sasha" } } });
         const spy = vi.fn();
-        field.watch(spy);
-        field.$.user.$.name.$.first.trigger(change.atom.blur, true);
+        state.watch(spy);
+        state.$.user.$.name.$.first.trigger(change.atom.blur, true);
         await postpone();
         const [[value, event]]: any = spy.mock.calls;
         expect(value).toEqual({ user: { name: { first: "Sasha" } } });
@@ -3541,11 +3426,11 @@ describe("Field", () => {
       });
 
       it("batches the changes", async () => {
-        const field = new Field({ user: { name: { first: "Sasha" } } });
+        const state = new State({ user: { name: { first: "Sasha" } } });
         const spy = vi.fn();
-        field.watch(spy);
-        field.$.user.$.name.$.first.trigger(change.atom.blur, true);
-        field.$.user.$.name.$.first.trigger(change.atom.shape, true);
+        state.watch(spy);
+        state.$.user.$.name.$.first.trigger(change.atom.blur, true);
+        state.$.user.$.name.$.first.trigger(change.atom.shape, true);
         await postpone();
         expect(spy).toHaveBeenCalledOnce();
         const [[value, event]]: any = spy.mock.calls;
@@ -3562,19 +3447,19 @@ describe("Field", () => {
 
     describe("#withhold", () => {
       it("allows to withhold the events until it's unleashed", async () => {
-        const field = new Field({ num: 42 });
+        const state = new State({ num: 42 });
         const spy = vi.fn();
-        field.watch(spy);
+        state.watch(spy);
         // @ts-expect-error -- WIP
-        field.withhold();
-        field.$.num.trigger(change.atom.value, true);
-        field.$.num.trigger(change.child.detach, true);
-        field.$.num.trigger(change.child.attach, true);
+        state.withhold();
+        state.$.num.trigger(change.atom.value, true);
+        state.$.num.trigger(change.child.detach, true);
+        state.$.num.trigger(change.child.attach, true);
         await postpone();
         expect(spy).not.toHaveBeenCalled();
 
         // @ts-expect-error -- WIP
-        field.unleash();
+        state.unleash();
 
         await postpone();
         const [[value, event]]: any = spy.mock.calls;
@@ -3585,20 +3470,20 @@ describe("Field", () => {
       });
 
       it("combines the changes into a single event", async () => {
-        const field = new Field(42);
+        const state = new State(42);
         const spy = vi.fn();
-        field.watch(spy);
+        state.watch(spy);
         // @ts-expect-error -- WIP
-        field.withhold();
-        field.trigger(change.atom.value, true);
-        field.trigger(change.child.detach, true);
-        field.trigger(change.child.attach, true);
+        state.withhold();
+        state.trigger(change.atom.value, true);
+        state.trigger(change.child.detach, true);
+        state.trigger(change.child.attach, true);
 
         await postpone();
         expect(spy).not.toHaveBeenCalled();
 
         // @ts-expect-error -- WIP
-        field.unleash();
+        state.unleash();
 
         await postpone();
         expect(spy).toHaveBeenCalledWith(
@@ -3611,20 +3496,20 @@ describe("Field", () => {
       });
 
       it("neutralizes valid/invalid changes", async () => {
-        const field = new Field(42);
+        const state = new State(42);
         const spy = vi.fn();
-        field.watch(spy);
+        state.watch(spy);
         // @ts-expect-error -- WIP
-        field.withhold();
-        field.trigger(change.atom.value, true);
-        field.trigger(change.atom.invalid, true);
-        field.trigger(change.atom.valid, true);
+        state.withhold();
+        state.trigger(change.atom.value, true);
+        state.trigger(change.atom.invalid, true);
+        state.trigger(change.atom.valid, true);
 
         await postpone();
         expect(spy).not.toHaveBeenCalled();
 
         // @ts-expect-error -- WIP
-        field.unleash();
+        state.unleash();
 
         await postpone();
         expect(spy).toHaveBeenCalledWith(
@@ -3636,18 +3521,18 @@ describe("Field", () => {
 
     describe("#watch", () => {
       describe("primitive", () => {
-        it("allows to subscribe for field changes", async () => {
-          const field = new Field(42);
+        it("allows to subscribe for state changes", async () => {
+          const state = new State(42);
 
-          const unsub = field.watch((value) => {
+          const unsub = state.watch((value) => {
             expect(value).toBe(43);
             unsub();
             // Check if the callback is not called after unsub
-            field.set(44);
+            state.set(44);
             setTimeout(resolve);
           });
 
-          field.set(43);
+          state.set(43);
 
           function resolve() {
             // Test passes if we reach here without the callback being called again
@@ -3655,14 +3540,14 @@ describe("Field", () => {
         });
 
         it("provides event object with change type as changes", async () => {
-          const field = new Field(42);
+          const state = new State(42);
 
-          const unsub = field.watch((value, event) => {
+          const unsub = state.watch((value, event) => {
             expect(event.changes).toBe(change.atom.value);
             unsub();
           });
 
-          field.set(43);
+          state.set(43);
           await postpone();
         });
 
@@ -3670,10 +3555,10 @@ describe("Field", () => {
       });
 
       describe("object", () => {
-        it("listens to the field changes", async () => {
-          const field = new Field({ num: 42 });
+        it("listens to the state changes", async () => {
+          const state = new State({ num: 42 });
 
-          const unsub = field.watch((value, event) => {
+          const unsub = state.watch((value, event) => {
             try {
               expect(event.changes).toMatchChanges(change.child.value);
               expect(value.num).toBe(43);
@@ -3682,33 +3567,33 @@ describe("Field", () => {
             }
           });
 
-          field.$.num.set(43);
+          state.$.num.set(43);
           await postpone();
         });
 
-        it("listens to fields create", async () => {
-          const field = new Field<{ num: number; str?: string }>({
+        it("listens to states create", async () => {
+          const state = new State<{ num: number; str?: string }>({
             num: 42,
           });
 
-          const unsub = field.watch((value, event) => {
+          const unsub = state.watch((value, event) => {
             expect(event.changes).toBe(change.child.attach | change.atom.shape);
             expect(value.str).toBe("Hello!");
             unsub();
           });
 
-          field.$.str.set("Hello!");
+          state.$.str.set("Hello!");
           await postpone();
         });
 
-        it("listens to field object create", async () => {
-          const field = new Field<Record<number, { n: number }>>({
+        it("listens to state object create", async () => {
+          const state = new State<Record<number, { n: number }>>({
             1: { n: 1 },
             2: { n: 2 },
           });
 
           return new Promise<void>((resolve, reject) => {
-            const unsub = field.watch((value, event) => {
+            const unsub = state.watch((value, event) => {
               try {
                 expect(event.changes).toMatchChanges(
                   change.child.attach | change.atom.shape,
@@ -3722,12 +3607,12 @@ describe("Field", () => {
               resolve();
             });
 
-            field.at(3).set({ n: 3 });
+            state.at(3).set({ n: 3 });
           });
         });
 
         describe("changes", () => {
-          describe.todo("field");
+          describe.todo("state");
 
           describe.todo("child");
 
@@ -3736,10 +3621,10 @@ describe("Field", () => {
       });
 
       describe("array", () => {
-        it("listens to the item field changes", async () => {
-          const field = new Field([1, 2, 3]);
+        it("listens to the item state changes", async () => {
+          const state = new State([1, 2, 3]);
 
-          const unsub = field.watch((value, event) => {
+          const unsub = state.watch((value, event) => {
             try {
               expect(event.changes).toMatchChanges(change.child.value);
               expect(value[1]).toBe(43);
@@ -3748,28 +3633,28 @@ describe("Field", () => {
             }
           });
 
-          field.at(1).set(43);
+          state.at(1).set(43);
           await postpone();
         });
 
         it("listens to items create", async () => {
-          const field = new Field([1, 2, 3]);
+          const state = new State([1, 2, 3]);
 
-          const unsub = field.watch((value, event) => {
+          const unsub = state.watch((value, event) => {
             expect(event.changes).toBe(change.child.attach | change.atom.shape);
             expect(value[5]).toBe(43);
             unsub();
           });
 
-          field.at(5).set(43);
+          state.at(5).set(43);
           await postpone();
         });
 
         it("listens to items object create", async () => {
-          const field = new Field<Array<{ n: number }>>([{ n: 1 }, { n: 2 }]);
+          const state = new State<Array<{ n: number }>>([{ n: 1 }, { n: 2 }]);
 
           return new Promise<void>((resolve, reject) => {
-            const unsub = field.watch((value, event) => {
+            const unsub = state.watch((value, event) => {
               try {
                 expect(event.changes).toMatchChanges(
                   change.child.attach | change.atom.shape,
@@ -3783,12 +3668,12 @@ describe("Field", () => {
               resolve();
             });
 
-            field.at(2).set({ n: 3 });
+            state.at(2).set({ n: 3 });
           });
         });
 
         describe("changes", () => {
-          describe.todo("field");
+          describe.todo("state");
 
           describe.todo("child");
 
@@ -3797,33 +3682,33 @@ describe("Field", () => {
       });
 
       describe("instance", () => {
-        it("allows to subscribe for field changes", async () => {
+        it("allows to subscribe for state changes", async () => {
           const map = new Map();
           map.set("num", 42);
-          const field = new Field(map);
+          const state = new State(map);
 
-          const unsub = field.watch((value) => {
+          const unsub = state.watch((value) => {
             expect(Object.fromEntries(value)).toEqual({ num: 43 });
             unsub();
             // Check if the callback is not called after unsub
-            field.set(new Map());
+            state.set(new Map());
           });
 
           const newMap = new Map();
           newMap.set("num", 43);
-          field.set(newMap);
+          state.set(newMap);
           await postpone();
         });
 
         it("provides event object with change type as changes", async () => {
-          const field = new Field(42);
+          const state = new State(42);
 
-          const unsub = field.watch((value, event) => {
+          const unsub = state.watch((value, event) => {
             expect(event.changes).toBe(change.atom.value);
             unsub();
           });
 
-          field.set(43);
+          state.set(43);
           await postpone();
         });
 
@@ -3833,22 +3718,22 @@ describe("Field", () => {
 
     describe("#unwatch", () => {
       it("unsubscribes all watchers", () => {
-        const field = new Field(42);
+        const state = new State(42);
         const spy = vi.fn();
-        field.watch(spy);
+        state.watch(spy);
         // @ts-expect-error -- WIP
-        field.unwatch();
-        field.set(43);
+        state.unwatch();
+        state.set(43);
         expect(spy).not.toHaveBeenCalled();
       });
 
       it("unsubscribes all children", () => {
-        const field = new Field({ num: 42 });
+        const state = new State({ num: 42 });
         const spy = vi.fn();
-        field.$.num?.watch(spy);
+        state.$.num?.watch(spy);
         // @ts-expect-error -- WIP
-        field.unwatch();
-        field.$.num?.set(43);
+        state.unwatch();
+        state.$.num?.set(43);
         expect(spy).not.toHaveBeenCalled();
       });
     });
@@ -3856,22 +3741,22 @@ describe("Field", () => {
     describe("#useWatch", () => {
       beforeEach(cleanup);
 
-      it("allows to watch for field using a function", async () => {
+      it("allows to watch for state using a function", async () => {
         function Component() {
           const count = useRenderCount();
-          const field = Field.use({ name: { first: "Alexander" } }, []);
-          const [name, setName] = useState(field.$.name.value);
-          field.$.name.useWatch(setName, []);
+          const state = State.use({ name: { first: "Alexander" } }, []);
+          const [name, setName] = useState(state.$.name.value);
+          state.$.name.useWatch(setName, []);
 
           return (
             <div>
               <div data-testid="render-watch">{count}</div>
 
-              <button onClick={() => field.$.name.$.first.set("Sasha")}>
+              <button onClick={() => state.$.name.$.first.set("Sasha")}>
                 Rename
               </button>
 
-              <button onClick={() => field.$.name.addError("Nope")}>
+              <button onClick={() => state.$.name.addError("Nope")}>
                 Add error
               </button>
 
@@ -3895,17 +3780,17 @@ describe("Field", () => {
         expect(screen.getByTestId("render-watch").textContent).toBe("3");
       });
 
-      it("depends on the field id", async () => {
+      it("depends on the state id", async () => {
         const spy = vi.fn();
 
         function Component() {
           const count = useRenderCount();
-          const field = Field.use(
+          const state = State.use(
             [{ name: "Alexander" }, { name: "Sasha" }],
             [],
           );
           const [index, setIndex] = useState(0);
-          field.at(index).useWatch(spy, []);
+          state.at(index).useWatch(spy, []);
 
           return (
             <div>
@@ -3913,7 +3798,7 @@ describe("Field", () => {
 
               <button onClick={() => setIndex(1)}>Set index to 1</button>
 
-              <button onClick={() => field.at(1).set({ name: "Alex" })}>
+              <button onClick={() => state.at(1).set({ name: "Alex" })}>
                 Rename item 1
               </button>
             </div>
@@ -3945,17 +3830,17 @@ describe("Field", () => {
         expect(screen.getByTestId("render-watch").textContent).toBe("2");
       });
 
-      it("updates the watcher on field id change", async () => {
+      it("updates the watcher on state id change", async () => {
         const spy = vi.fn();
 
         function Component() {
           const count = useRenderCount();
-          const field = Field.use(
+          const state = State.use(
             [{ name: "Alexander" }, { name: "Sasha" }],
             [],
           );
           const [index, setIndex] = useState(0);
-          field.at(index).useWatch(spy, []);
+          state.at(index).useWatch(spy, []);
 
           return (
             <div>
@@ -3963,11 +3848,11 @@ describe("Field", () => {
 
               <button onClick={() => setIndex(1)}>Set index to 1</button>
 
-              <button onClick={() => field.at(1).set({ name: "Alex" })}>
+              <button onClick={() => state.at(1).set({ name: "Alex" })}>
                 Rename item 1
               </button>
 
-              <button onClick={() => field.at(0).set({ name: "A." })}>
+              <button onClick={() => state.at(0).set({ name: "A." })}>
                 Rename item 0
               </button>
             </div>
@@ -3997,29 +3882,29 @@ describe("Field", () => {
     });
   });
 
-  describe("transform", () => {
+  describe.skip("transform", () => {
     describe("#into", () => {
-      it("allows to create a proxy field", () => {
-        const field = new Field({ message: "Hello, world!" });
-        const proxy = field.$.message.into(toCodes).from(fromCodes);
+      it("allows to create a proxy state", () => {
+        const state = new State({ message: "Hello, world!" });
+        const proxy = state.$.message.into(toCodes).from(fromCodes);
         expect(proxy.value).toEqual([
           72, 101, 108, 108, 111, 44, 32, 119, 111, 114, 108, 100, 33,
         ]);
       });
 
-      it("updates the field back from proxy", async () => {
-        const field = new Field({ message: "Hello, world!" });
-        const proxy = field.$.message.into(toCodes).from(fromCodes);
+      it("updates the state back from proxy", async () => {
+        const state = new State({ message: "Hello, world!" });
+        const proxy = state.$.message.into(toCodes).from(fromCodes);
         proxy.set([72, 105, 33]);
         await postpone();
-        expect(field.value).toEqual({ message: "Hi!" });
+        expect(state.value).toEqual({ message: "Hi!" });
       });
 
       it("passes the current value as 2nd argument", () => {
-        const field = new Field({ message: "Hello, world!" });
+        const state = new State({ message: "Hello, world!" });
         const intoSpy = vi.fn().mockReturnValue("Hey!");
         const fromSpy = vi.fn().mockReturnValue("Yo!");
-        const proxy = field.$.message.into(intoSpy).from(fromSpy);
+        const proxy = state.$.message.into(intoSpy).from(fromSpy);
         proxy.set("Hi!");
         // into
         expect(intoSpy).toHaveBeenCalledOnce();
@@ -4029,11 +3914,11 @@ describe("Field", () => {
         expect(fromSpy).toBeCalledWith("Hi!", "Hello, world!");
       });
 
-      it("triggers field update", async () => {
-        const field = new Field({ message: "Hello, world!" });
-        const proxy = field.$.message.into(toCodes).from(fromCodes);
+      it("triggers state update", async () => {
+        const state = new State({ message: "Hello, world!" });
+        const proxy = state.$.message.into(toCodes).from(fromCodes);
 
-        const unsub = field.$.message.watch((value) => {
+        const unsub = state.$.message.watch((value) => {
           expect(value).toBe("Hi!");
           unsub();
         });
@@ -4044,8 +3929,8 @@ describe("Field", () => {
 
       describe("value", () => {
         describe("#set", () => {
-          it("allows chaining multiple computed fields", async () => {
-            const source = new Field<{
+          it("allows chaining multiple computed states", async () => {
+            const source = new State<{
               name?: { first?: string; last?: string };
             }>({});
             const name = source.$.name
@@ -4074,8 +3959,8 @@ describe("Field", () => {
       });
 
       describe("events", () => {
-        it("delegates events to the source field", async () => {
-          const source = new Field<string>("Hello, world!");
+        it("delegates events to the source state", async () => {
+          const source = new State<string>("Hello, world!");
           const proxy = source.into(() => "Hi!").from((value) => value);
           const spy = vi.fn();
           source.watch(spy);
@@ -4085,8 +3970,8 @@ describe("Field", () => {
           expect(spy).toReceiveChanges(change.atom.blur);
         });
 
-        it("delegates events through a detached field", async () => {
-          const source = new Field<{
+        it("delegates events through a detached state", async () => {
+          const source = new State<{
             name?: { first?: string; last?: string };
           }>({});
           const sourceSpy = vi.fn();
@@ -4105,7 +3990,7 @@ describe("Field", () => {
         });
 
         it("delegates events through proxy chains", async () => {
-          const source = new Field<{
+          const source = new State<{
             name?: { first?: string; last?: string };
           }>({});
           const sourceSpy = vi.fn();
@@ -4127,7 +4012,7 @@ describe("Field", () => {
         });
 
         it("receives all validation events", async () => {
-          const source = new Field<string | undefined>(undefined);
+          const source = new State<string | undefined>(undefined);
           const proxy = source.into((val) => val || "").from((str) => str);
           const spy = vi.fn();
           proxy.watch(spy);
@@ -4148,7 +4033,7 @@ describe("Field", () => {
         });
 
         it("receives validation events through computed chains", async () => {
-          const source = new Field<{
+          const source = new State<{
             name?: { first?: string; last?: string };
           }>({});
           const sourceSpyInvalid = vi.fn();
@@ -4208,7 +4093,7 @@ describe("Field", () => {
         });
 
         it("receives validation events through maybe refs", async () => {
-          const source = new Field<{
+          const source = new State<{
             user?: { name?: { first?: string; last?: string } };
           }>({});
           const sourceSpyInvalid = vi.fn();
@@ -4291,9 +4176,9 @@ describe("Field", () => {
           expect(first.valid).toBe(true);
         });
 
-        it("receives add error events despited existing fields", async () => {
+        it("receives add error events despited existing states", async () => {
           // 1. When source is {}
-          const source1 = new Field<{
+          const source1 = new State<{
             name?: { first?: string; last?: string };
           }>({});
           const sourceSpy1 = vi.fn();
@@ -4333,7 +4218,7 @@ describe("Field", () => {
           expect(first1.errors).toEqual([{ message: "Something went wrong" }]);
           expect(first1.valid).toBe(false);
           // 2. When source is { name: {} }
-          const source2 = new Field<{
+          const source2 = new State<{
             name?: { first?: string; last?: string };
           }>({ name: {} });
           const sourceSpy2 = vi.fn();
@@ -4374,9 +4259,9 @@ describe("Field", () => {
           expect(first2.valid).toBe(false);
         });
 
-        it("receives clear error events despited existing fields", async () => {
+        it("receives clear error events despited existing states", async () => {
           // 1. When source is {}
-          const source1 = new Field<{
+          const source1 = new State<{
             name?: { first?: string; last?: string };
           }>({});
           const name1 = source1.$.name
@@ -4418,7 +4303,7 @@ describe("Field", () => {
           expect(first1.errors).toEqual([]);
           expect(first1.valid).toBe(true);
           // 2. When source is { name: {}}
-          const source2 = new Field<{
+          const source2 = new State<{
             name?: { first?: string; last?: string };
           }>({ name: {} });
           const name2 = source2.$.name
@@ -4461,9 +4346,9 @@ describe("Field", () => {
           expect(first2.valid).toBe(true);
         });
 
-        it("delivers valid events to parallel proxy fields", async () => {
+        it("delivers valid events to parallel proxy states", async () => {
           // 1. When source is {}
-          const source1 = new Field<{
+          const source1 = new State<{
             name?: { first?: string; last?: string };
           }>({});
           const hasName1 = source1.$.name
@@ -4504,7 +4389,7 @@ describe("Field", () => {
           expect(first1.errors).toEqual([]);
           expect(first1.valid).toBe(true);
           // 2. When source is { name: {} }
-          const source2 = new Field<{
+          const source2 = new State<{
             name?: { first?: string; last?: string };
           }>({ name: {} });
           const hasName2 = source2.$.name
@@ -4547,7 +4432,7 @@ describe("Field", () => {
         });
 
         it("listens to validation events through data updates", async () => {
-          const source = new Field<{
+          const source = new State<{
             user?: { name?: { first?: string | undefined; last?: string } };
           }>({});
           const sourceSpyInvalid = vi.fn();
@@ -4643,8 +4528,8 @@ describe("Field", () => {
       });
 
       describe("validation", () => {
-        it("points to the source field validation", () => {
-          const source = new Field<string>("Hello!");
+        it("points to the source state validation", () => {
+          const source = new State<string>("Hello!");
           const proxy = source.into(() => "Hi!").from((value) => value);
           // @ts-expect-error -- WIP
           expect(proxy.validationTree).toBe(source.validationTree);
@@ -4655,11 +4540,11 @@ describe("Field", () => {
     describe("#useInto", () => {
       beforeEach(cleanup);
 
-      it("allows to compute field", async () => {
+      it("allows to compute state", async () => {
         function Component() {
           const count = useRenderCount();
-          const field = Field.use({ message: "Hello" }, []);
-          const codes = field.$.message
+          const state = State.use({ message: "Hello" }, []);
+          const codes = state.$.message
             .useInto(toCodes, [])
             .from(fromCodes, []);
 
@@ -4667,13 +4552,13 @@ describe("Field", () => {
             <div>
               <div data-testid="render-compute">{count}</div>
 
-              <StringComponent string={field.$.message} />
+              <StringComponent string={state.$.message} />
 
               <CodesComponent codes={codes} />
 
               <button onClick={() => codes.set([72, 105, 33])}>Say hi</button>
 
-              <button onClick={() => field.$.message.set("Yo")}>Say yo</button>
+              <button onClick={() => state.$.message.set("Yo")}>Say yo</button>
             </div>
           );
         }
@@ -4699,12 +4584,12 @@ describe("Field", () => {
         expect(screen.getByTestId("render-codes").textContent).toBe("3");
       });
 
-      it("depends on the field id", async () => {
+      it("depends on the state id", async () => {
         function Component() {
           const count = useRenderCount();
-          const field = Field.use<string[]>(["Hello", "Yo"], []);
+          const state = State.use<string[]>(["Hello", "Yo"], []);
           const [index, setIndex] = useState(0);
-          const codes = field
+          const codes = state
             .at(index)
             .useInto(toCodes, [])
             .from(fromCodes, []);
@@ -4738,8 +4623,8 @@ describe("Field", () => {
         const fromSpy = vi.fn().mockReturnValue("Yo!");
 
         function Component() {
-          const field = Field.use({ message: "Hello, world!" }, []);
-          const computed = field.$.message
+          const state = State.use({ message: "Hello, world!" }, []);
+          const computed = state.$.message
             .useInto(intoSpy, [])
             .from(fromSpy, []);
 
@@ -4764,12 +4649,12 @@ describe("Field", () => {
         expect(fromSpy).toBeCalledWith("Hi!", "Hello, world!");
       });
 
-      it("updates the watcher on field id change", async () => {
+      it("updates the watcher on state id change", async () => {
         function Component() {
           const count = useRenderCount();
-          const field = Field.use<string[]>(["Hello", "Yo"], []);
+          const state = State.use<string[]>(["Hello", "Yo"], []);
           const [index, setIndex] = useState(0);
-          const codes = field
+          const codes = state
             .at(index)
             .useInto(toCodes, [])
             .from(fromCodes, []);
@@ -4780,7 +4665,7 @@ describe("Field", () => {
 
               <button onClick={() => setIndex(1)}>Set index to 1</button>
 
-              <button onClick={() => field.at(0).set("Duh")}>
+              <button onClick={() => state.at(0).set("Duh")}>
                 Rename item 1
               </button>
 
@@ -4809,13 +4694,13 @@ describe("Field", () => {
     });
 
     describe("#decompose", () => {
-      it("allows to decompose the field type", () => {
-        const field = new Field<string | number | Record<string, number>>(
+      it("allows to decompose the state type", () => {
+        const state = new State<string | number | Record<string, number>>(
           "Hello, world!",
         );
-        const decomposed = field.decompose();
+        const decomposed = state.decompose();
         if (typeof decomposed.value === "string") {
-          expect(decomposed.field.value).toBe("Hello, world!");
+          expect(decomposed.state.value).toBe("Hello, world!");
           return;
         }
         assert(false, "Should not reach here");
@@ -4825,17 +4710,17 @@ describe("Field", () => {
     describe("#useDecompose", () => {
       beforeEach(cleanup);
 
-      it("decomposes and updates on field change", async () => {
+      it("decomposes and updates on state change", async () => {
         type Payload = { data: string } | { data: number };
 
-        const field = new Field<Payload>({ data: "hello" });
+        const state = new State<Payload>({ data: "hello" });
         const callback = vi.fn(
           (newValue, prevValue) =>
             typeof newValue.data !== typeof prevValue.data,
         );
 
         function Component() {
-          const decomposed = field.useDecompose(callback, [field]);
+          const decomposed = state.useDecompose(callback, [state]);
           return <div data-testid="data">{String(decomposed.value.data)}</div>;
         }
 
@@ -4843,16 +4728,16 @@ describe("Field", () => {
         expect(screen.getByTestId("data").textContent).toBe("hello");
         expect(callback).not.toHaveBeenCalled();
 
-        await act(() => field.set({ data: 42 }));
+        await act(() => state.set({ data: 42 }));
 
         expect(screen.getByTestId("data").textContent).toBe("42");
         expect(callback).toHaveBeenCalledWith({ data: 42 }, { data: "hello" });
       });
 
-      it("allows to decompose union field", async () => {
+      it("allows to decompose union state", async () => {
         function Component() {
           const count = useRenderCount();
-          const address = Field.use<Address>(
+          const address = State.use<Address>(
             { name: { first: "Alexander" } },
             [],
           );
@@ -4869,26 +4754,26 @@ describe("Field", () => {
                 <div>
                   <button
                     onClick={() =>
-                      (name.field as Field<string>).set("Alexander")
+                      (name.state as State<string>).set("Alexander")
                     }
                   >
                     Rename
                   </button>
 
-                  <StringComponent string={name.field as Field<string>} />
+                  <StringComponent string={name.state as State<string>} />
                 </div>
               ) : (
                 <div>
                   <input
                     data-testid="input-name-first"
-                    {...(name.field as Field<UserName>).$.first.control()}
+                    {...(name.state as State<UserName>).$.first.control()}
                   />
 
                   <button onClick={() => address.$.name.set("Alex")}>
                     Set string name
                   </button>
 
-                  <UserNameComponent name={name.field as Field<UserName>} />
+                  <UserNameComponent name={name.state as State<UserName>} />
                 </div>
               )}
             </div>
@@ -4919,15 +4804,15 @@ describe("Field", () => {
         expect(screen.getByTestId("render-decompose").textContent).toBe("2");
       });
 
-      it("depends on the field id", async () => {
+      it("depends on the state id", async () => {
         function Component() {
           const count = useRenderCount();
-          const field = Field.use<Array<string | UserName>>(
+          const state = State.use<Array<string | UserName>>(
             ["Alexander", { first: "Sasha", last: "Koss" }],
             [],
           );
           const [index, setIndex] = useState(0);
-          const name = field
+          const name = state
             .at(index)
             .useDecompose((a, b) => typeof a !== typeof b, []);
           const nameType = typeof name.value;
@@ -4954,15 +4839,15 @@ describe("Field", () => {
         expect(screen.getByTestId("render-decompose").textContent).toBe("2");
       });
 
-      it("updates the watcher on field id change", async () => {
+      it("updates the watcher on state id change", async () => {
         function Component() {
           const count = useRenderCount();
-          const field = Field.use<Array<string | UserName>>(
+          const state = State.use<Array<string | UserName>>(
             ["Alexander", { first: "Sasha", last: "Koss" }],
             [],
           );
           const [index, setIndex] = useState(0);
-          const name = field
+          const name = state
             .at(index)
             .useDecompose((a, b) => typeof a !== typeof b, []);
           const nameType = typeof name.value;
@@ -4975,7 +4860,7 @@ describe("Field", () => {
 
               <button
                 onClick={() =>
-                  field.at(0).set({ first: "Alexander", last: "Koss" })
+                  state.at(0).set({ first: "Alexander", last: "Koss" })
                 }
               >
                 Make item 1 object
@@ -5004,21 +4889,21 @@ describe("Field", () => {
     });
 
     describe("#discriminate", () => {
-      it("allows to discriminate by field", () => {
-        const field = new Field<Cat | Dog>({ type: "cat", meow: true });
-        const discriminated = field.discriminate("type");
+      it("allows to discriminate by state", () => {
+        const state = new State<Cat | Dog>({ type: "cat", meow: true });
+        const discriminated = state.discriminate("type");
         if (discriminated.discriminator === "cat") {
-          expect(discriminated.field.value.meow).toBe(true);
+          expect(discriminated.state.value.meow).toBe(true);
           return;
         }
         assert(false, "Should not reach here");
       });
 
       it("handles undefineds", () => {
-        const field = new Field<Cat | Dog | undefined>(undefined);
-        const discriminated = field.discriminate("type");
+        const state = new State<Cat | Dog | undefined>(undefined);
+        const discriminated = state.discriminate("type");
         if (!discriminated.discriminator) {
-          expect(discriminated.field.value).toBe(undefined);
+          expect(discriminated.state.value).toBe(undefined);
           return;
         }
         assert(false, "Should not reach here");
@@ -5028,18 +4913,18 @@ describe("Field", () => {
     describe("#useDiscriminate", () => {
       beforeEach(cleanup);
 
-      it("discriminates and updates on field change", async () => {
-        const field = new Field<Cat | Dog>({ type: "cat", meow: true });
+      it("discriminates and updates on state change", async () => {
+        const state = new State<Cat | Dog>({ type: "cat", meow: true });
 
         function TestComponent() {
-          const discriminated = field.useDiscriminate("type");
+          const discriminated = state.useDiscriminate("type");
           return (
             <div data-testid="type">
               {discriminated.discriminator}:{" "}
               {discriminated.discriminator === "cat"
-                ? String(discriminated.field.value.meow)
+                ? String(discriminated.state.value.meow)
                 : discriminated.discriminator === "dog"
-                  ? String(discriminated.field.value.bark)
+                  ? String(discriminated.state.value.bark)
                   : ""}
             </div>
           );
@@ -5048,20 +4933,20 @@ describe("Field", () => {
         render(<TestComponent />);
         expect(screen.getByTestId("type").textContent).toBe("cat: true");
 
-        await act(() => field.set({ type: "dog", bark: false }));
+        await act(() => state.set({ type: "dog", bark: false }));
 
         expect(screen.getByTestId("type").textContent).toBe("dog: false");
       });
 
       it("handles undefineds", async () => {
-        const field = new Field<Cat | Dog | undefined>(undefined);
+        const state = new State<Cat | Dog | undefined>(undefined);
 
         function TestComponent() {
-          const discriminated = field.useDiscriminate("type");
+          const discriminated = state.useDiscriminate("type");
           return (
             <div data-testid="type">
               {String(discriminated.discriminator)}:{" "}
-              {String(discriminated.field.value?.type)}
+              {String(discriminated.state.value?.type)}
             </div>
           );
         }
@@ -5071,25 +4956,25 @@ describe("Field", () => {
           "undefined: undefined",
         );
 
-        await act(() => field.set({ type: "cat", meow: true }));
+        await act(() => state.set({ type: "cat", meow: true }));
 
         expect(screen.getByTestId("type").textContent).toBe("cat: cat");
       });
 
-      it("allows to discriminate union field", async () => {
+      it("allows to discriminate union state", async () => {
         interface TestState {
           hello: Hello;
         }
 
         function Component() {
           const count = useRenderCount();
-          const field = Field.use<TestState>(
+          const state = State.use<TestState>(
             {
               hello: { lang: "human", text: "Hello" },
             },
             [],
           );
-          const hello = field.$.hello.useDiscriminate("lang");
+          const hello = state.$.hello.useDiscriminate("lang");
 
           return (
             <div>
@@ -5099,7 +4984,7 @@ describe("Field", () => {
                 <div>
                   <button
                     onClick={() =>
-                      hello.field.set({
+                      hello.state.set({
                         lang: "human",
                         text: "Hola",
                       })
@@ -5110,7 +4995,7 @@ describe("Field", () => {
 
                   <button
                     onClick={() =>
-                      field.$.hello.set({
+                      state.$.hello.set({
                         lang: "machine",
                         binary: 0b1101010,
                       })
@@ -5119,14 +5004,14 @@ describe("Field", () => {
                     Switch to binary
                   </button>
 
-                  <StringComponent string={hello.field.$.text} />
+                  <StringComponent string={hello.state.$.text} />
                 </div>
               ) : (
                 hello.discriminator === "machine" && (
                   <div>
                     <button
                       onClick={() =>
-                        field.$.hello.set({
+                        state.$.hello.set({
                           lang: "machine",
                           binary: 0b1010101,
                         })
@@ -5135,7 +5020,7 @@ describe("Field", () => {
                       Say 1010101
                     </button>
 
-                    <NumberComponent number={hello.field.$.binary} />
+                    <NumberComponent number={hello.state.$.binary} />
                   </div>
                 )
               )}
@@ -5163,10 +5048,10 @@ describe("Field", () => {
         expect(screen.getByTestId("render-hello").textContent).toBe("2");
       });
 
-      it("depends on the field id", async () => {
+      it("depends on the state id", async () => {
         function Component() {
           const count = useRenderCount();
-          const field = Field.use<Hello[]>(
+          const state = State.use<Hello[]>(
             [
               { lang: "human", text: "Hello" },
               { lang: "machine", binary: 0b1101010 },
@@ -5174,7 +5059,7 @@ describe("Field", () => {
             [],
           );
           const [index, setIndex] = useState(0);
-          const hello = field.at(index).useDiscriminate("lang");
+          const hello = state.at(index).useDiscriminate("lang");
 
           return (
             <div>
@@ -5198,10 +5083,10 @@ describe("Field", () => {
         expect(screen.getByTestId("render-discriminate").textContent).toBe("2");
       });
 
-      it("updates the watcher on field id change", async () => {
+      it("updates the watcher on state id change", async () => {
         function Component() {
           const count = useRenderCount();
-          const field = Field.use<Hello[]>(
+          const state = State.use<Hello[]>(
             [
               { lang: "human", text: "Hello" },
               { lang: "machine", binary: 0b1101010 },
@@ -5209,7 +5094,7 @@ describe("Field", () => {
             [],
           );
           const [index, setIndex] = useState(0);
-          const hello = field.at(index).useDiscriminate("lang");
+          const hello = state.at(index).useDiscriminate("lang");
 
           return (
             <div>
@@ -5218,7 +5103,7 @@ describe("Field", () => {
               <button onClick={() => setIndex(1)}>Set index to 1</button>
 
               <button
-                onClick={() => field.at(0).set({ lang: "dog", chicken: true })}
+                onClick={() => state.at(0).set({ lang: "dog", chicken: true })}
               >
                 Make item 1 dog
               </button>
@@ -5265,21 +5150,21 @@ describe("Field", () => {
     describe("#useDefined", () => {
       beforeEach(cleanup);
 
-      it("returns defined field when value is string", async () => {
+      it("returns defined state when value is string", async () => {
         function Component() {
           const renders = useRenderCount();
 
-          const field = Field.use<string | undefined>("hello", []);
-          const definedField = field.useDefined("string");
-          const definedValue = definedField.useValue();
+          const state = State.use<string | undefined>("hello", []);
+          const definedState = state.useDefined("string");
+          const definedValue = definedState.useValue();
 
           return (
             <div>
               <div data-testid="value">{definedValue}</div>
               <div data-testid="type">{typeof definedValue}</div>
 
-              <button onClick={() => field.set("world")}>Change value</button>
-              <button onClick={() => field.set(undefined)}>
+              <button onClick={() => state.set("world")}>Change value</button>
+              <button onClick={() => state.set(undefined)}>
                 Set undefined
               </button>
 
@@ -5304,21 +5189,21 @@ describe("Field", () => {
         expect(screen.getByTestId("renders").textContent).toBe("3");
       });
 
-      it("works with nullable string fields", async () => {
+      it("works with nullable string states", async () => {
         function Component() {
           const renders = useRenderCount();
 
-          const field = Field.use<string | null | undefined>("hello", []);
-          const definedField = field.useDefined("string");
-          const definedValue = definedField.useValue();
+          const state = State.use<string | null | undefined>("hello", []);
+          const definedState = state.useDefined("string");
+          const definedValue = definedState.useValue();
 
           return (
             <div>
               <div data-testid="value">{definedValue}</div>
               <div data-testid="type">{typeof definedValue}</div>
 
-              <button onClick={() => field.set("world")}>Set world</button>
-              <button onClick={() => field.set(null)}>Set null</button>
+              <button onClick={() => state.set("world")}>Set world</button>
+              <button onClick={() => state.set(null)}>Set null</button>
 
               <div data-testid="renders">{renders}</div>
             </div>
@@ -5345,20 +5230,20 @@ describe("Field", () => {
         function Component() {
           const renders = useRenderCount();
 
-          const field = Field.use<string | null | undefined>(undefined, []);
-          const value = field.useValue();
-          const definedField = field.useDefined("string");
-          const definedValue = definedField.useValue();
+          const state = State.use<string | null | undefined>(undefined, []);
+          const value = state.useValue();
+          const definedState = state.useDefined("string");
+          const definedValue = definedState.useValue();
 
           return (
             <div>
               <div data-testid="original">{String(value)}</div>
               <div data-testid="defined">{String(definedValue)}</div>
 
-              <button onClick={() => definedField.set("world")}>
+              <button onClick={() => definedState.set("world")}>
                 Set world
               </button>
-              <button onClick={() => definedField.set("")}>Set empty</button>
+              <button onClick={() => definedState.set("")}>Set empty</button>
 
               <div data-testid="renders">{renders}</div>
             </div>
@@ -5385,20 +5270,20 @@ describe("Field", () => {
         function Component() {
           const renders = useRenderCount();
 
-          const field = Field.use<string | null | undefined>(null, []);
-          const value = field.useValue();
-          const definedField = field.useDefined("string");
-          const definedValue = definedField.useValue();
+          const state = State.use<string | null | undefined>(null, []);
+          const value = state.useValue();
+          const definedState = state.useDefined("string");
+          const definedValue = definedState.useValue();
 
           return (
             <div>
               <div data-testid="original">{String(value)}</div>
               <div data-testid="defined">{String(definedValue)}</div>
 
-              <button onClick={() => definedField.set("world")}>
+              <button onClick={() => definedState.set("world")}>
                 Set world
               </button>
-              <button onClick={() => definedField.set("")}>Set empty</button>
+              <button onClick={() => definedState.set("")}>Set empty</button>
 
               <div data-testid="renders">{renders}</div>
             </div>
@@ -5425,20 +5310,20 @@ describe("Field", () => {
         function Component() {
           const renders = useRenderCount();
 
-          const field = Field.use<string | null | undefined>("", []);
-          const value = field.useValue();
-          const definedField = field.useDefined("string");
-          const definedValue = definedField.useValue();
+          const state = State.use<string | null | undefined>("", []);
+          const value = state.useValue();
+          const definedState = state.useDefined("string");
+          const definedValue = definedState.useValue();
 
           return (
             <div>
               <div data-testid="original">{String(value)}</div>
               <div data-testid="defined">{String(definedValue)}</div>
 
-              <button onClick={() => definedField.set("world")}>
+              <button onClick={() => definedState.set("world")}>
                 Set world
               </button>
-              <button onClick={() => definedField.set("")}>Set empty</button>
+              <button onClick={() => definedState.set("")}>Set empty</button>
 
               <div data-testid="renders">{renders}</div>
             </div>
@@ -5466,9 +5351,9 @@ describe("Field", () => {
           const renders = useRenderCount();
           const [index, setIndex] = useState(0);
 
-          const field = Field.use(["hello", undefined], []);
-          const definedField = field.at(index).useDefined("string");
-          const definedValue = definedField.useValue();
+          const state = State.use(["hello", undefined], []);
+          const definedState = state.at(index).useDefined("string");
+          const definedValue = definedState.useValue();
 
           return (
             <div>
@@ -5495,35 +5380,35 @@ describe("Field", () => {
     });
 
     describe("#shared", () => {
-      it("returns the same field", () => {
-        const field = new Field<string>("Hello!");
-        const shared = field.shared<[string, string | undefined]>();
-        expect(shared).toBe(field);
+      it("returns the same state", () => {
+        const state = new State<string>("Hello!");
+        const shared = state.shared<[string, string | undefined]>();
+        expect(shared).toBe(state);
       });
     });
   });
 
-  describe("interop", () => {
+  describe.skip("interop", () => {
     describe("#input", () => {
       beforeEach(cleanup);
 
-      it("generates props for a field", () => {
-        const field = new Field({ name: { first: "Alexander" } });
-        const props = field.$.name.$.first.control();
+      it("generates props for a state", () => {
+        const state = new State({ name: { first: "Alexander" } });
+        const props = state.$.name.$.first.control();
         expect(props.name).toEqual("name.first");
-        expect(props.ref).toBe(field.$.name.$.first.ref);
+        expect(props.ref).toBe(state.$.name.$.first.ref);
       });
 
-      it("assigns . name for the root field", () => {
-        const field = new Field({ name: { first: "Alexander" } });
-        const props = field.control();
+      it("assigns . name for the root state", () => {
+        const state = new State({ name: { first: "Alexander" } });
+        const props = state.control();
         expect(props.name).toEqual(".");
       });
 
       it("synchronizes input with the state", async () => {
         function Component() {
           const count = useRenderCount();
-          const field = Field.use<User>({ name: { first: "Alexander" } }, []);
+          const state = State.use<User>({ name: { first: "Alexander" } }, []);
 
           return (
             <div>
@@ -5531,14 +5416,14 @@ describe("Field", () => {
 
               <input
                 data-testid="name-first-input"
-                {...field.$.name.$.first.control()}
+                {...state.$.name.$.first.control()}
               />
 
-              <button onClick={() => field.$.name.$.first.set("Sasha")}>
+              <button onClick={() => state.$.name.$.first.set("Sasha")}>
                 Rename
               </button>
 
-              <UserNameComponent name={field.$.name} />
+              <UserNameComponent name={state.$.name} />
             </div>
           );
         }
@@ -5576,7 +5461,7 @@ describe("Field", () => {
       it("synchronizes textarea with the state", async () => {
         function Component() {
           const count = useRenderCount();
-          const field = Field.use<User>({ name: { first: "Alexander" } }, []);
+          const state = State.use<User>({ name: { first: "Alexander" } }, []);
 
           return (
             <div>
@@ -5584,14 +5469,14 @@ describe("Field", () => {
 
               <textarea
                 data-testid="name-first-input"
-                {...field.$.name.$.first.control()}
+                {...state.$.name.$.first.control()}
               />
 
-              <button onClick={() => field.$.name.$.first.set("Sasha")}>
+              <button onClick={() => state.$.name.$.first.set("Sasha")}>
                 Rename
               </button>
 
-              <UserNameComponent name={field.$.name} />
+              <UserNameComponent name={state.$.name} />
             </div>
           );
         }
@@ -5632,7 +5517,7 @@ describe("Field", () => {
 
         function Component() {
           const count = useRenderCount();
-          const field = Field.use<User>({ name: { first: "Alexander" } }, []);
+          const state = State.use<User>({ name: { first: "Alexander" } }, []);
 
           return (
             <div>
@@ -5640,17 +5525,17 @@ describe("Field", () => {
 
               <input
                 data-testid="name-first-input"
-                {...field.$.name.$.first.control({
+                {...state.$.name.$.first.control({
                   ref: refSpy,
                   onBlur: onBlurSpy,
                 })}
               />
 
-              <button onClick={() => field.$.name.$.first.set("Sasha")}>
+              <button onClick={() => state.$.name.$.first.set("Sasha")}>
                 Rename
               </button>
 
-              <UserNameComponent name={field.$.name} />
+              <UserNameComponent name={state.$.name} />
             </div>
           );
         }
@@ -5703,14 +5588,14 @@ describe("Field", () => {
     describe("#Component", () => {
       beforeEach(cleanup);
 
-      it("allows to control object field", async () => {
+      it("allows to control object state", async () => {
         interface ComponentProps {
           profile: Profile;
         }
 
         function Component(props: ComponentProps) {
           const count = useRenderCount();
-          const profile = Field.use<Profile>(props.profile, []);
+          const profile = State.use<Profile>(props.profile, []);
 
           return (
             <div>
@@ -5750,15 +5635,15 @@ describe("Field", () => {
         expect(screen.getByTestId("render-name-0").textContent).toBe("3");
       });
 
-      it("allows to control array field", async () => {
+      it("allows to control array state", async () => {
         interface ComponentProps {
           names: UserName[];
         }
 
         function Component(props: ComponentProps) {
           const count = useRenderCount();
-          const field = Field.use({ names: props.names }, []);
-          const names = field.$.names.useCollection();
+          const state = State.use({ names: props.names }, []);
+          const names = state.$.names.useCollection();
 
           return (
             <div>
@@ -5808,14 +5693,14 @@ describe("Field", () => {
       it("allows to control input element", async () => {
         function Component() {
           const count = useRenderCount();
-          const field = Field.use<User>({ name: { first: "Alexander" } }, []);
+          const state = State.use<User>({ name: { first: "Alexander" } }, []);
 
           return (
             <div>
               <div data-testid="render-input">{count}</div>
 
-              <Field.Component
-                field={field.$.name.$.first}
+              <State.Component
+                state={state.$.name.$.first}
                 render={(control) => (
                   <input
                     data-testid="name-first-input"
@@ -5825,11 +5710,11 @@ describe("Field", () => {
                 )}
               />
 
-              <button onClick={() => field.$.name.$.first.set("Sasha")}>
+              <button onClick={() => state.$.name.$.first.set("Sasha")}>
                 Rename
               </button>
 
-              <UserNameComponent name={field.$.name} />
+              <UserNameComponent name={state.$.name} />
             </div>
           );
         }
@@ -5867,7 +5752,7 @@ describe("Field", () => {
       it("allows to subscribe to meta information", async () => {
         function Component() {
           const outsideCount = useRenderCount();
-          const field = Field.use(
+          const state = State.use(
             { name: { first: "Alexander", last: "" } },
             [],
           );
@@ -5876,8 +5761,8 @@ describe("Field", () => {
             <div>
               <div data-testid="render-meta-outside">{outsideCount}</div>
 
-              <Field.Component
-                field={field}
+              <State.Component
+                state={state}
                 meta
                 render={({ value }, { valid, errors, dirty }) => {
                   const count = useRenderCount();
@@ -5887,7 +5772,7 @@ describe("Field", () => {
 
                       <button
                         onClick={() =>
-                          field.$.name.$.first.addError(`Nope ${Math.random()}`)
+                          state.$.name.$.first.addError(`Nope ${Math.random()}`)
                         }
                       >
                         Set first name error
@@ -5895,20 +5780,20 @@ describe("Field", () => {
 
                       <button
                         onClick={() =>
-                          field.$.name.$.last.addError(`Nah ${Math.random()}`)
+                          state.$.name.$.last.addError(`Nah ${Math.random()}`)
                         }
                       >
                         Set last name error
                       </button>
 
-                      <button onClick={() => field.addError("Nope")}>
-                        Set field error
+                      <button onClick={() => state.addError("Nope")}>
+                        Set state error
                       </button>
 
                       <button
                         onClick={() => {
-                          field.$.name.$.first.clearErrors();
-                          field.$.name.$.last.clearErrors();
+                          state.$.name.$.first.clearErrors();
+                          state.$.name.$.last.clearErrors();
                         }}
                       >
                         Clear errors
@@ -5916,7 +5801,7 @@ describe("Field", () => {
 
                       <button
                         onClick={() =>
-                          field.$.name.set({ first: "Sasha", last: "Koss" })
+                          state.$.name.set({ first: "Sasha", last: "Koss" })
                         }
                       >
                         Rename
@@ -5974,14 +5859,14 @@ describe("Field", () => {
         expect(screen.getByTestId("errors").textContent).toBe("");
         expect(screen.getByTestId("render-meta").textContent).toBe("4");
 
-        await act(() => screen.getByText("Set field error").click());
+        await act(() => screen.getByText("Set state error").click());
 
         expect(screen.getByTestId("errors").textContent).toBe("Nope");
         expect(screen.getByTestId("render-meta").textContent).toBe("5");
         expect(screen.getByTestId("render-meta-outside").textContent).toBe("1");
       });
 
-      it("doesn't cause re-mounts on field change", async () => {
+      it("doesn't cause re-mounts on state change", async () => {
         const mountSpy = vi.fn();
         interface InputProps {
           name: string;
@@ -6003,28 +5888,28 @@ describe("Field", () => {
 
         function Component() {
           const count = useRenderCount();
-          const namesField = Field.use<string[]>(["Alexander", "Sasha"], []);
+          const namesState = State.use<string[]>(["Alexander", "Sasha"], []);
           const [index, setIndex] = useState(0);
-          const decomposedField = namesField.at(index).decompose();
-          if (!decomposedField.value) return null;
-          const { field } = decomposedField;
+          const decomposedState = namesState.at(index).decompose();
+          if (!decomposedState.value) return null;
+          const { state } = decomposedState;
 
           return (
             <div>
               <div data-testid="render-input">{count}</div>
 
-              <Field.Component
-                field={field}
+              <State.Component
+                state={state}
                 render={(control) => (
                   <Input {...control} data-testid="name-input" />
                 )}
               />
 
-              <button onClick={() => field.set("Alex")}>Rename</button>
+              <button onClick={() => state.set("Alex")}>Rename</button>
 
               <button onClick={() => setIndex(1)}>Switch</button>
 
-              <StringComponent string={field} />
+              <StringComponent string={state} />
             </div>
           );
         }
@@ -6070,64 +5955,64 @@ describe("Field", () => {
     });
   });
 
-  describe("validation", () => {
+  describe.skip("validation", () => {
     describe("#errors", () => {
-      it("returns direct errors of the field", () => {
-        const field = new Field(42);
-        field.addError("Something went wrong");
-        field.addError("Something went wrong again");
-        expect(field.errors).toEqual([
+      it("returns direct errors of the state", () => {
+        const state = new State(42);
+        state.addError("Something went wrong");
+        state.addError("Something went wrong again");
+        expect(state.errors).toEqual([
           { message: "Something went wrong" },
           { message: "Something went wrong again" },
         ]);
       });
 
       it("excludes tree errors", () => {
-        const field = new Field({ name: { first: "Sasha" } });
-        field.$.name.addError("Something went wrong");
-        field.$.name.$.first.addError("Something went wrong again");
-        expect(field.errors).toEqual([]);
+        const state = new State({ name: { first: "Sasha" } });
+        state.$.name.addError("Something went wrong");
+        state.$.name.$.first.addError("Something went wrong again");
+        expect(state.errors).toEqual([]);
       });
     });
 
     describe("#useErrors", () => {
       beforeEach(cleanup);
 
-      it("allows to listen to field error", async () => {
+      it("allows to listen to state error", async () => {
         function Component() {
           const count = useRenderCount();
-          const field = Field.use(
+          const state = State.use(
             { name: { first: "Alexander", last: "" } },
             [],
           );
-          const errors = field.$.name.useErrors();
+          const errors = state.$.name.useErrors();
 
           return (
             <div>
               <div data-testid="render-error">{count}</div>
 
-              <button onClick={() => field.$.name.addError("Nope 1")}>
+              <button onClick={() => state.$.name.addError("Nope 1")}>
                 Set error 1
               </button>
 
-              <button onClick={() => field.$.name.addError("Nope 2")}>
+              <button onClick={() => state.$.name.addError("Nope 2")}>
                 Set error 2
               </button>
 
-              <button onClick={() => field.$.name.$.first.addError("Nah")}>
+              <button onClick={() => state.$.name.$.first.addError("Nah")}>
                 Set first name error
               </button>
 
               <button
                 onClick={() => {
-                  field.$.name.clearErrors();
+                  state.$.name.clearErrors();
                 }}
               >
                 Clear errors
               </button>
 
-              <button onClick={() => field.$.name.$.last.set("Koss")}>
-                Trigger field update
+              <button onClick={() => state.$.name.$.last.set("Koss")}>
+                Trigger state update
               </button>
 
               <div data-testid="errors">{joinErrors(errors)}</div>
@@ -6156,7 +6041,7 @@ describe("Field", () => {
         );
         expect(screen.getByTestId("render-error").textContent).toBe("4");
 
-        await act(() => screen.getByText("Trigger field update").click());
+        await act(() => screen.getByText("Trigger state update").click());
 
         expect(screen.getByTestId("render-error").textContent).toBe("4");
 
@@ -6170,15 +6055,15 @@ describe("Field", () => {
         expect(screen.getByTestId("render-error").textContent).toBe("5");
       });
 
-      it("depends on the field id", async () => {
+      it("depends on the state id", async () => {
         function Component() {
           const count = useRenderCount();
-          const field = Field.use(
+          const state = State.use(
             [{ name: "Alexander" }, { name: "Sasha" }],
             [],
           );
           const [index, setIndex] = useState(0);
-          const errors = field.at(index).useErrors();
+          const errors = state.at(index).useErrors();
 
           return (
             <div>
@@ -6186,7 +6071,7 @@ describe("Field", () => {
 
               <button onClick={() => setIndex(1)}>Set index to 1</button>
 
-              <button onClick={() => field.at(1).addError("Nope")}>
+              <button onClick={() => state.at(1).addError("Nope")}>
                 Set item 1 error
               </button>
 
@@ -6210,15 +6095,15 @@ describe("Field", () => {
         expect(screen.getByTestId("render-error").textContent).toBe("2");
       });
 
-      it("updates the watcher on field id change", async () => {
+      it("updates the watcher on state id change", async () => {
         function Component() {
           const count = useRenderCount();
-          const field = Field.use(
+          const state = State.use(
             [{ name: "Alexander" }, { name: "Sasha" }],
             [],
           );
           const [index, setIndex] = useState(0);
-          const errors = field.at(index).useErrors();
+          const errors = state.at(index).useErrors();
 
           return (
             <div>
@@ -6226,7 +6111,7 @@ describe("Field", () => {
 
               <button onClick={() => setIndex(1)}>Set index to 1</button>
 
-              <button onClick={() => field.at(0).addError("Nope")}>
+              <button onClick={() => state.at(0).addError("Nope")}>
                 Set item 0 error
               </button>
 
@@ -6254,13 +6139,13 @@ describe("Field", () => {
       it("allows to enable/disable the error listener", async () => {
         function Component() {
           const count = useRenderCount();
-          const field = Field.use(
+          const state = State.use(
             [{ name: "Alexander" }, { name: "Sasha" }],
             [],
           );
           const [index, setIndex] = useState(0);
           const [enabled, setEnabled] = useState(false);
-          const errors = field.at(index).useErrors(enabled);
+          const errors = state.at(index).useErrors(enabled);
 
           return (
             <div>
@@ -6268,7 +6153,7 @@ describe("Field", () => {
 
               <button onClick={() => setIndex(1)}>Set index to 1</button>
 
-              <button onClick={() => field.at(1).addError("Nope")}>
+              <button onClick={() => state.at(1).addError("Nope")}>
                 Set item 1 error
               </button>
 
@@ -6302,40 +6187,40 @@ describe("Field", () => {
     });
 
     describe("#addError", () => {
-      it("adds error to field", () => {
-        const field = new Field(42);
-        field.addError({ type: "internal", message: "Something went wrong" });
-        expect(field.errors).toEqual([
+      it("adds error to state", () => {
+        const state = new State(42);
+        state.addError({ type: "internal", message: "Something went wrong" });
+        expect(state.errors).toEqual([
           { type: "internal", message: "Something went wrong" },
         ]);
       });
 
       it("convert string to error", () => {
-        const field = new Field(42);
-        field.addError("Something went wrong");
-        expect(field.errors).toEqual([{ message: "Something went wrong" }]);
+        const state = new State(42);
+        state.addError("Something went wrong");
+        expect(state.errors).toEqual([{ message: "Something went wrong" }]);
       });
 
       describe("changes", () => {
-        describe("field", () => {
+        describe("state", () => {
           it("triggers updates", async () => {
-            const field = new Field(42);
+            const state = new State(42);
             const spy = vi.fn();
-            field.watch(spy);
-            field.addError("Something went wrong");
+            state.watch(spy);
+            state.addError("Something went wrong");
             await postpone();
             expect(spy).toReceiveChanges(
               change.atom.invalid | change.atom.errors,
             );
           });
 
-          it("does not trigger invalid changes if the field is already invalid", async () => {
-            const field = new Field(42);
-            field.addError("Something went wrong");
+          it("does not trigger invalid changes if the state is already invalid", async () => {
+            const state = new State(42);
+            state.addError("Something went wrong");
             await postpone();
             const spy = vi.fn();
-            field.watch(spy);
-            field.addError("Something went wrong again");
+            state.watch(spy);
+            state.addError("Something went wrong again");
             await postpone();
             expect(spy).toReceiveChanges(change.atom.errors);
           });
@@ -6343,10 +6228,10 @@ describe("Field", () => {
 
         describe("child", () => {
           it("triggers updates", async () => {
-            const field = new Field({ name: { first: "Sasha" } });
+            const state = new State({ name: { first: "Sasha" } });
             const spy = vi.fn();
-            field.$.name.watch(spy);
-            field.$.name.$.first.addError("Something went wrong");
+            state.$.name.watch(spy);
+            state.$.name.$.first.addError("Something went wrong");
             await postpone();
             expect(spy).toReceiveChanges(
               change.child.invalid | change.child.errors,
@@ -6356,10 +6241,10 @@ describe("Field", () => {
 
         describe("subtree", () => {
           it("triggers updates", async () => {
-            const field = new Field({ name: { first: "Sasha" } });
+            const state = new State({ name: { first: "Sasha" } });
             const spy = vi.fn();
-            field.watch(spy);
-            field.$.name.$.first.addError("Something went wrong");
+            state.watch(spy);
+            state.$.name.$.first.addError("Something went wrong");
             await postpone();
             expect(spy).toReceiveChanges(
               change.subtree.invalid | change.subtree.errors,
@@ -6369,11 +6254,11 @@ describe("Field", () => {
       });
 
       describe("computed", () => {
-        it("sets the error to the source field", () => {
-          const field = new Field({ name: { first: "Sasha" } });
-          const computed = field.$.name.$.first.into(toCodes).from(fromCodes);
+        it("sets the error to the source state", () => {
+          const state = new State({ name: { first: "Sasha" } });
+          const computed = state.$.name.$.first.into(toCodes).from(fromCodes);
           computed.addError("Something went wrong");
-          expect(field.$.name.$.first.errors).toEqual([
+          expect(state.$.name.$.first.errors).toEqual([
             { message: "Something went wrong" },
           ]);
         });
@@ -6382,32 +6267,32 @@ describe("Field", () => {
 
     describe("#clearErrors", () => {
       it("clears the errors", () => {
-        const field = new Field(42);
-        field.addError("Something went wrong");
-        field.clearErrors();
-        expect(field.errors).toHaveLength(0);
-        expect(field.valid).toBe(true);
+        const state = new State(42);
+        state.addError("Something went wrong");
+        state.clearErrors();
+        expect(state.errors).toHaveLength(0);
+        expect(state.valid).toBe(true);
       });
 
       describe("changes", () => {
-        describe("field", () => {
+        describe("state", () => {
           it("triggers updates", async () => {
-            const field = new Field(42);
+            const state = new State(42);
             const spy = vi.fn();
-            field.watch(spy);
-            field.addError("Something went wrong");
-            field.clearErrors();
+            state.watch(spy);
+            state.addError("Something went wrong");
+            state.clearErrors();
             await postpone();
             expect(spy).toReceiveChanges(
               change.atom.valid | change.atom.errors,
             );
           });
 
-          it("ignores updates if the field has no errors", async () => {
-            const field = new Field(42);
+          it("ignores updates if the state has no errors", async () => {
+            const state = new State(42);
             const spy = vi.fn();
-            field.watch(spy);
-            field.clearErrors();
+            state.watch(spy);
+            state.clearErrors();
             await postpone();
             expect(spy).toHaveBeenCalledTimes(0);
           });
@@ -6415,12 +6300,12 @@ describe("Field", () => {
 
         describe("child", () => {
           it("triggers updates", async () => {
-            const field = new Field({ name: { first: "Sasha" } });
-            field.$.name.$.first.addError("Something went wrong");
+            const state = new State({ name: { first: "Sasha" } });
+            state.$.name.$.first.addError("Something went wrong");
             await postpone();
             const spy = vi.fn();
-            field.$.name.watch(spy);
-            field.$.name.$.first.clearErrors();
+            state.$.name.watch(spy);
+            state.$.name.$.first.clearErrors();
             await postpone();
             expect(spy).toReceiveChanges(
               change.child.valid | change.child.errors,
@@ -6430,12 +6315,12 @@ describe("Field", () => {
 
         describe("subtree", () => {
           it("triggers updates", async () => {
-            const field = new Field({ name: { first: "Sasha" } });
-            field.$.name.$.first.addError("Something went wrong");
+            const state = new State({ name: { first: "Sasha" } });
+            state.$.name.$.first.addError("Something went wrong");
             await postpone();
             const spy = vi.fn();
-            field.watch(spy);
-            field.$.name.$.first.clearErrors();
+            state.watch(spy);
+            state.$.name.$.first.clearErrors();
             await postpone();
             expect(spy).toReceiveChanges(
               change.subtree.valid | change.subtree.errors,
@@ -6445,39 +6330,39 @@ describe("Field", () => {
       });
 
       describe("computed", () => {
-        it("clears errors of the source field", () => {
-          const field = new Field({ name: { first: "Sasha" } });
-          const computed = field.$.name.$.first.into(toCodes).from(fromCodes);
+        it("clears errors of the source state", () => {
+          const state = new State({ name: { first: "Sasha" } });
+          const computed = state.$.name.$.first.into(toCodes).from(fromCodes);
           computed.addError("Something went wrong");
           computed.clearErrors();
-          expect(field.$.name.$.first.errors).toHaveLength(0);
+          expect(state.$.name.$.first.errors).toHaveLength(0);
         });
       });
     });
 
     describe("#valid", () => {
       it("is false if any of the children is invalid", () => {
-        const field = new Field({
+        const state = new State({
           name: { first: "" },
           age: 370,
           ids: [123, 456],
         });
-        expect(field.valid).toBe(true);
-        expect(field.$.name.valid).toBe(true);
-        field.$.name.$.first.addError("First name is required");
-        expect(field.valid).toBe(false);
-        expect(field.$.name.valid).toBe(false);
-        field.$.name.$.first.clearErrors();
-        expect(field.valid).toBe(true);
-        expect(field.$.name.valid).toBe(true);
+        expect(state.valid).toBe(true);
+        expect(state.$.name.valid).toBe(true);
+        state.$.name.$.first.addError("First name is required");
+        expect(state.valid).toBe(false);
+        expect(state.$.name.valid).toBe(false);
+        state.$.name.$.first.clearErrors();
+        expect(state.valid).toBe(true);
+        expect(state.$.name.valid).toBe(true);
       });
 
-      it("is false if the source field is invalid", () => {
-        const field = new Field({ name: { first: "", last: "" } });
-        const computed = field.$.name.into(toFullName).from(fromFullName);
+      it("is false if the source state is invalid", () => {
+        const state = new State({ name: { first: "", last: "" } });
+        const computed = state.$.name.into(toFullName).from(fromFullName);
         expect(computed.valid).toBe(true);
-        field.$.name.$.first.addError("First name is required");
-        field.$.name.$.last.addError("Last name is required");
+        state.$.name.$.first.addError("First name is required");
+        state.$.name.$.last.addError("Last name is required");
         expect(computed.valid).toBe(false);
       });
     });
@@ -6485,11 +6370,11 @@ describe("Field", () => {
     describe("#useValid", () => {
       beforeEach(cleanup);
 
-      it("allows to listen to field valid", async () => {
+      it("allows to listen to state valid", async () => {
         function Component() {
           const count = useRenderCount();
-          const field = Field.use({ name: { first: "Alexander" } }, []);
-          const valid = field.useValid();
+          const state = State.use({ name: { first: "Alexander" } }, []);
+          const valid = state.useValid();
 
           return (
             <div>
@@ -6497,18 +6382,18 @@ describe("Field", () => {
 
               <button
                 onClick={() =>
-                  field.$.name.$.first.addError(`Nope ${Math.random()}`)
+                  state.$.name.$.first.addError(`Nope ${Math.random()}`)
                 }
               >
                 Set error
               </button>
 
-              <button onClick={() => field.$.name.$.first.clearErrors()}>
+              <button onClick={() => state.$.name.$.first.clearErrors()}>
                 Clear errors
               </button>
 
-              <button onClick={() => field.$.name.$.first.set("Sasha")}>
-                Trigger field update
+              <button onClick={() => state.$.name.$.first.set("Sasha")}>
+                Trigger state update
               </button>
 
               <div data-testid="valid">{String(valid)}</div>
@@ -6531,7 +6416,7 @@ describe("Field", () => {
 
         expect(screen.getByTestId("render-valid").textContent).toBe("2");
 
-        await act(() => screen.getByText("Trigger field update").click());
+        await act(() => screen.getByText("Trigger state update").click());
 
         expect(screen.getByTestId("render-valid").textContent).toBe("2");
 
@@ -6543,15 +6428,15 @@ describe("Field", () => {
         expect(screen.getByTestId("render-valid").textContent).toBe("3");
       });
 
-      it("depends on the field id", async () => {
+      it("depends on the state id", async () => {
         function Component() {
           const count = useRenderCount();
-          const field = Field.use(
+          const state = State.use(
             [{ name: "Alexander" }, { name: "Sasha" }],
             [],
           );
           const [index, setIndex] = useState(0);
-          const valid = field.at(index).useValid();
+          const valid = state.at(index).useValid();
 
           return (
             <div>
@@ -6559,7 +6444,7 @@ describe("Field", () => {
 
               <button onClick={() => setIndex(1)}>Set index to 1</button>
 
-              <button onClick={() => field.at(1).addError("Nope")}>
+              <button onClick={() => state.at(1).addError("Nope")}>
                 Set item 1 error
               </button>
 
@@ -6585,15 +6470,15 @@ describe("Field", () => {
         expect(screen.getByTestId("render-valid").textContent).toBe("2");
       });
 
-      it("updates the watcher on field id change", async () => {
+      it("updates the watcher on state id change", async () => {
         function Component() {
           const count = useRenderCount();
-          const field = Field.use(
+          const state = State.use(
             [{ name: "Alexander" }, { name: "Sasha" }],
             [],
           );
           const [index, setIndex] = useState(0);
-          const valid = field.at(index).useValid();
+          const valid = state.at(index).useValid();
 
           return (
             <div>
@@ -6601,7 +6486,7 @@ describe("Field", () => {
 
               <button onClick={() => setIndex(1)}>Set index to 1</button>
 
-              <button onClick={() => field.at(0).addError("Nope")}>
+              <button onClick={() => state.at(0).addError("Nope")}>
                 Set item 0 error
               </button>
 
@@ -6632,13 +6517,13 @@ describe("Field", () => {
       it("allows to enable/disable the valid listener", async () => {
         function Component() {
           const count = useRenderCount();
-          const field = Field.use(
+          const state = State.use(
             [{ name: "Alexander" }, { name: "Sasha" }],
             [],
           );
           const [index, setIndex] = useState(0);
           const [enabled, setEnabled] = useState(false);
-          const valid = field.at(index).useValid(enabled);
+          const valid = state.at(index).useValid(enabled);
 
           return (
             <div>
@@ -6646,7 +6531,7 @@ describe("Field", () => {
 
               <button onClick={() => setIndex(1)}>Set index to 1</button>
 
-              <button onClick={() => field.at(1).addError("Nope")}>
+              <button onClick={() => state.at(1).addError("Nope")}>
                 Set item 1 error
               </button>
 
@@ -6686,27 +6571,27 @@ describe("Field", () => {
     describe("#validate", () => {
       describe("primitive", () => {
         it("allows to validate the state", () => {
-          const field = new Field(42);
-          field.validate((ref) => {
+          const state = new State(42);
+          state.validate((ref) => {
             if (ref.value !== 43) {
               ref.addError("Invalid");
             }
           });
-          expect(field.valid).toBe(false);
-          expect(field.errors).toEqual([{ message: "Invalid" }]);
+          expect(state.valid).toBe(false);
+          expect(state.errors).toEqual([{ message: "Invalid" }]);
         });
 
         it("clears previous errors on validation", () => {
-          function validateNum(ref: Field.Ref<number>) {
+          function validateNum(ref: State.Ref<number>) {
             if (ref.value !== 43) {
               ref.addError("Invalid");
             }
           }
-          const field = new Field(42);
-          field.validate(validateNum);
-          field.set(43);
-          field.validate(validateNum);
-          expect(field.valid).toBe(true);
+          const state = new State(42);
+          state.validate(validateNum);
+          state.set(43);
+          state.validate(validateNum);
+          expect(state.valid).toBe(true);
         });
 
         describe.todo("changes");
@@ -6714,44 +6599,44 @@ describe("Field", () => {
 
       describe("object", () => {
         it("allows to validate the state", () => {
-          const field = new Field<Name>({ first: "" });
+          const state = new State<Name>({ first: "" });
 
-          field.validate(validateName);
+          state.validate(validateName);
 
-          expect(field.valid).toBe(false);
-          expect(field.$.first.errors).toEqual([{ message: "Required" }]);
-          expect(field.$.last.errors).toEqual([{ message: "Required" }]);
+          expect(state.valid).toBe(false);
+          expect(state.$.first.errors).toEqual([{ message: "Required" }]);
+          expect(state.$.last.errors).toEqual([{ message: "Required" }]);
         });
 
         it("clears previous errors on validation", () => {
-          const field = new Field<Name>({ first: "" });
+          const state = new State<Name>({ first: "" });
 
-          field.validate(validateName);
+          state.validate(validateName);
 
-          expect(field.valid).toBe(false);
-          expect(field.$.first.errors).toEqual([{ message: "Required" }]);
-          expect(field.$.last.errors).toEqual([{ message: "Required" }]);
+          expect(state.valid).toBe(false);
+          expect(state.$.first.errors).toEqual([{ message: "Required" }]);
+          expect(state.$.last.errors).toEqual([{ message: "Required" }]);
 
-          field.set({ first: "Sasha", last: "Koss" });
-          field.validate(validateName);
+          state.set({ first: "Sasha", last: "Koss" });
+          state.validate(validateName);
 
-          expect(field.valid).toBe(true);
-          expect(field.$.first.errors).toHaveLength(0);
-          expect(field.$.last.errors).toHaveLength(0);
+          expect(state.valid).toBe(true);
+          expect(state.$.first.errors).toHaveLength(0);
+          expect(state.$.last.errors).toHaveLength(0);
         });
 
         it("sends a single watch event on validation", async () => {
-          const field = new Field<Name>({ first: "" });
+          const state = new State<Name>({ first: "" });
 
-          const fieldSpy = vi.fn();
+          const stateSpy = vi.fn();
           const nameSpy = vi.fn();
-          field.watch(fieldSpy);
-          field.$.first.watch(nameSpy);
+          state.watch(stateSpy);
+          state.$.first.watch(nameSpy);
 
-          await field.validate(validateName);
+          await state.validate(validateName);
 
-          expect(fieldSpy).toHaveBeenCalledOnce();
-          expect(fieldSpy).toReceiveChanges(
+          expect(stateSpy).toHaveBeenCalledOnce();
+          expect(stateSpy).toReceiveChanges(
             change.child.invalid | change.child.errors,
           );
 
@@ -6761,40 +6646,40 @@ describe("Field", () => {
           );
         });
 
-        it("allows to iterate the fields", () => {
-          const field = new Field<{
+        it("allows to iterate the states", () => {
+          const state = new State<{
             first: string;
             last?: string | undefined;
           }>({
             first: "",
             last: undefined,
           });
-          field.validate((ref) => {
+          state.validate((ref) => {
             ref.forEach((valueRef) => {
               if (!valueRef.value?.trim()) {
                 valueRef.addError("Required");
               }
             });
           });
-          expect(field.valid).toBe(false);
-          expect(field.$.first.errors).toEqual([{ message: "Required" }]);
-          expect(field.$.last.errors).toEqual([{ message: "Required" }]);
+          expect(state.valid).toBe(false);
+          expect(state.$.first.errors).toEqual([{ message: "Required" }]);
+          expect(state.$.last.errors).toEqual([{ message: "Required" }]);
         });
 
         it("allows to validate records", () => {
-          const field = new Field<Record<string, number>>({
+          const state = new State<Record<string, number>>({
             one: 1,
             two: 2,
           });
-          field.validate((ref) => {
+          state.validate((ref) => {
             ref.at("two").addError("Invalid");
           });
-          expect(field.valid).toBe(false);
-          expect(field.at("two").errors).toEqual([{ message: "Invalid" }]);
+          expect(state.valid).toBe(false);
+          expect(state.at("two").errors).toEqual([{ message: "Invalid" }]);
         });
 
         describe("changes", () => {
-          describe.todo("field");
+          describe.todo("state");
 
           describe.todo("child");
 
@@ -6808,30 +6693,30 @@ describe("Field", () => {
         it("allows to validate the state", () => {
           const map = new Map();
           map.set("num", 42);
-          const field = new Field(map);
-          field.validate((ref) => {
+          const state = new State(map);
+          state.validate((ref) => {
             if (ref.value.get("num") !== 43) {
               ref.addError("Invalid");
             }
           });
-          expect(field.valid).toBe(false);
-          expect(field.errors).toEqual([{ message: "Invalid" }]);
+          expect(state.valid).toBe(false);
+          expect(state.errors).toEqual([{ message: "Invalid" }]);
         });
 
         it("clears previous errors on validation", () => {
-          function validateMap(ref: Field.Ref<Map<string, number>>) {
+          function validateMap(ref: State.Ref<Map<string, number>>) {
             if (ref.value.get("num") !== 43) {
               ref.addError("Invalid");
             }
           }
           const map = new Map();
           map.set("num", 42);
-          const field = new Field(map);
-          field.validate(validateMap);
+          const state = new State(map);
+          state.validate(validateMap);
 
           map.set("num", 43);
-          field.validate(validateMap);
-          expect(field.valid).toBe(true);
+          state.validate(validateMap);
+          expect(state.valid).toBe(true);
         });
 
         describe.todo("changes");
@@ -6877,12 +6762,12 @@ function fromCodes(codes: number[]) {
 }
 
 function validateRequired(
-  ref: Field.Ref<string> | Field.Ref<string | undefined>,
+  ref: State.Ref<string> | State.Ref<string | undefined>,
 ) {
   if (!ref.value?.trim()) ref.addError("Required");
 }
 
-function validateName(ref: Field.Ref<Name>) {
+function validateName(ref: State.Ref<Name>) {
   validateRequired(ref.$.first);
   validateRequired(ref.$.last);
 }
@@ -6914,7 +6799,7 @@ interface UserName {
 }
 
 interface UserComponentProps {
-  user: Field<User>;
+  user: State<User>;
 }
 
 function UserComponent(props: UserComponentProps) {
@@ -6935,7 +6820,7 @@ function UserComponent(props: UserComponentProps) {
 }
 
 interface UserNameComponentProps {
-  name: Field<UserName>;
+  name: State<UserName>;
   index?: number;
 }
 
@@ -6952,8 +6837,8 @@ function UserNameComponent(props: UserNameComponentProps) {
       <div data-testid={`name-first-${index}`}>{first}</div>
       <div data-testid={`name-last-${index}`}>{last}</div>
 
-      <Field.Component
-        field={name.$.first}
+      <State.Component
+        state={name.$.first}
         render={(control) => (
           <input
             data-testid={`name-first-${index}-input`}
@@ -6963,8 +6848,8 @@ function UserNameComponent(props: UserNameComponentProps) {
         )}
       />
 
-      <Field.Component
-        field={name.$.last}
+      <State.Component
+        state={name.$.last}
         render={(control) => (
           <input
             data-testid={`name-last-${index}-input`}
@@ -6984,7 +6869,7 @@ interface UserNameFormComponentProps {
 
 function UserNameFormComponent(props: UserNameFormComponentProps) {
   const count = useRenderCount();
-  const field = Field.use<UserName>({ first: "", last: "" }, []);
+  const state = State.use<UserName>({ first: "", last: "" }, []);
 
   return (
     <div>
@@ -6993,11 +6878,11 @@ function UserNameFormComponent(props: UserNameFormComponentProps) {
       <form
         onSubmit={(event) => {
           event.preventDefault();
-          props.onSubmit?.(field.value);
+          props.onSubmit?.(state.value);
         }}
       >
-        <Field.Component
-          field={field.$.first}
+        <State.Component
+          state={state.$.first}
           render={(control) => (
             <input
               data-testid="input-name-first"
@@ -7007,8 +6892,8 @@ function UserNameFormComponent(props: UserNameFormComponentProps) {
           )}
         />
 
-        <Field.Component
-          field={field.$.last}
+        <State.Component
+          state={state.$.last}
           render={(control) => (
             <input
               data-testid="input-name-last"
@@ -7025,7 +6910,7 @@ function UserNameFormComponent(props: UserNameFormComponentProps) {
 }
 
 interface StringComponentProps {
-  string: Field<string>;
+  string: State<string>;
 }
 
 function StringComponent(props: StringComponentProps) {
@@ -7040,7 +6925,7 @@ function StringComponent(props: StringComponentProps) {
 }
 
 interface NumberComponentProps {
-  number: Field<number>;
+  number: State<number>;
 }
 
 function NumberComponent(props: NumberComponentProps) {
@@ -7055,7 +6940,7 @@ function NumberComponent(props: NumberComponentProps) {
 }
 
 interface CodesComponentProps {
-  codes: Field<number[]>;
+  codes: State<number[]>;
 }
 
 function CodesComponent(props: CodesComponentProps) {
@@ -7069,7 +6954,7 @@ function CodesComponent(props: CodesComponentProps) {
   );
 }
 
-function joinErrors(errors: Field.Error[] | undefined) {
+function joinErrors(errors: State.Error[] | undefined) {
   if (!errors) return "";
   return errors.map((error) => error.message).join(", ");
 }

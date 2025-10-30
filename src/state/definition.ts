@@ -1,15 +1,10 @@
-import {
-  DependencyList,
-  FocusEventHandler,
-  ReactElement,
-  ReactNode,
-} from "react";
+import { DependencyList } from "react";
 import type { Atom } from "../atom/index.js";
 import type { EnsoUtils as Utils } from "../utils.ts";
 
 const hintSymbol = Symbol();
 
-export declare class Field<
+export declare class State<
     Value,
     Qualifier extends
       Atom.Qualifier.External.Constraint = Atom.Qualifier.External.Default,
@@ -18,7 +13,7 @@ export declare class Field<
     > = Atom.Parent.Default,
   >
   extends Atom<
-    "field",
+    "state",
     "exact",
     Atom.Def<Value>,
     Atom.Qualifier.Internalize<Qualifier>,
@@ -26,10 +21,10 @@ export declare class Field<
   >
   implements
     Utils.StaticImplements<
-      typeof Field<Value, Qualifier, Parent>,
-      Atom.Static.Subclass<"field">
+      typeof State<Value, Qualifier, Parent>,
+      Atom.Static.Subclass<"state">
     >,
-    Field.Exact<Value, Qualifier, Parent>
+    State.Exact<Value, Qualifier, Parent>
 {
   //#region Static
 
@@ -43,12 +38,12 @@ export declare class Field<
     > = Atom.Parent.Default,
   >(
     value: Value,
-    parent?: Atom.Parent.Ref<"field", Qualifier, Parent>,
-  ): Atom.Envelop<"field", "exact", Atom.Def<Value>, Qualifier, Parent>;
+    parent?: Atom.Parent.Ref<"state", Qualifier, Parent>,
+  ): Atom.Envelop<"state", "exact", Atom.Def<Value>, Qualifier, Parent>;
 
-  static base<Envelop extends Atom.Envelop<"field", any, any>>(
-    field: Envelop,
-  ): Atom.Base.Result<"field", Envelop>;
+  static base<Envelop extends Atom.Envelop<"state", any, any>>(
+    state: Envelop,
+  ): Atom.Base.Result<"state", Envelop>;
 
   static proxy<
     Variant extends Atom.Flavor.Variant,
@@ -58,11 +53,11 @@ export declare class Field<
     Qualifier extends Atom.Qualifier.Constraint,
     Parent extends Atom.Parent.Constraint<ValueDef>,
   >(
-    field: Field.Envelop<Variant, ValueDef, Qualifier, Parent>,
+    state: State.Envelop<Variant, ValueDef, Qualifier, Parent>,
     intoMapper: Atom.Proxy.Into.Mapper<ValueDef, ComputedValue>,
     fromMapper: Atom.Proxy.From.Mapper<ValueDef, ComputedValue, MappedValue>,
   ): Atom.Proxy.Envelop<
-    "field",
+    "state",
     Variant,
     ValueDef,
     ComputedValue,
@@ -73,35 +68,17 @@ export declare class Field<
   static use<Value>(
     initialValue: Value,
     deps: DependencyList,
-  ): Field.Exact<Value>;
+  ): State.Exact<Value>;
 
   static useEnsure<
-    FieldType extends Atom.Envelop<"field", any, any> | Utils.Falsy,
+    StateType extends Atom.Envelop<"state", any, any> | Utils.Falsy,
     MappedType extends
-      | Atom.Envelop<"field", any, any>
+      | Atom.Envelop<"state", any, any>
       | Utils.Falsy = undefined,
   >(
-    field: FieldType,
-    map?: Atom.Static.Ensure.Mapper<"field", FieldType, MappedType>,
-  ): Atom.Static.Ensure.Result<"field", FieldType, MappedType>;
-
-  // Field
-
-  static Component<
-    Value,
-    MetaEnable extends boolean | undefined = undefined,
-    DirtyEnable extends boolean = false,
-    ErrorsEnable extends boolean = false,
-    ValidEnable extends boolean = false,
-  >(
-    props: Field.Component.Props<
-      Value,
-      MetaEnable,
-      DirtyEnable,
-      ErrorsEnable,
-      ValidEnable
-    >,
-  ): ReactElement<HTMLElement>;
+    state: StateType,
+    map?: Atom.Static.Ensure.Mapper<"state", StateType, MappedType>,
+  ): Atom.Static.Ensure.Result<"state", StateType, MappedType>;
 
   //#endregion
 
@@ -110,80 +87,27 @@ export declare class Field<
   [hintSymbol]: true;
 
   //#endregion
-
-  //#region Value
-
-  get dirty(): boolean;
-
-  useDirty: Field.Dirty.Use.Prop<Atom.Qualifier.Internalize<Qualifier>>;
-
-  commit: Field.Commit.Prop<Atom.Qualifier.Internalize<Qualifier>>;
-
-  reset: Field.Reset.Prop<Atom.Qualifier.Internalize<Qualifier>>;
-
-  readonly initial: Atom.Value.Prop<Atom.Def<Value>>;
-
-  //#endregion
-
-  //#region Meta
-
-  // TODO: useMeta
-
-  //#endregion
-
-  //#region Interop
-
-  control<Element extends HTMLElement>(
-    props?: Field.Control.Props<Element>,
-  ): Field.Control.Registration<Element>;
-
-  ref<Element extends HTMLElement>(element: Element | null): void;
-
-  //#endregion
-
-  //#region Validation
-
-  get errors(): Field.Error[];
-
-  useErrors: Field.Errors.Use.Prop<Atom.Qualifier.Internalize<Qualifier>>;
-
-  get valid(): boolean;
-
-  useValid: Field.Valid.Use.Prop<Atom.Qualifier.Internalize<Qualifier>>;
-
-  readonly validate: Field.Validate.Prop<
-    Atom.Def<Value>,
-    Atom.Qualifier.Internalize<Qualifier>
-  >;
-
-  addError: Field.AddError.Prop;
-
-  clearErrors(): void;
-
-  //#endregion
 }
 
-export namespace Field {
+export namespace State {
   export type Envelop<
     Variant extends Atom.Flavor.Variant,
     ValueDef extends Atom.Def.Constraint,
     Qualifier extends Atom.Qualifier.Constraint,
     Parent extends Atom.Parent.Constraint<ValueDef>,
-  > = Variant extends "exact"
-    ? Exact.Internal<ValueDef, Qualifier, Parent>
-    : Variant extends "optional"
+  > = "immutable" extends Variant
+    ? Immutable.Internal<ValueDef, Qualifier, Parent>
+    : "optional" extends Variant
       ? Optional.Internal<ValueDef, Qualifier, Parent>
-      : Variant extends "base"
+      : "base" extends Variant
         ? Base.Internal<ValueDef, Qualifier, Parent>
-        : Variant extends "immutable"
-          ? Immutable.Internal<ValueDef, Qualifier, Parent>
+        : "exact" extends Variant
+          ? Exact.Internal<ValueDef, Qualifier, Parent>
           : never;
 
-  export type Prop = "field";
+  export type Prop = "state";
 
-  //#region Interface
-
-  //#region Exact
+  // #region Exact
 
   export interface Exact<
     Value,
@@ -203,8 +127,7 @@ export namespace Field {
       /*out*/ ValueDef extends Atom.Def.Constraint,
       out Qualifier extends Atom.Qualifier.Constraint = Atom.Qualifier.Default,
       Parent extends Atom.Parent.Constraint<ValueDef> = Atom.Parent.Default,
-    > extends Ish.Value.Write<Qualifier>,
-        Atom.Exact<"field", "exact", ValueDef, Qualifier, Parent>,
+    > extends Atom.Exact<"state", "exact", ValueDef, Qualifier, Parent>,
         Immutable.Interface<"exact", ValueDef, Qualifier, Parent> {}
   }
 
@@ -248,7 +171,7 @@ export namespace Field {
         Atom.Def<Value>
       > = Atom.Parent.Default,
     > = Atom.Discriminate.Result<
-      "field",
+      "state",
       "base",
       Atom.Def<Value>,
       Discriminator,
@@ -297,7 +220,7 @@ export namespace Field {
         Atom.Def<Value>
       > = Atom.Parent.Default,
     > = Atom.Discriminate.Result<
-      "field",
+      "state",
       "optional",
       Atom.Def<Value>,
       Discriminator,
@@ -335,19 +258,8 @@ export namespace Field {
       /*out*/ ValueDef extends Atom.Def.Constraint,
       out Qualifier extends Atom.Qualifier.Constraint = Atom.Qualifier.Default,
       Parent extends Atom.Parent.Constraint<ValueDef> = Atom.Parent.Default,
-    > extends Ish.Value.Read<ValueDef, Qualifier>,
-        Ish.Validation<ValueDef, Qualifier>,
-        Atom.Immutable<"field", Variant, ValueDef, Qualifier, Parent> {
+    > extends Atom.Immutable<"state", Variant, ValueDef, Qualifier, Parent> {
       [hintSymbol]: true;
-
-      control<Element extends HTMLElement>(
-        props?: Field.Control.Props<Element>,
-      ): Field.Control.Registration<Element>;
-
-      ref<Element extends HTMLElement>(element: Element | null): void;
-
-      //TODO: Consider removing this as form has its own validate method.
-      readonly validate: Field.Validate.Prop<ValueDef, Qualifier>;
     }
 
     export type Discriminated<
@@ -359,7 +271,7 @@ export namespace Field {
         Atom.Def<Value>
       > = Atom.Parent.Default,
     > = Atom.Discriminate.Result<
-      "field",
+      "state",
       "immutable",
       Atom.Def<Value>,
       Discriminator,
@@ -395,7 +307,7 @@ export namespace Field {
       Parent extends Atom.Parent.Constraint<
         Atom.Shared.Def<ValueTuple>
       > = Atom.Parent.Default,
-    > = Field.Exact.Internal<
+    > = State.Exact.Internal<
       Atom.Shared.Def<ValueTuple>,
       Atom.Qualifier.Internalize<Qualifier>,
       Parent
@@ -408,7 +320,7 @@ export namespace Field {
       Parent extends Atom.Parent.Constraint<
         Atom.Shared.Def<ValueTuple>
       > = Atom.Parent.Default,
-    > = Field.Base.Internal<
+    > = State.Base.Internal<
       Atom.Shared.Def<ValueTuple>,
       Atom.Qualifier.Internalize<Qualifier>,
       Parent
@@ -421,88 +333,12 @@ export namespace Field {
       Parent extends Atom.Parent.Constraint<
         Atom.Shared.Def<ValueTuple>
       > = Atom.Parent.Default,
-    > = Field.Immutable.Internal<
+    > = State.Immutable.Internal<
       Atom.Shared.Def<ValueTuple>,
       Atom.Qualifier.Internalize<Qualifier>,
       Parent
     >;
   }
-
-  //#endregion
-
-  //#region Ref
-
-  export type Ref<
-    Value,
-    Qualifier extends
-      Atom.Qualifier.External.Constraint = Atom.Qualifier.External.Default,
-    Parent extends Atom.Parent.Constraint<
-      Atom.Def<Value>
-    > = Atom.Parent.Default,
-  > = Field.Immutable<
-    Value,
-    Utils.Transparent<Atom.Qualifier.External.Concat<Qualifier, "ref">>,
-    Parent
-  >;
-
-  export namespace Ref {
-    export type Optional<
-      Value,
-      Qualifier extends
-        Atom.Qualifier.External.Constraint = Atom.Qualifier.External.Default,
-      Parent extends Atom.Parent.Constraint<
-        Atom.Def<Value>
-      > = Atom.Parent.Default,
-    > = Field.Optional<
-      Value,
-      Utils.Transparent<Atom.Qualifier.External.Concat<Qualifier, "ref">>,
-      Parent
-    >;
-  }
-
-  //#endregion
-
-  //#region Fieldish
-
-  export namespace Ish {
-    export namespace Value {
-      export interface Read<
-        /*out*/ ValueDef extends Atom.Def.Constraint,
-        out Qualifier extends Atom.Qualifier.Constraint,
-      > {
-        readonly initial: Atom.Value.Prop<ValueDef>;
-
-        dirty: boolean;
-
-        useDirty: Dirty.Use.Prop<Qualifier>;
-      }
-
-      export interface Write<out Qualifier extends Atom.Qualifier.Constraint> {
-        commit: Commit.Prop<Qualifier>;
-
-        reset: Reset.Prop<Qualifier>;
-      }
-    }
-
-    export interface Validation<
-      ValueDef extends Atom.Def.Constraint,
-      out Qualifier extends Atom.Qualifier.Constraint,
-    > {
-      errors: Field.Error[];
-
-      useErrors: Field.Errors.Use.Prop<Qualifier>;
-
-      valid: boolean;
-
-      useValid: Field.Valid.Use.Prop<Qualifier>;
-
-      addError: Field.AddError.Prop;
-
-      clearErrors(): void;
-    }
-  }
-
-  //#endregion
 
   //#endregion
 
@@ -515,55 +351,11 @@ export namespace Field {
 
   export namespace Value {
     export namespace Use {
-      export type IncludeMeta<Props extends Use.Props | undefined> =
-        undefined extends Props
-          ? false
-          : Props extends Use.Props
-            ? Props["meta"] extends true
-              ? true
-              : Props["meta"] extends false
-                ? false
-                : Props["valid"] extends true
-                  ? true
-                  : Props["dirty"] extends true
-                    ? true
-                    : false
-            : false;
-
       export interface Props extends Meta.Props {
         meta?: boolean | undefined;
       }
-    }
-  }
 
-  export namespace Dirty {
-    export namespace Use {
-      export type Prop<Qualifier extends Atom.Qualifier.Constraint> =
-        Atom.Qualifier.Ref.DisableFor<Qualifier, Fn>;
-
-      export interface Fn {
-        <Enable extends boolean | undefined = undefined>(
-          enable?: Enable,
-        ): Atom.Hooks.Result<Enable, boolean>;
-      }
-    }
-  }
-
-  export namespace Commit {
-    export type Prop<Qualifier extends Atom.Qualifier.Constraint> =
-      Atom.Qualifier.Ref.DisableFor<Qualifier, Fn>;
-
-    export interface Fn {
-      (): void;
-    }
-  }
-
-  export namespace Reset {
-    export type Prop<Qualifier extends Atom.Qualifier.Constraint> =
-      Atom.Qualifier.Ref.DisableFor<Qualifier, Fn>;
-
-    export interface Fn {
-      (): void;
+      export type IncludeMeta<_Props extends Use.Props | undefined> = false;
     }
   }
 
@@ -594,7 +386,7 @@ export namespace Field {
       Atom.Def<Value>
     > = Atom.Parent.Default,
   > = Atom.Decompose.Result<
-    "field",
+    "state",
     "exact",
     Atom.Def<Value>,
     Atom.Qualifier.Internalize<Qualifier>,
@@ -610,7 +402,7 @@ export namespace Field {
       Atom.Def<Value>
     > = Atom.Parent.Default,
   > = Atom.Discriminate.Result<
-    "field",
+    "state",
     "exact",
     Atom.Def<Value>,
     Discriminator,
@@ -626,177 +418,10 @@ export namespace Field {
 
   //#region Meta
 
-  export type Meta<Props extends Meta.Props | undefined> =
-    Props extends Meta.Props
-      ? {
-          valid: Meta.Enable<Props["valid"], boolean>;
-          errors: Meta.Enable<Props["errors"], Error[]>;
-          dirty: Meta.Enable<Props["dirty"], boolean>;
-        }
-      : {
-          valid: boolean;
-          errors: Error[];
-          dirty: boolean;
-        };
+  export interface Meta<Props extends Meta.Props | undefined> {}
 
   export namespace Meta {
-    export interface Props {
-      valid?: boolean | undefined;
-      errors?: boolean | undefined;
-      dirty?: boolean | undefined;
-    }
-
-    export type Enable<Enable, Value> = Enable extends true
-      ? Value
-      : Enable extends false
-        ? undefined
-        : Enable extends boolean
-          ? Value | undefined
-          : Enable extends undefined
-            ? undefined
-            : never;
-  }
-
-  //#endregion
-
-  //#region Form
-
-  //#region Control
-
-  export namespace Control {
-    export interface Props<Element extends HTMLElement> {
-      ref?:
-        | React.RefCallback<Element>
-        | React.RefObject<Element | null>
-        | undefined;
-      onBlur?: FocusEventHandler<Element> | undefined;
-    }
-
-    export interface Registration<Element extends HTMLElement> {
-      name: string;
-      ref: React.RefCallback<Element>;
-      onBlur: FocusEventHandler<Element>;
-    }
-  }
-
-  //#endregion
-
-  //#region Component
-
-  export namespace Component {
-    export type Props<
-      Value,
-      MetaEnable extends boolean | undefined = undefined,
-      DirtyEnable extends boolean = false,
-      ErrorsEnable extends boolean = false,
-      ValidEnable extends boolean = false,
-    > = {
-      field: Field<Value>;
-      render: Render<
-        Value,
-        MetaEnable extends true
-          ? undefined
-          : MetaEnable extends false
-            ? {
-                valid: false;
-                errors: false;
-                dirty: false;
-              }
-            : {
-                valid: ValidEnable;
-                errors: ErrorsEnable;
-                dirty: DirtyEnable;
-              }
-      >;
-      meta?: MetaEnable;
-      dirty?: DirtyEnable;
-      errors?: ErrorsEnable;
-      valid?: ValidEnable;
-    };
-
-    export type Render<Value, MetaProps extends Meta.Props | undefined> = (
-      input: Input<Value>,
-      meta: Meta<MetaProps>,
-    ) => ReactNode;
-  }
-
-  //#endregion
-
-  //#region Input
-
-  export type Input<Value> = {
-    name: string;
-    value: Value;
-    onChange: Input.OnChange<Value>;
-    onBlur: FocusEventHandler<Element>;
-  };
-
-  export namespace Input {
-    export type OnChange<Value> = (value: Value) => void;
-  }
-
-  //#endregion
-
-  //#endregion
-
-  //#region Validation
-
-  export interface Error {
-    type?: string | undefined;
-    message: string;
-  }
-
-  export namespace Error {
-    export type Type = Error | string;
-  }
-
-  export namespace Valid {
-    export namespace Use {
-      export type Prop<Qualifier extends Atom.Qualifier.Constraint> =
-        Atom.Qualifier.Ref.DisableFor<Qualifier, Fn>;
-
-      export interface Fn {
-        <Enable extends boolean | undefined = undefined>(
-          enable?: Enable,
-        ): Atom.Hooks.Result<Enable, boolean>;
-      }
-    }
-  }
-
-  export interface Validator<Value> {
-    (field: Field.Immutable<Value, "ref">): Promise<void> | void;
-  }
-
-  export namespace Validate {
-    export type Prop<
-      ValueDef extends Atom.Def.Constraint,
-      Qualifier extends Atom.Qualifier.Constraint,
-    > = Atom.Qualifier.Ref.DisableFor<Qualifier, Fn<ValueDef["read"]>>;
-
-    export interface Fn<Value> {
-      (validator: Field.Validator<Value>): Promise<void>;
-    }
-  }
-
-  export namespace Errors {
-    export namespace Use {
-      export type Prop<Qualifier extends Atom.Qualifier.Constraint> =
-        Atom.Qualifier.Ref.DisableFor<Qualifier, Fn>;
-
-      export interface Fn {
-        <Enable extends boolean | undefined = undefined>(
-          enable?: Enable,
-        ): Atom.Hooks.Result<Enable, Field.Error[]>;
-      }
-    }
-  }
-
-  export namespace AddError {
-    export type Prop = Fn;
-
-    export interface Fn {
-      (error: Error.Type): void;
-    }
+    export interface Props {}
   }
 
   //#endregion

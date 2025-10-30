@@ -1,4 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
+import { postpone } from "../../tests/utils.ts";
 import {
   change,
   ChangesEvent,
@@ -6,7 +7,6 @@ import {
   shiftChildChanges,
   structuralChanges,
 } from "./index.ts";
-import { postpone } from "../../tests/utils.ts";
 
 describe("ChangesEvent", () => {
   describe("#batch", () => {
@@ -19,12 +19,12 @@ describe("ChangesEvent", () => {
       const spyB = vi.fn();
       targetB.addEventListener("change", spyB);
 
-      ChangesEvent.batch(targetA, change.field.type);
-      ChangesEvent.batch(targetA, change.field.valid);
-      ChangesEvent.batch(targetA, change.field.commit);
+      ChangesEvent.batch(targetA, change.atom.type);
+      ChangesEvent.batch(targetA, change.atom.valid);
+      ChangesEvent.batch(targetA, change.atom.commit);
 
-      ChangesEvent.batch(targetB, change.field.key);
-      ChangesEvent.batch(targetB, change.field.shape);
+      ChangesEvent.batch(targetB, change.atom.key);
+      ChangesEvent.batch(targetB, change.atom.shape);
 
       expect(spyA).not.toHaveBeenCalled();
       expect(spyB).not.toHaveBeenCalled();
@@ -34,12 +34,12 @@ describe("ChangesEvent", () => {
       expect(spyA).toHaveBeenCalledTimes(1);
       const [[eventA]]: any = spyA.mock.calls;
       expect(eventA.changes).toMatchChanges(
-        change.field.type | change.field.valid | change.field.commit,
+        change.atom.type | change.atom.valid | change.atom.commit,
       );
       expect(spyB).toHaveBeenCalledTimes(1);
       const [[eventB]]: any = spyB.mock.calls;
       expect(eventB.changes).toMatchChanges(
-        change.field.key | change.field.shape,
+        change.atom.key | change.atom.shape,
       );
     });
 
@@ -52,16 +52,16 @@ describe("ChangesEvent", () => {
       const spyB = vi.fn();
       targetB.addEventListener("change", spyB);
 
-      ChangesEvent.batch(targetA, change.field.valid);
-      ChangesEvent.batch(targetA, change.field.invalid);
-      ChangesEvent.batch(targetA, change.field.valid);
+      ChangesEvent.batch(targetA, change.atom.valid);
+      ChangesEvent.batch(targetA, change.atom.invalid);
+      ChangesEvent.batch(targetA, change.atom.valid);
       ChangesEvent.batch(targetA, change.child.valid);
       ChangesEvent.batch(targetA, change.child.invalid);
       ChangesEvent.batch(targetA, change.subtree.valid);
       ChangesEvent.batch(targetA, change.subtree.invalid);
 
-      ChangesEvent.batch(targetB, change.field.valid);
-      ChangesEvent.batch(targetB, change.field.invalid);
+      ChangesEvent.batch(targetB, change.atom.valid);
+      ChangesEvent.batch(targetB, change.atom.invalid);
       ChangesEvent.batch(targetB, change.child.valid);
       ChangesEvent.batch(targetB, change.child.invalid);
       ChangesEvent.batch(targetB, change.subtree.valid);
@@ -72,7 +72,7 @@ describe("ChangesEvent", () => {
       expect(spyA).toHaveBeenCalledTimes(1);
       const [[eventA]]: any = spyA.mock.calls;
       expect(eventA.changes).toMatchChanges(
-        change.field.valid |
+        change.atom.valid |
           change.child.valid |
           change.child.invalid |
           change.subtree.valid |
@@ -81,7 +81,7 @@ describe("ChangesEvent", () => {
       expect(spyB).toHaveBeenCalledTimes(1);
       const [[eventB]]: any = spyB.mock.calls;
       expect(eventB.changes).toMatchChanges(
-        change.field.invalid |
+        change.atom.invalid |
           change.child.valid |
           change.child.invalid |
           change.subtree.valid |
@@ -98,16 +98,16 @@ describe("ChangesEvent", () => {
       const spyB = vi.fn();
       targetB.addEventListener("change", spyB);
 
-      ChangesEvent.batch(targetA, change.field.attach);
-      ChangesEvent.batch(targetA, change.field.detach);
-      ChangesEvent.batch(targetA, change.field.attach);
+      ChangesEvent.batch(targetA, change.atom.attach);
+      ChangesEvent.batch(targetA, change.atom.detach);
+      ChangesEvent.batch(targetA, change.atom.attach);
       ChangesEvent.batch(targetA, change.child.attach);
       ChangesEvent.batch(targetA, change.child.detach);
       ChangesEvent.batch(targetA, change.subtree.attach);
       ChangesEvent.batch(targetA, change.subtree.detach);
 
-      ChangesEvent.batch(targetB, change.field.attach);
-      ChangesEvent.batch(targetB, change.field.detach);
+      ChangesEvent.batch(targetB, change.atom.attach);
+      ChangesEvent.batch(targetB, change.atom.detach);
       ChangesEvent.batch(targetB, change.child.attach);
       ChangesEvent.batch(targetB, change.child.detach);
       ChangesEvent.batch(targetB, change.subtree.attach);
@@ -118,7 +118,7 @@ describe("ChangesEvent", () => {
       expect(spyA).toHaveBeenCalledTimes(1);
       const [[eventA]]: any = spyA.mock.calls;
       expect(eventA.changes).toMatchChanges(
-        change.field.attach |
+        change.atom.attach |
           change.child.attach |
           change.child.detach |
           change.subtree.attach |
@@ -127,7 +127,7 @@ describe("ChangesEvent", () => {
       expect(spyB).toHaveBeenCalledTimes(1);
       const [[eventB]]: any = spyB.mock.calls;
       expect(eventB.changes).toMatchChanges(
-        change.field.detach |
+        change.atom.detach |
           change.child.attach |
           change.child.detach |
           change.subtree.attach |
@@ -141,14 +141,14 @@ describe("ChangesEvent", () => {
       const spyA = vi.fn(() => {
         switch (state) {
           case 0: {
-            ChangesEvent.batch(targetA, change.field.valid);
-            ChangesEvent.batch(targetA, change.field.commit);
+            ChangesEvent.batch(targetA, change.atom.valid);
+            ChangesEvent.batch(targetA, change.atom.commit);
             break;
           }
 
           case 1: {
-            ChangesEvent.batch(targetB, change.field.key);
-            ChangesEvent.batch(targetB, change.field.shape);
+            ChangesEvent.batch(targetB, change.atom.key);
+            ChangesEvent.batch(targetB, change.atom.shape);
             break;
           }
         }
@@ -160,7 +160,7 @@ describe("ChangesEvent", () => {
       const spyB = vi.fn();
       targetB.addEventListener("change", spyB);
 
-      ChangesEvent.batch(targetA, change.field.type);
+      ChangesEvent.batch(targetA, change.atom.type);
 
       expect(spyA).not.toHaveBeenCalled();
       expect(spyB).not.toHaveBeenCalled();
@@ -169,15 +169,15 @@ describe("ChangesEvent", () => {
 
       expect(spyA).toHaveBeenCalledTimes(2);
       const [[eventA1], [eventA2]]: any = spyA.mock.calls;
-      expect(eventA1.changes).toMatchChanges(change.field.type);
+      expect(eventA1.changes).toMatchChanges(change.atom.type);
       expect(eventA2.changes).toMatchChanges(
-        change.field.valid | change.field.commit,
+        change.atom.valid | change.atom.commit,
       );
 
       expect(spyB).toHaveBeenCalledTimes(1);
       const [[eventB]]: any = spyB.mock.calls;
       expect(eventB.changes).toMatchChanges(
-        change.field.key | change.field.shape,
+        change.atom.key | change.atom.shape,
       );
     });
   });
@@ -193,11 +193,11 @@ describe("ChangesEvent", () => {
       targetB.addEventListener("change", spyB);
 
       ChangesEvent.context({ hello: "world" }, () => {
-        ChangesEvent.batch(targetA, change.field.type);
-        ChangesEvent.batch(targetA, change.field.valid);
+        ChangesEvent.batch(targetA, change.atom.type);
+        ChangesEvent.batch(targetA, change.atom.valid);
       });
 
-      ChangesEvent.batch(targetB, change.field.key);
+      ChangesEvent.batch(targetB, change.atom.key);
 
       expect(spyA).not.toHaveBeenCalled();
       expect(spyB).not.toHaveBeenCalled();
@@ -220,15 +220,15 @@ describe("ChangesEvent", () => {
       targetB.addEventListener("change", spyB);
 
       ChangesEvent.context({ hello: "world" }, () => {
-        ChangesEvent.batch(targetA, change.field.type);
-        ChangesEvent.batch(targetA, change.field.valid);
+        ChangesEvent.batch(targetA, change.atom.type);
+        ChangesEvent.batch(targetA, change.atom.valid);
       });
 
       ChangesEvent.context({ foo: "bar" }, () => {
-        ChangesEvent.batch(targetA, change.field.key);
+        ChangesEvent.batch(targetA, change.atom.key);
       });
 
-      ChangesEvent.batch(targetB, change.field.key);
+      ChangesEvent.batch(targetB, change.atom.key);
 
       expect(spyA).not.toHaveBeenCalled();
       expect(spyB).not.toHaveBeenCalled();
@@ -252,12 +252,12 @@ describe("ChangesEvent", () => {
 
       ChangesEvent.context({ hello: "world" }, () => {
         ChangesEvent.context({ foo: "bar" }, () => {
-          ChangesEvent.batch(targetA, change.field.type);
-          ChangesEvent.batch(targetA, change.field.valid);
+          ChangesEvent.batch(targetA, change.atom.type);
+          ChangesEvent.batch(targetA, change.atom.valid);
         });
       });
 
-      ChangesEvent.batch(targetB, change.field.key);
+      ChangesEvent.batch(targetB, change.atom.key);
 
       expect(spyA).not.toHaveBeenCalled();
       expect(spyB).not.toHaveBeenCalled();
@@ -275,8 +275,8 @@ describe("ChangesEvent", () => {
 describe("shiftChildChanges", () => {
   it("shifts changes in the subtree direction", () => {
     const once = shiftChildChanges(
-      change.field.attach |
-        change.field.commit |
+      change.atom.attach |
+        change.atom.commit |
         change.child.value |
         change.child.errors |
         change.subtree.attach |
@@ -305,15 +305,15 @@ describe("structuralChanges", () => {
   it("isolates structural changes", () => {
     expect(
       structuralChanges(
-        change.field.attach |
-          change.field.commit |
+        change.atom.attach |
+          change.atom.commit |
           change.child.value |
           change.child.errors |
           change.subtree.attach |
           change.subtree.valid,
       ),
     ).toMatchChanges(
-      change.field.attach | change.child.value | change.subtree.attach,
+      change.atom.attach | change.child.value | change.subtree.attach,
     );
   });
 });
@@ -322,15 +322,15 @@ describe("metaChanges", () => {
   it("isolates meta changes", () => {
     expect(
       metaChanges(
-        change.field.attach |
-          change.field.commit |
+        change.atom.attach |
+          change.atom.commit |
           change.child.value |
           change.child.errors |
           change.subtree.attach |
           change.subtree.valid,
       ),
     ).toMatchChanges(
-      change.field.commit | change.child.errors | change.subtree.valid,
+      change.atom.commit | change.child.errors | change.subtree.valid,
     );
   });
 });

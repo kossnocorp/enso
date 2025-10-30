@@ -1,5 +1,3 @@
-import type { Atom } from "../atom/index.js";
-
 export const detachedValue = Symbol();
 
 export type DetachedValue = typeof detachedValue;
@@ -20,12 +18,12 @@ export class UndefinedStateRegistry<AtomType extends object> {
   }
 
   claim(key: string) {
-    // Look up if the undefined field exists
+    // Look up if the undefined atom exists
     const ref = this.#refsMap.get(key);
     const registered = ref?.deref();
     if (!ref || !registered) return;
 
-    // Unregister the field and allow the caller to claim it
+    // Unregister the atom and allow the caller to claim it
     this.#registry.unregister(ref);
     this.#refsMap.delete(key);
     return registered;
@@ -37,11 +35,11 @@ export class UndefinedStateRegistry<AtomType extends object> {
     if (registered) return registered;
 
     // Or create and register a new one
-    const field = this.#external.constructor.create(detachedValue, {
+    const atom = this.#external.constructor.create(detachedValue, {
       key,
-      field: this.#external,
+      [this.#external.constructor.prop]: this.#external,
     });
-    this.register(key, field);
-    return field;
+    this.register(key, atom);
+    return atom;
   }
 }

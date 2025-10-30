@@ -1,9 +1,9 @@
 import { DependencyList } from "react";
-import { ChangesEvent, FieldChange } from "../change/index.ts";
+import { AtomChange, ChangesEvent } from "../change/index.ts";
 import { DetachedValue } from "../detached/index.ts";
 import { EventsTree } from "../events/index.ts";
 import type { Field } from "../field/definition.ts";
-import type { State } from "../state/index.ts";
+import type { State } from "../state/definition.ts";
 import type { Enso } from "../types.ts";
 import type { EnsoUtils as Utils } from "../utils.ts";
 
@@ -78,7 +78,7 @@ export declare class Atom<
     value: NewValue,
   ): Atom.Pave.Result<Kind, Variant, ValueDef, NewValue, Qualifier, Parent>;
 
-  get lastChanges(): FieldChange;
+  get lastChanges(): AtomChange;
 
   //#endregion
 
@@ -402,6 +402,12 @@ export namespace Atom {
       ? Field.Envelop<Variant, ValueDef, Qualifier, Parent>
       : never;
 
+  export type Prop<Kind extends Atom.Flavor.Kind> = Kind extends "state"
+    ? State.Prop
+    : Kind extends "field"
+      ? Field.Prop
+      : "atom";
+
   //#endregion
 
   //#region Variant
@@ -595,12 +601,12 @@ export namespace Atom {
             | Parent.Source<Kind, Value, Qualifier>
         : never;
 
-    export interface Direct<
+    export type Direct<
       Kind extends Atom.Flavor.Kind,
       Value,
       Key extends keyof Value,
       Qualifier extends Atom.Qualifier.Constraint,
-    > extends Bare.Direct<Envelop<Kind, Value, Qualifier>, Key> {}
+    > = Bare.Direct<Kind, Envelop<Kind, Value, Qualifier>, Key>;
 
     export interface Interface<ParentValue, Key extends keyof ParentValue> {
       value: ParentValue;
@@ -614,12 +620,15 @@ export namespace Atom {
     > extends Bare.Source<Envelop<Kind, Value, Qualifier>> {}
 
     export namespace Bare {
-      export type Ref<AtomType, Key> = Direct<AtomType, Key> | Source<AtomType>;
+      export type Ref<Kind extends Atom.Flavor.Kind, AtomType, Key> =
+        | Direct<Kind, AtomType, Key>
+        | Source<AtomType>;
 
-      export interface Direct<AtomType, Key> {
-        field: AtomType;
+      export type Direct<Kind extends Atom.Flavor.Kind, AtomType, Key> = {
         key: Key;
-      }
+      } & {
+        [Key in Atom.Prop<Kind>]: AtomType;
+      };
 
       export interface Source<AtomType> {
         source: AtomType;
@@ -726,7 +735,7 @@ export namespace Atom {
     // with subtypes.
     [AtomPrivate.valueExactPhantom]: Atom.ValueExactPhantom<ValueDef["read"]>;
 
-    lastChanges: FieldChange;
+    lastChanges: AtomChange;
 
     //#endregion
 
@@ -1098,7 +1107,7 @@ export namespace Atom {
         | (null extends Value ? null : never)
           // Add undefined to the union
           | (undefined extends Value ? undefined : never)
-          // Resolve branded field without null or undefined
+          // Resolve branded atom without null or undefined
           | Atom.Envelop<
               Kind,
               Variant,
@@ -1648,7 +1657,7 @@ export namespace Atom {
     // and `TupleSingle` as with the current approach binding the key and
     // value in the arguments on the type level, TypeScript fails to find
     // the correct overload for when the callback accepts a single argument
-    // (i.e. just the item field).
+    // (i.e. just the item atom).
 
     export interface TupleHandlerPair<
       Kind extends Atom.Flavor.Kind,
@@ -1714,7 +1723,7 @@ export namespace Atom {
     // and `ObjectSingle` as with the current approach binding the key and
     // value in the arguments on the type level, TypeScript fails to find
     // the correct overload for when the callback accepts a single argument
-    // (i.e. just the item field).
+    // (i.e. just the item atom).
 
     export interface ObjectHandlerPair<
       Kind extends Atom.Flavor.Kind,
@@ -1725,7 +1734,7 @@ export namespace Atom {
     > {
       (
         // Exclude is needed to remove undefined that appears when there're
-        // optional fields in the object.
+        // optional atoms in the object.
         ...args: Exclude<
           {
             [Key in Utils.CovariantifyKeyof<Value>]: [
@@ -1747,7 +1756,7 @@ export namespace Atom {
     > {
       (
         // Exclude is needed to remove undefined that appears when there're
-        // optional fields in the object.
+        // optional atoms in the object.
         item: Exclude<
           {
             [Key in keyof Value]: Child<
@@ -2323,7 +2332,7 @@ export namespace Atom {
     | (null extends Value ? null : never)
     // Add undefined to the union
     | (undefined extends Value ? undefined : never)
-    // Resolve branded field without null or undefined
+    // Resolve branded atom without null or undefined
     | Atom.Envelop<
         Kind,
         Child.Variant<Variant, Value>,
@@ -2354,7 +2363,7 @@ export namespace Atom {
         | (null extends Value ? null : never)
           // Add undefined to the union
           | (undefined extends Value ? undefined : never)
-          // Resolve branded field without null or undefined
+          // Resolve branded atom without null or undefined
           | Atom.Envelop<
               Kind,
               Variant,
@@ -2405,29 +2414,32 @@ export namespace Atom {
   /**
    * Optional reference target.
    */
-  export type OptionalTarget<Value> =
-    | OptionalTargetDirect<Value>
-    | OptionalTargetProjection;
+  export type OptionalTarget<Kind extends Atom.Flavor.Kind, Value> =
+    | OptionalTargetDirect<Kind, Value>
+    | OptionalTargetProjection<Kind>;
 
-  export interface OptionalTargetDirect<Value>
-    extends BareOptionalTargetDirect<Field<Value>> {}
+  export type OptionalTargetDirect<
+    Kind extends Atom.Flavor.Kind,
+    Value,
+  > = BareOptionalTargetDirect<Kind, Atom.Envelop<Kind, any, Atom.Def<Value>>>;
 
-  export interface OptionalTargetProjection
-    extends BareOptionalTargetProjection<Field<unknown>> {}
+  export type OptionalTargetProjection<Kind extends Atom.Flavor.Kind> =
+    BareOptionalTargetProjection<Atom.Envelop<Kind, any, Atom.Def<unknown>>>;
 
-  export type BareOptionalTarget<Type> =
-    | BareOptionalTargetDirect<Type>
+  export type BareOptionalTarget<Kind extends Atom.Flavor.Kind, Type> =
+    | BareOptionalTargetDirect<Kind, Type>
     | BareOptionalTargetProjection<Type>;
 
-  export interface BareOptionalTargetDirect<Type> {
+  export type BareOptionalTargetDirect<Kind extends Atom.Flavor.Kind, Type> = {
     type: "direct";
-    field: Type;
-  }
+  } & {
+    [Key in Atom.Prop<Kind>]: Type;
+  };
 
   export interface BareOptionalTargetProjection<Type> {
     type: "shadow";
     closest: Type;
-    /** Path relative to the closest field. */
+    /** Path relative to the closest atom. */
     path: Atom.Path;
   }
 
@@ -2483,7 +2495,7 @@ export namespace Atom {
       Qualifier.Ref.DisableFor<Qualifier, Fn>;
 
     export interface Fn {
-      (changes: FieldChange, notifyParents?: boolean): void;
+      (changes: AtomChange, notifyParents?: boolean): void;
     }
   }
 
@@ -2541,7 +2553,8 @@ export namespace Atom {
           | (Value extends Value
               ? {
                   value: Value;
-                  field: Envelop<
+                } & {
+                  [Key in Atom.Prop<Kind>]: Envelop<
                     Kind,
                     Variant,
                     Atom.Def<Value>,
@@ -2554,7 +2567,8 @@ export namespace Atom {
           | (Utils.Extends<Variant, "base"> extends true
               ? {
                   value: unknown;
-                  field: Envelop<
+                } & {
+                  [Key in Atom.Prop<Kind>]: Envelop<
                     Kind,
                     "base",
                     Atom.Def<unknown>,
@@ -2649,7 +2663,8 @@ export namespace Atom {
                   ? DiscriminatorValue extends Value[Discriminator]
                     ? {
                         discriminator: DiscriminatorValue;
-                        field: Envelop<
+                      } & {
+                        [Key in Atom.Prop<Kind>]: Envelop<
                           Kind,
                           Variant,
                           Atom.Def<Value>,
@@ -2662,7 +2677,8 @@ export namespace Atom {
                 : // Add the payload type without the discriminator (i.e. undefined)
                   {
                     discriminator: undefined;
-                    field: Envelop<
+                  } & {
+                    [Key in Atom.Prop<Kind>]: Envelop<
                       Kind,
                       Variant,
                       Atom.Def<Value>,
@@ -2675,7 +2691,8 @@ export namespace Atom {
           | (Utils.Extends<Variant, "base"> extends true
               ? {
                   discriminator: unknown;
-                  field: Envelop<
+                } & {
+                  [Key in Atom.Prop<Kind>]: Envelop<
                     Kind,
                     "base",
                     Atom.Def<unknown>,

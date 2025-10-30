@@ -1,9 +1,9 @@
 import { expect } from "vitest";
 import { devHumanizeChanges, devStringifyChanges } from "../src/dev.ts";
-import { FieldChange } from "../src/index.ts";
+import { AtomChange } from "../src/index.ts";
 
 expect.extend({
-  toMatchChanges(received: unknown, expected: FieldChange) {
+  toMatchChanges(received: unknown, expected: AtomChange) {
     if (typeof received !== "bigint") {
       return {
         pass: false,
@@ -17,9 +17,9 @@ expect.extend({
     };
   },
 
-  toReceiveChanges(received: any, expected: FieldChange) {
+  toReceiveChanges(received: any, expected: AtomChange) {
     let pass = false;
-    const receivedChanges: FieldChange[] = [];
+    const receivedChanges: AtomChange[] = [];
     for (const [_, event] of received.mock.calls) {
       if (event.changes !== expected) {
         receivedChanges.push(event.changes);
@@ -35,16 +35,13 @@ expect.extend({
   },
 });
 
-function toMatchChangesMessage(received: any, expected: FieldChange) {
+function toMatchChangesMessage(received: any, expected: AtomChange) {
   return `${expectedChangesMessage("the change to be", expected)}
 ...but got:
   ${receivedChangesMessage(received)}`;
 }
 
-function toReceiveChangesMessage(
-  received: FieldChange[],
-  expected: FieldChange,
-) {
+function toReceiveChangesMessage(received: AtomChange[], expected: AtomChange) {
   const receivedStr = received
     .map(
       (change, index) =>
@@ -58,12 +55,12 @@ function toReceiveChangesMessage(
 ${receivedStr || "  no changes received"}`;
 }
 
-function expectedChangesMessage(expectation: string, expected: FieldChange) {
+function expectedChangesMessage(expectation: string, expected: AtomChange) {
   return `Expected ${expectation}:
   0b${devStringifyChanges(expected)} (${devHumanizeChanges(expected)})`;
 }
 
-function receivedChangesMessage(received: FieldChange | undefined) {
+function receivedChangesMessage(received: AtomChange | undefined) {
   const receivedN = BigInt(received || 0);
   return received === undefined
     ? "undefined"
