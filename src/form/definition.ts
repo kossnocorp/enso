@@ -115,6 +115,11 @@ export declare class Form<Value> implements Form.Interface<Value> {
 
   get submitting(): boolean;
 
+  // TODO: Right now there's no implementation for the function. The thing is
+  // that it is not needed as Form.use rerenders when submitting changes.
+  // However, there's no actual need for that and having isolated subscriptions
+  // to useSubmitting would be more performant and consistent with the rest of
+  // the API, i.e. Field's methods.
   useSubmitting(): boolean;
 
   //#endregion

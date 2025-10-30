@@ -657,7 +657,7 @@ describe("Form", () => {
       });
     });
 
-    describe("#Component", () => {
+    describe("Form.Component", () => {
       beforeEach(cleanup);
 
       it("allows to use Form component", async () => {
