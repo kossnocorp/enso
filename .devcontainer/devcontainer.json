@@ -31,10 +31,10 @@
   "updateContentCommand": ".devcontainer/scripts/on-update.sh",
   "postStartCommand": ".devcontainer/scripts/post-start.sh",
 
-  "runArgs": ["--env-file", ".devcontainer/.env"],
-
   "containerEnv": {
-    "DEVCONTAINER": "true"
+    "DEVCONTAINER": "true",
+    // Optional GitHub token for elevated public API access, so mise installs don't choke.
+    "GITHUB_TOKEN": "${localEnv:GITHUB_TOKEN}"
   },
 
   "features": {
