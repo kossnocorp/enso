@@ -1,5 +1,7 @@
 # Enso
 
+Maximalist state & form management library for React.
+
 🚧 Work in progress
 
 ## Glossary
