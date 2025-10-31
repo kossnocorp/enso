@@ -1,11 +1,10 @@
-import { ty } from "tysts";
+import { ty } from "tyst";
+import { Atom } from "../atom/definition.ts";
 import { change, type ChangesEvent } from "../change/index.ts";
 import type { DetachedValue } from "../detached/index.ts";
 import { EventsTree } from "../events/index.ts";
 import { State } from "../state/index.ts";
 import { Field } from "./definition.ts";
-import { Atom } from "../atom/definition.ts";
-import { EnsoUtils } from "../utils.ts";
 
 const unionValue = new Field<Hello | Blah>({ hello: "world", world: true });
 const unionField = new Field({ hello: "world", world: true }) as

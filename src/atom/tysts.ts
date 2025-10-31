@@ -1,6 +1,6 @@
+import { ty } from "tyst";
 import { EnsoUtils as Utils } from "../utils.ts";
 import { Atom } from "./definition.ts";
-import { ty } from "tysts";
 
 //#region Static
 
