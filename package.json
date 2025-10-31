@@ -54,6 +54,7 @@
   },
   "homepage": "https://github.com/kossnocorp/enso#readme",
   "dependencies": {
+    "alwaysly": "^0.3.1",
     "nanoid": "^5.1.5",
     "react": "^19"
   },

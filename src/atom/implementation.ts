@@ -1,5 +1,6 @@
 "use client";
 
+import { always } from "alwaysly";
 import { nanoid } from "nanoid";
 import React, { useEffect, useRef } from "react";
 import {
@@ -7,11 +8,11 @@ import {
   atomChange,
   change,
   ChangesEvent,
+  metaChanges,
   shapeChanges,
   shiftChildChanges,
   structuralChanges,
 } from "../change/index.ts";
-// import { detachedValue } from "../detached/index.ts";
 import { DetachedValue, detachedValue } from "../detached/index.ts";
 import { EventsTree } from "../events/index.ts";
 import { useCallback, useMemo } from "../hooks/index.ts";
@@ -28,6 +29,8 @@ import {
   AtomInternalOpaque,
   detectInternalConstructor,
 } from "./internal/index.ts";
+
+//#region AtomImpl
 
 export class AtomImpl<Value> {
   //#region Static
@@ -422,7 +425,7 @@ export class AtomImpl<Value> {
   //#region Ref
 
   optional(): any {
-    return this.#static.optional(this) as any;
+    return this.#static.optional({ type: "direct", [this.#prop]: this }) as any;
   }
 
   //#endregion
@@ -544,7 +547,7 @@ export class AtomImpl<Value> {
   /**
    * Withholds the atom changes until `unleash` is called. It allows to batch
    * changes when submitting a form and send the submitting even to the atom
-   * along with the submitting state.
+   * along with the submitting value.
    *
    * TODO: I added automatic batching of changes, so all the changes are send
    * after the current stack is cleared. Check if this functionality is still
@@ -733,6 +736,233 @@ export class AtomImpl<Value> {
   //#endregion
 }
 
-function always(condition: unknown): asserts condition {
-  if (!condition) throw new Error("Assertion failed");
+//#region
+
+//#region AtomProxyInternal
+
+export class AtomProxyInternal<Kind extends Atom.Flavor.Kind, Value> {
+  // External atom proxy implementation instance, i.e., StateProxyImpl or FieldProxyImpl
+  #external: AtomImpl<unknown>;
+  #source: AtomImpl<unknown>;
+  #brand = Symbol();
+  #into: any;
+  #from: any;
+  #unsubs: Atom.Unwatch[] = [];
+
+  constructor(
+    external: AtomImpl<unknown>,
+    source: AtomImpl<unknown>,
+    into: any,
+    from: any,
+  ) {
+    this.#external = external;
+
+    this.#source = source;
+    this.#into = into;
+    this.#from = from;
+
+    // Watch for the atom (source) and update the computed value
+    // on structural changes.
+    this.#unsubs.push(
+      this.#source.watch(
+        (sourceValue, sourceEvent) => {
+          // Check if the change was triggered by the computed value and ignore
+          // it to stop circular updates.
+          if (sourceEvent.context[this.#brand]) return;
+
+          // Update the computed value if the change is structural.
+          // TODO: Tests
+          if (structuralChanges(sourceEvent.changes)) {
+            // TODO: Second argument is unnecessary expensive and probably can
+            // be replaced with simple atom.
+            this.#external.set(this.#into(sourceValue, this.#external.value));
+          }
+        },
+        // TODO: Add tests and rationale for this. Without it, though, when
+        // rendering collection settings in Mind Control and disabling a package
+        // that triggers rerender and makes the computed atom set to initial
+        // value. The culprit is "Prevent extra mapper call" code above that
+        // resets parent computed atom value before it gets a chance to update.
+        true,
+      ),
+    );
+
+    // Listen for the computed atom changes and update the atom
+    // (source) value.
+    this.#unsubs.push(
+      this.#external.watch(
+        (computedValue, computedEvent) => {
+          // Check if the change was triggered by the source value and ignore it
+          // to stop circular updates.
+          if (computedEvent.context[this.#brand]) return;
+
+          // Set context so we can know if the atom change was triggered by
+          // the computed value and stop circular updates.
+          ChangesEvent.context({ [this.#brand]: true }, () => {
+            // If there are structural changes, update the source atom.
+            // // TODO: Tests
+            if (structuralChanges(computedEvent.changes)) {
+              // TODO: Second argument is unnecessary expensive and probably can
+              // be replaced with simple atom.
+              this.#source.set(this.#from(computedValue, this.#source.value));
+            }
+
+            // Trigger meta changes.
+            // TODO: Add tests and rationale for this.
+            const computedMetaChanges = metaChanges(computedEvent.changes);
+            if (computedMetaChanges) {
+              this.#source.trigger(
+                computedMetaChanges,
+                // TODO: Add tests and rationale for this (see a todo above).
+                true,
+              );
+            }
+          });
+        },
+        // TODO: Add tests and rationale for this (see a todo above).
+        true,
+      ),
+    );
+  }
+
+  deconstruct() {
+    (this.#source as any).constructor.prototype.deconstruct.call(
+      this.#external,
+    );
+    this.#unsubs.forEach((unsub) => unsub());
+    this.#unsubs = [];
+  }
+
+  //#region Computed
+
+  connect(source: AtomImpl<unknown>) {
+    this.#source = source;
+  }
 }
+
+//#endregion
+
+//#region AtomOptionalInternal
+
+export class AtomOptionalInternal<Kind extends Atom.Flavor.Kind, Value> {
+  //#region Static
+
+  static instances = new WeakMap<
+    AtomImpl<unknown>,
+    AtomOptionalInternal<any, unknown>
+  >();
+
+  static instance(atom: AtomImpl<unknown>): AtomOptionalInternal<any, unknown> {
+    let ref = AtomOptionalInternal.instances.get(atom);
+    console.log("===", ref);
+    if (!ref) {
+      ref = (atom.constructor as any).optional({
+        type: "direct",
+        [(atom.constructor as any).prop]: atom,
+      }) as AtomOptionalInternal<any, unknown>;
+      console.log("~~~", ref);
+      AtomOptionalInternal.instances.set(atom, ref);
+    }
+    return ref;
+  }
+
+  //#endregion
+
+  #external: AtomImpl<Value>;
+  #target: Atom.BareOptionalTarget<Kind, AtomImpl<unknown>>;
+
+  constructor(
+    external: AtomImpl<Value>,
+    target: Atom.BareOptionalTarget<Kind, AtomImpl<unknown>>,
+  ) {
+    this.#external = external;
+
+    this.#target = target;
+
+    this.#try = this.#try.bind(this);
+  }
+
+  get value(): Value {
+    return AtomOptionalInternal.value(this.#prop, this.#target) as any;
+  }
+
+  //#region Value
+
+  static value<Kind extends Atom.Flavor.Kind>(
+    prop: Atom.Prop<Kind>,
+    target: Atom.BareOptionalTarget<Kind, AtomImpl<unknown>>,
+  ) {
+    if (target.type !== "direct") return undefined;
+    return target[prop].value;
+  }
+
+  //#endregion
+
+  //#region Tree
+
+  at<Key extends keyof Utils.NonNullish<Value>>(key: Key): any {
+    let target: Atom.BareOptionalTarget<Kind, AtomImpl<unknown>>;
+    if (this.#target.type === "direct") {
+      const atom = (this.#target[this.#prop].at as any)(key as any);
+      target = atom
+        ? ({
+            type: "direct",
+            [this.#prop]: atom,
+          } as any)
+        : { type: "shadow", closest: this.#target[this.#prop], path: [key] };
+    } else {
+      target = {
+        type: "shadow",
+        closest: this.#target.closest,
+        path: [...this.#target.path, String(key)],
+      };
+    }
+
+    return (this.#external.constructor as any).optional(target);
+  }
+
+  #try: Atom.BareTry<AtomImpl<Value[keyof Value]>, keyof Value> = (key) => {
+    // If it is a shadow atom, there can't be anything to try.
+    if (this.#target.type !== "direct") return;
+    const atom = this.#target[this.#prop].try?.(
+      // @ts-expect-error
+      key,
+    );
+    return atom && (AtomOptionalInternal.instance(atom as any) as any);
+  };
+
+  get try():
+    | Atom.BareTry<AtomImpl<Value[keyof Value]>, keyof Value>
+    | undefined
+    | null {
+    return this.#try;
+  }
+
+  //#endregion
+
+  //#region Optional
+
+  get path(): Atom.Path {
+    return this.#target.type === "direct"
+      ? this.#target[this.#prop].path
+      : [...this.#target.closest.path, ...this.#target.path];
+  }
+
+  get root(): AtomImpl<unknown> {
+    return this.#target.type === "direct"
+      ? (this.#target[this.#prop].root as any)
+      : (this.#target.closest.root as any);
+  }
+
+  //#e
+
+  //#region External
+
+  get #prop(): Atom.Prop<Kind> {
+    return (this.#external.constructor as any).prop;
+  }
+
+  //#endregion
+}
+
+//#endregion

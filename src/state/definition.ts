@@ -355,7 +355,16 @@ export namespace State {
         meta?: boolean | undefined;
       }
 
-      export type IncludeMeta<_Props extends Use.Props | undefined> = false;
+      export type IncludeMeta<Props extends Use.Props | undefined> =
+        undefined extends Props
+          ? false
+          : Props extends Use.Props
+            ? Props["meta"] extends true
+              ? true
+              : Props["meta"] extends false
+                ? false
+                : false
+            : never;
     }
   }
 

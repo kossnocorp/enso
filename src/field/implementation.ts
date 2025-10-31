@@ -2,15 +2,14 @@
 
 import type { Atom } from "../atom/definition.ts";
 import { UseAtomHook, useAtomHook } from "../atom/hooks/index.ts";
-import { AtomImpl } from "../atom/implementation.ts";
+import {
+  AtomImpl,
+  AtomOptionalInternal,
+  AtomProxyInternal,
+} from "../atom/implementation.ts";
 import { AtomInternalArray } from "../atom/internal/array/index.ts";
 import { AtomInternalObject } from "../atom/internal/object/index.ts";
-import {
-  change,
-  ChangesEvent,
-  metaChanges,
-  structuralChanges,
-} from "../change/index.ts";
+import { change } from "../change/index.ts";
 import { useCallback } from "../hooks/index.ts";
 import { EnsoUtils as Utils } from "../utils.ts";
 import { ValidationTree } from "../validation/index.ts";
@@ -36,8 +35,10 @@ export class FieldImpl<Value> extends AtomImpl<Value> {
     return new FieldProxyImpl(field, intoMapper, fromMapper);
   }
 
-  static optional(field: FieldImpl<unknown>) {
-    return new FieldOptionalImpl({ type: "direct", field });
+  static optional(
+    target: Atom.BareOptionalTarget<"field", FieldImpl<unknown>>,
+  ) {
+    return new FieldOptionalImpl(target);
   }
 
   static Component<Value>(props: Field.Component.Props<Value>) {
@@ -403,97 +404,22 @@ export class FieldImpl<Value> extends AtomImpl<Value> {
 //#region FieldProxy
 
 export class FieldProxyImpl<Value> extends FieldImpl<Value> {
-  #source: FieldImpl<unknown>;
-  #brand = Symbol();
-  #into: any;
-  #from: any;
-  #unsubs: Atom.Unwatch[] = [];
+  #internal: AtomProxyInternal<"field", Value>;
 
   constructor(source: FieldImpl<unknown>, into: any, from: any) {
     const value = into(source.value, undefined);
     super(value, { source });
 
-    this.#source = source;
-    this.#into = into;
-    this.#from = from;
-
-    // Watch for the atom (source) and update the computed value
-    // on structural changes.
-    this.#unsubs.push(
-      this.#source.watch(
-        (sourceValue, sourceEvent) => {
-          // Check if the change was triggered by the computed value and ignore
-          // it to stop circular updates.
-          if (sourceEvent.context[this.#brand]) return;
-
-          // Update the computed value if the change is structural.
-          // TODO: Tests
-          if (structuralChanges(sourceEvent.changes)) {
-            // TODO: Second argument is unnecessary expensive and probably can
-            // be replaced with simple atom.
-            this.set(this.#into(sourceValue, this.value));
-          }
-        },
-        // TODO: Add tests and rationale for this. Without it, though, when
-        // rendering collection settings in Mind Control and disabling a package
-        // that triggers rerender and makes the computed atom set to initial
-        // value. The culprit is "Prevent extra mapper call" code above that
-        // resets parent computed atom value before it gets a chance to update.
-        true,
-      ),
-    );
-
-    // Listen for the computed atom changes and update the atom
-    // (source) value.
-    this.#unsubs.push(
-      this.watch(
-        (computedValue, computedEvent) => {
-          // Check if the change was triggered by the source value and ignore it
-          // to stop circular updates.
-          if (computedEvent.context[this.#brand]) return;
-
-          // Set context so we can know if the atom change was triggered by
-          // the computed value and stop circular updates.
-          ChangesEvent.context({ [this.#brand]: true }, () => {
-            // If there are structural changes, update the source atom.
-            // // TODO: Tests
-            if (structuralChanges(computedEvent.changes)) {
-              // TODO: Second argument is unnecessary expensive and probably can
-              // be replaced with simple atom.
-              this.#source.set(this.#from(computedValue, this.#source.value));
-            }
-
-            // Trigger meta changes.
-            // TODO: Add tests and rationale for this.
-            const computedMetaChanges = metaChanges(computedEvent.changes);
-            if (computedMetaChanges) {
-              this.#source.trigger(
-                computedMetaChanges,
-                // TODO: Add tests and rationale for this (see a todo above).
-                true,
-              );
-            }
-          });
-        },
-        // TODO: Add tests and rationale for this (see a todo above).
-        true,
-      ),
-    );
+    this.#internal = new AtomProxyInternal(this as any, source, into, from);
   }
 
   override deconstruct() {
-    FieldImpl.prototype.deconstruct.call(this);
-    this.#unsubs.forEach((unsub) => unsub());
-    this.#unsubs = [];
+    this.#internal.deconstruct();
   }
-
-  //#region Computed
 
   connect(source: FieldImpl<unknown>) {
-    this.#source = source;
+    this.#internal.connect(source);
   }
-
-  //#endregion
 }
 
 //#endregion
@@ -501,43 +427,18 @@ export class FieldProxyImpl<Value> extends FieldImpl<Value> {
 //#region FieldOptional
 
 export class FieldOptionalImpl<Value> extends FieldImpl<Value> {
-  //#region Static
-
-  static instances = new WeakMap<
-    FieldImpl<unknown>,
-    FieldOptionalImpl<unknown>
-  >();
-
-  static instance(field: FieldImpl<unknown>): FieldOptionalImpl<unknown> {
-    let ref = FieldOptionalImpl.instances.get(field);
-    if (!ref) {
-      ref = new FieldOptionalImpl({ type: "direct", field });
-      FieldOptionalImpl.instances.set(field, ref);
-    }
-    return ref;
-  }
-
-  //#endregion
-
-  #target: Atom.BareOptionalTarget<"field", FieldImpl<unknown>>;
+  #internal: AtomOptionalInternal<"field", Value>;
 
   constructor(target: Atom.BareOptionalTarget<"field", FieldImpl<unknown>>) {
-    super(FieldOptionalImpl.value(target) as any);
+    super(AtomOptionalInternal.value("field", target) as any);
 
-    this.#target = target;
-
-    this.#try = this.#try.bind(this);
-  }
-
-  override get value(): Value {
-    return FieldOptionalImpl.value(this.#target) as any;
+    this.#internal = new AtomOptionalInternal(this, target);
   }
 
   //#region Value
 
-  static value(target: Atom.BareOptionalTarget<"field", FieldImpl<unknown>>) {
-    if (target.type !== "direct") return undefined;
-    return target.field.value;
+  override get value(): Value {
+    return this.#internal.value;
   }
 
   //#endregion
@@ -545,39 +446,14 @@ export class FieldOptionalImpl<Value> extends FieldImpl<Value> {
   //#region Tree
 
   override at<Key extends keyof Utils.NonNullish<Value>>(key: Key): any {
-    let target: Atom.BareOptionalTarget<"field", FieldImpl<unknown>>;
-    if (this.#target.type === "direct") {
-      const field = (this.#target.field.at as any)(key as any);
-      target = field
-        ? ({
-            type: "direct",
-            field,
-          } as any)
-        : { type: "shadow", closest: this.#target.field, path: [key] };
-    } else {
-      target = {
-        type: "shadow",
-        closest: this.#target.closest,
-        path: [...this.#target.path, String(key)],
-      };
-    }
-
-    return new FieldOptionalImpl(target);
+    return this.#internal.at(key);
   }
-
-  #try: Atom.BareTry<AtomImpl<Value[keyof Value]>, keyof Value> = (key) => {
-    // If it is a shadow field, there can't be anything to try.
-    if (this.#target.type !== "direct") return;
-    // @ts-expect-error
-    const field = this.#target.field.try?.(key);
-    return field && (FieldOptionalImpl.instance(field as any) as any);
-  };
 
   override get try():
     | Atom.BareTry<AtomImpl<Value[keyof Value]>, keyof Value>
     | undefined
     | null {
-    return this.#try;
+    return this.#internal.try;
   }
 
   //#endregion
@@ -585,8 +461,8 @@ export class FieldOptionalImpl<Value> extends FieldImpl<Value> {
   //#region Validation
 
   override addError(error: Field.Error | string): void {
-    const path = this.#targetPath();
-    const root = this.#targetRoot();
+    const path = this.#internal.path;
+    const root = this.#internal.root as unknown as FieldImpl<any>;
 
     // If there are any nested errors at this path, field is not valid.
     const wasValid = !root.validationTree.nested(path).length;
@@ -594,22 +470,6 @@ export class FieldOptionalImpl<Value> extends FieldImpl<Value> {
 
     root.validationTree.add(path, FieldImpl.normalizeError(error));
     root.events.trigger(path, changes);
-  }
-
-  //#endregion
-
-  //#region Optional
-
-  #targetPath(): Atom.Path {
-    return this.#target.type === "direct"
-      ? this.#target.field.path
-      : [...this.#target.closest.path, ...this.#target.path];
-  }
-
-  #targetRoot(): FieldImpl<any> {
-    return this.#target.type === "direct"
-      ? (this.#target.field.root as any)
-      : (this.#target.closest.root as any);
   }
 
   //#endregion

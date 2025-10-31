@@ -1,6 +1,5 @@
 import { Atom } from "../atom/definition.ts";
 import { Field } from "../field/definition.ts";
-import { Enso } from "../types.ts";
 
 export class ValidationTree {
   #errors: Field.Error[] = [];
