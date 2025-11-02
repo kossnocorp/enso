@@ -5071,6 +5071,153 @@ const brandedPrim = new Field({} as Branded<string>);
 }
 //#endregion
 
+//#region Field.Decomposed
+{
+  // Default
+  {
+    const decomposed = {} as Field.Decomposed<string[] | undefined>;
+
+    if (decomposed.value) {
+      ty(decomposed.field).is(ty<Field<string[]>>());
+    } else {
+      ty(decomposed.field).is(ty<Field<undefined>>());
+    }
+
+    ty(decomposed).is(
+      ty.assignableTo<Field.Exact.Decomposed<string[] | undefined>>(),
+    );
+  }
+
+  // Exact
+  {
+    const decomposed = {} as Field.Exact.Decomposed<string[] | undefined>;
+
+    if (decomposed.value) {
+      ty(decomposed.field).is(ty<Field.Exact<string[]>>());
+    } else {
+      ty(decomposed.field).is(ty<Field.Exact<undefined>>());
+    }
+  }
+
+  // Base
+  {
+    const decomposed = {} as Field.Base.Decomposed<string[] | undefined>;
+
+    ty(decomposed.value).is(ty<unknown>());
+    ty(decomposed.field).is(
+      ty<Field.Base<string[]> | Field.Base<undefined> | Field.Base<unknown>>(),
+    );
+  }
+
+  // Optional
+  {
+    const decomposed = {} as Field.Optional.Decomposed<string[] | undefined>;
+
+    if (decomposed.value) {
+      ty(decomposed.field).is(ty<Field.Optional<string[]>>());
+    } else {
+      ty(decomposed.field).is(ty<Field.Optional<undefined>>());
+    }
+  }
+
+  // Immutable
+  {
+    const decomposed = {} as Field.Immutable.Decomposed<string[] | undefined>;
+
+    if (decomposed.value) {
+      ty(decomposed.field).is(ty<Field.Immutable<string[]>>());
+    } else {
+      ty(decomposed.field).is(ty<Field.Immutable<undefined>>());
+    }
+  }
+}
+//#endregion
+
+//#region Field.DecomposedVariant
+{
+  // Default
+  {
+    const decomposed = {} as Field.DecomposedVariant<
+      string[] | undefined,
+      undefined
+    >;
+
+    ty(decomposed).is(
+      ty.assignableTo<Field.Decomposed<string[] | undefined>>(),
+    );
+
+    ty(decomposed.value).is(ty<undefined>());
+    ty(decomposed.field).is(ty<Field<undefined>>());
+
+    ty(decomposed).is(
+      ty.assignableTo<
+        Field.Exact.DecomposedVariant<string[] | undefined, undefined>
+      >(),
+    );
+  }
+
+  // Exact
+  {
+    const decomposed = {} as Field.Exact.DecomposedVariant<
+      string[] | undefined,
+      undefined
+    >;
+
+    ty(decomposed).is(
+      ty.assignableTo<Field.Exact.Decomposed<string[] | undefined>>(),
+    );
+
+    ty(decomposed.value).is(ty<undefined>());
+    ty(decomposed.field).is(ty<Field.Exact<undefined>>());
+  }
+
+  // Base
+  {
+    const decomposed = {} as Field.Base.DecomposedVariant<
+      string[] | undefined,
+      undefined
+    >;
+
+    ty(decomposed).is(
+      ty.assignableTo<Field.Base.Decomposed<string[] | undefined>>(),
+    );
+
+    ty(decomposed.value).is(ty<undefined>());
+    ty(decomposed.field).is(ty<Field.Base<undefined> | Field.Base<unknown>>());
+  }
+
+  // Optional
+  {
+    const decomposed = {} as Field.Optional.DecomposedVariant<
+      string[] | undefined,
+      undefined
+    >;
+
+    ty(decomposed).is(
+      ty.assignableTo<Field.Optional.Decomposed<string[] | undefined>>(),
+    );
+
+    ty(decomposed.value).is(ty<undefined>());
+    ty(decomposed.field).is(ty<Field.Optional<undefined>>());
+  }
+
+  // Immutable
+  {
+    const decomposed = {} as Field.Immutable.DecomposedVariant<
+      string[] | undefined,
+      undefined
+    >;
+
+    ty(decomposed).is(
+      ty.assignableTo<Field.Immutable.Decomposed<string[] | undefined>>(),
+    );
+
+    ty(decomposed.value).is(ty<undefined>());
+    ty(decomposed.field).is(ty<Field.Immutable<undefined>>());
+  }
+}
+//#endregion
+
 //#region Field#discriminate & Field#useDiscriminate
 {
   function _discriminate<Key extends keyof User>(
@@ -5664,6 +5811,188 @@ const brandedPrim = new Field({} as Branded<string>);
     {
       ty(field.useDiscriminate).is.undefined();
     }
+  }
+}
+//#endregion
+
+//#region Field.Discriminated
+{
+  interface Square {
+    type: "square";
+    side: number;
+  }
+
+  interface Circle {
+    type: "circle";
+    radius: number;
+  }
+
+  // Default
+  {
+    const discriminated = {} as Field.Discriminated<Square | Circle, "type">;
+
+    if (discriminated.discriminator === "square") {
+      ty(discriminated.field).is(ty<Field<Square>>());
+    } else {
+      ty(discriminated.field).is(ty<Field<Circle>>());
+    }
+
+    ty(discriminated).is(
+      ty<Field.Exact.Discriminated<Square | Circle, "type">>(),
+    );
+  }
+
+  // Exact
+  {
+    const discriminated = {} as Field.Exact.Discriminated<
+      Square | Circle,
+      "type"
+    >;
+
+    if (discriminated.discriminator === "square") {
+      ty(discriminated.field).is(ty<Field.Exact<Square>>());
+    } else {
+      ty(discriminated.field).is(ty<Field.Exact<Circle>>());
+    }
+  }
+
+  // Base
+  {
+    const discriminated = {} as Field.Base.Discriminated<
+      Square | Circle,
+      "type"
+    >;
+
+    ty(discriminated.discriminator).is(ty<unknown>());
+    ty(discriminated.field).is(
+      ty<Field.Base<Square> | Field.Base<Circle> | Field.Base<unknown>>(),
+    );
+  }
+
+  // Optional
+  {
+    const discriminated = {} as Field.Optional.Discriminated<
+      Square | Circle,
+      "type"
+    >;
+
+    if (discriminated.discriminator === "square") {
+      ty(discriminated.field).is(ty<Field.Optional<Square>>());
+    } else {
+      ty(discriminated.field).is(ty<Field.Optional<Circle>>());
+    }
+  }
+
+  // Immutable
+  {
+    const discriminated = {} as Field.Immutable.Discriminated<
+      Square | Circle,
+      "type"
+    >;
+
+    if (discriminated.discriminator === "square") {
+      ty(discriminated.field).is(ty<Field.Immutable<Square>>());
+    } else {
+      ty(discriminated.field).is(ty<Field.Immutable<Circle>>());
+    }
+  }
+}
+//#endregion
+
+//#region Field.DiscriminatedVariant
+{
+  interface Square {
+    type: "square";
+    side: number;
+  }
+
+  interface Circle {
+    type: "circle";
+    radius: number;
+  }
+
+  // Default
+  {
+    const discriminated = {} as Field.DiscriminatedVariant<
+      Square | Circle,
+      "type",
+      "circle"
+    >;
+
+    ty(discriminated.discriminator).is(ty<"circle">());
+    ty(discriminated.field).is(ty<Field<Circle>>());
+
+    ty(discriminated).is(
+      ty.assignableTo<Field.Discriminated<Square | Circle, "type">>(),
+    );
+
+    ty(discriminated).is(
+      ty<Field.Exact.DiscriminatedVariant<Square | Circle, "type", "circle">>(),
+    );
+  }
+
+  // Exact
+  {
+    const discriminated = {} as Field.Exact.DiscriminatedVariant<
+      Square | Circle,
+      "type",
+      "circle"
+    >;
+
+    ty(discriminated).is(
+      ty.assignableTo<Field.Exact.Discriminated<Square | Circle, "type">>(),
+    );
+
+    ty(discriminated.discriminator).is(ty<"circle">());
+    ty(discriminated.field).is(ty<Field<Circle>>());
+  }
+
+  // Base
+  {
+    const discriminated = {} as Field.Base.DiscriminatedVariant<
+      Square | Circle,
+      "type",
+      "circle"
+    >;
+
+    ty(discriminated).is(
+      ty.assignableTo<Field.Base.Discriminated<Square | Circle, "type">>(),
+    );
+
+    ty(discriminated.discriminator).is(ty<"circle">());
+    ty(discriminated.field).is(ty<Field.Base<Circle> | Field.Base<unknown>>());
+  }
+
+  // Optional
+  {
+    const discriminated = {} as Field.Optional.DiscriminatedVariant<
+      Square | Circle,
+      "type",
+      "circle"
+    >;
+
+    ty(discriminated).is(
+      ty.assignableTo<Field.Optional.Discriminated<Square | Circle, "type">>(),
+    );
+
+    ty(discriminated.discriminator).is(ty<"circle">());
+    ty(discriminated.field).is(ty<Field.Optional<Circle>>());
+  }
+
+  // Immutable
+  {
+    const discriminated = {} as Field.Immutable.DiscriminatedVariant<
+      Square | Circle,
+      "type",
+      "circle"
+    >;
+
+    ty(discriminated).is(
+      ty.assignableTo<Field.Immutable.Discriminated<Square | Circle, "type">>(),
+    );
+
+    ty(discriminated.discriminator).is(ty<"circle">());
+    ty(discriminated.field).is(ty<Field.Immutable<Circle>>());
   }
 }
 //#endregion

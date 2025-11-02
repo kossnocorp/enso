@@ -2688,6 +2688,7 @@ export namespace Atom {
                   }
               : never)
           // Add unknown option for the base and immutable variants
+          // TODO: Right now immutable is excluded, should it be?
           | (Utils.Extends<Variant, "base"> extends true
               ? {
                   discriminator: unknown;

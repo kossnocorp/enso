@@ -129,6 +129,63 @@ export namespace State {
       Parent extends Atom.Parent.Constraint<ValueDef> = Atom.Parent.Default,
     > extends Atom.Exact<"state", "exact", ValueDef, Qualifier, Parent>,
         Immutable.Interface<"exact", ValueDef, Qualifier, Parent> {}
+
+    export type Decomposed<
+      Value,
+      Qualifier extends
+        Atom.Qualifier.External.Constraint = Atom.Qualifier.External.Default,
+      Parent extends Atom.Parent.Constraint<
+        Atom.Def<Value>
+      > = Atom.Parent.Default,
+    > = Atom.Decompose.Result<
+      "state",
+      "exact",
+      Atom.Def<Value>,
+      Atom.Qualifier.Internalize<Qualifier>,
+      Parent
+    >;
+
+    export type DecomposedVariant<
+      Value,
+      Variant extends Value,
+      Qualifier extends
+        Atom.Qualifier.External.Constraint = Atom.Qualifier.External.Default,
+      Parent extends Atom.Parent.Constraint<
+        Atom.Def<Value>
+      > = Atom.Parent.Default,
+    > = Decomposed<Value, Qualifier, Parent> & { value: Variant };
+
+    export type Discriminated<
+      Value,
+      Discriminator extends Atom.Discriminate.Discriminator<Atom.Def<Value>>,
+      Qualifier extends
+        Atom.Qualifier.External.Constraint = Atom.Qualifier.External.Default,
+      Parent extends Atom.Parent.Constraint<
+        Atom.Def<Value>
+      > = Atom.Parent.Default,
+    > = Atom.Discriminate.Result<
+      "state",
+      "exact",
+      Atom.Def<Value>,
+      Discriminator,
+      Atom.Qualifier.Internalize<Qualifier>,
+      Parent
+    >;
+
+    export type DiscriminatedVariant<
+      Value,
+      Discriminator extends Atom.Discriminate.Discriminator<Atom.Def<Value>>,
+      Variant extends Discriminator extends keyof Value
+        ? Value[Discriminator]
+        : never,
+      Qualifier extends
+        Atom.Qualifier.External.Constraint = Atom.Qualifier.External.Default,
+      Parent extends Atom.Parent.Constraint<
+        Atom.Def<Value>
+      > = Atom.Parent.Default,
+    > = Discriminated<Value, Discriminator, Qualifier, Parent> & {
+      discriminator: Variant;
+    };
   }
 
   //#endregion
@@ -162,6 +219,31 @@ export namespace State {
       Parent extends Atom.Parent.Constraint<ValueDef> = Atom.Parent.Default,
     > extends Immutable.Interface<Variant, ValueDef, Qualifier, Parent> {}
 
+    export type Decomposed<
+      Value,
+      Qualifier extends
+        Atom.Qualifier.External.Constraint = Atom.Qualifier.External.Default,
+      Parent extends Atom.Parent.Constraint<
+        Atom.Def<Value>
+      > = Atom.Parent.Default,
+    > = Atom.Decompose.Result<
+      "state",
+      "base",
+      Atom.Def<Value>,
+      Atom.Qualifier.Internalize<Qualifier>,
+      Parent
+    >;
+
+    export type DecomposedVariant<
+      Value,
+      Variant extends Value,
+      Qualifier extends
+        Atom.Qualifier.External.Constraint = Atom.Qualifier.External.Default,
+      Parent extends Atom.Parent.Constraint<
+        Atom.Def<Value>
+      > = Atom.Parent.Default,
+    > = Decomposed<Value, Qualifier, Parent> & { value: Variant };
+
     export type Discriminated<
       Value,
       Discriminator extends Atom.Discriminate.Discriminator<Atom.Def<Value>>,
@@ -178,6 +260,21 @@ export namespace State {
       Atom.Qualifier.Internalize<Qualifier>,
       Parent
     >;
+
+    export type DiscriminatedVariant<
+      Value,
+      Discriminator extends Atom.Discriminate.Discriminator<Atom.Def<Value>>,
+      Variant extends Discriminator extends keyof Value
+        ? Value[Discriminator]
+        : never,
+      Qualifier extends
+        Atom.Qualifier.External.Constraint = Atom.Qualifier.External.Default,
+      Parent extends Atom.Parent.Constraint<
+        Atom.Def<Value>
+      > = Atom.Parent.Default,
+    > = Discriminated<Value, Discriminator, Qualifier, Parent> & {
+      discriminator: Variant;
+    };
   }
 
   //#endregion
@@ -211,6 +308,31 @@ export namespace State {
       Parent extends Atom.Parent.Constraint<ValueDef> = Atom.Parent.Default,
     > extends Immutable.Interface<Variant, ValueDef, Qualifier, Parent> {}
 
+    export type Decomposed<
+      Value,
+      Qualifier extends
+        Atom.Qualifier.External.Constraint = Atom.Qualifier.External.Default,
+      Parent extends Atom.Parent.Constraint<
+        Atom.Def<Value>
+      > = Atom.Parent.Default,
+    > = Atom.Decompose.Result<
+      "state",
+      "optional",
+      Atom.Def<Value>,
+      Atom.Qualifier.Internalize<Qualifier>,
+      Parent
+    >;
+
+    export type DecomposedVariant<
+      Value,
+      Variant extends Value,
+      Qualifier extends
+        Atom.Qualifier.External.Constraint = Atom.Qualifier.External.Default,
+      Parent extends Atom.Parent.Constraint<
+        Atom.Def<Value>
+      > = Atom.Parent.Default,
+    > = Decomposed<Value, Qualifier, Parent> & { value: Variant };
+
     export type Discriminated<
       Value,
       Discriminator extends Atom.Discriminate.Discriminator<Atom.Def<Value>>,
@@ -227,6 +349,21 @@ export namespace State {
       Atom.Qualifier.Internalize<Qualifier>,
       Parent
     >;
+
+    export type DiscriminatedVariant<
+      Value,
+      Discriminator extends Atom.Discriminate.Discriminator<Atom.Def<Value>>,
+      Variant extends Discriminator extends keyof Value
+        ? Value[Discriminator]
+        : never,
+      Qualifier extends
+        Atom.Qualifier.External.Constraint = Atom.Qualifier.External.Default,
+      Parent extends Atom.Parent.Constraint<
+        Atom.Def<Value>
+      > = Atom.Parent.Default,
+    > = Discriminated<Value, Discriminator, Qualifier, Parent> & {
+      discriminator: Variant;
+    };
   }
 
   //#endregion
@@ -262,6 +399,31 @@ export namespace State {
       [hintSymbol]: true;
     }
 
+    export type Decomposed<
+      Value,
+      Qualifier extends
+        Atom.Qualifier.External.Constraint = Atom.Qualifier.External.Default,
+      Parent extends Atom.Parent.Constraint<
+        Atom.Def<Value>
+      > = Atom.Parent.Default,
+    > = Atom.Decompose.Result<
+      "state",
+      "immutable",
+      Atom.Def<Value>,
+      Atom.Qualifier.Internalize<Qualifier>,
+      Parent
+    >;
+
+    export type DecomposedVariant<
+      Value,
+      Variant extends Value,
+      Qualifier extends
+        Atom.Qualifier.External.Constraint = Atom.Qualifier.External.Default,
+      Parent extends Atom.Parent.Constraint<
+        Atom.Def<Value>
+      > = Atom.Parent.Default,
+    > = Decomposed<Value, Qualifier, Parent> & { value: Variant };
+
     export type Discriminated<
       Value,
       Discriminator extends Atom.Discriminate.Discriminator<Atom.Def<Value>>,
@@ -278,6 +440,21 @@ export namespace State {
       Atom.Qualifier.Internalize<Qualifier>,
       Parent
     >;
+
+    export type DiscriminatedVariant<
+      Value,
+      Discriminator extends Atom.Discriminate.Discriminator<Atom.Def<Value>>,
+      Variant extends Discriminator extends keyof Value
+        ? Value[Discriminator]
+        : never,
+      Qualifier extends
+        Atom.Qualifier.External.Constraint = Atom.Qualifier.External.Default,
+      Parent extends Atom.Parent.Constraint<
+        Atom.Def<Value>
+      > = Atom.Parent.Default,
+    > = Discriminated<Value, Discriminator, Qualifier, Parent> & {
+      discriminator: Variant;
+    };
   }
 
   //#endregion
@@ -402,6 +579,16 @@ export namespace State {
     Parent
   >;
 
+  export type DecomposedVariant<
+    Value,
+    Variant extends Value,
+    Qualifier extends
+      Atom.Qualifier.External.Constraint = Atom.Qualifier.External.Default,
+    Parent extends Atom.Parent.Constraint<
+      Atom.Def<Value>
+    > = Atom.Parent.Default,
+  > = Decomposed<Value, Qualifier, Parent> & { value: Variant };
+
   export type Discriminated<
     Value,
     Discriminator extends Atom.Discriminate.Discriminator<Atom.Def<Value>>,
@@ -418,6 +605,21 @@ export namespace State {
     Atom.Qualifier.Internalize<Qualifier>,
     Parent
   >;
+
+  export type DiscriminatedVariant<
+    Value,
+    Discriminator extends Atom.Discriminate.Discriminator<Atom.Def<Value>>,
+    Variant extends Discriminator extends keyof Value
+      ? Value[Discriminator]
+      : never,
+    Qualifier extends
+      Atom.Qualifier.External.Constraint = Atom.Qualifier.External.Default,
+    Parent extends Atom.Parent.Constraint<
+      Atom.Def<Value>
+    > = Atom.Parent.Default,
+  > = Discriminated<Value, Discriminator, Qualifier, Parent> & {
+    discriminator: Variant;
+  };
 
   export type Proxy<SourceValue = any> = Atom.Proxy.Qualifier<
     Atom.Def<SourceValue>
