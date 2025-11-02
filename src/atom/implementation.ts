@@ -674,38 +674,6 @@ export class AtomImpl<Value> {
       // Otherwise, return the original value, which should be ""
       return value;
     }, []);
-
-    // switch (type) {
-    //   case "string": {
-    //     const maybeNullish = useRef<any>(this.value);
-    //     return this.useInto((value: any) => value ?? "", []).from(
-    //       (value: any) => {
-    //         // If the value not nullish, return it
-    //         if (value) return value;
-    //         // Restore original value if it was nullish
-    //         if (!maybeNullish.current) return maybeNullish.current;
-    //         // Otherwise, return the original value, which should be ""
-    //         return value;
-    //       },
-    //       [],
-    //     );
-    //   }
-
-    //   case "array": {
-    //     const maybeNullish = useRef<any>(this.value);
-    //     return this.useInto((value: any) => value ?? "", []).from(
-    //       (value: any) => {
-    //         // If the value not nullish, return it
-    //         if (value) return value;
-    //         // Restore original value if it was nullish
-    //         if (!maybeNullish.current) return maybeNullish.current;
-    //         // Otherwise, return the original value, which should be ""
-    //         return value;
-    //       },
-    //       [],
-    //     );
-    //   }
-    // }
   }
 
   shared() {
