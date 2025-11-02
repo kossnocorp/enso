@@ -2895,6 +2895,20 @@ export namespace Atom {
       ): Envelop<Kind, Variant, Atom.Def<string>, Qualifier, Parent>;
     }
 
+    export interface FnArray<
+      Kind extends Atom.Flavor.Kind,
+      Variant extends Atom.Flavor.Variant,
+      Value extends unknown[] | Utils.Nullish,
+      Qualifier extends Atom.Qualifier.Constraint,
+      Parent extends Atom.Parent.Constraint<
+        Atom.Def<Value>
+      > = Atom.Parent.Default,
+    > {
+      (
+        to: "array",
+      ): Envelop<Kind, Variant, Atom.Def<Value & {}>, Qualifier, Parent>;
+    }
+
     export namespace Use {
       export type Prop<
         Kind extends Atom.Flavor.Kind,
@@ -2907,6 +2921,13 @@ export namespace Atom {
         Fn<Kind, Variant, ValueDef, Qualifier, Parent>
       >;
 
+      // TODO: Add support for other primitives:
+      // - object to default to {}
+      // - number to default to 0
+      // - boolean to default to false
+      // - bigint to default to 0n
+      // - etc.
+
       export type Fn<
         Kind extends Atom.Flavor.Kind,
         Variant extends Atom.Flavor.Variant,
@@ -2914,16 +2935,20 @@ export namespace Atom {
         Qualifier extends Atom.Qualifier.Constraint,
         Parent extends Atom.Parent.Constraint<ValueDef>,
       > = ValueDef["read"] extends infer Value
-        ? Utils.IsNever<Extract<Value, string>> extends false
-          ? Value extends string | Utils.Nullish
-            ? FnString<Kind, Variant, Value, Qualifier, Parent>
-            : undefined
+        ? Utils.IsNever<Extract<Value, string | unknown[]>> extends false
+          ? Value & {} extends infer NonNullishValue
+            ? NonNullishValue extends string
+              ? FnString<Kind, Variant, NonNullishValue, Qualifier, Parent>
+              : NonNullishValue extends unknown[]
+                ? FnArray<Kind, Variant, NonNullishValue, Qualifier, Parent>
+                : undefined
+            : never
           : never
         : never;
     }
   }
 
-  export type DefinedType = "string";
+  export type DefinedType = "string" | "array";
 
   //#endregion
 

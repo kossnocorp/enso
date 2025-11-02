@@ -6047,6 +6047,45 @@ const brandedPrim = new Field({} as Branded<string>);
     }
   }
 
+  // Array
+  {
+    // Basic
+    {
+      const field = {} as Field<string[] | undefined | null>;
+      const result = field.useDefined("array");
+      ty(result).is(ty<Field<string[]>>());
+    }
+
+    // Defined
+    {
+      const field = {} as Field<string[]>;
+      const result = field.useDefined("array");
+      ty(result).is(ty<Field<string[]>>());
+    }
+
+    // Mixed
+    {
+      const field = {} as Field<string[] | number>;
+      const result = field.useDefined?.("array");
+      ty(result).is(ty<Field<string[]> | undefined>());
+      ty(field.useDefined).is(ty.assignableFrom<undefined>());
+    }
+
+    // Base
+    {
+      const field = {} as Field.Base<string[]>;
+      const result = field.useDefined("array");
+      ty(result).is(ty<Field.Base<string[]>>());
+    }
+
+    // Immutable
+    {
+      const field = {} as Field.Immutable<string[]>;
+      const result = field.useDefined("array");
+      ty(result).is(ty<Field.Immutable<string[]>>());
+    }
+  }
+
   // Shared
   {
     const field = ({} as Field<string>).shared<[string, string | undefined]>();

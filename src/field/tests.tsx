@@ -5265,232 +5265,466 @@ describe("Field", () => {
     describe("#useDefined", () => {
       beforeEach(cleanup);
 
-      it("returns defined field when value is string", async () => {
-        function Component() {
-          const renders = useRenderCount();
+      describe("string", () => {
+        it("returns defined field when value is string", async () => {
+          function Component() {
+            const renders = useRenderCount();
 
-          const field = Field.use<string | undefined>("hello", []);
-          const definedField = field.useDefined("string");
-          const definedValue = definedField.useValue();
+            const field = Field.use<string | undefined>("hello", []);
+            const definedField = field.useDefined("string");
+            const definedValue = definedField.useValue();
 
-          return (
-            <div>
-              <div data-testid="value">{definedValue}</div>
-              <div data-testid="type">{typeof definedValue}</div>
+            return (
+              <div>
+                <div data-testid="value">{definedValue}</div>
+                <div data-testid="type">{typeof definedValue}</div>
 
-              <button onClick={() => field.set("world")}>Change value</button>
-              <button onClick={() => field.set(undefined)}>
-                Set undefined
-              </button>
+                <button onClick={() => field.set("world")}>Change value</button>
+                <button onClick={() => field.set(undefined)}>
+                  Set undefined
+                </button>
 
-              <div data-testid="renders">{renders}</div>
-            </div>
-          );
-        }
+                <div data-testid="renders">{renders}</div>
+              </div>
+            );
+          }
 
-        render(<Component />);
-        expect(screen.getByTestId("value").textContent).toBe("hello");
-        expect(screen.getByTestId("type").textContent).toBe("string");
-        expect(screen.getByTestId("renders").textContent).toBe("1");
+          render(<Component />);
+          expect(screen.getByTestId("value").textContent).toBe("hello");
+          expect(screen.getByTestId("type").textContent).toBe("string");
+          expect(screen.getByTestId("renders").textContent).toBe("1");
 
-        await actClick("Change value");
-        expect(screen.getByTestId("value").textContent).toBe("world");
-        expect(screen.getByTestId("type").textContent).toBe("string");
-        expect(screen.getByTestId("renders").textContent).toBe("2");
+          await actClick("Change value");
+          expect(screen.getByTestId("value").textContent).toBe("world");
+          expect(screen.getByTestId("type").textContent).toBe("string");
+          expect(screen.getByTestId("renders").textContent).toBe("2");
 
-        await actClick("Set undefined");
-        expect(screen.getByTestId("value").textContent).toBe("");
-        expect(screen.getByTestId("type").textContent).toBe("string");
-        expect(screen.getByTestId("renders").textContent).toBe("3");
+          await actClick("Set undefined");
+          expect(screen.getByTestId("value").textContent).toBe("");
+          expect(screen.getByTestId("type").textContent).toBe("string");
+          expect(screen.getByTestId("renders").textContent).toBe("3");
+        });
+
+        it("works with nullable string fields", async () => {
+          function Component() {
+            const renders = useRenderCount();
+
+            const field = Field.use<string | null | undefined>("hello", []);
+            const definedField = field.useDefined("string");
+            const definedValue = definedField.useValue();
+
+            return (
+              <div>
+                <div data-testid="value">{definedValue}</div>
+                <div data-testid="type">{typeof definedValue}</div>
+
+                <button onClick={() => field.set("world")}>Set world</button>
+                <button onClick={() => field.set(null)}>Set null</button>
+
+                <div data-testid="renders">{renders}</div>
+              </div>
+            );
+          }
+
+          render(<Component />);
+          expect(screen.getByTestId("value").textContent).toBe("hello");
+          expect(screen.getByTestId("type").textContent).toBe("string");
+          expect(screen.getByTestId("renders").textContent).toBe("1");
+
+          await actClick("Set null");
+          expect(screen.getByTestId("value").textContent).toBe("");
+          expect(screen.getByTestId("type").textContent).toBe("string");
+          expect(screen.getByTestId("renders").textContent).toBe("2");
+
+          await actClick("Set world");
+          expect(screen.getByTestId("value").textContent).toBe("world");
+          expect(screen.getByTestId("type").textContent).toBe("string");
+          expect(screen.getByTestId("renders").textContent).toBe("3");
+        });
+
+        it("restores undefined when changing back to empty string", async () => {
+          function Component() {
+            const renders = useRenderCount();
+
+            const field = Field.use<string | null | undefined>(undefined, []);
+            const value = field.useValue();
+            const definedField = field.useDefined("string");
+            const definedValue = definedField.useValue();
+
+            return (
+              <div>
+                <div data-testid="original">{String(value)}</div>
+                <div data-testid="defined">{String(definedValue)}</div>
+
+                <button onClick={() => definedField.set("world")}>
+                  Set world
+                </button>
+                <button onClick={() => definedField.set("")}>Set empty</button>
+
+                <div data-testid="renders">{renders}</div>
+              </div>
+            );
+          }
+
+          render(<Component />);
+          expect(screen.getByTestId("original").textContent).toBe("undefined");
+          expect(screen.getByTestId("defined").textContent).toBe("");
+          expect(screen.getByTestId("renders").textContent).toBe("1");
+
+          await actClick("Set world");
+          expect(screen.getByTestId("original").textContent).toBe("world");
+          expect(screen.getByTestId("defined").textContent).toBe("world");
+          expect(screen.getByTestId("renders").textContent).toBe("2");
+
+          await actClick("Set empty");
+          expect(screen.getByTestId("original").textContent).toBe("undefined");
+          expect(screen.getByTestId("defined").textContent).toBe("");
+          expect(screen.getByTestId("renders").textContent).toBe("3");
+        });
+
+        it("restores null when changing back to empty string", async () => {
+          function Component() {
+            const renders = useRenderCount();
+
+            const field = Field.use<string | null | undefined>(null, []);
+            const value = field.useValue();
+            const definedField = field.useDefined("string");
+            const definedValue = definedField.useValue();
+
+            return (
+              <div>
+                <div data-testid="original">{String(value)}</div>
+                <div data-testid="defined">{String(definedValue)}</div>
+
+                <button onClick={() => definedField.set("world")}>
+                  Set world
+                </button>
+                <button onClick={() => definedField.set("")}>Set empty</button>
+
+                <div data-testid="renders">{renders}</div>
+              </div>
+            );
+          }
+
+          render(<Component />);
+          expect(screen.getByTestId("original").textContent).toBe("null");
+          expect(screen.getByTestId("defined").textContent).toBe("");
+          expect(screen.getByTestId("renders").textContent).toBe("1");
+
+          await actClick("Set world");
+          expect(screen.getByTestId("original").textContent).toBe("world");
+          expect(screen.getByTestId("defined").textContent).toBe("world");
+          expect(screen.getByTestId("renders").textContent).toBe("2");
+
+          await actClick("Set empty");
+          expect(screen.getByTestId("original").textContent).toBe("null");
+          expect(screen.getByTestId("defined").textContent).toBe("");
+          expect(screen.getByTestId("renders").textContent).toBe("3");
+        });
+
+        it("restores empty string when changing back to empty string", async () => {
+          function Component() {
+            const renders = useRenderCount();
+
+            const field = Field.use<string | null | undefined>("", []);
+            const value = field.useValue();
+            const definedField = field.useDefined("string");
+            const definedValue = definedField.useValue();
+
+            return (
+              <div>
+                <div data-testid="original">{String(value)}</div>
+                <div data-testid="defined">{String(definedValue)}</div>
+
+                <button onClick={() => definedField.set("world")}>
+                  Set world
+                </button>
+                <button onClick={() => definedField.set("")}>Set empty</button>
+
+                <div data-testid="renders">{renders}</div>
+              </div>
+            );
+          }
+
+          render(<Component />);
+          expect(screen.getByTestId("original").textContent).toBe("");
+          expect(screen.getByTestId("defined").textContent).toBe("");
+          expect(screen.getByTestId("renders").textContent).toBe("1");
+
+          await actClick("Set world");
+          expect(screen.getByTestId("original").textContent).toBe("world");
+          expect(screen.getByTestId("defined").textContent).toBe("world");
+          expect(screen.getByTestId("renders").textContent).toBe("2");
+
+          await actClick("Set empty");
+          expect(screen.getByTestId("original").textContent).toBe("");
+          expect(screen.getByTestId("defined").textContent).toBe("");
+          expect(screen.getByTestId("renders").textContent).toBe("3");
+        });
+
+        it("updates when id changes", async () => {
+          function Component() {
+            const renders = useRenderCount();
+            const [index, setIndex] = useState(0);
+
+            const field = Field.use(["hello", undefined], []);
+            const definedField = field.at(index).useDefined("string");
+            const definedValue = definedField.useValue();
+
+            return (
+              <div>
+                <div data-testid="value">{definedValue}</div>
+                <div data-testid="type">{typeof definedValue}</div>
+
+                <button onClick={() => setIndex(1)}>Set index 1</button>
+
+                <div data-testid="renders">{renders}</div>
+              </div>
+            );
+          }
+
+          render(<Component />);
+          expect(screen.getByTestId("value").textContent).toBe("hello");
+          expect(screen.getByTestId("type").textContent).toBe("string");
+          expect(screen.getByTestId("renders").textContent).toBe("1");
+
+          await actClick("Set index 1");
+          expect(screen.getByTestId("value").textContent).toBe("");
+          expect(screen.getByTestId("type").textContent).toBe("string");
+          expect(screen.getByTestId("renders").textContent).toBe("2");
+        });
       });
 
-      it("works with nullable string fields", async () => {
-        function Component() {
-          const renders = useRenderCount();
+      describe("array", () => {
+        it("returns defined field when value is string", async () => {
+          function Component() {
+            const renders = useRenderCount();
 
-          const field = Field.use<string | null | undefined>("hello", []);
-          const definedField = field.useDefined("string");
-          const definedValue = definedField.useValue();
+            const field = Field.use<string[] | undefined>(["hello"], []);
+            const definedField = field.useDefined("array");
+            const definedValue = definedField.useValue();
 
-          return (
-            <div>
-              <div data-testid="value">{definedValue}</div>
-              <div data-testid="type">{typeof definedValue}</div>
+            return (
+              <div>
+                <div data-testid="value">{JSON.stringify(definedValue)}</div>
+                <div data-testid="type">{typeof definedValue}</div>
 
-              <button onClick={() => field.set("world")}>Set world</button>
-              <button onClick={() => field.set(null)}>Set null</button>
+                <button onClick={() => field.at?.(0).set("world")}>
+                  Change value
+                </button>
+                <button onClick={() => field.set(undefined)}>
+                  Set undefined
+                </button>
 
-              <div data-testid="renders">{renders}</div>
-            </div>
-          );
-        }
+                <div data-testid="renders">{renders}</div>
+              </div>
+            );
+          }
 
-        render(<Component />);
-        expect(screen.getByTestId("value").textContent).toBe("hello");
-        expect(screen.getByTestId("type").textContent).toBe("string");
-        expect(screen.getByTestId("renders").textContent).toBe("1");
+          render(<Component />);
+          expect(screen.getByTestId("value").textContent).toBe('["hello"]');
+          expect(screen.getByTestId("type").textContent).toBe("object");
+          expect(screen.getByTestId("renders").textContent).toBe("1");
 
-        await actClick("Set null");
-        expect(screen.getByTestId("value").textContent).toBe("");
-        expect(screen.getByTestId("type").textContent).toBe("string");
-        expect(screen.getByTestId("renders").textContent).toBe("2");
+          await actClick("Change value");
+          expect(screen.getByTestId("value").textContent).toBe('["world"]');
+          expect(screen.getByTestId("type").textContent).toBe("object");
+          expect(screen.getByTestId("renders").textContent).toBe("2");
 
-        await actClick("Set world");
-        expect(screen.getByTestId("value").textContent).toBe("world");
-        expect(screen.getByTestId("type").textContent).toBe("string");
-        expect(screen.getByTestId("renders").textContent).toBe("3");
-      });
+          await actClick("Set undefined");
+          expect(screen.getByTestId("value").textContent).toBe("[]");
+          expect(screen.getByTestId("type").textContent).toBe("object");
+          expect(screen.getByTestId("renders").textContent).toBe("3");
+        });
 
-      it("restores undefined when changing back to empty string", async () => {
-        function Component() {
-          const renders = useRenderCount();
+        it.skip("works with nullable string fields", async () => {
+          function Component() {
+            const renders = useRenderCount();
 
-          const field = Field.use<string | null | undefined>(undefined, []);
-          const value = field.useValue();
-          const definedField = field.useDefined("string");
-          const definedValue = definedField.useValue();
+            const field = Field.use<string | null | undefined>("hello", []);
+            const definedField = field.useDefined("string");
+            const definedValue = definedField.useValue();
 
-          return (
-            <div>
-              <div data-testid="original">{String(value)}</div>
-              <div data-testid="defined">{String(definedValue)}</div>
+            return (
+              <div>
+                <div data-testid="value">{definedValue}</div>
+                <div data-testid="type">{typeof definedValue}</div>
 
-              <button onClick={() => definedField.set("world")}>
-                Set world
-              </button>
-              <button onClick={() => definedField.set("")}>Set empty</button>
+                <button onClick={() => field.set("world")}>Set world</button>
+                <button onClick={() => field.set(null)}>Set null</button>
 
-              <div data-testid="renders">{renders}</div>
-            </div>
-          );
-        }
+                <div data-testid="renders">{renders}</div>
+              </div>
+            );
+          }
 
-        render(<Component />);
-        expect(screen.getByTestId("original").textContent).toBe("undefined");
-        expect(screen.getByTestId("defined").textContent).toBe("");
-        expect(screen.getByTestId("renders").textContent).toBe("1");
+          render(<Component />);
+          expect(screen.getByTestId("value").textContent).toBe("hello");
+          expect(screen.getByTestId("type").textContent).toBe("string");
+          expect(screen.getByTestId("renders").textContent).toBe("1");
 
-        await actClick("Set world");
-        expect(screen.getByTestId("original").textContent).toBe("world");
-        expect(screen.getByTestId("defined").textContent).toBe("world");
-        expect(screen.getByTestId("renders").textContent).toBe("2");
+          await actClick("Set null");
+          expect(screen.getByTestId("value").textContent).toBe("");
+          expect(screen.getByTestId("type").textContent).toBe("string");
+          expect(screen.getByTestId("renders").textContent).toBe("2");
 
-        await actClick("Set empty");
-        expect(screen.getByTestId("original").textContent).toBe("undefined");
-        expect(screen.getByTestId("defined").textContent).toBe("");
-        expect(screen.getByTestId("renders").textContent).toBe("3");
-      });
+          await actClick("Set world");
+          expect(screen.getByTestId("value").textContent).toBe("world");
+          expect(screen.getByTestId("type").textContent).toBe("string");
+          expect(screen.getByTestId("renders").textContent).toBe("3");
+        });
 
-      it("restores null when changing back to empty string", async () => {
-        function Component() {
-          const renders = useRenderCount();
+        it("restores undefined when changing back to empty string", async () => {
+          function Component() {
+            const renders = useRenderCount();
 
-          const field = Field.use<string | null | undefined>(null, []);
-          const value = field.useValue();
-          const definedField = field.useDefined("string");
-          const definedValue = definedField.useValue();
+            const field = Field.use<string | null | undefined>(undefined, []);
+            const value = field.useValue();
+            const definedField = field.useDefined("string");
+            const definedValue = definedField.useValue();
 
-          return (
-            <div>
-              <div data-testid="original">{String(value)}</div>
-              <div data-testid="defined">{String(definedValue)}</div>
+            return (
+              <div>
+                <div data-testid="original">{String(value)}</div>
+                <div data-testid="defined">{String(definedValue)}</div>
 
-              <button onClick={() => definedField.set("world")}>
-                Set world
-              </button>
-              <button onClick={() => definedField.set("")}>Set empty</button>
+                <button onClick={() => definedField.set("world")}>
+                  Set world
+                </button>
+                <button onClick={() => definedField.set("")}>Set empty</button>
 
-              <div data-testid="renders">{renders}</div>
-            </div>
-          );
-        }
+                <div data-testid="renders">{renders}</div>
+              </div>
+            );
+          }
 
-        render(<Component />);
-        expect(screen.getByTestId("original").textContent).toBe("null");
-        expect(screen.getByTestId("defined").textContent).toBe("");
-        expect(screen.getByTestId("renders").textContent).toBe("1");
+          render(<Component />);
+          expect(screen.getByTestId("original").textContent).toBe("undefined");
+          expect(screen.getByTestId("defined").textContent).toBe("");
+          expect(screen.getByTestId("renders").textContent).toBe("1");
 
-        await actClick("Set world");
-        expect(screen.getByTestId("original").textContent).toBe("world");
-        expect(screen.getByTestId("defined").textContent).toBe("world");
-        expect(screen.getByTestId("renders").textContent).toBe("2");
+          await actClick("Set world");
+          expect(screen.getByTestId("original").textContent).toBe("world");
+          expect(screen.getByTestId("defined").textContent).toBe("world");
+          expect(screen.getByTestId("renders").textContent).toBe("2");
 
-        await actClick("Set empty");
-        expect(screen.getByTestId("original").textContent).toBe("null");
-        expect(screen.getByTestId("defined").textContent).toBe("");
-        expect(screen.getByTestId("renders").textContent).toBe("3");
-      });
+          await actClick("Set empty");
+          expect(screen.getByTestId("original").textContent).toBe("undefined");
+          expect(screen.getByTestId("defined").textContent).toBe("");
+          expect(screen.getByTestId("renders").textContent).toBe("3");
+        });
 
-      it("restores empty string when changing back to empty string", async () => {
-        function Component() {
-          const renders = useRenderCount();
+        it.skip("restores null when changing back to empty string", async () => {
+          function Component() {
+            const renders = useRenderCount();
 
-          const field = Field.use<string | null | undefined>("", []);
-          const value = field.useValue();
-          const definedField = field.useDefined("string");
-          const definedValue = definedField.useValue();
+            const field = Field.use<string | null | undefined>(null, []);
+            const value = field.useValue();
+            const definedField = field.useDefined("string");
+            const definedValue = definedField.useValue();
 
-          return (
-            <div>
-              <div data-testid="original">{String(value)}</div>
-              <div data-testid="defined">{String(definedValue)}</div>
+            return (
+              <div>
+                <div data-testid="original">{String(value)}</div>
+                <div data-testid="defined">{String(definedValue)}</div>
 
-              <button onClick={() => definedField.set("world")}>
-                Set world
-              </button>
-              <button onClick={() => definedField.set("")}>Set empty</button>
+                <button onClick={() => definedField.set("world")}>
+                  Set world
+                </button>
+                <button onClick={() => definedField.set("")}>Set empty</button>
 
-              <div data-testid="renders">{renders}</div>
-            </div>
-          );
-        }
+                <div data-testid="renders">{renders}</div>
+              </div>
+            );
+          }
 
-        render(<Component />);
-        expect(screen.getByTestId("original").textContent).toBe("");
-        expect(screen.getByTestId("defined").textContent).toBe("");
-        expect(screen.getByTestId("renders").textContent).toBe("1");
+          render(<Component />);
+          expect(screen.getByTestId("original").textContent).toBe("null");
+          expect(screen.getByTestId("defined").textContent).toBe("");
+          expect(screen.getByTestId("renders").textContent).toBe("1");
 
-        await actClick("Set world");
-        expect(screen.getByTestId("original").textContent).toBe("world");
-        expect(screen.getByTestId("defined").textContent).toBe("world");
-        expect(screen.getByTestId("renders").textContent).toBe("2");
+          await actClick("Set world");
+          expect(screen.getByTestId("original").textContent).toBe("world");
+          expect(screen.getByTestId("defined").textContent).toBe("world");
+          expect(screen.getByTestId("renders").textContent).toBe("2");
 
-        await actClick("Set empty");
-        expect(screen.getByTestId("original").textContent).toBe("");
-        expect(screen.getByTestId("defined").textContent).toBe("");
-        expect(screen.getByTestId("renders").textContent).toBe("3");
-      });
+          await actClick("Set empty");
+          expect(screen.getByTestId("original").textContent).toBe("null");
+          expect(screen.getByTestId("defined").textContent).toBe("");
+          expect(screen.getByTestId("renders").textContent).toBe("3");
+        });
 
-      it("updates when id changes", async () => {
-        function Component() {
-          const renders = useRenderCount();
-          const [index, setIndex] = useState(0);
+        it.skip("restores empty string when changing back to empty string", async () => {
+          function Component() {
+            const renders = useRenderCount();
 
-          const field = Field.use(["hello", undefined], []);
-          const definedField = field.at(index).useDefined("string");
-          const definedValue = definedField.useValue();
+            const field = Field.use<string | null | undefined>("", []);
+            const value = field.useValue();
+            const definedField = field.useDefined("string");
+            const definedValue = definedField.useValue();
 
-          return (
-            <div>
-              <div data-testid="value">{definedValue}</div>
-              <div data-testid="type">{typeof definedValue}</div>
+            return (
+              <div>
+                <div data-testid="original">{String(value)}</div>
+                <div data-testid="defined">{String(definedValue)}</div>
 
-              <button onClick={() => setIndex(1)}>Set index 1</button>
+                <button onClick={() => definedField.set("world")}>
+                  Set world
+                </button>
+                <button onClick={() => definedField.set("")}>Set empty</button>
 
-              <div data-testid="renders">{renders}</div>
-            </div>
-          );
-        }
+                <div data-testid="renders">{renders}</div>
+              </div>
+            );
+          }
 
-        render(<Component />);
-        expect(screen.getByTestId("value").textContent).toBe("hello");
-        expect(screen.getByTestId("type").textContent).toBe("string");
-        expect(screen.getByTestId("renders").textContent).toBe("1");
+          render(<Component />);
+          expect(screen.getByTestId("original").textContent).toBe("");
+          expect(screen.getByTestId("defined").textContent).toBe("");
+          expect(screen.getByTestId("renders").textContent).toBe("1");
 
-        await actClick("Set index 1");
-        expect(screen.getByTestId("value").textContent).toBe("");
-        expect(screen.getByTestId("type").textContent).toBe("string");
-        expect(screen.getByTestId("renders").textContent).toBe("2");
+          await actClick("Set world");
+          expect(screen.getByTestId("original").textContent).toBe("world");
+          expect(screen.getByTestId("defined").textContent).toBe("world");
+          expect(screen.getByTestId("renders").textContent).toBe("2");
+
+          await actClick("Set empty");
+          expect(screen.getByTestId("original").textContent).toBe("");
+          expect(screen.getByTestId("defined").textContent).toBe("");
+          expect(screen.getByTestId("renders").textContent).toBe("3");
+        });
+
+        it.skip("updates when id changes", async () => {
+          function Component() {
+            const renders = useRenderCount();
+            const [index, setIndex] = useState(0);
+
+            const field = Field.use(["hello", undefined], []);
+            const definedField = field.at(index).useDefined("string");
+            const definedValue = definedField.useValue();
+
+            return (
+              <div>
+                <div data-testid="value">{definedValue}</div>
+                <div data-testid="type">{typeof definedValue}</div>
+
+                <button onClick={() => setIndex(1)}>Set index 1</button>
+
+                <div data-testid="renders">{renders}</div>
+              </div>
+            );
+          }
+
+          render(<Component />);
+          expect(screen.getByTestId("value").textContent).toBe("hello");
+          expect(screen.getByTestId("type").textContent).toBe("string");
+          expect(screen.getByTestId("renders").textContent).toBe("1");
+
+          await actClick("Set index 1");
+          expect(screen.getByTestId("value").textContent).toBe("");
+          expect(screen.getByTestId("type").textContent).toBe("string");
+          expect(screen.getByTestId("renders").textContent).toBe("2");
+        });
       });
     });
 
