@@ -665,6 +665,8 @@ export class AtomImpl<Value> {
           return value ?? "";
         case "array":
           return value ?? [];
+        case "object":
+          return value ?? {};
       }
     }, []).from((value: any) => {
       // If the value not nullish, return it

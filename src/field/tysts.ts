@@ -6378,11 +6378,18 @@ const brandedPrim = new Field({} as Branded<string>);
 
   // Array
   {
-    // Basic
+    // Regular
     {
       const field = {} as Field<string[] | undefined | null>;
       const result = field.useDefined("array");
       ty(result).is(ty<Field<string[]>>());
+    }
+
+    // Tuple
+    {
+      type Tuple = [string, number];
+      const field = {} as Field<Tuple | undefined | null>;
+      ty(field.useDefined).is(ty<never>());
     }
 
     // Defined
@@ -6402,16 +6409,75 @@ const brandedPrim = new Field({} as Branded<string>);
 
     // Base
     {
-      const field = {} as Field.Base<string[]>;
+      const field = {} as Field.Base<string[] | undefined | null>;
       const result = field.useDefined("array");
       ty(result).is(ty<Field.Base<string[]>>());
     }
 
     // Immutable
     {
-      const field = {} as Field.Immutable<string[]>;
+      const field = {} as Field.Immutable<string[] | undefined | null>;
       const result = field.useDefined("array");
       ty(result).is(ty<Field.Immutable<string[]>>());
+    }
+  }
+
+  // Object
+  {
+    type RecordType = Record<string, string>;
+
+    interface RequiredType {
+      name: string;
+    }
+
+    // Record
+    {
+      const field = {} as Field<RecordType | undefined | null>;
+      const result = field.useDefined("object");
+      ty(result).is(ty<Field<RecordType>>());
+    }
+
+    // Partial
+    {
+      type PartialType = Partial<RequiredType>;
+      const field = {} as Field<PartialType | undefined | null>;
+      const result = field.useDefined("object");
+      ty(result).is(ty<Field<PartialType>>());
+    }
+
+    // Required
+    {
+      const field = {} as Field<RequiredType | undefined | null>;
+      ty(field.useDefined).is(ty<never>());
+    }
+
+    // Defined
+    {
+      const field = {} as Field<RecordType>;
+      const result = field.useDefined("object");
+      ty(result).is(ty<Field<RecordType>>());
+    }
+
+    // Mixed
+    {
+      const field = {} as Field<RecordType | number>;
+      const result = field.useDefined?.("object");
+      ty(result).is(ty<Field<RecordType> | undefined>());
+      ty(field.useDefined).is(ty.assignableFrom<undefined>());
+    }
+
+    // Base
+    {
+      const field = {} as Field.Base<RecordType | undefined | null>;
+      const result = field.useDefined("object");
+      ty(result).is(ty<Field.Base<RecordType>>());
+    }
+
+    // Immutable
+    {
+      const field = {} as Field.Immutable<RecordType | undefined | null>;
+      const result = field.useDefined("object");
+      ty(result).is(ty<Field.Immutable<RecordType>>());
     }
   }
 

@@ -2896,17 +2896,17 @@ export namespace Atom {
       ): Envelop<Kind, Variant, Atom.Def<string>, Qualifier, Parent>;
     }
 
-    export interface FnArray<
+    export interface FnObject<
       Kind extends Atom.Flavor.Kind,
       Variant extends Atom.Flavor.Variant,
-      Value extends unknown[] | Utils.Nullish,
+      Value extends object | Utils.Nullish,
       Qualifier extends Atom.Qualifier.Constraint,
       Parent extends Atom.Parent.Constraint<
         Atom.Def<Value>
       > = Atom.Parent.Default,
     > {
       (
-        to: "array",
+        to: "object" | "array",
       ): Envelop<Kind, Variant, Atom.Def<Value & {}>, Qualifier, Parent>;
     }
 
@@ -2923,7 +2923,6 @@ export namespace Atom {
       >;
 
       // TODO: Add support for other primitives:
-      // - object to default to {}
       // - number to default to 0
       // - boolean to default to false
       // - bigint to default to 0n
@@ -2936,12 +2935,32 @@ export namespace Atom {
         Qualifier extends Atom.Qualifier.Constraint,
         Parent extends Atom.Parent.Constraint<ValueDef>,
       > = ValueDef["read"] extends infer Value
-        ? Utils.IsNever<Extract<Value, string | unknown[]>> extends false
+        ? Utils.IsNever<Extract<Value, string | object>> extends false
           ? Value & {} extends infer NonNullishValue
             ? NonNullishValue extends string
               ? FnString<Kind, Variant, NonNullishValue, Qualifier, Parent>
-              : NonNullishValue extends unknown[]
-                ? FnArray<Kind, Variant, NonNullishValue, Qualifier, Parent>
+              : NonNullishValue extends object
+                ? NonNullishValue extends Utils.StaticArray
+                  ? never
+                  : NonNullishValue extends unknown[]
+                    ? FnObject<
+                        Kind,
+                        Variant,
+                        NonNullishValue,
+                        Qualifier,
+                        Parent
+                      >
+                    : NonNullishValue extends object
+                      ? Utils.StaticKeys<NonNullishValue> extends Utils.OptionalKeys<NonNullishValue>
+                        ? FnObject<
+                            Kind,
+                            Variant,
+                            NonNullishValue,
+                            Qualifier,
+                            Parent
+                          >
+                        : never
+                      : never
                 : undefined
             : never
           : never
@@ -2949,7 +2968,7 @@ export namespace Atom {
     }
   }
 
-  export type DefinedType = "string" | "array";
+  export type DefinedType = "string" | "array" | "object";
 
   //#endregion
 
