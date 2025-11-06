@@ -5017,8 +5017,18 @@ describe("Field", () => {
       it("handles undefineds", () => {
         const field = new Field<Cat | Dog | undefined>(undefined);
         const discriminated = field.discriminate("type");
-        if (!discriminated.discriminator) {
+        if (discriminated.discriminator === undefined) {
           expect(discriminated.field.value).toBe(undefined);
+          return;
+        }
+        assert(false, "Should not reach here");
+      });
+
+      it.only("handles nulls", () => {
+        const field = new Field<Cat | Dog | null>(null);
+        const discriminated = field.discriminate("type");
+        if (discriminated.discriminator === null) {
+          expect(discriminated.field.value).toBe(null);
           return;
         }
         assert(false, "Should not reach here");
@@ -5060,8 +5070,8 @@ describe("Field", () => {
           const discriminated = field.useDiscriminate("type");
           return (
             <div data-testid="type">
-              {String(discriminated.discriminator)}:{" "}
-              {String(discriminated.field.value?.type)}
+              {stringify(discriminated.discriminator)}:{" "}
+              {stringify(discriminated.field.value?.type)}
             </div>
           );
         }
@@ -5070,6 +5080,27 @@ describe("Field", () => {
         expect(screen.getByTestId("type").textContent).toBe(
           "undefined: undefined",
         );
+
+        await act(() => field.set({ type: "cat", meow: true }));
+
+        expect(screen.getByTestId("type").textContent).toBe("cat: cat");
+      });
+
+      it("handles nulls", async () => {
+        const field = new Field<Cat | Dog | null>(null);
+
+        function TestComponent() {
+          const discriminated = field.useDiscriminate("type");
+          return (
+            <div data-testid="type">
+              {stringify(discriminated.discriminator)}:{" "}
+              {stringify(discriminated.field.value?.type)}
+            </div>
+          );
+        }
+
+        render(<TestComponent />);
+        expect(screen.getByTestId("type").textContent).toBe("null: null");
 
         await act(() => field.set({ type: "cat", meow: true }));
 
@@ -7399,6 +7430,10 @@ function CodesComponent(props: CodesComponentProps) {
 function joinErrors(errors: Field.Error[] | undefined) {
   if (!errors) return "";
   return errors.map((error) => error.message).join(", ");
+}
+
+function stringify(value: unknown): string {
+  return value === null ? "null" : String(value);
 }
 
 //#endregion

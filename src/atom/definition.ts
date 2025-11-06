@@ -2637,7 +2637,7 @@ export namespace Atom {
     }
 
     export type Discriminator<ValueDef extends Def.Constraint> =
-      keyof Utils.NonUndefined<ValueDef["read"]>;
+      keyof Utils.NonNullish<ValueDef["read"]>;
 
     export type Result<
       Kind extends Atom.Flavor.Kind,
@@ -2676,7 +2676,10 @@ export namespace Atom {
                   : never
                 : // Add the payload type without the discriminator (i.e. undefined)
                   {
-                    discriminator: undefined;
+                    discriminator: Exclude<
+                      Value,
+                      { [Key in Discriminator]: unknown }
+                    >;
                   } & {
                     [Key in Atom.Prop<Kind>]: Envelop<
                       Kind,

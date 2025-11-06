@@ -5372,85 +5372,181 @@ const brandedPrim = new Field({} as Branded<string>);
       unionValue as Field<User | Organization | undefined>
     ).discriminate("type");
 
-    result satisfies
-      | {
-          discriminator: undefined;
-          field: Field<undefined>;
-        }
-      | {
-          discriminator: "user";
-          field: Field<User>;
-        }
-      | {
-          discriminator: "organization";
-          field: Field<Organization>;
-        };
-    // @ts-expect-error
-    result satisfies
-      | {
-          discriminator: undefined;
-          field: Field<undefined, "detachable">;
-        }
-      | {
-          discriminator: "user";
-          field: Field<User, "detachable">;
-        }
-      | {
-          discriminator: "organization";
-          field: Field<Organization, "detachable">;
-        };
-    // @ts-expect-error
-    result satisfies
-      | {
-          discriminator: undefined;
-          field: Field<undefined, "tried">;
-        }
-      | {
-          discriminator: "user";
-          field: Field<User, "tried">;
-        }
-      | {
-          discriminator: "organization";
-          field: Field<Organization, "tried">;
-        };
-    // @ts-expect-error
-    result.any;
+    ty(result).is(
+      ty<
+        | {
+            discriminator: undefined;
+            field: Field<undefined>;
+          }
+        | {
+            discriminator: "user";
+            field: Field<User>;
+          }
+        | {
+            discriminator: "organization";
+            field: Field<Organization>;
+          }
+      >(),
+    );
 
-    if (result.discriminator === "user") {
-      result.field satisfies Field<User>;
-      result.field satisfies Field.Base<User>;
-      // @ts-expect-error
-      result.field satisfies Field<Organization>;
-      // @ts-expect-error
-      result.field.any;
+    if (result.discriminator === "user") ty(result.field).is(ty<Field<User>>());
 
-      result.field.value satisfies User;
-    }
+    ty(result).is(
+      ty.assignableTo<
+        Field.Discriminated<User | Organization | undefined, "type">
+      >(),
+    );
+    ty(result).is(
+      ty.assignableTo<
+        Field.Base.Discriminated<User | Organization | undefined, "type">
+      >(),
+    );
+    ty(result).is(
+      ty.assignableTo<
+        Field.Base.Discriminated<
+          User | Organization | undefined | Unrelated,
+          "type"
+        >
+      >(),
+    );
 
-    const _manual1: Field.Discriminated<
-      User | Organization | undefined,
-      "type"
-    > = result;
-    const _manual2: Field.Base.Discriminated<
-      User | Organization | undefined,
-      "type"
-    > = result;
-    const _manual3: Field.Base.Discriminated<
-      User | Organization | undefined | Unrelated,
-      "type"
-    > = result;
+    ty(result).is.not(
+      ty.assignableTo<Field.Discriminated<User | Organization, "type">>(),
+    );
+    ty(result).is.not(
+      ty.assignableTo<Field.Discriminated<Named | undefined, "type">>(),
+    );
+    ty(result).is.not(
+      ty.assignableTo<Field.Discriminated<Unrelated | undefined, "type">>(),
+    );
+    ty(result).is.not(
+      ty.assignableTo<Field.Discriminated<Named | undefined, "type">>(),
+    );
+
     // @ts-expect-error
-    const _manualWrong1: Field.Discriminated<User | Organization, "type"> =
-      result;
+    unionValue.discriminate("paid");
+  }
+
+  // Null value
+  {
+    const result = (
+      unionValue as Field<User | Organization | null>
+    ).discriminate("type");
+
+    ty(result).is(
+      ty<
+        | {
+            discriminator: null;
+            field: Field<null>;
+          }
+        | {
+            discriminator: "user";
+            field: Field<User>;
+          }
+        | {
+            discriminator: "organization";
+            field: Field<Organization>;
+          }
+      >(),
+    );
+
+    if (result.discriminator === "user") ty(result.field).is(ty<Field<User>>());
+
+    ty(result).is(
+      ty.assignableTo<
+        Field.Discriminated<User | Organization | null, "type">
+      >(),
+    );
+    ty(result).is(
+      ty.assignableTo<
+        Field.Base.Discriminated<User | Organization | null, "type">
+      >(),
+    );
+    ty(result).is(
+      ty.assignableTo<
+        Field.Base.Discriminated<User | Organization | null | Unrelated, "type">
+      >(),
+    );
+
+    ty(result).is.not(
+      ty.assignableTo<Field.Discriminated<User | Organization, "type">>(),
+    );
+    ty(result).is.not(
+      ty.assignableTo<Field.Discriminated<Named | null, "type">>(),
+    );
+    ty(result).is.not(
+      ty.assignableTo<Field.Discriminated<Unrelated | null, "type">>(),
+    );
+    ty(result).is.not(
+      ty.assignableTo<Field.Discriminated<Named | null, "type">>(),
+    );
+
     // @ts-expect-error
-    const _manualWrong2: Field.Discriminated<Named | undefined, "type"> =
-      result;
-    // @ts-expect-error
-    const _manualWrong3: Field.Discriminated<Unrelated | undefined, "type"> =
-      result;
-    // @ts-expect-error
-    const _manualWrong4: Field.Discriminated<Named | undefined, "type"> =
-      result;
+    unionValue.discriminate("paid");
+  }
+
+  // Nullish value
+  {
+    const result = (
+      unionValue as Field<User | Organization | undefined | null>
+    ).discriminate("type");
+
+    ty(result).is(
+      ty<
+        | {
+            discriminator: undefined;
+            field: Field<undefined>;
+          }
+        | {
+            discriminator: null;
+            field: Field<null>;
+          }
+        | {
+            discriminator: "user";
+            field: Field<User>;
+          }
+        | {
+            discriminator: "organization";
+            field: Field<Organization>;
+          }
+      >(),
+    );
+
+    if (result.discriminator === "user") ty(result.field).is(ty<Field<User>>());
+
+    ty(result).is(
+      ty.assignableTo<
+        Field.Discriminated<User | Organization | undefined | null, "type">
+      >(),
+    );
+    ty(result).is(
+      ty.assignableTo<
+        Field.Base.Discriminated<User | Organization | undefined | null, "type">
+      >(),
+    );
+    ty(result).is(
+      ty.assignableTo<
+        Field.Base.Discriminated<
+          User | Organization | undefined | null | Unrelated,
+          "type"
+        >
+      >(),
+    );
+
+    ty(result).is.not(
+      ty.assignableTo<Field.Discriminated<User | Organization, "type">>(),
+    );
+    ty(result).is.not(
+      ty.assignableTo<Field.Discriminated<Named | undefined | null, "type">>(),
+    );
+    ty(result).is.not(
+      ty.assignableTo<
+        Field.Discriminated<Unrelated | undefined | null, "type">
+      >(),
+    );
+    ty(result).is.not(
+      ty.assignableTo<Field.Discriminated<Named | undefined | null, "type">>(),
+    );
 
     // @ts-expect-error
     unionValue.discriminate("paid");

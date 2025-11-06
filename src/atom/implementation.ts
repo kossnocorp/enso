@@ -626,11 +626,13 @@ export class AtomImpl<Value> {
   discriminate<Discriminator extends keyof Utils.NonNullish<Value>>(
     discriminator: Discriminator,
   ): any {
+    const value = this.value;
     return {
-      // @ts-expect-error
-      discriminator: this.$?.[discriminator]?.value,
+      // NOTE: We use value and `&&` instead of optional chaining to preserve
+      // null as a valid discriminator value.
+      discriminator: value && value[discriminator as keyof Value],
       [this.#prop]: this,
-    } as any;
+    };
   }
 
   useDiscriminate<Discriminator extends keyof Utils.NonNullish<Value>>(
