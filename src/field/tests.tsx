@@ -5003,6 +5003,151 @@ describe("Field", () => {
       });
     });
 
+    describe("#decomposeNullish", () => {
+      it("allows to decompose nullish and non-nullish fields", () => {
+        const field = new Field<string | number | null | undefined>(
+          "Hello, world!",
+        );
+        const decomposed = field.decomposeNullish();
+        if (typeof decomposed.value === "string") {
+          expect(decomposed.field.value).toBe("Hello, world!");
+          return;
+        }
+        assert(false, "Should not reach here");
+      });
+    });
+
+    describe("#useDecomposeNullish", () => {
+      beforeEach(cleanup);
+
+      it("decomposes and updates on change from nullish to non-nullish", async () => {
+        type Payload = string | number | null | undefined;
+
+        const field = new Field<Payload>("hello");
+
+        function Component() {
+          const count = useRenderCount();
+          const decomposed = field.useDecomposeNullish();
+          return (
+            <div>
+              <div data-testid="render">{count}</div>
+              <div data-testid="value">{stringify(decomposed.value)}</div>
+            </div>
+          );
+        }
+
+        render(<Component />);
+        expect(screen.getByTestId("value").textContent).toBe("hello");
+        expect(screen.getByTestId("render").textContent).toBe("1");
+
+        await act(() => field.set(42));
+
+        expect(screen.getByTestId("value").textContent).toBe("hello");
+        expect(screen.getByTestId("render").textContent).toBe("1");
+
+        await act(() => field.set(null));
+
+        expect(screen.getByTestId("value").textContent).toBe("null");
+        expect(screen.getByTestId("render").textContent).toBe("2");
+
+        await act(() => field.set(undefined));
+
+        expect(screen.getByTestId("value").textContent).toBe("null");
+        expect(screen.getByTestId("render").textContent).toBe("2");
+
+        await act(() => field.set(42));
+
+        expect(screen.getByTestId("value").textContent).toBe("42");
+        expect(screen.getByTestId("render").textContent).toBe("3");
+      });
+
+      it("depends on the field id", async () => {
+        function Component() {
+          const count = useRenderCount();
+          const field = Field.use<Array<string | null>>(
+            ["Alexander", "Sasha", null],
+            [],
+          );
+          const [index, setIndex] = useState(0);
+          const name = field.at(index).useDecomposeNullish();
+
+          return (
+            <div>
+              <div data-testid="render-decompose">{count}</div>
+
+              <button onClick={() => setIndex(1)}>Set index to 1</button>
+              <button onClick={() => setIndex(2)}>Set index to 2</button>
+
+              <div data-testid="value">{stringify(name.field.value)}</div>
+            </div>
+          );
+        }
+
+        render(<Component />);
+
+        expect(screen.getByTestId("value").textContent).toBe("Alexander");
+        expect(screen.getByTestId("render-decompose").textContent).toBe("1");
+
+        await act(() => screen.getByText("Set index to 1").click());
+
+        expect(screen.getByTestId("value").textContent).toBe("Sasha");
+        expect(screen.getByTestId("render-decompose").textContent).toBe("2");
+
+        await act(() => screen.getByText("Set index to 2").click());
+
+        expect(screen.getByTestId("value").textContent).toBe("null");
+        expect(screen.getByTestId("render-decompose").textContent).toBe("3");
+      });
+
+      it("updates the watcher on field id change", async () => {
+        function Component() {
+          const count = useRenderCount();
+          const field = Field.use<Array<string | UserName>>(
+            ["Alexander", { first: "Sasha", last: "Koss" }],
+            [],
+          );
+          const [index, setIndex] = useState(0);
+          const name = field
+            .at(index)
+            .useDecompose((a, b) => typeof a !== typeof b, []);
+          const nameType = typeof name.value;
+
+          return (
+            <div>
+              <div data-testid="render-decompose">{count}</div>
+
+              <button onClick={() => setIndex(1)}>Set index to 1</button>
+
+              <button
+                onClick={() =>
+                  field.at(0).set({ first: "Alexander", last: "Koss" })
+                }
+              >
+                Make item 1 object
+              </button>
+
+              <div data-testid="decomposed">{nameType}</div>
+            </div>
+          );
+        }
+
+        render(<Component />);
+
+        expect(screen.getByTestId("decomposed").textContent).toBe("string");
+        expect(screen.getByTestId("render-decompose").textContent).toBe("1");
+
+        await act(() => screen.getByText("Set index to 1").click());
+
+        expect(screen.getByTestId("decomposed").textContent).toBe("object");
+        expect(screen.getByTestId("render-decompose").textContent).toBe("2");
+
+        await act(() => screen.getByText("Make item 1 object").click());
+
+        expect(screen.getByTestId("decomposed").textContent).toBe("object");
+        expect(screen.getByTestId("render-decompose").textContent).toBe("2");
+      });
+    });
+
     describe("#discriminate", () => {
       it("allows to discriminate by field", () => {
         const field = new Field<Cat | Dog>({ type: "cat", meow: true });
@@ -5024,7 +5169,7 @@ describe("Field", () => {
         assert(false, "Should not reach here");
       });
 
-      it.only("handles nulls", () => {
+      it("handles nulls", () => {
         const field = new Field<Cat | Dog | null>(null);
         const discriminated = field.discriminate("type");
         if (discriminated.discriminator === null) {
@@ -5094,7 +5239,9 @@ describe("Field", () => {
           return (
             <div data-testid="type">
               {stringify(discriminated.discriminator)}:{" "}
-              {stringify(discriminated.field.value?.type)}
+              {stringify(
+                discriminated.field.value && discriminated.field.value.type,
+              )}
             </div>
           );
         }

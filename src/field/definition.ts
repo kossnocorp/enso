@@ -232,6 +232,21 @@ export namespace Field {
       > = Atom.Parent.Default,
     > = Decomposed<Value, Qualifier, Parent> & { value: Variant };
 
+    export type DecomposedNullish<
+      Value,
+      Qualifier extends
+        Atom.Qualifier.External.Constraint = Atom.Qualifier.External.Default,
+      Parent extends Atom.Parent.Constraint<
+        Atom.Def<Value>
+      > = Atom.Parent.Default,
+    > = Atom.DecomposeNullish.Result<
+      "field",
+      "exact",
+      Atom.Def<Value>,
+      Atom.Qualifier.Internalize<Qualifier>,
+      Parent
+    >;
+
     export type Discriminated<
       Value,
       Discriminator extends Atom.Discriminate.Discriminator<Atom.Def<Value>>,
@@ -321,6 +336,21 @@ export namespace Field {
       > = Atom.Parent.Default,
     > = Decomposed<Value, Qualifier, Parent> & { value: Variant };
 
+    export type DecomposedNullish<
+      Value,
+      Qualifier extends
+        Atom.Qualifier.External.Constraint = Atom.Qualifier.External.Default,
+      Parent extends Atom.Parent.Constraint<
+        Atom.Def<Value>
+      > = Atom.Parent.Default,
+    > = Atom.DecomposeNullish.Result<
+      "field",
+      "base",
+      Atom.Def<Value>,
+      Atom.Qualifier.Internalize<Qualifier>,
+      Parent
+    >;
+
     export type Discriminated<
       Value,
       Discriminator extends Atom.Discriminate.Discriminator<Atom.Def<Value>>,
@@ -409,6 +439,21 @@ export namespace Field {
         Atom.Def<Value>
       > = Atom.Parent.Default,
     > = Decomposed<Value, Qualifier, Parent> & { value: Variant };
+
+    export type DecomposedNullish<
+      Value,
+      Qualifier extends
+        Atom.Qualifier.External.Constraint = Atom.Qualifier.External.Default,
+      Parent extends Atom.Parent.Constraint<
+        Atom.Def<Value>
+      > = Atom.Parent.Default,
+    > = Atom.DecomposeNullish.Result<
+      "field",
+      "optional",
+      Atom.Def<Value>,
+      Atom.Qualifier.Internalize<Qualifier>,
+      Parent
+    >;
 
     export type Discriminated<
       Value,
@@ -511,6 +556,21 @@ export namespace Field {
         Atom.Def<Value>
       > = Atom.Parent.Default,
     > = Decomposed<Value, Qualifier, Parent> & { value: Variant };
+
+    export type DecomposedNullish<
+      Value,
+      Qualifier extends
+        Atom.Qualifier.External.Constraint = Atom.Qualifier.External.Default,
+      Parent extends Atom.Parent.Constraint<
+        Atom.Def<Value>
+      > = Atom.Parent.Default,
+    > = Atom.DecomposeNullish.Result<
+      "field",
+      "immutable",
+      Atom.Def<Value>,
+      Atom.Qualifier.Internalize<Qualifier>,
+      Parent
+    >;
 
     export type Discriminated<
       Value,
@@ -787,6 +847,21 @@ export namespace Field {
       Atom.Def<Value>
     > = Atom.Parent.Default,
   > = Decomposed<Value, Qualifier, Parent> & { value: Variant };
+
+  export type DecomposedNullish<
+    Value,
+    Qualifier extends
+      Atom.Qualifier.External.Constraint = Atom.Qualifier.External.Default,
+    Parent extends Atom.Parent.Constraint<
+      Atom.Def<Value>
+    > = Atom.Parent.Default,
+  > = Atom.DecomposeNullish.Result<
+    "field",
+    "exact",
+    Atom.Def<Value>,
+    Atom.Qualifier.Internalize<Qualifier>,
+    Parent
+  >;
 
   export type Discriminated<
     Value,

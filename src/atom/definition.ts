@@ -172,6 +172,22 @@ export declare class Atom<
     Parent
   >;
 
+  readonly decomposeNullish: Atom.DecomposeNullish.Prop<
+    Kind,
+    Variant,
+    ValueDef,
+    Qualifier,
+    Parent
+  >;
+
+  readonly useDecomposeNullish: Atom.DecomposeNullish.Prop<
+    Kind,
+    Variant,
+    ValueDef,
+    Qualifier,
+    Parent
+  >;
+
   readonly discriminate: Atom.Discriminate.Prop<
     Kind,
     Variant,
@@ -1041,6 +1057,22 @@ export namespace Atom {
     >;
 
     readonly useDecompose: Decompose.Use.Prop<
+      Kind,
+      Variant,
+      ValueDef,
+      Qualifier,
+      Parent
+    >;
+
+    readonly decomposeNullish: Atom.DecomposeNullish.Prop<
+      Kind,
+      Variant,
+      ValueDef,
+      Qualifier,
+      Parent
+    >;
+
+    readonly useDecomposeNullish: Atom.DecomposeNullish.Prop<
       Kind,
       Variant,
       ValueDef,
@@ -2609,6 +2641,74 @@ export namespace Atom {
         prevValue: ValueDef["read"],
       ) => boolean;
     }
+  }
+
+  //#endregion
+
+  //#region DecomposeNullish
+
+  export namespace DecomposeNullish {
+    export interface Prop<
+      Kind extends Atom.Flavor.Kind,
+      Variant extends Atom.Flavor.Variant,
+      ValueDef extends Def.Constraint,
+      Qualifier extends Atom.Qualifier.Constraint,
+      Parent extends Atom.Parent.Constraint<ValueDef>,
+    > {
+      (): Result<Kind, Variant, ValueDef, Qualifier, Parent>;
+    }
+
+    export type Result<
+      Kind extends Atom.Flavor.Kind,
+      Variant extends Atom.Flavor.Variant,
+      ValueDef extends Def.Constraint,
+      Qualifier extends Atom.Qualifier.Constraint,
+      Parent extends Atom.Parent.Constraint<ValueDef>,
+    > =
+      | (ValueDef["read"] & {} extends infer Value
+          ? Utils.IsNever<Value> extends false
+            ? {
+                value: Value;
+              } & {
+                [Key in Atom.Prop<Kind>]: Envelop<
+                  Kind,
+                  Variant,
+                  Atom.Def<Value>,
+                  Qualifier,
+                  Parent
+                >;
+              }
+            : never
+          : never)
+      | (Exclude<ValueDef["read"], {}> extends infer Value
+          ? Utils.IsNever<Value> extends false
+            ? {
+                value: Value;
+              } & {
+                [Key in Atom.Prop<Kind>]: Envelop<
+                  Kind,
+                  Variant,
+                  Atom.Def<Value>,
+                  Qualifier,
+                  Parent
+                >;
+              }
+            : never
+          : never)
+      // Add unknown option for the base and immutable variants
+      | (Utils.Extends<Variant, "base"> extends true
+          ? {
+              value: unknown;
+            } & {
+              [Key in Atom.Prop<Kind>]: Envelop<
+                Kind,
+                "base",
+                Atom.Def<unknown>,
+                Qualifier,
+                Parent
+              >;
+            }
+          : never);
   }
 
   //#endregion

@@ -150,6 +150,85 @@ import { State } from "./definition.ts";
 }
 //#endregion
 
+//#region State.DecomposedNullish
+{
+  // Default
+  {
+    const decomposed = {} as State.DecomposedNullish<
+      string[] | number[] | undefined | null
+    >;
+
+    if (decomposed.value) {
+      ty(decomposed.state).is(ty<State<string[] | number[]>>());
+    } else {
+      decomposed.value;
+      ty(decomposed.state).is(ty<State<undefined | null>>());
+    }
+
+    ty(decomposed).is(
+      ty.assignableTo<
+        State.Exact.DecomposedNullish<string[] | number[] | undefined | null>
+      >(),
+    );
+  }
+
+  // Exact
+  {
+    const decomposed = {} as State.Exact.DecomposedNullish<
+      string[] | number[] | undefined | null
+    >;
+
+    if (decomposed.value) {
+      ty(decomposed.state).is(ty<State.Exact<string[] | number[]>>());
+    } else {
+      ty(decomposed.state).is(ty<State.Exact<undefined | null>>());
+    }
+  }
+
+  // Base
+  {
+    const decomposed = {} as State.Base.DecomposedNullish<
+      string[] | number[] | undefined | null
+    >;
+
+    ty(decomposed.value).is(ty<unknown>());
+    ty(decomposed.state).is(
+      ty<
+        | State.Base<string[] | number[]>
+        | State.Base<undefined | null>
+        | State.Base<unknown>
+      >(),
+    );
+  }
+
+  // Optional
+  {
+    const decomposed = {} as State.Optional.DecomposedNullish<
+      string[] | number[] | undefined | null
+    >;
+
+    if (decomposed.value) {
+      ty(decomposed.state).is(ty<State.Optional<string[] | number[]>>());
+    } else {
+      ty(decomposed.state).is(ty<State.Optional<undefined | null>>());
+    }
+  }
+
+  // Immutable
+  {
+    const decomposed = {} as State.Immutable.DecomposedNullish<
+      string[] | number[] | undefined | null
+    >;
+
+    if (decomposed.value) {
+      ty(decomposed.state).is(ty<State.Immutable<string[] | number[]>>());
+    } else {
+      ty(decomposed.state).is(ty<State.Immutable<undefined | null>>());
+    }
+  }
+}
+//#endregion
+
 //#region State.Discriminated
 {
   interface Square {

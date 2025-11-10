@@ -623,6 +623,36 @@ export class AtomImpl<Value> {
     }) as any;
   }
 
+  decomposeNullish(): any {
+    return {
+      value: this.value,
+      [this.#prop]: this,
+    } as any;
+  }
+
+  useDecomposeNullish(callback: any, deps: React.DependencyList): any {
+    const getValue = useCallback(
+      () => this.decomposeNullish(),
+      [
+        // eslint-disable-next-line react-hooks/exhaustive-deps -- It can't handle this
+        this,
+      ],
+    );
+
+    const shouldRender = useCallback(
+      (prev: any, next: any) =>
+        !!prev && (next.value == null) !== (prev.value == null),
+      // eslint-disable-next-line react-hooks/exhaustive-deps -- It can't handle this
+      deps,
+    );
+
+    return useAtomHook({
+      atom: this as any,
+      getValue,
+      shouldRender,
+    }) as any;
+  }
+
   discriminate<Discriminator extends keyof Utils.NonNullish<Value>>(
     discriminator: Discriminator,
   ): any {

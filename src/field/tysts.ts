@@ -5218,6 +5218,431 @@ const brandedPrim = new Field({} as Branded<string>);
 }
 //#endregion
 
+//#region Field#decomposeNullish
+{
+  // Nullishable
+  {
+    const field = {} as Field<string | number | undefined | null>;
+    const result = field.decomposeNullish();
+    ty(result).is(
+      ty<
+        | {
+            value: string | number;
+            field: Field<string | number>;
+          }
+        | {
+            value: undefined | null;
+            field: Field<undefined | null>;
+          }
+      >(),
+    );
+
+    ty(result).is(
+      ty.assignableTo<
+        Field.DecomposedNullish<string | number | undefined | null>
+      >(),
+    );
+  }
+
+  // Defined
+  {
+    const field = {} as Field<string | number>;
+    const result = field.decomposeNullish();
+    ty(result).is(
+      ty<{
+        value: string | number;
+        field: Field<string | number>;
+      }>(),
+    );
+
+    ty(result).is(ty.assignableTo<Field.DecomposedNullish<string | number>>());
+  }
+
+  // Nullish
+  {
+    const field = {} as Field<undefined | null>;
+    const result = field.decomposeNullish();
+    ty(result).is(
+      ty<{
+        value: undefined | null;
+        field: Field<undefined | null>;
+      }>(),
+    );
+
+    ty(result).is(ty.assignableTo<Field.DecomposedNullish<undefined | null>>());
+  }
+
+  // Value union
+  {
+    const field = {} as Field<Hello | Blah | undefined | null>;
+    const result = field.decomposeNullish();
+    ty(result).is(
+      ty<
+        | {
+            value: Hello | Blah;
+            field: Field<Hello | Blah>;
+          }
+        | {
+            value: undefined | null;
+            field: Field<undefined | null>;
+          }
+      >(),
+    );
+
+    ty(result).is(
+      ty.assignableTo<
+        Field.DecomposedNullish<Hello | Blah | undefined | null>
+      >(),
+    );
+  }
+
+  // Field union
+  {
+    const field = {} as
+      | Field<Hello>
+      | Field<Blah>
+      | Field<undefined>
+      | Field<null>;
+    const result = field.decomposeNullish();
+    ty(result).is(
+      ty<
+        | {
+            value: Hello;
+            field: Field<Hello>;
+          }
+        | {
+            value: Blah;
+            field: Field<Blah>;
+          }
+        | {
+            value: undefined;
+            field: Field<undefined>;
+          }
+        | {
+            value: null;
+            field: Field<null>;
+          }
+      >(),
+    );
+
+    ty(result).is(
+      ty.assignableTo<
+        | Field.DecomposedNullish<Hello>
+        | Field.DecomposedNullish<Blah>
+        | Field.DecomposedNullish<undefined>
+        | Field.DecomposedNullish<null>
+      >(),
+    );
+  }
+
+  // Detachable
+  {
+    const field = {} as Field<string | number | undefined | null, "detachable">;
+    const result = field.decomposeNullish();
+    ty(result).is(
+      ty<
+        | {
+            value: string | number;
+            field: Field<string | number, "detachable">;
+          }
+        | {
+            value: undefined | null;
+            field: Field<undefined | null, "detachable">;
+          }
+      >(),
+    );
+
+    ty(result).is(
+      ty.assignableTo<
+        Field.DecomposedNullish<
+          string | number | undefined | null,
+          "detachable"
+        >
+      >(),
+    );
+  }
+
+  // Shared
+  {
+    const field = ({} as Field<string | number>).shared<
+      [string | number, string | number | undefined | null]
+    >();
+
+    const result = field.decomposeNullish();
+    ty(result).is(
+      ty<
+        | {
+            value: string | number;
+            field: Field<string | number>;
+          }
+        | {
+            value: undefined | null;
+            field: Field<undefined | null>;
+          }
+      >(),
+    );
+
+    ty(result).is(
+      ty.assignableTo<
+        Field.DecomposedNullish<string | number | undefined | null>
+      >(),
+    );
+  }
+}
+//#endregion
+
+//#region Field#useDecomposeNullish
+{
+  // Nullishable
+  {
+    const field = {} as Field<string | number | undefined | null>;
+    const result = field.useDecomposeNullish();
+    ty(result).is(
+      ty<
+        | {
+            value: string | number;
+            field: Field<string | number>;
+          }
+        | {
+            value: undefined | null;
+            field: Field<undefined | null>;
+          }
+      >(),
+    );
+
+    ty(result).is(
+      ty.assignableTo<
+        Field.DecomposedNullish<string | number | undefined | null>
+      >(),
+    );
+  }
+
+  // Defined
+  {
+    const field = {} as Field<string | number>;
+    const result = field.useDecomposeNullish();
+    ty(result).is(
+      ty<{
+        value: string | number;
+        field: Field<string | number>;
+      }>(),
+    );
+
+    ty(result).is(ty.assignableTo<Field.DecomposedNullish<string | number>>());
+  }
+
+  // Nullish
+  {
+    const field = {} as Field<undefined | null>;
+    const result = field.useDecomposeNullish();
+    ty(result).is(
+      ty<{
+        value: undefined | null;
+        field: Field<undefined | null>;
+      }>(),
+    );
+
+    ty(result).is(ty.assignableTo<Field.DecomposedNullish<undefined | null>>());
+  }
+
+  // Value union
+  {
+    const field = {} as Field<Hello | Blah | undefined | null>;
+    const result = field.useDecomposeNullish();
+    ty(result).is(
+      ty<
+        | {
+            value: Hello | Blah;
+            field: Field<Hello | Blah>;
+          }
+        | {
+            value: undefined | null;
+            field: Field<undefined | null>;
+          }
+      >(),
+    );
+
+    ty(result).is(
+      ty.assignableTo<
+        Field.DecomposedNullish<Hello | Blah | undefined | null>
+      >(),
+    );
+  }
+
+  // Field union
+  {
+    const field = {} as
+      | Field<Hello>
+      | Field<Blah>
+      | Field<undefined>
+      | Field<null>;
+    const result = field.useDecomposeNullish();
+    ty(result).is(
+      ty<
+        | {
+            value: Hello;
+            field: Field<Hello>;
+          }
+        | {
+            value: Blah;
+            field: Field<Blah>;
+          }
+        | {
+            value: undefined;
+            field: Field<undefined>;
+          }
+        | {
+            value: null;
+            field: Field<null>;
+          }
+      >(),
+    );
+
+    ty(result).is(
+      ty.assignableTo<
+        | Field.DecomposedNullish<Hello>
+        | Field.DecomposedNullish<Blah>
+        | Field.DecomposedNullish<undefined>
+        | Field.DecomposedNullish<null>
+      >(),
+    );
+  }
+
+  // Detachable
+  {
+    const field = {} as Field<string | number | undefined | null, "detachable">;
+    const result = field.useDecomposeNullish();
+    ty(result).is(
+      ty<
+        | {
+            value: string | number;
+            field: Field<string | number, "detachable">;
+          }
+        | {
+            value: undefined | null;
+            field: Field<undefined | null, "detachable">;
+          }
+      >(),
+    );
+
+    ty(result).is(
+      ty.assignableTo<
+        Field.DecomposedNullish<
+          string | number | undefined | null,
+          "detachable"
+        >
+      >(),
+    );
+  }
+
+  // Shared
+  {
+    const field = ({} as Field<string | number>).shared<
+      [string | number, string | number | undefined | null]
+    >();
+
+    const result = field.useDecomposeNullish();
+    ty(result).is(
+      ty<
+        | {
+            value: string | number;
+            field: Field<string | number>;
+          }
+        | {
+            value: undefined | null;
+            field: Field<undefined | null>;
+          }
+      >(),
+    );
+
+    ty(result).is(
+      ty.assignableTo<
+        Field.DecomposedNullish<string | number | undefined | null>
+      >(),
+    );
+  }
+}
+//#endregion
+
+//#region Field.DecomposedNullish
+{
+  // Default
+  {
+    const decomposed = {} as Field.DecomposedNullish<
+      string[] | number[] | undefined | null
+    >;
+
+    if (decomposed.value) {
+      ty(decomposed.field).is(ty<Field<string[] | number[]>>());
+    } else {
+      decomposed.value;
+      ty(decomposed.field).is(ty<Field<undefined | null>>());
+    }
+
+    ty(decomposed).is(
+      ty.assignableTo<
+        Field.Exact.DecomposedNullish<string[] | number[] | undefined | null>
+      >(),
+    );
+  }
+
+  // Exact
+  {
+    const decomposed = {} as Field.Exact.DecomposedNullish<
+      string[] | number[] | undefined | null
+    >;
+
+    if (decomposed.value) {
+      ty(decomposed.field).is(ty<Field.Exact<string[] | number[]>>());
+    } else {
+      ty(decomposed.field).is(ty<Field.Exact<undefined | null>>());
+    }
+  }
+
+  // Base
+  {
+    const decomposed = {} as Field.Base.DecomposedNullish<
+      string[] | number[] | undefined | null
+    >;
+
+    ty(decomposed.value).is(ty<unknown>());
+    ty(decomposed.field).is(
+      ty<
+        | Field.Base<string[] | number[]>
+        | Field.Base<undefined | null>
+        | Field.Base<unknown>
+      >(),
+    );
+  }
+
+  // Optional
+  {
+    const decomposed = {} as Field.Optional.DecomposedNullish<
+      string[] | number[] | undefined | null
+    >;
+
+    if (decomposed.value) {
+      ty(decomposed.field).is(ty<Field.Optional<string[] | number[]>>());
+    } else {
+      ty(decomposed.field).is(ty<Field.Optional<undefined | null>>());
+    }
+  }
+
+  // Immutable
+  {
+    const decomposed = {} as Field.Immutable.DecomposedNullish<
+      string[] | number[] | undefined | null
+    >;
+
+    if (decomposed.value) {
+      ty(decomposed.field).is(ty<Field.Immutable<string[] | number[]>>());
+    } else {
+      ty(decomposed.field).is(ty<Field.Immutable<undefined | null>>());
+    }
+  }
+}
+//#endregion
+
 //#region Field#discriminate & Field#useDiscriminate
 {
   function _discriminate<Key extends keyof User>(

@@ -155,6 +155,21 @@ export namespace State {
       > = Atom.Parent.Default,
     > = Decomposed<Value, Qualifier, Parent> & { value: Variant };
 
+    export type DecomposedNullish<
+      Value,
+      Qualifier extends
+        Atom.Qualifier.External.Constraint = Atom.Qualifier.External.Default,
+      Parent extends Atom.Parent.Constraint<
+        Atom.Def<Value>
+      > = Atom.Parent.Default,
+    > = Atom.DecomposeNullish.Result<
+      "state",
+      "exact",
+      Atom.Def<Value>,
+      Atom.Qualifier.Internalize<Qualifier>,
+      Parent
+    >;
+
     export type Discriminated<
       Value,
       Discriminator extends Atom.Discriminate.Discriminator<Atom.Def<Value>>,
@@ -244,6 +259,21 @@ export namespace State {
       > = Atom.Parent.Default,
     > = Decomposed<Value, Qualifier, Parent> & { value: Variant };
 
+    export type DecomposedNullish<
+      Value,
+      Qualifier extends
+        Atom.Qualifier.External.Constraint = Atom.Qualifier.External.Default,
+      Parent extends Atom.Parent.Constraint<
+        Atom.Def<Value>
+      > = Atom.Parent.Default,
+    > = Atom.DecomposeNullish.Result<
+      "state",
+      "base",
+      Atom.Def<Value>,
+      Atom.Qualifier.Internalize<Qualifier>,
+      Parent
+    >;
+
     export type Discriminated<
       Value,
       Discriminator extends Atom.Discriminate.Discriminator<Atom.Def<Value>>,
@@ -332,6 +362,21 @@ export namespace State {
         Atom.Def<Value>
       > = Atom.Parent.Default,
     > = Decomposed<Value, Qualifier, Parent> & { value: Variant };
+
+    export type DecomposedNullish<
+      Value,
+      Qualifier extends
+        Atom.Qualifier.External.Constraint = Atom.Qualifier.External.Default,
+      Parent extends Atom.Parent.Constraint<
+        Atom.Def<Value>
+      > = Atom.Parent.Default,
+    > = Atom.DecomposeNullish.Result<
+      "state",
+      "optional",
+      Atom.Def<Value>,
+      Atom.Qualifier.Internalize<Qualifier>,
+      Parent
+    >;
 
     export type Discriminated<
       Value,
@@ -423,6 +468,21 @@ export namespace State {
         Atom.Def<Value>
       > = Atom.Parent.Default,
     > = Decomposed<Value, Qualifier, Parent> & { value: Variant };
+
+    export type DecomposedNullish<
+      Value,
+      Qualifier extends
+        Atom.Qualifier.External.Constraint = Atom.Qualifier.External.Default,
+      Parent extends Atom.Parent.Constraint<
+        Atom.Def<Value>
+      > = Atom.Parent.Default,
+    > = Atom.DecomposeNullish.Result<
+      "state",
+      "immutable",
+      Atom.Def<Value>,
+      Atom.Qualifier.Internalize<Qualifier>,
+      Parent
+    >;
 
     export type Discriminated<
       Value,
@@ -572,6 +632,21 @@ export namespace State {
       Atom.Def<Value>
     > = Atom.Parent.Default,
   > = Atom.Decompose.Result<
+    "state",
+    "exact",
+    Atom.Def<Value>,
+    Atom.Qualifier.Internalize<Qualifier>,
+    Parent
+  >;
+
+  export type DecomposedNullish<
+    Value,
+    Qualifier extends
+      Atom.Qualifier.External.Constraint = Atom.Qualifier.External.Default,
+    Parent extends Atom.Parent.Constraint<
+      Atom.Def<Value>
+    > = Atom.Parent.Default,
+  > = Atom.DecomposeNullish.Result<
     "state",
     "exact",
     Atom.Def<Value>,
