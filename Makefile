@@ -36,10 +36,10 @@ prepare-build:
 	@mkdir -p lib
 
 publish: build
-	cd lib && pnpm publish --access public
+	cd lib && pnpm publish --no-git-checks --access public
 
 publish-next: build
-	cd lib && pnpm publish --access public --tag next
+	cd lib && pnpm publish --no-git-checks --access public --tag next
 
 link:
 	@cd lib && pnpm link

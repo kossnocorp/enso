@@ -588,14 +588,14 @@ export namespace State {
 
   export namespace Value {
     export namespace Use {
-      export interface Props extends Meta.Props {
+      export interface Options extends Meta.Props {
         meta?: boolean | undefined;
       }
 
-      export type IncludeMeta<Props extends Use.Props | undefined> =
+      export type IncludeMeta<Props extends Use.Options | undefined> =
         undefined extends Props
           ? false
-          : Props extends Use.Props
+          : Props extends Use.Options
             ? Props["meta"] extends true
               ? true
               : Props["meta"] extends false

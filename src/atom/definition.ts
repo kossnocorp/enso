@@ -146,7 +146,10 @@ export declare class Atom<
 
   events: Atom.Events.Prop<Kind, Variant, Qualifier>;
 
-  watch(callback: Atom.Watch.Callback<ValueDef>): Atom.Unwatch;
+  watch(
+    callback: Atom.Watch.Callback<ValueDef>,
+    options?: Atom.WatchSyncOptions,
+  ): Atom.Unwatch;
 
   useWatch: Atom.Watch.Use.Prop<ValueDef, Qualifier>;
 
@@ -1038,7 +1041,10 @@ export namespace Atom {
 
     events: Events.Prop<Kind, Variant, Qualifier>;
 
-    watch(callback: Watch.Callback<ValueDef>): Unwatch;
+    watch(
+      callback: Watch.Callback<ValueDef>,
+      options?: WatchSyncOptions,
+    ): Unwatch;
 
     useWatch: Watch.Use.Prop<ValueDef, Qualifier>;
 
@@ -1406,36 +1412,37 @@ export namespace Atom {
         Variant extends Atom.Flavor.Variant,
         ValueDef extends Def.Constraint,
       > {
-        <Props extends Use.Props<Kind> | undefined = undefined>(
-          props?: Props,
-        ): Result<Kind, Variant, ValueDef, Props>;
+        <Options extends Use.Options<Kind> | undefined = undefined>(
+          options?: Options,
+        ): Result<Kind, Variant, ValueDef, Options>;
       }
 
       export type Result<
         Kind extends Atom.Flavor.Kind,
         Variant extends Atom.Flavor.Variant,
         ValueDef extends Def.Constraint,
-        Props extends Use.Props<Kind> | undefined,
+        Options extends Use.Options<Kind> | undefined,
       > =
-        IncludeMeta<Kind, Variant, Props> extends true
+        IncludeMeta<Kind, Variant, Options> extends true
           ? [
               Opaque<ValueDef["read"]>,
-              Props extends { meta: true }
+              Options extends { meta: true }
                 ? Meta<Kind, Variant, undefined>
-                : Meta<Kind, Variant, Props>,
+                : Meta<Kind, Variant, Options>,
             ]
           : Opaque<ValueDef["read"]>;
 
-      export type Props<Kind extends Atom.Flavor.Kind> = "state" extends Kind
-        ? State.Value.Use.Props
-        : "field" extends Kind
-          ? Field.Value.Use.Props
-          : never;
+      export type Options<Kind extends Atom.Flavor.Kind> = WatchSyncOptions &
+        ("state" extends Kind
+          ? State.Value.Use.Options
+          : "field" extends Kind
+            ? Field.Value.Use.Options
+            : {});
 
       export type IncludeMeta<
         Kind extends Atom.Flavor.Kind,
         Variant extends Atom.Flavor.Variant,
-        Props extends Use.Props<Kind> | undefined,
+        Props extends Use.Options<Kind> | undefined,
       > = "state" extends Kind
         ? State.Value.Use.IncludeMeta<Props>
         : "field" extends Kind
@@ -1517,7 +1524,7 @@ export namespace Atom {
         ? State.Meta.Props
         : "field" extends Flavor
           ? Field.Meta.Props
-          : never;
+          : {};
 
     export namespace Use {
       export type Prop<
@@ -2495,7 +2502,11 @@ export namespace Atom {
       > = Qualifier.Ref.DisableFor<Qualifier, Fn<ValueDef>>;
 
       export interface Fn<ValueDef extends Def.Constraint> {
-        (callback: Watch.Callback<ValueDef>, deps: DependencyList): Unwatch;
+        (
+          callback: Watch.Callback<ValueDef>,
+          deps: DependencyList,
+          options?: WatchSyncOptions,
+        ): Unwatch;
       }
     }
 
@@ -2504,6 +2515,10 @@ export namespace Atom {
         (value: ValueType, event: ChangesEvent): void;
       }
     }
+  }
+
+  export interface WatchSyncOptions {
+    sync?: boolean | undefined;
   }
 
   //#endregion

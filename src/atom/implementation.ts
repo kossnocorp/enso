@@ -131,16 +131,18 @@ export class AtomImpl<Value> {
     return this.#cachedGet as any;
   }
 
-  useValue(props: any) {
-    const watchAllMeta = !!props?.meta;
-    const watchMeta = watchAllMeta || props?.valid || props?.dirty;
+  useValue(
+    options?: Atom.Value.Use.Options<"state"> & Atom.Value.Use.Options<"field">,
+  ) {
+    const watchAllMeta = !!options?.meta;
+    const watchMeta = watchAllMeta || options?.valid || options?.dirty;
     const meta = (this as any).useMeta(
       watchAllMeta
         ? undefined
         : {
-            dirty: !!props?.dirty,
-            errors: !!props?.errors,
-            valid: !!props?.valid,
+            dirty: !!options?.dirty,
+            errors: !!options?.errors,
+            valid: !!options?.valid,
           },
     );
 
@@ -154,16 +156,21 @@ export class AtomImpl<Value> {
 
     const watch = useCallback(
       ({ valueRef, rerender }: any) =>
-        this.watch((payload: any, event: any) => {
-          // React only on structural changes
-          if (!structuralChanges(event.changes)) return;
+        this.watch(
+          (payload: any, event: any) => {
+            // React only on structural changes
+            if (!structuralChanges(event.changes)) return;
 
-          valueRef.current = { id: this.id, enable: true, value: payload };
-          rerender();
-        }),
+            valueRef.current = { id: this.id, enable: true, value: payload };
+            rerender();
+          },
+          // TODO: Add tests
+          { sync: options?.sync },
+        ),
       [
         // eslint-disable-next-line react-hooks/exhaustive-deps -- It can't handle this
         this,
+        options?.sync,
       ],
     );
 
@@ -501,9 +508,12 @@ export class AtomImpl<Value> {
     this.trigger(changes, true);
   }
 
-  watch(callback: Atom.Watch.Bare.Callback<Value>, sync = false): Atom.Unwatch {
+  watch(
+    callback: Atom.Watch.Bare.Callback<Value>,
+    options?: Atom.WatchSyncOptions,
+  ): Atom.Unwatch {
     // TODO: Add tests for this
-    const target = sync ? this.#syncTarget : this.#batchTarget;
+    const target = options?.sync ? this.#syncTarget : this.#batchTarget;
     const handler = (event: any) => {
       callback(this.value as any, event);
     };
@@ -517,7 +527,10 @@ export class AtomImpl<Value> {
     };
   }
 
-  useWatch(callback: Atom.Watch.Bare.Callback<Value>): void {
+  useWatch(
+    callback: Atom.Watch.Bare.Callback<Value>,
+    options?: Atom.WatchSyncOptions,
+  ): void {
     // Preserve id to detected the active atom swap.
     const idRef = useRef(this.id);
 
@@ -528,8 +541,9 @@ export class AtomImpl<Value> {
         callback(this.value as any, new ChangesEvent(change.atom.id));
       }
 
-      return this.watch(callback);
-    }, [this.id, callback]);
+      // TODO: Add tests for options passing
+      return this.watch(callback, options);
+    }, [this.id, callback, options?.sync]);
   }
 
   unwatch() {
@@ -817,7 +831,7 @@ export class AtomProxyInternal<Kind extends Atom.Flavor.Kind, Value> {
         // that triggers rerender and makes the computed atom set to initial
         // value. The culprit is "Prevent extra mapper call" code above that
         // resets parent computed atom value before it gets a chance to update.
-        true,
+        { sync: true },
       ),
     );
 
@@ -854,7 +868,7 @@ export class AtomProxyInternal<Kind extends Atom.Flavor.Kind, Value> {
           });
         },
         // TODO: Add tests and rationale for this (see a todo above).
-        true,
+        { sync: true },
       ),
     );
   }

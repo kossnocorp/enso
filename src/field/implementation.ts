@@ -43,7 +43,10 @@ export class FieldImpl<Value> extends AtomImpl<Value> {
 
   static Component<Value>(props: Field.Component.Props<Value>) {
     const { field } = props;
-    const value = field.useValue();
+    // TODO: Add tests for this behavior! It is needed so that React doesn't
+    // intercept the value before the change and reset cursor position to
+    // the end.
+    const value = field.useValue({ sync: true });
     const meta = field.useMeta({
       dirty: props.meta || !!props.dirty,
       errors: props.meta || !!props.errors,

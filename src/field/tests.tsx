@@ -6470,19 +6470,19 @@ describe("Field", () => {
         expect(screen.getByTestId("full-name").textContent).toBe("Sasha Koss");
         expect(screen.getByTestId("dirty").textContent).toBe("true");
         expect(screen.getByTestId("valid").textContent).toBe("false");
-        expect(screen.getByTestId("render-meta").textContent).toBe("3");
+        expect(screen.getByTestId("render-meta").textContent).toBe("4");
 
         await act(() => screen.getByText("Clear errors").click());
 
         expect(screen.getByTestId("dirty").textContent).toBe("true");
         expect(screen.getByTestId("valid").textContent).toBe("true");
         expect(screen.getByTestId("errors").textContent).toBe("");
-        expect(screen.getByTestId("render-meta").textContent).toBe("4");
+        expect(screen.getByTestId("render-meta").textContent).toBe("5");
 
         await act(() => screen.getByText("Set field error").click());
 
         expect(screen.getByTestId("errors").textContent).toBe("Nope");
-        expect(screen.getByTestId("render-meta").textContent).toBe("5");
+        expect(screen.getByTestId("render-meta").textContent).toBe("6");
         expect(screen.getByTestId("render-meta-outside").textContent).toBe("1");
       });
 

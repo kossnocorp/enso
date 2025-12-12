@@ -752,10 +752,10 @@ export namespace Field {
 
   export namespace Value {
     export namespace Use {
-      export type IncludeMeta<Props extends Use.Props | undefined> =
+      export type IncludeMeta<Props extends Use.Options | undefined> =
         undefined extends Props
           ? false
-          : Props extends Use.Props
+          : Props extends Use.Options
             ? Props["meta"] extends true
               ? true
               : Props["meta"] extends false
@@ -767,7 +767,7 @@ export namespace Field {
                     : false
             : false;
 
-      export interface Props extends Meta.Props {
+      export interface Options extends Meta.Props {
         meta?: boolean | undefined;
       }
     }
